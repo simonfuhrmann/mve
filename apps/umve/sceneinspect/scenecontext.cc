@@ -522,22 +522,20 @@ SceneContext::create_frusta_renderer (float size)
         upvec = ctw.mult(upvec, 0.0f);
         rightvec = ctw.mult(rightvec, 0.0f);
 
-        math::Vec3f corners[4];
-        for (int j = 0; j < 4; ++j)
-            corners[j] = campos + size * viewdir
-                + rightvec * size / (2.0f * cam.flen) * (j & 1 ? -1.0f : 1.0f)
-                + upvec * size / (2.0f * cam.flen) * (j & 2 ? -1.0f : 1.0f);
-
         std::size_t idx(verts.size());
 
         verts.push_back(campos);
         colors.push_back(math::Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
         for (int j = 0; j < 4; ++j)
         {
-            verts.push_back(corners[j]);
+            math::Vec3f corner = campos + size * viewdir
+                + rightvec * size / (2.0f * cam.flen) * (j & 1 ? -1.0f : 1.0f)
+                + upvec * size / (2.0f * cam.flen) * (j & 2 ? -1.0f : 1.0f);
+            verts.push_back(corner);
             colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
             faces.push_back(idx + 0); faces.push_back(idx + 1 + j);
         }
+        // FIXME: Why does this guy face downwards?
         verts.push_back(campos + (size * 0.5f) * upvec);
         colors.push_back(math::Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
 
