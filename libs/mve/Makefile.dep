@@ -1,0 +1,77 @@
+bundlefile.o: bundlefile.cc ../util/exception.h ../util/defines.h \
+ ../util/string.h bundlefile.h ../util/refptr.h ../util/atomic.h \
+ defines.h camera.h trianglemesh.h ../math/vector.h ../math/defines.h \
+ ../math/algo.h
+camera.o: camera.cc ../math/matrixtools.h ../math/defines.h \
+ ../math/matrix.h ../math/algo.h ../math/vector.h camera.h defines.h
+depthmap.o: depthmap.cc ../math/defines.h ../math/matrix.h \
+ ../math/defines.h ../math/algo.h ../math/vector.h vertexinfo.h \
+ ../util/refptr.h ../util/defines.h ../util/atomic.h defines.h \
+ trianglemesh.h ../math/vector.h depthmap.h camera.h image.h \
+ ../math/algo.h imagebase.h ../util/string.h meshtools.h bilateral.h \
+ ../math/accum.h
+imageexif.o: imageexif.cc imageexif.h defines.h
+imagefile.o: imagefile.cc ../util/endian.h ../util/defines.h \
+ ../util/exception.h ../util/string.h imagefile.h defines.h image.h \
+ ../util/refptr.h ../util/atomic.h ../math/algo.h ../math/defines.h \
+ imagebase.h
+imagetools.o: imagetools.cc camera.h defines.h imagetools.h \
+ ../util/exception.h ../util/defines.h ../math/accum.h ../math/defines.h \
+ ../math/algo.h image.h ../util/refptr.h ../util/atomic.h imagebase.h \
+ ../util/string.h
+makescene.o: makescene.cc makescene.h defines.h
+marching.o: marching.cc defines.h
+meshtools.o: meshtools.cc ../util/exception.h ../util/defines.h \
+ ../util/string.h ../math/algo.h ../math/defines.h ../math/vector.h \
+ ../math/algo.h offfile.h defines.h trianglemesh.h ../util/refptr.h \
+ ../util/atomic.h plyfile.h image.h imagebase.h camera.h view.h \
+ ../util/atomic.h pbrtfile.h vertexinfo.h meshtools.h ../math/matrix.h \
+ ../math/vector.h
+msvfile.o: msvfile.cc ../util/exception.h ../util/defines.h image.h \
+ ../util/refptr.h ../util/atomic.h ../math/algo.h ../math/defines.h \
+ defines.h imagebase.h ../util/string.h msvfile.h
+offfile.o: offfile.cc ../math/vector.h ../math/defines.h ../math/algo.h \
+ ../util/exception.h ../util/defines.h offfile.h defines.h trianglemesh.h \
+ ../util/refptr.h ../util/atomic.h
+pbrtfile.o: pbrtfile.cc ../util/exception.h ../util/defines.h pbrtfile.h \
+ trianglemesh.h ../math/vector.h ../math/defines.h ../math/algo.h \
+ ../util/refptr.h ../util/atomic.h defines.h
+plyfile.o: plyfile.cc ../util/exception.h ../util/defines.h \
+ ../util/tokenizer.h ../util/endian.h ../math/vector.h ../math/defines.h \
+ ../math/algo.h ../math/matrix.h ../math/vector.h depthmap.h defines.h \
+ camera.h image.h ../util/refptr.h ../util/atomic.h ../math/algo.h \
+ imagebase.h ../util/string.h trianglemesh.h plyfile.h view.h \
+ ../util/atomic.h
+scene.o: scene.cc ../util/exception.h ../util/defines.h ../util/inifile.h \
+ ../util/string.h ../util/refptr.h ../util/atomic.h ../util/hrtimer.h \
+ ../util/fs.h scene.h ../util/refptr.h defines.h view.h ../util/atomic.h \
+ camera.h imagebase.h ../util/string.h image.h ../math/algo.h \
+ ../math/defines.h bundlefile.h trianglemesh.h ../math/vector.h \
+ ../math/algo.h
+seamcarving.o: seamcarving.cc ../math/algo.h ../math/defines.h \
+ seamcarving.h defines.h image.h ../util/refptr.h ../util/defines.h \
+ ../util/atomic.h imagebase.h ../util/string.h
+sift.o: sift.cc ../util/clocktimer.h ../util/defines.h ../math/matrix.h \
+ ../math/defines.h ../math/algo.h ../math/vector.h ../math/matrixtools.h \
+ ../math/matrix.h imagefile.h defines.h image.h ../util/refptr.h \
+ ../util/atomic.h ../math/algo.h imagebase.h ../util/string.h \
+ imagetools.h ../util/exception.h ../math/accum.h camera.h sift.h \
+ ../math/vector.h
+surf.o: surf.cc image.h ../util/refptr.h ../util/defines.h \
+ ../util/atomic.h ../math/algo.h ../math/defines.h defines.h imagebase.h \
+ ../util/string.h imagetools.h ../util/exception.h ../math/accum.h \
+ camera.h imagefile.h surf.h
+trianglemesh.o: trianglemesh.cc ../math/defines.h trianglemesh.h \
+ ../math/vector.h ../math/defines.h ../math/algo.h ../util/refptr.h \
+ ../util/defines.h ../util/atomic.h defines.h
+vertexinfo.o: vertexinfo.cc vertexinfo.h ../util/refptr.h \
+ ../util/defines.h ../util/atomic.h defines.h trianglemesh.h \
+ ../math/vector.h ../math/defines.h ../math/algo.h
+view.o: view.cc ../util/tokenizer.h ../util/defines.h ../util/exception.h \
+ ../util/fs.h ../util/string.h image.h ../util/refptr.h ../util/atomic.h \
+ ../math/algo.h ../math/defines.h defines.h imagebase.h view.h \
+ ../util/atomic.h camera.h
+volume.o: volume.cc ../math/vector.h ../math/defines.h ../math/algo.h \
+ marchingtets.h ../math/algo.h defines.h trianglemesh.h ../util/refptr.h \
+ ../util/defines.h ../util/atomic.h marchingcubes.h image.h imagebase.h \
+ ../util/string.h volume.h

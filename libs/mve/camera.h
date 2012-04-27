@@ -1,0 +1,121 @@
+/*
+ * Camera representations.
+ * Written by Simon Fuhrmann.
+ */
+
+#ifndef MVE_CAMERA_HEADER
+#define MVE_CAMERA_HEADER
+
+#include <string>
+
+#include "defines.h"
+
+MVE_NAMESPACE_BEGIN
+
+/**
+ * Per-view low-level camera information (as in the bundle).
+ * An invalid camera is indicated if focal length is set to 0.0f.
+ */
+struct CameraInfo
+{
+public:
+    /* Intrinsic camera parameters. */
+
+    /** Focal length. */
+    float flen;
+    /** Principal point in x- and y-direction. */
+    float ppoint[2];
+    /** Pixel aspect ratio pixel_width / pixel_height. */
+    float paspect;
+    /** Image distortion parameters. */
+    float dist[2];
+
+    /* Extrinsic camera parameters. */
+
+    /** Camera translation vector. Camera position p = -ROT^T * trans. */
+    float trans[3];
+    /** Camera rotation which transforms from world to cam. */
+    float rot[9];
+
+public:
+    /**
+     * Default ctor that invalidates the camera.
+     * An invalid camera always has focal length 'flen' set to 0.0f.
+     */
+    CameraInfo (void);
+
+    /**
+     * Stores camera position 3-vector into array pointed to by pos.
+     * The position is calculated with: -R^T * t.
+     */
+    void fill_camera_pos (float* pos) const;
+
+    /**
+     * Stores the (normalized) viewing direction in world coordinates
+     * into the array pointed to by 'viewdir'.
+     */
+    void fill_viewing_direction (float* viewdir) const;
+
+    /**
+     * Stores world to camera 4x4 matrix in array pointed to by mat.
+     */
+    void fill_world_to_cam (float* mat) const;
+
+    /**
+     * Stores camera to world 4x4 matrix in array pointed to by mat.
+     */
+    void fill_cam_to_world (float* mat) const;
+
+    /**
+     * Initializes 'rot' and 'trans' members using the 4x4 matrix 'mat'.
+     */
+    void set_transformation (float const* mat);
+
+    /**
+     * Stores 3x3 projection matrix (K-matrix in Hartley, Zisserman).
+     * The matrix projects a point in camera coordinates to the image
+     * plane with dimensions 'w' and 'h'.
+     */
+    void fill_projection (float* mat, std::size_t w, std::size_t h) const;
+
+    /**
+     * Stores 3x3 inverse projection matrix.
+     * The matrix projects a point on the image plane with dimension 'w'
+     * and 'h' to 3D in camera coordinate system at z = -1.
+     */
+    void fill_inverse_projection (float* mat,
+        std::size_t w, std::size_t h) const;
+
+    /**
+     * Generates space separated list of floats for extrinsic parameters.
+     * The list is in format: t1 t2 t3 r1 ... r9.
+     */
+    std::string to_ext_string (void) const;
+
+    /**
+     * Initializes extrinsic camera parameters from string.
+     * The string must be in the format 'to_ext_string' produces.
+     */
+    void from_ext_string (std::string const& str);
+
+    /**
+     * Generates space separated list of floats for intrinsic parameters.
+     * The list is in format: fl rd1 rd2 pa ppx ppy (see Wiki for details).
+     */
+    std::string to_int_string (void) const;
+
+    /**
+     * Initializes intrinsic camera parameters from string.
+     * The string must be in the format 'to_int_string' produces.
+     */
+    void from_int_string (std::string const& str);
+
+    /**
+     * Prints debug information to stdout.
+     */
+    void debug_print (void) const;
+};
+
+MVE_NAMESPACE_END
+
+#endif /* MVE_CAMERA_HEADER */

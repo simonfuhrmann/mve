@@ -1,0 +1,6 @@
+arguments.o: arguments.cc string.h defines.h tokenizer.h arguments.h \
+ exception.h
+fs.o: fs.cc exception.h defines.h system.h fs.h
+inifile.o: inifile.cc exception.h defines.h inifile.h string.h refptr.h \
+ atomic.h
+system.o: system.cc system.h defines.h

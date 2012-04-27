@@ -1,0 +1,43 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/icon_exit.svg</file>
+        <file>images/icon_copy.svg</file>
+        <file>images/icon_delete.svg</file>
+        <file>images/icon_save.svg</file>
+        <file>images/icon_about.svg</file>
+        <file>images/icon_revert.svg</file>
+        <file>images/icon_open_file.svg</file>
+        <file>images/icon_image_inspect.svg</file>
+        <file>images/icon_export_ply.svg</file>
+        <file>images/icon_zoom_in.svg</file>
+        <file>images/icon_zoom_out.svg</file>
+        <file>images/icon_zoom_reset.svg</file>
+        <file>images/icon_zoom_page.svg</file>
+        <file>images/icon_exec.svg</file>
+        <file>images/icon_new_dir.svg</file>
+        <file>images/icon_close.svg</file>
+        <file>images/icon_broken.svg</file>
+        <file>images/icon_toolbox.svg</file>
+        <file>images/icon_clean.svg</file>
+        <file>images/icon_export.svg</file>
+        <file>images/icon_small_minus.png</file>
+        <file>images/icon_small_plus.png</file>
+        <file>images/icon_large_minus.png</file>
+        <file>images/icon_large_plus.png</file>
+        <file>images/icon_screenshot.svg</file>
+        <file>images/icon_file.svg</file>
+        <file>images/icon_folder.svg</file>
+        <file>images/icon_player_eject.svg</file>
+        <file>images/icon_player_end.svg</file>
+        <file>images/icon_player_fwd.svg</file>
+        <file>images/icon_player_pause.svg</file>
+        <file>images/icon_player_play.svg</file>
+        <file>images/icon_player_record.svg</file>
+        <file>images/icon_player_rew.svg</file>
+        <file>images/icon_player_start.svg</file>
+        <file>images/icon_player_stop.svg</file>
+        <file>images/icon_eye.svg</file>
+        <file>images/icon_video.svg</file>
+        <file>images/icon_refresh.svg</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,58 @@
+DMRecon.o: DMRecon.cpp DMRecon.h ../mve/bundlefile.h ../util/refptr.h \
+ ../util/defines.h ../util/atomic.h ../mve/defines.h ../mve/camera.h \
+ ../mve/trianglemesh.h ../math/vector.h ../math/defines.h ../math/algo.h \
+ ../mve/image.h ../math/algo.h ../mve/imagebase.h ../util/string.h \
+ ../mve/scene.h ../mve/view.h ../util/atomic.h ../mve/image.h \
+ ../mve/bundlefile.h defines.h PatchOptimization.h PatchSampler.h \
+ Settings.h SingleView.h ../math/matrix.h ../math/vector.h ../mve/view.h \
+ LocalViewSelection.h ViewSelection.h Progress.h GlobalViewSelection.h \
+ ../mve/imagetools.h ../util/exception.h ../math/accum.h ../util/fs.h
+GlobalViewSelection.o: GlobalViewSelection.cpp GlobalViewSelection.h \
+ SingleView.h ../math/vector.h ../math/defines.h ../math/algo.h \
+ ../math/matrix.h ../math/vector.h ../mve/view.h ../util/refptr.h \
+ ../util/defines.h ../util/atomic.h ../util/atomic.h ../mve/defines.h \
+ ../mve/camera.h ../mve/imagebase.h ../util/string.h ../mve/image.h \
+ ../math/algo.h ../mve/bundlefile.h ../mve/trianglemesh.h ../mve/image.h \
+ defines.h ViewSelection.h Settings.h mvstools.h
+LocalViewSelection.o: LocalViewSelection.cpp ../math/defines.h \
+ ../util/refptr.h ../util/defines.h ../util/atomic.h LocalViewSelection.h \
+ ViewSelection.h defines.h ../math/vector.h ../math/defines.h \
+ ../math/algo.h Settings.h PatchSampler.h SingleView.h ../math/matrix.h \
+ ../math/vector.h ../mve/view.h ../util/atomic.h ../mve/defines.h \
+ ../mve/camera.h ../mve/imagebase.h ../util/string.h ../mve/image.h \
+ ../math/algo.h ../mve/bundlefile.h ../mve/trianglemesh.h ../mve/image.h \
+ mvstools.h
+mvstools.o: mvstools.cpp mvstools.h defines.h ../math/vector.h \
+ ../math/defines.h ../math/algo.h ../math/matrix.h ../math/vector.h \
+ ../mve/image.h ../util/refptr.h ../util/defines.h ../util/atomic.h \
+ ../math/algo.h ../mve/defines.h ../mve/imagebase.h ../util/string.h \
+ SingleView.h ../mve/view.h ../util/atomic.h ../mve/camera.h \
+ ../mve/image.h ../mve/bundlefile.h ../mve/trianglemesh.h \
+ ../mve/imagetools.h ../util/exception.h ../math/accum.h \
+ ../mve/imagefile.h
+PatchOptimization.o: PatchOptimization.cpp ../util/string.h \
+ ../util/defines.h ../math/algo.h ../math/defines.h ../math/defines.h \
+ ../math/matrix.h ../math/algo.h ../math/vector.h ../math/matrixtools.h \
+ ../math/matrix.h ../math/vector.h PatchOptimization.h ../util/refptr.h \
+ ../util/atomic.h defines.h PatchSampler.h Settings.h SingleView.h \
+ ../mve/view.h ../util/atomic.h ../mve/defines.h ../mve/camera.h \
+ ../mve/imagebase.h ../mve/image.h ../mve/bundlefile.h \
+ ../mve/trianglemesh.h ../mve/image.h LocalViewSelection.h \
+ ViewSelection.h
+PatchSampler.o: PatchSampler.cpp ../math/defines.h ../math/matrix.h \
+ ../math/defines.h ../math/algo.h ../math/vector.h ../math/vector.h \
+ defines.h mvstools.h ../mve/image.h ../util/refptr.h ../util/defines.h \
+ ../util/atomic.h ../math/algo.h ../mve/defines.h ../mve/imagebase.h \
+ ../util/string.h SingleView.h ../mve/view.h ../util/atomic.h \
+ ../mve/camera.h ../mve/image.h ../mve/bundlefile.h ../mve/trianglemesh.h \
+ PatchSampler.h Settings.h
+Settings.o: Settings.cpp Settings.h defines.h ../math/vector.h \
+ ../math/defines.h ../math/algo.h
+SingleView.o: SingleView.cpp ../mve/imagefile.h ../mve/defines.h \
+ ../mve/image.h ../util/refptr.h ../util/defines.h ../util/atomic.h \
+ ../math/algo.h ../math/defines.h ../mve/imagebase.h ../util/string.h \
+ ../mve/imagetools.h ../util/exception.h ../math/accum.h ../mve/camera.h \
+ ../mve/plyfile.h ../mve/view.h ../util/atomic.h ../mve/trianglemesh.h \
+ ../math/vector.h ../math/algo.h ../mve/view.h ../util/fs.h defines.h \
+ SingleView.h ../math/matrix.h ../math/vector.h ../mve/bundlefile.h \
+ ../mve/image.h

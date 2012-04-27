@@ -1,0 +1,88 @@
+#ifndef UMVE_MAIN_WINDOW_HEADER
+#define UMVE_MAIN_WINDOW_HEADER
+
+#include <string>
+#include <QtGui>
+
+#include "mve/view.h"
+
+#include "viewinspect/viewinspect.h"
+#include "sceneinspect/sceneinspect.h"
+#include "jobqueue.h"
+#include "sceneoverview.h"
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+private:
+    QDockWidget* dock_scene;
+    QDockWidget* dock_jobs;
+    //QDockWidget* dock_log;
+    QTabWidget* tabs;
+
+    QStatusBar* statusbar;
+    QLabel* memory_label;
+    QTimer* update_timer;
+
+    SceneOverview* scene_overview;
+    JobQueue* jobqueue;
+    ViewInspect* tab_viewinspect;
+    SceneInspect* tab_sceneinspect;
+
+    QAction* action_open_scene;
+    QAction* action_reload_scene;
+    QAction* action_save_scene;
+    QAction* action_close_scene;
+    QAction* action_recon_export;
+    QAction* action_batch_delete;
+    QAction* action_cache_cleanup;
+    QAction* action_refresh_scene;
+    QAction* action_exit;
+    QAction* action_about;
+    QAction* action_about_qt;
+
+    QMenu* menu_file;
+    QMenu* menu_help;
+
+private:
+    void create_actions (void);
+    void create_menus (void);
+
+    bool perform_close_scene (void);
+
+private slots:
+    void on_reload_scene (void);
+    void on_save_scene (void);
+    void on_close_scene (void);
+    void on_refresh_scene (void);
+    void on_about (void);
+
+    void on_update_memory (void);
+    void on_cache_cleanup (void);
+    void on_recon_export (void);
+    void on_batch_delete (void);
+
+    void closeEvent (QCloseEvent* event);
+
+public slots:
+    void raise_open_dialog (void);
+
+public:
+    MainWindow (void);
+    ~MainWindow (void);
+
+    void load_scene (std::string const& path);
+    void load_file (std::string const& filename);
+
+    void open_scene_inspect (void);
+};
+
+/* ---------------------------------------------------------------- */
+
+inline
+MainWindow::~MainWindow (void)
+{
+}
+
+#endif /* UMVE_MAIN_WINDOW_HEADER */
