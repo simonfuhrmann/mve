@@ -77,13 +77,14 @@ CameraInfo::set_transformation (float const* mat)
 void
 CameraInfo::fill_projection (float* mat, std::size_t w, std::size_t h) const
 {
-    float aspect = (float)w / (float)h;
-    float iaspect = aspect * this->paspect;
+    float aspect = (float)w / (float)h; // ratio between width and height
+    float iaspect = aspect * this->paspect; // aspect ratio of the image
 
+    /* mx and my are the number of pixels per unit distance. */
     float mx = (iaspect < 1 ? (float)h / this->paspect : (float)w);
     float my = (iaspect < 1 ? (float)h : (float)w * this->paspect);
-    float ax = this->flen * mx;
-    float ay = this->flen * my;
+    float ax = this->flen * mx; // horizontal focal length in pixels
+    float ay = this->flen * my; // vertical focal length in pixels
 
     mat[0] =  -ax; mat[1] = 0.0f; mat[2] = -(float)w * this->ppoint[0];
     mat[3] = 0.0f; mat[4] =   ay; mat[5] = -(float)h * this->ppoint[1];
