@@ -40,6 +40,8 @@ void vector_tests (void)
     assert(Vec2f(-1000.0f, 100.0f).maximum() == 100.0f);
     assert(Vec3f(2.0f, 2.0f, 2.0f).product() == 8.0f);
     assert(Vec3f(2.0f, 2.0f, 2.0f).sum() == 6.0f);
+    assert(Vec3f(2.0f, -1.0f, -1.0f).sum() == 0.0f);
+    assert(Vec3f(2.0f, -1.0f, -1.0f).abs_sum() == 4.0f);
     assert(Vec3f(1.0f, 2.0f, 3.0f).sort_asc() == Vec3f(1.0f, 2.0f, 3.0f));
     assert(Vec3f(3.0f, 2.0f, 1.0f).sort_asc() == Vec3f(1.0f, 2.0f, 3.0f));
     assert(Vec3f(1.0f, 3.0f, 2.0f).sort_asc() == Vec3f(1.0f, 2.0f, 3.0f));
@@ -313,6 +315,7 @@ bspline_tests (void)
     out.close();
 #endif
 
+#if 0
     BSpline<math::Vec3f, float> s;
     s.set_degree(3);
     s.add_point(math::Vec3f(0,0,0));
@@ -342,7 +345,7 @@ bspline_tests (void)
     s.scale_knots(0.0f, 1.0f);
     for (std::size_t i = 0; i < s.get_knots().size(); ++i)
         std::cout << "Knot " << i << ": " << s.get_knots()[i] << std::endl;
-
+#endif
 
 #if 0
     BSpline<math::Vec3f, float> s;

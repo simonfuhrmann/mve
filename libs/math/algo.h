@@ -94,6 +94,14 @@ accum_squared_sum (T const& init, T const& next)
     return init + next * next;
 }
 
+/** Absolute sum accumulator. */
+template <typename T>
+inline T
+accum_absolute_sum (T const& init, T const& next)
+{
+    return init + std::abs(next);
+}
+
 /** Epsilon comparator predicate. */
 template <typename T>
 struct predicate_epsilon_equal

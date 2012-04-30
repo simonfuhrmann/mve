@@ -103,6 +103,9 @@ public:
     /** Returns the sum of all elements. */
     T sum (void) const;
 
+    /** Returns the sum of the absolute values of all elements. */
+    T abs_sum (void) const;
+
     /** Returns the product of all elements. */
     T product (void) const;
 
@@ -370,6 +373,13 @@ inline T
 Vector<T,N>::sum (void) const
 {
     return std::accumulate(v, v + N, T(0), std::plus<T>());
+}
+
+template <typename T, int N>
+inline T
+Vector<T,N>::abs_sum (void) const
+{
+    return std::accumulate(v, v + N, T(0), &algo::accum_absolute_sum<T>);
 }
 
 template <typename T, int N>
