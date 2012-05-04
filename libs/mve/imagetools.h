@@ -61,6 +61,14 @@ ByteImage::Ptr
 int_to_byte_image (IntImage::ConstPtr image);
 
 /**
+ * Generic conversion between image types without scaling or clamping.
+ * This is useful to convert float to double and vice versa.
+ */
+template <typename A, typename B>
+typename Image<B>::Ptr
+type_to_type_image (typename Image<A>::ConstPtr image);
+
+/**
  * Normalizes a float image IN-PLACE such that all values are [0, 1].
  * This is done by first finding the largest value in the image
  * and dividing all image values by the largest value.
@@ -419,6 +427,21 @@ MVE_NAMESPACE_END
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
+
+template <typename A, typename B>
+typename Image<B>::Ptr
+type_to_type_image (typename Image<A>::ConstPtr image)
+{
+    typename Image<B>::Ptr out = Image<B>::create();
+    out->allocate(image->width(), image->height(), image->channels());
+    std::size_t size = image->get_value_amount();
+    A const* src_buf = image->get_data_pointer();
+    B* dst_buf = out->get_data_pointer();
+    std::copy(src_buf, src_buf + size, dst_buf);
+    return out;
+}
+
+/* ---------------------------------------------------------------- */
 
 template <typename T>
 typename Image<T>::Ptr
