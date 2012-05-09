@@ -14,7 +14,7 @@ MVE_NAMESPACE_BEGIN
 
 /**
  * Per-view low-level camera information (as in the bundle).
- * An invalid camera is indicated if focal length is set to 0.0f.
+ * An invalid camera is indicated with focal length set to 0.0f.
  */
 struct CameraInfo
 {
@@ -46,9 +46,17 @@ public:
 
     /**
      * Stores camera position 3-vector into array pointed to by pos.
+     * This can be thought of as the camera to world translation.
      * The position is calculated with: -R^T * t.
      */
     void fill_camera_pos (float* pos) const;
+
+    /**
+     * Stores the camera translation 3-vector into array pointed to by pos.
+     * This can be thought of as the world to camera translation.
+     * This is identical to the translation stored in the camera.
+     */
+    void fill_camera_translation (float* trans) const;
 
     /**
      * Stores the (normalized) viewing direction in world coordinates
@@ -65,6 +73,18 @@ public:
      * Stores camera to world 4x4 matrix in array pointed to by mat.
      */
     void fill_cam_to_world (float* mat) const;
+
+    /**
+     * Stores the world to camera 3x3 rotation matrix in mat.
+     * This is identical to the rotation stored in the camera.
+     */
+    void fill_world_to_cam_rot (float* mat) const;
+
+    /**
+     * Stores the camera to world 3x3 rotation matrix in mat.
+     * This is identical to the transposed rotation stored in the camera.
+     */
+    void fill_cam_to_world_rot (float* mat) const;
 
     /**
      * Initializes 'rot' and 'trans' members using the 4x4 matrix 'mat'.

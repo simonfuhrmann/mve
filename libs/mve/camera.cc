@@ -31,6 +31,14 @@ CameraInfo::fill_camera_pos (float* pos) const
 /* ---------------------------------------------------------------- */
 
 void
+CameraInfo::fill_camera_translation (float* trans) const
+{
+    std::copy(this->trans, this->trans + 3, trans);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 CameraInfo::fill_viewing_direction (float* viewdir) const
 {
     for (int i = 0; i < 3; ++i)
@@ -60,6 +68,24 @@ CameraInfo::fill_cam_to_world (float* mat) const
     mat[7]  = -(rot[1] * trans[0] + rot[4] * trans[1] + rot[7] * trans[2]);
     mat[11] = -(rot[2] * trans[0] + rot[5] * trans[1] + rot[8] * trans[2]);
     mat[12] = 0.0f;   mat[13] = 0.0f;   mat[14] = 0.0f;   mat[15] = 1.0f;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+CameraInfo::fill_world_to_cam_rot (float* mat) const
+{
+    std::copy(this->rot, this->rot + 9, mat);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+CameraInfo::fill_cam_to_world_rot (float* mat) const
+{
+    mat[0]  = rot[0]; mat[1] = rot[3]; mat[2] = rot[6];
+    mat[3]  = rot[1]; mat[4] = rot[4]; mat[5] = rot[7];
+    mat[6]  = rot[2]; mat[7] = rot[5]; mat[8] = rot[8];
 }
 
 /* ---------------------------------------------------------------- */
