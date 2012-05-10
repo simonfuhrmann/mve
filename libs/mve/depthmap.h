@@ -91,7 +91,8 @@ pixel_3dpos (std::size_t x, std::size_t y, float depth,
  *
  * A factor may be specified that guides depth discontinuity detection. A
  * depth discontinuity between pixels is assumed if depth difference is
- * larger than pixel footprint times dd_factor. The depthmap is
+ * larger than pixel footprint times 'dd_factor'. If 'dd_factor' is zero,
+ * no depth discontinuity detection is performed. The depthmap is
  * triangulated in the local camera coordinate system.
  *
  * If 'vids' is not NULL (but the image can be unallocated), image content

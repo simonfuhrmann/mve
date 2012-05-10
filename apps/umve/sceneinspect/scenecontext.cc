@@ -60,7 +60,7 @@ SceneContext::SceneContext (void)
     this->offscreen_playbut.setToolTip("Play sequence");
     this->offscreen_working = false;
 
-    this->dm_depth_disc.setMinimum(0.1f);
+    this->dm_depth_disc.setMinimum(0.0f);
     this->dm_depth_disc.setMaximum(100.0f);
     this->dm_depth_disc.setValue(5.0f);
     this->dm_confidences.setMinimum(0);

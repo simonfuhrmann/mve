@@ -444,24 +444,28 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
                 default: continue;
             }
 
-            /* Cache pixel footprints. */
-            float widths[4];
-            for (int j = 0; j < 4; ++j)
+            /* Omit depth discontinuity detection if dd_factor is zero. */
+            if (dd_factor > 0.0f)
             {
-                if (depths[j] == 0.0f)
-                    continue;
-                widths[j] = pixel_footprint(x + (j % 2), y + (j / 2),
-                    depths[j], invproj);// w, h, focal_len);
-            }
+                /* Cache pixel footprints. */
+                float widths[4];
+                for (int j = 0; j < 4; ++j)
+                {
+                    if (depths[j] == 0.0f)
+                        continue;
+                    widths[j] = pixel_footprint(x + (j % 2), y + (j / 2),
+                        depths[j], invproj);// w, h, focal_len);
+                }
 
-            /* Check for depth discontinuities. */
-            for (int j = 0; j < 2 && tri[j] != 0; ++j)
-            {
-                int* tv = tris[tri[j] - 1];
-                #define DM_DD_ARGS widths, depths, dd_factor
-                if (dm_is_depthdisc(DM_DD_ARGS, tv[0], tv[1])) tri[j] = 0;
-                if (dm_is_depthdisc(DM_DD_ARGS, tv[1], tv[2])) tri[j] = 0;
-                if (dm_is_depthdisc(DM_DD_ARGS, tv[2], tv[0])) tri[j] = 0;
+                /* Check for depth discontinuities. */
+                for (int j = 0; j < 2 && tri[j] != 0; ++j)
+                {
+                    int* tv = tris[tri[j] - 1];
+                    #define DM_DD_ARGS widths, depths, dd_factor
+                    if (dm_is_depthdisc(DM_DD_ARGS, tv[0], tv[1])) tri[j] = 0;
+                    if (dm_is_depthdisc(DM_DD_ARGS, tv[1], tv[2])) tri[j] = 0;
+                    if (dm_is_depthdisc(DM_DD_ARGS, tv[2], tv[0])) tri[j] = 0;
+                }
             }
 
             /* Build triangles. */
