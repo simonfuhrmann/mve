@@ -145,9 +145,9 @@ TransferFunctionWidget::set_color_assignment (int channels)
         this->channel_grid->addWidget(ch_g, i + 1, 2);
         this->channel_grid->addWidget(ch_b, i + 1, 3);
 
-        this->connect(ch_r, SIGNAL(released()), this->ca_mapper, SLOT(map()));
-        this->connect(ch_g, SIGNAL(released()), this->ca_mapper, SLOT(map()));
-        this->connect(ch_b, SIGNAL(released()), this->ca_mapper, SLOT(map()));
+        this->connect(ch_r, SIGNAL(clicked()), this->ca_mapper, SLOT(map()));
+        this->connect(ch_g, SIGNAL(clicked()), this->ca_mapper, SLOT(map()));
+        this->connect(ch_b, SIGNAL(clicked()), this->ca_mapper, SLOT(map()));
         this->ca_mapper->setMapping(ch_r, SIGINT_RED | i);
         this->ca_mapper->setMapping(ch_g, SIGINT_GREEN | i);
         this->ca_mapper->setMapping(ch_b, SIGINT_BLUE | i);
