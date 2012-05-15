@@ -17,7 +17,7 @@ struct TransferFunction
     int blue;
 
     /* Special values. */
-    bool highlight_zeros;
+    float highlight_values;
 
     TransferFunction (void);
     float evaluate (float value);
@@ -34,7 +34,7 @@ private slots:
     void on_slider_released (void);
     void on_assignment_changed (int mask);
     void update_sliders (void);
-    void on_highlight_zeros_changed (void);
+    void on_highlight_values_changed (void);
 
 private:
     TransferFunction func;
@@ -44,6 +44,7 @@ private:
     QSlider* gamma_slider;
     QSlider* minvalue_slider;
     QSlider* maxvalue_slider;
+    QSlider* highlight_slider;
 
     QLabel* zoom_label;
     QLabel* gamma_label;
@@ -51,7 +52,7 @@ private:
     QLabel* maxvalue_label;
 
     QCheckBox* fix_clamp_slider;
-    QCheckBox* highlight_zeros;
+    QCheckBox* highlight_values;
     QGridLayout* channel_grid;
 
 signals:
@@ -82,7 +83,7 @@ TransferFunction::TransferFunction (void)
     this->green = 1;
     this->blue = 2;
 
-    this->highlight_zeros = true;
+    this->highlight_values = 0.0f;
 }
 
 inline TransferFunction const&

@@ -39,6 +39,8 @@ TransferFunctionWidget::TransferFunctionWidget (void)
     this->minvalue_slider->setRange(0, 100000);
     this->maxvalue_slider = new QSlider(Qt::Horizontal);
     this->maxvalue_slider->setRange(0, 100000);
+    this->highlight_slider = new QSlider(Qt::Horizontal);
+    this->highlight_slider->setRange(0, 1000);
 
     this->zoom_label = new QLabel();
     this->gamma_label = new QLabel();
@@ -46,8 +48,8 @@ TransferFunctionWidget::TransferFunctionWidget (void)
     this->maxvalue_label = new QLabel();
     this->fix_clamp_slider = new QCheckBox("Fix clamp sliders");
     this->fix_clamp_slider->setChecked(false);
-    this->highlight_zeros = new QCheckBox("Highlight zeros");
-    this->highlight_zeros->setChecked(this->func.highlight_zeros);
+    this->highlight_values = new QCheckBox("Highlight values");
+    this->highlight_values->setChecked(this->func.highlight_values >= 0.0f);
 
     this->channel_grid = new QGridLayout();
     this->channel_grid->setVerticalSpacing(0);
@@ -64,7 +66,8 @@ TransferFunctionWidget::TransferFunctionWidget (void)
     layout->addWidget(this->maxvalue_label);
     layout->addWidget(this->maxvalue_slider);
     layout->addWidget(this->fix_clamp_slider);
-    layout->addWidget(this->highlight_zeros);
+    layout->addWidget(this->highlight_values);
+    layout->addWidget(this->highlight_slider);
     layout->addWidget(get_separator());
     layout->addSpacerItem(new QSpacerItem(0, 10));
     layout->addLayout(this->channel_grid);
@@ -84,6 +87,8 @@ TransferFunctionWidget::TransferFunctionWidget (void)
         this, SLOT(on_slider_changed()));
     this->connect(this->maxvalue_slider, SIGNAL(valueChanged(int)),
         this, SLOT(on_slider_changed()));
+    this->connect(this->highlight_slider, SIGNAL(valueChanged(int)),
+        this, SLOT(on_slider_changed()));
 
     this->connect(this->zoom_slider, SIGNAL(sliderReleased()),
         this, SLOT(on_slider_released()));
@@ -93,9 +98,11 @@ TransferFunctionWidget::TransferFunctionWidget (void)
         this, SLOT(on_slider_released()));
     this->connect(this->maxvalue_slider, SIGNAL(sliderReleased()),
         this, SLOT(on_slider_released()));
+    this->connect(this->highlight_slider, SIGNAL(sliderReleased()),
+        this, SLOT(on_slider_released()));
 
-    this->connect(this->highlight_zeros, SIGNAL(toggled(bool)),
-        this, SLOT(on_highlight_zeros_changed()));
+    this->connect(this->highlight_values, SIGNAL(toggled(bool)),
+        this, SLOT(on_highlight_values_changed()));
 
     this->setLayout(layout);
 }
@@ -183,6 +190,8 @@ TransferFunctionWidget::show_minmax_sliders (bool value)
     this->minvalue_label->setVisible(value);
     this->maxvalue_label->setVisible(value);
     this->fix_clamp_slider->setVisible(value);
+    this->highlight_values->setVisible(value);
+    this->highlight_slider->setVisible(value);
 }
 
 /* ---------------------------------------------------------------- */
@@ -234,6 +243,17 @@ TransferFunctionWidget::on_slider_released (void)
 /* ---------------------------------------------------------------- */
 
 void
+TransferFunctionWidget::on_highlight_values_changed (void)
+{
+    float value = (float)this->highlight_slider->value() / 1000.0f;
+    bool highlight_checked = this->highlight_values->isChecked();
+    this->func.highlight_values = highlight_checked ? value : -1.0f;
+    emit this->function_changed(this->func);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 TransferFunctionWidget::on_slider_changed (void)
 {
     this->func.zoom = (float)this->zoom_slider->value() / 100.0f;
@@ -251,15 +271,13 @@ TransferFunctionWidget::on_slider_changed (void)
     this->func.clamp_max = (float)this->maxvalue_slider->value() / 1000.0f;
     this->maxvalue_label->setText(tr("Clamp max: %1")
         .arg(this->func.clamp_max, 0, 'f', 3));
-}
 
-/* ---------------------------------------------------------------- */
+    float value = (float)this->highlight_slider->value() / 1000.0f;
+    this->highlight_values->setText(tr("Highlight values: %1")
+        .arg(value, 0, 'f', 3));
+    bool highlight_checked = this->highlight_values->isChecked();
+    this->func.highlight_values = highlight_checked ? value : -1.0f;
 
-void
-TransferFunctionWidget::on_highlight_zeros_changed (void)
-{
-    this->func.highlight_zeros = this->highlight_zeros->isChecked();
-    emit this->function_changed(this->func);
 }
 
 /* ---------------------------------------------------------------- */

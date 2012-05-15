@@ -452,8 +452,10 @@ ViewInspect::display_image (mve::FloatImage::Ptr img)
                 float green = img->at(inpos + this->func.green);
                 float blue = img->at(inpos + this->func.blue);
 
-                if (this->func.highlight_zeros
-                    && red == 0.0f && green == 0.0f && blue == 0.0f)
+                if (this->func.highlight_values >= 0.0f
+                    && red >= 0.0f && red <= this->func.highlight_values
+                    && green >= 0.0f && green <= this->func.highlight_values
+                    && blue >= 0.0f && blue <= this->func.highlight_values)
                 {
                     red = 0.5f;
                     green = 0.0f;
