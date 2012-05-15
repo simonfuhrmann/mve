@@ -50,6 +50,7 @@ TransferFunctionWidget::TransferFunctionWidget (void)
     this->highlight_zeros->setChecked(this->func.highlight_zeros);
 
     this->channel_grid = new QGridLayout();
+    this->channel_grid->setVerticalSpacing(0);
     this->ca_mapper = new QSignalMapper();
 
     /* Create transfer function control widgets. */
@@ -130,17 +131,17 @@ TransferFunctionWidget::set_color_assignment (int channels)
 
     for (int i = 0; i < channels; ++i)
     {
-        QLabel* ch_label = new QLabel(tr("Channel %1").arg(i));
+        QPushButton* ch_but = new QPushButton(tr("Channel %1").arg(i));
+        ch_but->setFlat(true);
 
         QRadioButton* ch_r = new QRadioButton();
         QRadioButton* ch_g = new QRadioButton();
         QRadioButton* ch_b = new QRadioButton();
-
         grp_r->addButton(ch_r);
         grp_g->addButton(ch_g);
         grp_b->addButton(ch_b);
 
-        this->channel_grid->addWidget(ch_label, i + 1, 0);
+        this->channel_grid->addWidget(ch_but, i + 1, 0);
         this->channel_grid->addWidget(ch_r, i + 1, 1);
         this->channel_grid->addWidget(ch_g, i + 1, 2);
         this->channel_grid->addWidget(ch_b, i + 1, 3);
@@ -148,6 +149,9 @@ TransferFunctionWidget::set_color_assignment (int channels)
         this->connect(ch_r, SIGNAL(clicked()), this->ca_mapper, SLOT(map()));
         this->connect(ch_g, SIGNAL(clicked()), this->ca_mapper, SLOT(map()));
         this->connect(ch_b, SIGNAL(clicked()), this->ca_mapper, SLOT(map()));
+        this->connect(ch_but, SIGNAL(clicked()), ch_r, SLOT(click()));
+        this->connect(ch_but, SIGNAL(clicked()), ch_g, SLOT(click()));
+        this->connect(ch_but, SIGNAL(clicked()), ch_b, SLOT(click()));
         this->ca_mapper->setMapping(ch_r, SIGINT_RED | i);
         this->ca_mapper->setMapping(ch_g, SIGINT_GREEN | i);
         this->ca_mapper->setMapping(ch_b, SIGINT_BLUE | i);
