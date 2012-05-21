@@ -13,6 +13,7 @@
 #include "mve/scene.h"
 #include "mve/imagefile.h"
 #include "mve/imagetools.h"
+#include "mve/imageexif.h"
 
 #include "shell.h"
 
@@ -109,6 +110,10 @@ Shell::process_line (std::string const& line)
     {
         this->scene->save_views();
     }
+    else if (tok.size() == 2 && tok[0] == "addexif")
+    {
+        this->add_exif(tok[1]);
+    }
     else
     {
         std::cout << "Unknown command: " << line << std::endl;
@@ -126,6 +131,7 @@ Shell::print_help (void)
         << "  delete NAME        Delete embeddings NAME from all views" << std::endl
         << "  list embeddings    Print list of all embeddings" << std::endl
         << "  export NAME [PATH] Export embeddings NAME from all views" << std::endl
+        << "  addexif IMG_PATH   Adds EXIF tags to views form source images" << std::endl
         << "  save               Write changes to MVE scene" << std::endl
         << "  exit               Exit MVE shell" << std::endl
         << "  help               Print this help" << std::endl;
@@ -300,5 +306,52 @@ Shell::export_embeddings (std::string const& name, std::string const& path)
         }
 
         std::cout << "no such image." << std::endl;
+    }
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Shell::add_exif (std::string const& path)
+{
+    if (!this->scene.get())
+        throw std::runtime_error("No scene loaded");
+
+    if (!util::fs::dir_exists(path.c_str()))
+        throw std::runtime_error("Image path is invalid");
+
+    mve::Scene::ViewList const& vl(this->scene->get_views());
+    for (std::size_t i = 0; i < vl.size(); ++i)
+    {
+        mve::View::Ptr view = vl[i];
+        if (!view.get())
+            continue;
+
+        std::string name = path + "/" + view->get_name();
+        std::string fname = name;
+        if (!util::fs::file_exists(fname.c_str()))
+            fname = name + ".JPG";
+        if (!util::fs::file_exists(fname.c_str()))
+            fname = name + ".jpg";
+        if (!util::fs::file_exists(fname.c_str()))
+        {
+            std::cout << "Warning: Cannot find image for view \""
+                << name << "\", skipping." << std::endl;
+            continue;
+        }
+
+        std::cout << "Loading EXIF for " << fname << "..." << std::endl;
+        std::string exif;
+        mve::image::load_jpg_file(fname, &exif);
+        if (exif.empty())
+        {
+            std::cout << "    does not contain EXIF information." << std::endl;
+            continue;
+        }
+
+        mve::ByteImage::Ptr data = mve::ByteImage::create(exif.size(), 1, 1);
+        std::copy(exif.begin(), exif.end(), data->begin());
+        view->add_data("exif", data);
+        view->save_mve_file();
     }
 }

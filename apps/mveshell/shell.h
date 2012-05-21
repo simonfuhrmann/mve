@@ -14,6 +14,7 @@ private:
     void delete_embeddings (std::string const& name);
     void export_embeddings (std::string const& name, std::string const& path);
     void list_embeddings (void);
+    void add_exif (std::string const& path);
     std::string readline (void);
 
 public:
