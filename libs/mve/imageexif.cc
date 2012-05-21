@@ -76,11 +76,11 @@ copyEXIFString (std::string& dest, unsigned char const* buf, unsigned int len)
 /* ---------------------------------------------------------------- */
 
 float
-parseEXIFrational(unsigned char const* buf)
+parseEXIFrational(unsigned char const* buf, bool intel)
 {
-    float numerator = (float)*((unsigned int*)buf);
-    float denominator = (float)*(((unsigned int*)buf)+1);
-    if (denominator < 1e-20)
+    float numerator = (float)parse32(buf, intel);
+    float denominator = (float)parse32(buf+4, intel);
+    if (denominator == 0.0f)
         return 0.0f;
     return numerator / denominator;
 }
@@ -233,9 +233,9 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
         unsigned int ncomp = parse32(buf+offs+4, alignIntel);
         unsigned int coffs = parse32(buf+offs+8, alignIntel);
         unsigned int buf_off = ifdOffset + coffs;
-        //std::cout << "tag: " << tag << ", type: " << type
-        //    << ", ncomp: " << ncomp << ", coffs: "
-        //    << coffs << std::endl;
+        //std::cout << "tag: " << std::hex << "0x" << tag << std::dec
+        //    << ", type: " << type << ", ncomp: " << ncomp
+        //    << ", coffs: " << coffs << std::endl;
 
         if (ifd_is_offset(type, ncomp) && buf_off + ncomp > len)
             throw std::invalid_argument("EXIF data corrupt (SubIFD entry)");
@@ -251,7 +251,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
                 break;
 
             case 0x920A: // Focal length in mm
-                result.focal_length = parseEXIFrational(buf + buf_off);
+                result.focal_length = parseEXIFrational(buf + buf_off, alignIntel);
                 break;
 
             case 0xA405: // Focal length in 35 mm
@@ -259,11 +259,11 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
                 break;
 
             case 0x829D: // F-stop
-                result.f_number = parseEXIFrational(buf + buf_off);
+                result.f_number = parseEXIFrational(buf + buf_off, alignIntel);
                 break;
 
             case 0x829A: // Exposure time
-                result.exposure_time = parseEXIFrational(buf + buf_off);
+                result.exposure_time = parseEXIFrational(buf + buf_off, alignIntel);
                 break;
         }
         offs += 12;

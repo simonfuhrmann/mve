@@ -351,7 +351,7 @@ Shell::add_exif (std::string const& path)
 
         mve::ByteImage::Ptr data = mve::ByteImage::create(exif.size(), 1, 1);
         std::copy(exif.begin(), exif.end(), data->begin());
-        view->add_data("exif", data);
+        view->set_data("exif", data);
         view->save_mve_file();
     }
 }
