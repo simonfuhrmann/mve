@@ -535,15 +535,21 @@ SceneContext::create_frusta_renderer (float size)
             colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
             faces.push_back(idx + 0); faces.push_back(idx + 1 + j);
         }
-        // FIXME: Why does this guy face downwards?
+        // FIXME: Why is the local coordinate system f**ked up?
+        verts.push_back(campos + (size * 0.5f) * rightvec);
         verts.push_back(campos + (size * 0.5f) * upvec);
+        verts.push_back(campos + (size * 0.5f) * -viewdir);
+        colors.push_back(math::Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
         colors.push_back(math::Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
 
         faces.push_back(idx + 1); faces.push_back(idx + 2);
         faces.push_back(idx + 2); faces.push_back(idx + 4);
         faces.push_back(idx + 4); faces.push_back(idx + 3);
         faces.push_back(idx + 3); faces.push_back(idx + 1);
-        faces.push_back(idx + 0); faces.push_back(idx + 5); // Upvec
+        faces.push_back(idx + 0); faces.push_back(idx + 5); // local x
+        faces.push_back(idx + 0); faces.push_back(idx + 6); // local y
+        faces.push_back(idx + 0); faces.push_back(idx + 7); // local y
     }
 
     this->frusta_renderer = ogl::MeshRenderer::create(mesh);
