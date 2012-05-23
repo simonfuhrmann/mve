@@ -461,6 +461,14 @@ ViewInspect::display_image (mve::FloatImage::Ptr img)
                     green = 0.0f;
                     blue = 0.5f;
                 }
+                else if (MATH_ISNAN(red) || MATH_ISNAN(green)
+                    || MATH_ISNAN(blue) || MATH_ISINF(red)
+                    || MATH_ISINF(green) || MATH_ISINF(blue))
+                {
+                    red = 1.0f;
+                    green = 1.0f;
+                    blue = 0.0f;
+                }
                 else
                 {
                     red = this->func.evaluate(red);
