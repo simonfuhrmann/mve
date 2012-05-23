@@ -86,8 +86,15 @@ public:
     /** 2D indexing of image data, more expensive. */
     T& at (std::size_t x, std::size_t y, std::size_t channel);
 
-    /** Indexing with linear interpolation (more expensive). */
+    /** Linear interpolation (more expensive) for a single color channel. */
     T linear_at (float x, float y, std::size_t channel) const;
+
+    /**
+     * Linear interpolation (more expensive) for all color channels.
+     * The method generates one value for each color channel and places
+     * the result in the buffer provided by 'px'.
+     */
+    void linear_at (float x, float y, T* px) const;
 
     // TODO operators for data access (operators & refptr?)
     T& operator[] (std::size_t index);
@@ -337,11 +344,8 @@ template <typename T>
 T
 Image<T>::linear_at (float x, float y, std::size_t channel) const
 {
-    std::size_t iw(this->width());
-    std::size_t ih(this->height());
-    std::size_t ic(this->channels());
-    x = std::max(0.0f, std::min((float)(iw - 1), x));
-    y = std::max(0.0f, std::min((float)(ih - 1), y));
+    x = std::max(0.0f, std::min((float)(this->w - 1), x));
+    y = std::max(0.0f, std::min((float)(this->h - 1), y));
     std::size_t x1 = (std::size_t)std::floor(x);
     std::size_t x2 = (std::size_t)std::ceil(x);
     std::size_t y1 = (std::size_t)std::floor(y);
@@ -350,13 +354,51 @@ Image<T>::linear_at (float x, float y, std::size_t channel) const
     float wx1 = 1.0f - wx2;
     float wy2 = y - std::floor(y);
     float wy1 = 1.0f - wy2;
-    std::size_t row1 = y1 * iw * ic;
-    std::size_t row2 = y2 * iw * ic;
-    return math::algo::interpolate<T>(at(row1 + x1 * ic + channel),
-        at(row1 + x2 * ic + channel),
-        at(row2 + x1 * ic + channel),
-        at(row2 + x2 * ic + channel),
+    std::size_t row1 = y1 * this->w * this->c;
+    std::size_t row2 = y2 * this->w * this->c;
+    return math::algo::interpolate<T>(at(row1 + x1 * this->c + channel),
+        at(row1 + x2 * this->c + channel),
+        at(row2 + x1 * this->c + channel),
+        at(row2 + x2 * this->c + channel),
         wx1 * wy1, wx2 * wy1, wx1 * wy2, wx2 * wy2);
+}
+
+template <typename T>
+void
+Image<T>::linear_at (float x, float y, T* px) const
+{
+    /* Determine the four pixels and weights. */
+    std::size_t pos[4];
+    float w[4];
+    {
+        x = std::max(0.0f, std::min((float)(this->w - 1), x));
+        y = std::max(0.0f, std::min((float)(this->h - 1), y));
+
+        w[1] = x - std::floor(x);
+        w[0] = 1.0f - w[1];
+        w[3] = y - std::floor(y);
+        w[2] = 1.0f - w[3];
+
+        std::size_t rowstride(this->w * this->c);
+        std::size_t row1 = (std::size_t)std::floor(y) * rowstride;
+        std::size_t row2 = (std::size_t)std::ceil(y) * rowstride;
+        std::size_t col1 = (std::size_t)std::floor(x) * this->c;
+        std::size_t col2 = (std::size_t)std::ceil(x) * this->c;
+
+        pos[0] = row1 + col1;
+        pos[1] = row1 + col2;
+        pos[2] = row2 + col1;
+        pos[3] = row2 + col2;
+    }
+
+    /* Copy interpolated value to output buffer. */
+    for (std::size_t cc = 0; cc < this->c; ++cc)
+    {
+        px[cc] = math::algo::interpolate<T>
+            (this->at(pos[0] + cc), this->at(pos[1] + cc),
+            this->at(pos[2] + cc), this->at(pos[3] + cc),
+            w[0] * w[2], w[1] * w[2], w[0] * w[3], w[1] * w[3]);
+    }
 }
 
 MVE_NAMESPACE_END

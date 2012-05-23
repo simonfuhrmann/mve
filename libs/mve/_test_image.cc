@@ -19,6 +19,20 @@ main (int argc, char** argv)
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
 #if 1
+    /* Test new linear interpolation. */
+    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/testpixels.png");
+    mve::ByteImage::Ptr tmp = mve::ByteImage::create(10, 10, 3);
+    for (int y = 0; y < 10; ++y)
+        for (int x = 0; x < 10; ++x)
+        {
+            math::Vec3uc px;
+            img->linear_at((float)x/10, (float)y/10, *px);
+            std::copy(*px, *px + 3, &tmp->at(x, y, 0));
+        }
+    mve::image::save_file(tmp, "/tmp/testpixels2.png");
+#endif
+
+#if 0
     /* SURF test. */
     mve::ByteImage::Ptr img = mve::image::load_file("/tmp/testimage.png");
     mve::Surf surf;
