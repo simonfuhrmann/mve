@@ -25,6 +25,7 @@ QMeshContextMenu::build (void)
     QAction* action_invert_faces = new QAction("Invert faces", this);
     QAction* action_strip_faces = new QAction("Strip faces", this);
     QAction* action_save_mesh = new QAction("Save mesh...", this);
+    QAction* action_rename_mesh = new QAction("Rename mesh...", this);
 
     this->connect(action_reload_mesh, SIGNAL(triggered()),
         this, SLOT(on_reload_mesh()));
@@ -36,6 +37,8 @@ QMeshContextMenu::build (void)
         this, SLOT(on_scale_and_center()));
     this->connect(action_save_mesh, SIGNAL(triggered()),
         this, SLOT(on_save_mesh()));
+    this->connect(action_rename_mesh, SIGNAL(triggered()),
+        this, SLOT(on_rename_mesh()));
 
     std::string num_verts(util::string::get(rep->mesh->get_vertices().size()));
     std::string num_faces(util::string::get(rep->mesh->get_faces().size() / 3));
@@ -45,10 +48,12 @@ QMeshContextMenu::build (void)
     this->addAction(tr("Vertices: %1").arg(num_verts.c_str()))->setEnabled(false);
     this->addAction(tr("Faces: %1").arg(num_faces.c_str()))->setEnabled(false);
     this->addSeparator();
-    this->addAction(action_reload_mesh);
     this->addAction(action_scale_and_center);
     this->addAction(action_invert_faces);
     this->addAction(action_strip_faces);
+    this->addSeparator();
+    this->addAction(action_reload_mesh);
+    this->addAction(action_rename_mesh);
     this->addAction(action_save_mesh);
 
     /* Enable / disable certain actions. */
@@ -135,6 +140,34 @@ QMeshContextMenu::on_save_mesh (void)
     {
         QMessageBox::critical(this->parent, "Error saving mesh", e.what());
     }
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_rename_mesh (void)
+{
+    bool pressed_ok = false;
+    QString q_new_name = QInputDialog::getText(this->parent,
+        tr("Rename mesh..."), tr("New mesh name:"), QLineEdit::Normal,
+        this->rep->name.c_str(), &pressed_ok);
+
+    if (q_new_name.isEmpty() || !pressed_ok)
+        return;
+
+    /* Check if there is a mesh by that new name. That is not allowed! */
+    std::string new_name = q_new_name.toStdString();
+    MeshRep* old_mesh = this->parent->mesh_by_name(new_name);
+    if (old_mesh != 0)
+    {
+        QMessageBox::critical(this->parent, "Error renaming mesh",
+            "A mesh by that name does already exist!");
+        return;
+    }
+
+    this->rep->name = new_name;
+    this->rep->filename.clear();
+    this->item->setText(new_name.c_str());
 }
 
 /* ---------------------------------------------------------------- */

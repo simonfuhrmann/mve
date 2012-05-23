@@ -32,6 +32,7 @@ private slots:
     void on_strip_faces (void);
     void on_scale_and_center (void);
     void on_save_mesh (void);
+    void on_rename_mesh (void);
 
 public:
     QListWidgetItem* item;
