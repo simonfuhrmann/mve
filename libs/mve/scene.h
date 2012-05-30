@@ -49,6 +49,8 @@ public:
 
     /** Constructs a smart pointered scene. */
     static Scene::Ptr create (void);
+    /** Constructs and loads a scene from the given directory. */
+    static Scene::Ptr create (std::string const& path);
 
     /** Loads the scene from the given directory. */
     void load_scene (std::string const& base_path);
@@ -107,6 +109,14 @@ inline Scene::Ptr
 Scene::create (void)
 {
     return Scene::Ptr(new Scene);
+}
+
+inline Scene::Ptr
+Scene::create (std::string const& path)
+{
+    Scene::Ptr scene(new Scene);
+    scene->load_scene(path);
+    return scene;
 }
 
 inline Scene::ViewList const&
