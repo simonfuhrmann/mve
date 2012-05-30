@@ -126,8 +126,11 @@ public:
     /** Returns the amount of valid cameras. */
     std::size_t get_num_valid_cameras (void) const;
 
-    /** Returns the points as mesh (colored points without faces). */
-    TriangleMesh::Ptr get_points_mesh (void) const;
+    /**
+     * Returns SfM points as a mesh. If cam_id is set, only points seen
+     * by the given camera are returned. Points are colored, no faces.
+     */
+    TriangleMesh::Ptr get_points_mesh (int cam_id = -1) const;
 
     /** Returns the detected format of the bundle file. */
     BundleFormat get_format (void) const;

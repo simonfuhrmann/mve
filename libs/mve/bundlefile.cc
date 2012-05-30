@@ -294,7 +294,7 @@ BundleFile::get_byte_size (void) const
 /* -------------------------------------------------------------- */
 
 TriangleMesh::Ptr
-BundleFile::get_points_mesh (void) const
+BundleFile::get_points_mesh (int cam_id) const
 {
     mve::TriangleMesh::Ptr mesh(mve::TriangleMesh::create());
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
@@ -302,11 +302,14 @@ BundleFile::get_points_mesh (void) const
 
     for (std::size_t i = 0; i < this->points.size(); ++i)
     {
-        verts.push_back(points[i].pos);
-        math::Vec3uc color_uc(points[i].color);
+        FeaturePoint const& p(this->points[i]);
+        if (cam_id >= 0 && !p.contains_view_id(cam_id))
+            continue;
+
+        verts.push_back(p.pos);
         math::Vec4f color(1.0f);
         for (int j = 0; j < 3; ++j)
-            color[j] = color_uc[j] / 255.0f;
+            color[j] = float(p.color[j]) / 255.0f;
         colors.push_back(color);
     }
 
