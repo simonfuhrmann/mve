@@ -95,6 +95,13 @@ public:
      * Stores 3x3 projection matrix (K-matrix in Hartley, Zisserman).
      * The matrix projects a point in camera coordinates to the image
      * plane with dimensions 'w' and 'h'.
+     *
+     * If the dimensions of the image are unknown, the generic projection
+     * matrix with w=1 and h=1 can be used. Image coordinates x' and y' for
+     * image size w and h are then computed as follows:
+     *
+     * For w > h:  x' = x * w  and  y' = y * w - (w - h) / 2.
+     * For h > w:  x' = x * h - (h - w) / 2  and  y' = y * h.
      */
     void fill_projection (float* mat, std::size_t w, std::size_t h) const;
 

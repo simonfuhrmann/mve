@@ -440,6 +440,14 @@ foreach_negate_value (T& val)
     val = -val;
 }
 
+/** for-each functor: inverts floating point values with 1/value. */
+template <typename T>
+inline void
+foreach_invert_value (T& val)
+{
+    val = T(1) / val;
+}
+
 /** for-each functor: applies floor operation to the operand. */
 template <typename T>
 inline void
