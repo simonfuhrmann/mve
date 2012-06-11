@@ -253,7 +253,6 @@ SceneContext::init_impl (void)
 void
 SceneContext::resize_impl (int old_width, int old_height)
 {
-    std::cout << "Resizing viewport..." << std::endl;
     this->ogl::CameraTrackballContext::resize_impl(old_width, old_height);
     this->ui_needs_update = true;
 }
@@ -275,8 +274,8 @@ SceneContext::paint_impl (void)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // TODO: Make configurable through GUI
-    //glPointSize(8.0f);
-    //glLineWidth(8.0f);
+    //glPointSize(4.0f);
+    //glLineWidth(2.0f);
 
     this->wireframe_shader->bind();
     this->wireframe_shader->send_uniform("viewmat", this->camera.view);
@@ -494,6 +493,10 @@ SceneContext::create_frusta_renderer (float size)
     if (!this->scene.get())
         return;
 
+    /* Color at camera center (start) and at the four corners (end). */
+    math::Vec4f const frustum_start_color(0.5f, 0.5f, 0.5f, 1.0f);
+    math::Vec4f const frustum_end_color(0.5f, 0.5f, 0.5f, 1.0f);
+
     mve::TriangleMesh::Ptr mesh(mve::TriangleMesh::create());
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
     mve::TriangleMesh::ColorList& colors(mesh->get_vertex_colors());
@@ -524,32 +527,39 @@ SceneContext::create_frusta_renderer (float size)
 
         std::size_t idx(verts.size());
 
+        /* Vertices, colors and faces for the frustum. */
         verts.push_back(campos);
-        colors.push_back(math::Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        colors.push_back(frustum_start_color);
         for (int j = 0; j < 4; ++j)
         {
             math::Vec3f corner = campos + size * viewdir
                 + rightvec * size / (2.0f * cam.flen) * (j & 1 ? -1.0f : 1.0f)
                 + upvec * size / (2.0f * cam.flen) * (j & 2 ? -1.0f : 1.0f);
             verts.push_back(corner);
-            colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+            colors.push_back(frustum_end_color);
             faces.push_back(idx + 0); faces.push_back(idx + 1 + j);
         }
-        // FIXME: Why is the local coordinate system f**ked up?
-        verts.push_back(campos + (size * 0.5f) * rightvec);
-        verts.push_back(campos + (size * 0.5f) * upvec);
-        verts.push_back(campos + (size * 0.5f) * -viewdir);
-        colors.push_back(math::Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
-        colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
-        colors.push_back(math::Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
-
         faces.push_back(idx + 1); faces.push_back(idx + 2);
         faces.push_back(idx + 2); faces.push_back(idx + 4);
         faces.push_back(idx + 4); faces.push_back(idx + 3);
         faces.push_back(idx + 3); faces.push_back(idx + 1);
-        faces.push_back(idx + 0); faces.push_back(idx + 5); // local x
-        faces.push_back(idx + 0); faces.push_back(idx + 6); // local y
-        faces.push_back(idx + 0); faces.push_back(idx + 7); // local y
+
+        /* Vertices, colors and faces for the local coordinate system. */
+        verts.push_back(campos);
+        verts.push_back(campos + (size * 0.5f) * rightvec);
+        verts.push_back(campos);
+        verts.push_back(campos + (size * 0.5f) * upvec);
+        verts.push_back(campos);
+        verts.push_back(campos + (size * 0.5f) * -viewdir);
+        colors.push_back(math::Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        colors.push_back(math::Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+        colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+        colors.push_back(math::Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
+        colors.push_back(math::Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
+        faces.push_back(idx + 5); faces.push_back(idx + 6);
+        faces.push_back(idx + 7); faces.push_back(idx + 8);
+        faces.push_back(idx + 9); faces.push_back(idx + 10);
     }
 
     this->frusta_renderer = ogl::MeshRenderer::create(mesh);

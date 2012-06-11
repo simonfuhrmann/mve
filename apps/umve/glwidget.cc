@@ -32,6 +32,10 @@ GLWidget::initializeGL()
 void
 GLWidget::resizeGL(int width, int height)
 {
+    std::cout << "Resizing GL from "
+        << this->gl_width << "x" << this->gl_height << " to "
+        << width << "x" << height << std::endl;
+
     this->gl_width = width;
     this->gl_height = height;
     if (this->context != 0)
