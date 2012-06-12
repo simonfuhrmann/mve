@@ -20,6 +20,7 @@ else
   CORES = 1
 endif
 
-# Compiler flags
-GCCFLAGS = -Wall -Wextra -Wundef -ansi -pedantic -g -O3
-CXXFLAGS ?= ${GCCFLAGS}
+# Compiler flags and defines
+GCCFLAGS ?= -Wall -Wextra -Wundef -ansi -pedantic -g -O3
+GCCDEFINES ?=
+CXXFLAGS = ${GCCFLAGS} ${GCCDEFINES}
