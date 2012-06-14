@@ -182,20 +182,33 @@ QMeshList::QMeshList (QWidget *parent)
     this->qlist->setContextMenuPolicy(Qt::CustomContextMenu);
 
     QPushButton* select_all_but = new QPushButton("All");
-    QPushButton* select_none_but = new QPushButton("None");
+    QPushButton* select_none_but = new QPushButton("Nne");
     QPushButton* inv_selection_but = new QPushButton("Inv");
-    QPushButton* select_next_but = new QPushButton("Next");
-    select_all_but->setMinimumWidth(15);
-    select_none_but->setMinimumWidth(15);
-    inv_selection_but->setMinimumWidth(15);
-    select_next_but->setMinimumWidth(15);
+    QPushButton* select_next_but = new QPushButton("Nxt");
+    QPushButton* select_toggle_but = new QPushButton("Tgl");
+    select_all_but->setMinimumWidth(8);
+    select_none_but->setMinimumWidth(8);
+    inv_selection_but->setMinimumWidth(8);
+    select_next_but->setMinimumWidth(8);
+    select_toggle_but->setMinimumWidth(8);
+    select_all_but->setToolTip
+        (tr("Check all meshes"));
+    select_none_but->setToolTip
+        (tr("Uncheck all meshes"));
+    inv_selection_but->setToolTip
+        (tr("Invert check state of all meshes"));
+    select_next_but->setToolTip
+        (tr("Move check state to the next mesh in order"));
+    select_toggle_but->setToolTip
+        (tr("Toggle between a checked and the selected mesh"));
 
     QHBoxLayout* button_hbox = new QHBoxLayout();
     button_hbox->setSpacing(1);
     button_hbox->addWidget(select_all_but, 1);
     button_hbox->addWidget(select_none_but, 1);
-    button_hbox->addWidget(inv_selection_but, 1);
     button_hbox->addWidget(select_next_but, 1);
+    button_hbox->addWidget(inv_selection_but, 1);
+    button_hbox->addWidget(select_toggle_but, 1);
 
     QVBoxLayout* vbox = new QVBoxLayout();
     vbox->setSpacing(1);
@@ -216,10 +229,12 @@ QMeshList::QMeshList (QWidget *parent)
         this, SLOT(on_select_all()));
     this->connect(select_none_but, SIGNAL(clicked()),
         this, SLOT(on_select_none()));
+    this->connect(select_next_but, SIGNAL(clicked()),
+        this, SLOT(on_select_next()));
     this->connect(inv_selection_but, SIGNAL(clicked()),
         this, SLOT(on_inv_selection()));
-    this->connect(select_next_but, SIGNAL(clicked()),
-        this, SLOT(on_next_select_next()));
+    this->connect(select_toggle_but, SIGNAL(clicked()),
+        this, SLOT(on_select_toggle()));
 }
 
 /* ---------------------------------------------------------------- */
@@ -396,7 +411,7 @@ QMeshList::on_inv_selection (void)
 /* ---------------------------------------------------------------- */
 
 void
-QMeshList::on_next_select_next (void)
+QMeshList::on_select_next (void)
 {
     int cnt = this->qlist->count();
     std::vector<int> check;
@@ -413,6 +428,31 @@ QMeshList::on_next_select_next (void)
         this->qlist->item(check[i])->setCheckState(Qt::Checked);
 
     emit this->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshList::on_select_toggle (void)
+{
+    int current = this->qlist->currentRow();
+    int checked = -1;
+
+    /* Find the mesh that is checked (in case of multiple, find first). */
+    int cnt = this->qlist->count();
+    for (int i = 0; i < cnt; ++i)
+    {
+        QListWidgetItem* item = this->qlist->item(i);
+        if (item->checkState() == Qt::Checked)
+            checked = i;
+        item->setCheckState(Qt::Unchecked);
+    }
+
+    /* Exchange state of checked and selected mesh. */
+    if (checked != -1)
+        this->qlist->setCurrentRow(checked);
+    if (current != -1)
+        this->qlist->item(current)->setCheckState(Qt::Checked);
 }
 
 /* ---------------------------------------------------------------- */

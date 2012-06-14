@@ -22,6 +22,10 @@ struct MeshRep
 /* ---------------------------------------------------------------- */
 
 class QMeshList;
+
+/**
+ * Context menu for each loaded mesh.
+ */
 class QMeshContextMenu : public QMenu
 {
     Q_OBJECT
@@ -46,9 +50,7 @@ public:
 
 /* ---------------------------------------------------------------- */
 
-/**
- * Context menu for each loaded mesh.
- */
+
 class QMeshList : public QWidget
 {
     Q_OBJECT
@@ -62,8 +64,9 @@ protected slots:
     void on_item_changed (QListWidgetItem* item);
     void on_select_all (void);
     void on_select_none (void);
+    void on_select_next (void);
     void on_inv_selection (void);
-    void on_next_select_next (void);
+    void on_select_toggle (void);
     void on_list_context_menu (QPoint pos);
 
 signals:
