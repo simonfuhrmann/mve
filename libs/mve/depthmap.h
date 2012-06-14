@@ -1,10 +1,9 @@
 /*
- * Algorithms to fill depth maps and make them more complete.
+ * Algorithms that deal with depth maps.
  * Written by Simon Fuhrmann.
  */
-
-#ifndef MVE_DM_FILL_HEADER
-#define MVE_DM_FILL_HEADER
+#ifndef MVE_DEPTHMAP_HEADER
+#define MVE_DEPTHMAP_HEADER
 
 #include "math/vector.h"
 #include "math/matrix.h"
@@ -60,6 +59,18 @@ depthmap_confidence_clean (FloatImage::Ptr dm, FloatImage::ConstPtr cm);
 FloatImage::Ptr
 depthmap_bilateral_filter (FloatImage::ConstPtr dm,
     math::Matrix3f const& invproj, float gc_sigma, float pc_fator);
+
+/**
+ * Converts between depth map conventions IN-PLACE. In one convention,
+ * a depth map with a constant value means a plane, in another convention,
+ * which is what MVE uses, a constant value creates a curved surface. The
+ * difference is whether only the z-value is considered, or the distance
+ * to the camera center is used (MVE).
+ */
+template <typename T>
+void
+depthmap_convert_conventions (typename Image<T>::Ptr dm,
+    math::Matrix3f const& invproj, bool to_mve);
 
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
@@ -154,9 +165,30 @@ MVE_NAMESPACE_END
 /* ------------------------- Implementation ----------------------- */
 
 MVE_NAMESPACE_BEGIN
-MVE_GEOM_NAMESPACE_BEGIN
+MVE_IMAGE_NAMESPACE_BEGIN
 
-MVE_GEOM_NAMESPACE_END
+template <typename T>
+inline void
+depthmap_convert_conventions (typename Image<T>::Ptr dm,
+    math::Matrix3f const& invproj, bool to_mve)
+{
+    std::size_t w = dm->width();
+    std::size_t h = dm->height();
+    std::size_t pos = 0;
+    for (std::size_t y = 0; y < h; ++y)
+        for (std::size_t x = 0; x < w; ++x, ++pos)
+        {
+            // Construct viewing ray for that pixel
+            math::Vec3f px((float)x + 0.5f, (float)y + 0.5f, 1.0f);
+            px = invproj * px;
+            // Measure length of viewing ray
+            double len = px.norm();
+            // Either divide or multiply with the length
+            dm->at(pos) *= (to_mve ? len : 1.0 / len);
+        }
+}
+
+MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
 
-#endif /* MVE_DM_FILL_HEADER */
+#endif /* MVE_DEPTHMAP_HEADER */
