@@ -374,16 +374,21 @@ Image<T>::linear_at (float x, float y, T* px) const
         x = std::max(0.0f, std::min((float)(this->w - 1), x));
         y = std::max(0.0f, std::min((float)(this->h - 1), y));
 
-        w[1] = x - std::floor(x);
+        std::size_t floor_x = (std::size_t)x;
+        std::size_t floor_y = (std::size_t)y;
+        std::size_t floor_xp1 = std::min(floor_x + 1, this->w - 1);
+        std::size_t floor_yp1 = std::min(floor_y + 1, this->h - 1);
+
+        w[1] = x - (float)floor_x;
         w[0] = 1.0f - w[1];
-        w[3] = y - std::floor(y);
+        w[3] = y - (float)floor_y;
         w[2] = 1.0f - w[3];
 
         std::size_t rowstride(this->w * this->c);
-        std::size_t row1 = (std::size_t)std::floor(y) * rowstride;
-        std::size_t row2 = (std::size_t)std::ceil(y) * rowstride;
-        std::size_t col1 = (std::size_t)std::floor(x) * this->c;
-        std::size_t col2 = (std::size_t)std::ceil(x) * this->c;
+        std::size_t row1 = floor_y * rowstride;
+        std::size_t row2 = floor_yp1 * rowstride;
+        std::size_t col1 = floor_x * this->c;
+        std::size_t col2 = floor_xp1 * this->c;
 
         pos[0] = row1 + col1;
         pos[1] = row1 + col2;
