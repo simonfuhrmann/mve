@@ -105,9 +105,20 @@ void matrix_tests (void)
 
     assert(test.mult(Vec3f(1.0f, 2.0f, 3.0f)) == Vec3f(14.0f, 32.0f, 50.0f));
 
+    /* Matrix init diagonal tests. */
+    Vec3f diag_vector(1, 2, 3);
+    Matrix3f diag_mat = matrix_from_diagonal(diag_vector);
+    assert(diag_mat[0] == 1 && diag_mat[4] == 2 && diag_mat[8] == 3);
+
+    Vec3f diag_vector2(4, 5, 6);
+    matrix_set_diagonal(diag_mat, *diag_vector2);
+
+    Vec3f diag_test = matrix_get_diagonal(diag_mat);
+    assert(diag_test == diag_vector2);
+
 #if 0
     Matrix4d A(0.0);
-    A(0,0)=-5.56345;   A(0,1)=-5.43511;   A(0,2)=-5.43511;   A(0,3)=-5.43511;
+    A(0,0)=-5.56345;  A(0,1)=-5.43511;  A(0,2)=-5.43511;  A(0,3)=-5.43511;
     A(1,0)=24.2440;   A(1,1)=24.3723;   A(1,2)=24.3723;   A(1,3)=24.2440;
     A(2,0)=15.1236;   A(2,1)=15.2519;   A(2,2)=15.1236;   A(2,3)=15.1236;
     A(3,0)=1.0000;    A(3,1)=1.0000;    A(3,2)=1.0000;    A(3,3)=1.0000;

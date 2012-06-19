@@ -73,6 +73,13 @@ T*
 matrix_set_identity (T* mat, int n);
 
 /**
+ * Returns a diagonal matrix from the given vector.
+ */
+template <typename T, int N>
+Matrix<T,N,N>
+matrix_diagonal (math::Vector<T,N> const& v);
+
+/**
  * Calculates the determinant of the given matrix.
  * This is specialized for 1x1, 2x2, 3x3 and 4x4 matrices only.
  */
@@ -211,6 +218,36 @@ matrix_set_identity (T* mat, int n)
     for (int i = 0; i < len; i += n + 1)
         mat[i] = T(1);
     return mat;
+}
+
+template <typename T, int N>
+Matrix<T,N,N>
+matrix_from_diagonal (math::Vector<T,N> const& v)
+{
+    Matrix<T,N,N> mat;
+    std::fill(*mat, *mat + N*N, T(0));
+    for (int i = 0, j = 0; i < N*N; i += N+1, j += 1)
+        mat[i] = v[j];
+    return mat;
+}
+
+template <typename T, int N>
+Matrix<T,N,N>&
+matrix_set_diagonal (Matrix<T,N,N>& mat, T const* diag)
+{
+    for (int i = 0, j = 0; i < N*N; i += N+1, j += 1)
+        mat[i] = diag[j];
+    return mat;
+}
+
+template <typename T, int N>
+Vector<T,N>
+matrix_get_diagonal (Matrix<T,N,N> const& mat)
+{
+    Vector<T,N> diag;
+    for (int i = 0, j = 0; i < N*N; i += N+1, j += 1)
+        diag[j] = mat[i];
+    return diag;
 }
 
 template <typename T>
