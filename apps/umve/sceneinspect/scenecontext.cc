@@ -63,9 +63,6 @@ SceneContext::SceneContext (void)
     this->dm_depth_disc.setMinimum(0.0f);
     this->dm_depth_disc.setMaximum(100.0f);
     this->dm_depth_disc.setValue(5.0f);
-    this->dm_confidences.setMinimum(0);
-    this->dm_confidences.setMaximum(50);
-    this->dm_confidences.setValue(3);
 
     this->draw_frusta_size.setMinimum(1);
     this->draw_frusta_size.setMaximum(100);
@@ -137,7 +134,6 @@ SceneContext::SceneContext (void)
     dmtri_form->addRow(tr("Depthmap"), &this->dm_depthmap);
     dmtri_form->addRow(tr("Image"), &this->dm_colorimage);
     dmtri_form->addRow(tr("DD factor"), &this->dm_depth_disc);
-    dmtri_form->addRow(tr("Confidences"), &this->dm_confidences);
     dmtri_form->addRow(&this->dm_triangulate_but);
 
     QCollapsible* rendering_header = new QCollapsible

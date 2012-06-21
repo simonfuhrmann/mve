@@ -79,7 +79,6 @@ private:
     QComboBox dm_depthmap;
     QComboBox dm_colorimage;
     QDoubleSpinBox dm_depth_disc;
-    QSpinBox dm_confidences;
     QPushButton dm_triangulate_but;
 
 private slots:
