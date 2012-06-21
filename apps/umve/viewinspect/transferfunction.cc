@@ -136,7 +136,7 @@ TransferFunctionWidget::set_color_assignment (int channels)
     QButtonGroup* grp_g = new QButtonGroup(this);
     QButtonGroup* grp_b = new QButtonGroup(this);
 
-    for (int i = 0; i < channels; ++i)
+    for (int i = 0; i < std::min(10, channels); ++i)
     {
         QPushButton* ch_but = new QPushButton(tr("Channel %1").arg(i));
         ch_but->setFlat(true);
@@ -175,6 +175,15 @@ TransferFunctionWidget::set_color_assignment (int channels)
 
         if (i == 2 && channels >= 3)
         { ch_b->setChecked(true); this->func.blue = i; }
+    }
+
+    // Limited to 10 channels
+    if (channels > 10)
+    {
+        QLabel* more_label = new QLabel
+            (tr("<omitted %1 channels>").arg(channels - 10));
+        more_label->setAlignment(Qt::AlignCenter);
+        this->channel_grid->addWidget(more_label, 11, 0, 1, -1);
     }
 
     emit this->function_changed(this->func);

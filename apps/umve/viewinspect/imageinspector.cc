@@ -220,31 +220,41 @@ ImageInspectorWidget::get_image_color (int x, int y)
 void
 ImageInspectorWidget::update_value_label (int x, int y)
 {
+    std::size_t iw = this->image->width();
     std::size_t ic = this->image->channels();
+    std::size_t off = y * iw * ic + x * ic;
 
     QString value_str;
+    QString tooltip_str;
     if (this->image->get_type() == mve::IMAGE_TYPE_FLOAT)
     {
         mve::FloatImage::ConstPtr img(this->image);
-        for (std::size_t chan = 0; chan < ic; ++chan)
+        for (std::size_t i = 0; i < ic; ++i)
         {
-            if (!value_str.isEmpty())
-                value_str += " ";
-            value_str += tr("%1").arg((float)img->at(x, y, chan), 0, 'f', 3);
+            if (ic <= 4 || i < 3)
+                value_str += tr(" %1").arg(img->at(off + i), 0, 'f', 3);
+            if (ic > 4 && i == 3)
+                value_str += tr(" ...");
+            if (ic > 4)
+                tooltip_str += tr(" %1").arg(img->at(off + i), 0, 'f', 3);
         }
     }
     else if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
     {
         mve::ByteImage::ConstPtr img(this->image);
-        for (std::size_t chan = 0; chan < ic; ++chan)
+        for (std::size_t i = 0; i < ic; ++i)
         {
-            if (!value_str.isEmpty())
-                value_str += " ";
-            value_str += tr("%1").arg((int)img->at(x, y, chan));
+            if (ic <= 4 || i < 3)
+                value_str += tr(" %1").arg((int)img->at(off + i));
+            if (ic > 4 && i == 3)
+                value_str += tr(" ...");
+            if (ic > 4)
+                tooltip_str += tr(" %1").arg((int)img->at(off + i));
         }
     }
 
     this->label_values->setText(value_str);
+    this->label_values->setToolTip(tooltip_str);
 }
 
 /* ---------------------------------------------------------------- */
