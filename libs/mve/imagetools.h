@@ -1642,11 +1642,13 @@ image_undistort (typename Image<T>::ConstPtr img, CameraInfo const& cam)
     float k0 = cam.dist[0] * MATH_POW2(cam.flen);
     float k1 = cam.dist[1] * MATH_POW2(cam.flen);
 
-    typename Image<T>::Ptr undist = Image<T>::create(w, h, c);
-    undist->fill(T(0));
+    typename Image<T>::Ptr out = Image<T>::create(w, h, c);
+    T* out_ptr = out->get_data_pointer();
+    out->fill(T(0));
 
+    std::size_t outpos = 0;
     for (int y = 0; y < (int)h; y++)
-        for (int x = 0; x < (int)w; x++)
+        for (int x = 0; x < (int)w; x++, outpos += c)
         {
             float p3d[3] =
             {
@@ -1667,14 +1669,13 @@ image_undistort (typename Image<T>::ConstPtr img, CameraInfo const& cam)
 
             float xc = p3d[0];
             float yc = p3d[1];
-            if (xc < 0.0f || xc >= w-1 || yc < 0.0f || yc >= h-1)
-                continue;
 
-            for (int cc = 0; cc < (int)c; ++cc)
-                undist->at(x,y,cc) = img->linear_at(xc, yc, cc); // FIXME
+            if (xc < 0.0f || xc > w-1 || yc < 0.0f || yc > h-1)
+                continue;
+            img->linear_at(xc, yc, out_ptr + outpos);
         }
 
-    return undist;
+    return out;
 }
 
 /* ---------------------------------------------------------------- */
@@ -1706,11 +1707,12 @@ image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam)
     float f2inv = 1.0f / (noah_flen * noah_flen);
 
     typename Image<T>::Ptr out = Image<T>::create(w, h, c);
+    T* out_ptr = out->get_data_pointer();
     out->fill(T(0));
 
-    std::size_t i = 0;
+    std::size_t outpos = 0;
     for (std::size_t y = 0; y < h; ++y)
-        for (std::size_t x = 0; x < w; ++x, ++i)
+        for (std::size_t x = 0; x < w; ++x, outpos += c)
         {
             float xc = (float)x - fw2;
             float yc = (float)y - fh2;
@@ -1721,9 +1723,7 @@ image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam)
 
             if (xc < 0.0f || xc > fw - 1.0f || yc < 0.0f || yc > fh - 1.0f)
                 continue;
-
-            for (std::size_t cc = 0; cc < c; ++cc)
-                out->at(i, cc) = img->linear_at(xc, yc, cc); // FIXME
+            img->linear_at(xc, yc, out_ptr + outpos);
         }
 
     return out;
