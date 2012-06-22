@@ -305,16 +305,6 @@ template <typename T>
 typename Image<T>::Ptr
 desaturate (typename Image<T>::ConstPtr image, DesaturateType type);
 
-/* ------------------------- Miscellaneous ------------------------ */
-
-/*
- * TODO Binarizes an image given the theshold, minimum and maximum value.
- */
-//template <typename T>
-//typename Image<T>::Ptr
-//binarize (typename Image<T>::ConstPtr img, T const& thres,
-//    T const& min, T const& max);
-
 /**
  * Expands a gray image (one or two channels) to an RGB or RGBA image.
  */
@@ -326,6 +316,20 @@ expand_grayscale (typename Image<T>::ConstPtr image);
 template <typename T>
 void
 reduce_alpha (typename mve::Image<T>::Ptr img); // TODO Blend color?
+
+/* ------------------------- Edge detection ----------------------- */
+
+/**
+ * Implementation of the Sobel operator.
+ * For details, see http://en.wikipedia.org/wiki/Sobel_operator
+ * For byte images, the operation can lead to clipped values.
+ * Likewise for floating point images, it leads to values >1.
+ */
+template <typename T>
+typename mve::Image<T>::Ptr
+sobel_edge (typename mve::Image<T>::ConstPtr img);
+
+/* ------------------------- Miscellaneous ------------------------ */
 
 /**
  * Subtracts two images to create the signed difference between the values.
@@ -793,16 +797,16 @@ rescale_linear (typename Image<T>::ConstPtr img, typename Image<T>::Ptr out)
     std::size_t ic(img->channels());
     std::size_t ow(out->width());
     std::size_t oh(out->height());
+    T* out_ptr = out->get_data_pointer();
 
     std::size_t outpos = 0;
     for (std::size_t y = 0; y < oh; ++y)
     {
         float fy = ((float)y + 0.5f) * (float)ih / (float)oh;
-        for (std::size_t x = 0; x < ow; ++x)
+        for (std::size_t x = 0; x < ow; ++x, outpos += ic)
         {
             float fx = ((float)x + 0.5f) * (float)iw / (float)ow;
-            for (std::size_t c = 0; c < ic; ++c)
-                out->at(outpos++) = img->linear_at(fx - 0.5f, fy - 0.5f, c);
+            img->linear_at(fx - 0.5f, fy - 0.5f, out_ptr + outpos);
         }
     }
 }
@@ -1314,6 +1318,54 @@ reduce_alpha (typename mve::Image<T>::Ptr img)
 /* ---------------------------------------------------------------- */
 
 template <typename T>
+typename mve::Image<T>::Ptr
+sobel_edge (typename mve::Image<T>::ConstPtr img)
+{
+    std::size_t w = img->width();
+    std::size_t h = img->height();
+    std::size_t c = img->channels(); // pixel stride
+    std::size_t rs = w * c; // row stride
+
+    double const max_value = static_cast<double>(std::numeric_limits<T>::max());
+    typename mve::Image<T>::Ptr out = mve::Image<T>::create(w, h, c);
+    T* out_ptr = out->get_data_pointer();
+
+    std::size_t pos = 0;
+    for (std::size_t y = 0; y < h; ++y)
+        for (std::size_t x = 0; x < w; ++x, pos += c)
+        {
+            if (y == 0 || y == h-1 || x == 0 || x == w-1)
+            {
+                std::fill(out_ptr + pos, out_ptr + pos + c, T(0));
+                continue;
+            }
+
+            for (std::size_t cc = 0; cc < c; ++cc)
+            {
+                std::size_t i = pos + cc;
+                double gx = 1.0 * (double)img->at(i+c-rs)
+                    - 1.0 * (double)img->at(i-c-rs)
+                    + 2.0 * (double)img->at(i+c)
+                    - 2.0 * (double)img->at(i-c)
+                    + 1.0 * (double)img->at(i+c+rs)
+                    - 1.0 * (double)img->at(i-c+rs);
+                double gy = 1.0 * (double)img->at(i+rs-c)
+                    - 1.0 * (double)img->at(i-rs-c)
+                    + 2.0 * (double)img->at(i+rs)
+                    - 2.0 * (double)img->at(i-rs)
+                    + 1.0 * (double)img->at(i+rs+c)
+                    - 1.0 * (double)img->at(i-rs+c);
+                double g = std::sqrt(gx * gx + gy * gy);
+                out_ptr[i] = static_cast<T>(std::min(max_value, g));
+            }
+        }
+
+    return out;
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
 typename Image<T>::Ptr
 subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
 {
@@ -1619,7 +1671,7 @@ image_undistort (typename Image<T>::ConstPtr img, CameraInfo const& cam)
                 continue;
 
             for (int cc = 0; cc < (int)c; ++cc)
-                undist->at(x,y,cc) = img->linear_at(xc, yc, cc);
+                undist->at(x,y,cc) = img->linear_at(xc, yc, cc); // FIXME
         }
 
     return undist;
@@ -1671,7 +1723,7 @@ image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam)
                 continue;
 
             for (std::size_t cc = 0; cc < c; ++cc)
-                out->at(i, cc) = img->linear_at(xc, yc, cc);
+                out->at(i, cc) = img->linear_at(xc, yc, cc); // FIXME
         }
 
     return out;
