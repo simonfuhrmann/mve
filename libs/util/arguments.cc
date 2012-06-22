@@ -299,7 +299,7 @@ Arguments::next_option (void)
 /* ---------------------------------------------------------------- */
 
 std::string
-Arguments::get_nth_nonopt(std::size_t index)
+Arguments::get_nth_nonopt (std::size_t index)
 {
     std::size_t cnt = 0;
     for (std::size_t i = 0; i < this->results.size(); ++i)
