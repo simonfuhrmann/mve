@@ -789,7 +789,7 @@ ViewInspect::on_copy_embedding (void)
     bool text_ok = false;
     QString qtext = QInputDialog::getText(this, tr("Copy Embedding"),
         tr("Enter a target name for the new embedding."),
-        QLineEdit::Normal, QString(), &text_ok);
+        QLineEdit::Normal, this->recent_embedding.c_str(), &text_ok);
 
     if (!text_ok || qtext.isEmpty())
         return;
