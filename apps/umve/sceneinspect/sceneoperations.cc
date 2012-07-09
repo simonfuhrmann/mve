@@ -2,7 +2,7 @@
 #include "scenemanager.h"
 #include "sceneoperations.h"
 
-#ifdef USE_BUNDLER_SHIT
+#ifdef USE_BUNDLER
 
 #endif
 
@@ -16,38 +16,24 @@ SceneOperations::SceneOperations (void)
     helloworld_layout->addWidget(my_test_label);
     helloworld_layout->addWidget(update_scene_but);
 
-#ifdef USE_BUNDLER_SHIT
+#ifdef USE_BUNDLER
     QVBoxLayout* bundler_layout = new QVBoxLayout();
 
     QPushButton* init_bundler_but = new QPushButton("Initialize Bundler");
-    QPushButton* add_cam_but = new QPushButton("Add Camera");
-    QLabel* add_cam_label = new QLabel(" -- ");
-    QPushButton* show_cams_but = new QPushButton("Show Next Cameras");
-    QPushButton* hide_cams_but = new QPushButton("Hide Next Cameras");
-    QLabel* add_cams_label = new QLabel(" -- ");
-    QPushButton* add_feat_but = new QPushButton("Add Features");
-    QLabel* feature_label = new QLabel(" -- ");
     QPushButton* full_ba_but = new QPushButton("Run Full BA");
     QPushButton* run_steps_but = new QPushButton("Run X Steps");
+    QPushButton* undist_emb_but = new QPushButton("Create undistorted embeddings");
     QLabel* color_label = new QLabel(" -- ");
     QPushButton* hilight_camera_but = new QPushButton("Hilight Features in Camera: ");
     QPushButton* color_true_but = new QPushButton("Set True Colors");
     QPushButton* color_error_but = new QPushButton("Set Error Colors");
-    QPushButton* remove_error_but = new QPushButton("Remove High Error Features");
         
 
     bundler_layout->addWidget(init_bundler_but);
-    bundler_layout->addWidget(add_cam_but);
-    bundler_layout->addWidget(add_cam_label);
-    bundler_layout->addWidget(show_cams_but);
-    bundler_layout->addWidget(hide_cams_but);
-    bundler_layout->addWidget(add_cams_label);
-    bundler_layout->addWidget(add_feat_but);
-    bundler_layout->addWidget(remove_error_but);
-    bundler_layout->addWidget(feature_label);
     bundler_layout->addWidget(full_ba_but);
     bundler_layout->addWidget(run_steps_but);
     bundler_layout->addWidget(&this->run_steps);
+    bundler_layout->addWidget(undist_emb_but);
     bundler_layout->addWidget(color_label);
     bundler_layout->addWidget(hilight_camera_but);
     bundler_layout->addWidget(&this->hilight_cam);
@@ -59,7 +45,7 @@ SceneOperations::SceneOperations (void)
     /* Collapsible headers. */
     QCollapsible* helloworld_header = new QCollapsible
         ("Hello World", get_wrapper(helloworld_layout));
-#ifdef USE_BUNDLER_SHIT
+#ifdef USE_BUNDLER
     QCollapsible* bundler_header = new QCollapsible
         ("Bundler", get_wrapper(bundler_layout));
 #endif
@@ -69,7 +55,7 @@ SceneOperations::SceneOperations (void)
     /* Manage main layout. */
     QVBoxLayout* main_layout = new QVBoxLayout();
     main_layout->addWidget(helloworld_header);
-#ifdef USE_BUNDLER_SHIT
+#ifdef USE_BUNDLER
     main_layout->addWidget(bundler_header);
 #endif
     main_layout->addStretch(1);
@@ -81,19 +67,13 @@ SceneOperations::SceneOperations (void)
     this->connect(update_scene_but, SIGNAL(clicked(void)),
         this, SLOT(on_update_scene(void)));
 
-#ifdef USE_BUNDLER_SHIT
+#ifdef USE_BUNDLER
     this->connect(init_bundler_but, SIGNAL(clicked(void)),
                   this, SLOT(on_init_bundler(void)));
-    this->connect(add_cam_but, SIGNAL(clicked(void)),
-                  this, SLOT(on_add_camera(void)));
-    this->connect(show_cams_but, SIGNAL(clicked(void)),
-                  this, SLOT(on_show_next_cameras(void)));
-    this->connect(hide_cams_but, SIGNAL(clicked(void)),
-                  this, SLOT(on_hide_next_cameras(void)));
-    this->connect(add_feat_but, SIGNAL(clicked(void)),
-                  this, SLOT(on_add_features(void)));
     this->connect(full_ba_but, SIGNAL(clicked(void)),
                   this, SLOT(on_full_ba(void)));
+    this->connect(undist_emb_but, SIGNAL(clicked(void)),
+                  this, SLOT(on_undistort(void)));
     this->connect(run_steps_but, SIGNAL(clicked(void)),
                   this, SLOT(on_run_steps(void)));
     this->connect(hilight_camera_but, SIGNAL(clicked(void)),
@@ -102,8 +82,6 @@ SceneOperations::SceneOperations (void)
                   this, SLOT(on_true_color(void)));
     this->connect(color_error_but, SIGNAL(clicked(void)),
                   this, SLOT(on_error_color(void)));
-    this->connect(remove_error_but, SIGNAL(clicked(void)),
-                  this, SLOT(on_remove_error_features(void)));
 #endif
 
 }
@@ -114,10 +92,12 @@ void
 SceneOperations::on_scene_selected (mve::Scene::Ptr scene)
 {
     this->scene = scene;
-#ifdef USE_BUNDLER_SHIT
+#ifdef USE_BUNDLER
     this->bundler.set_scene(scene);
 
     this->hilight_cam.setMinimum(0);
+    this->run_steps.setMinimum(1);
+
     if (this->scene.get()){
         this->hilight_cam.setMaximum(this->scene->get_bundle()->get_num_cameras());
         this->run_steps.setMaximum(this->scene->get_bundle()->get_num_cameras());
@@ -136,7 +116,7 @@ SceneOperations::on_update_scene (void)
 
 /* ---------------------------------------------------------------- */
 
-#ifdef USE_BUNDLER_SHIT
+#ifdef USE_BUNDLER
 
 void
 SceneOperations::on_init_bundler (void)
@@ -151,35 +131,6 @@ SceneOperations::on_init_bundler (void)
 }
 
 void
-SceneOperations::on_add_camera (void)
-{
-    this->bundler.reconstruct_new_cam();
-    this->on_update_scene();
-}
-
-void
-SceneOperations::on_show_next_cameras (void)
-{
-    this->bundler.precompute_next_cameras();
-    this->bundler.enable_next_cameras();
-    this->on_update_scene();
-}
-
-void
-SceneOperations::on_hide_next_cameras (void)
-{
-    this->bundler.disable_next_cameras();
-    this->on_update_scene();
-}
-
-void
-SceneOperations::on_add_features (void)
-{
-    this->bundler.reconstruct_new_features();
-    this->on_update_scene();
-}
-
-void
 SceneOperations::on_full_ba (void)
 {
     this->bundler.run_full_ba();
@@ -189,7 +140,7 @@ SceneOperations::on_full_ba (void)
 void
 SceneOperations::on_run_steps (void)
 {
-    int i = 0;
+    std::size_t i = 0;
 
     std::size_t steps = this->run_steps.value();
     while (i++ < steps)
@@ -221,13 +172,6 @@ SceneOperations::on_true_color (void)
 }
 
 void
-SceneOperations::on_remove_error_features (void)
-{
-    this->bundler.remove_high_err_features();
-    this->on_update_scene();
-}
-
-void
 SceneOperations::on_hilight_camera (void)
 {
     std::size_t cam_num = this->hilight_cam.value();
@@ -235,6 +179,14 @@ SceneOperations::on_hilight_camera (void)
     this->on_update_scene();
 }
 
+
+void
+SceneOperations::on_undistort (void)
+{
+    this->bundler.create_undistorted_embeddings();
+    this->bundler.save();
+    this->on_update_scene();
+}
 
 
 #endif

@@ -21,6 +21,13 @@ int main (void)
 
 #if 1
 
+util::fs::FileLock x("/tmp/test.tmp");
+return 0;
+
+#endif
+
+#if 0
+
     /* Test id parser. */
     std::vector<int> v;
     util::Arguments args;

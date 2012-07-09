@@ -40,7 +40,9 @@ enum PlyVertexElement
     PLY_V_FLOAT_CONF = 9,
     PLY_V_FLOAT_IGNORE,
     PLY_V_INT_IGNORE,
-    PLY_V_BYTE_IGNORE
+    PLY_V_BYTE_IGNORE,
+    PLY_V_FLOAT_U,
+    PLY_V_FLOAT_V
 };
 
 /* Face element enum. */
@@ -263,6 +265,10 @@ load_ply_mesh (std::string const& filename)
                         v_format.push_back(PLY_V_FLOAT_G);
                     else if (header[2] == "b" || header[2] == "blue")
                         v_format.push_back(PLY_V_FLOAT_B);
+                    else if (header[2] == "u")
+                        v_format.push_back(PLY_V_FLOAT_U);
+                    else if (header[2] == "v")
+                        v_format.push_back(PLY_V_FLOAT_V);
                     else if (header[2] == "confidence")
                         v_format.push_back(PLY_V_FLOAT_CONF);
                     else
@@ -356,16 +362,27 @@ load_ply_mesh (std::string const& filename)
     TriangleMesh::FaceList& faces = mesh->get_faces();
     TriangleMesh::ColorList& vcolors = mesh->get_vertex_colors();
     TriangleMesh::ConfidenceList& vconf = mesh->get_vertex_confidences();
+    TriangleMesh::TexCoordList& tcoords = mesh->get_vertex_texcoords();
 
     bool want_colors = false;
+    bool want_tex_coords = false;
+
     for (std::size_t i = 0; i < v_format.size(); ++i)
+    {
         if (v_format[i] == PLY_V_UCHAR_R
             || v_format[i] == PLY_V_UCHAR_G
             || v_format[i] == PLY_V_UCHAR_B)
         {
             want_colors = true;
-            break;
         }
+
+        if (v_format[i] == PLY_V_FLOAT_U
+            || v_format[i] == PLY_V_FLOAT_V)
+        {
+            want_tex_coords = true;
+        }
+    }
+
 
     /* Start reading the vertex data. */
     std::cout << "Reading PLY: " << num_vertices << " verts..." << std::flush;
@@ -379,6 +396,8 @@ load_ply_mesh (std::string const& filename)
     {
         math::Vec3f vertex(0.0f, 0.0f, 0.0f);
         math::Vec4f color(1.0f, 0.5f, 0.5f, 1.0f); // Make it ugly by default
+        math::Vec2f tex_coord(0.0f, 0.0f);
+
         for (std::size_t n = 0; n < v_format.size(); ++n)
         {
             PlyVertexElement elem = (PlyVertexElement)v_format[n];
@@ -400,6 +419,11 @@ load_ply_mesh (std::string const& filename)
             case PLY_V_FLOAT_G:
             case PLY_V_FLOAT_B:
                 color[(int)elem - PLY_V_FLOAT_R] = ply_get_value<float>(input, ply_format);
+                break;
+
+            case PLY_V_FLOAT_U:
+            case PLY_V_FLOAT_V:
+                tex_coord[(int)elem - PLY_V_FLOAT_U] = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_CONF:
@@ -425,6 +449,9 @@ load_ply_mesh (std::string const& filename)
         vertices.push_back(vertex);
         if (want_colors)
             vcolors.push_back(color);
+
+        if(want_tex_coords)
+            tcoords.push_back(tex_coord);
 
         eof = input.eof();
     }
