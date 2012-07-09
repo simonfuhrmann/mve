@@ -14,6 +14,7 @@
 
 #include "math/matrix.h" // for rot matrix determinant
 #include "math/matrixtools.h" // for rot matrix determinant
+#include "math/algo.h"
 #include "util/arguments.h"
 #include "util/string.h"
 #include "util/fs.h"
@@ -394,7 +395,7 @@ import_bundle (AppSettings const& conf)
         if (name_ext == ".jpg" || name_ext == ".png")
             viewname = util::string::left(viewname, viewname.size() - 4);
 
-        /* Fix Photosynther camera conventions, look along -z axis. */
+        /* Convert from Photosynther camera conventions. */
         if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER)
         {
             for (int j = 0; j < 3; ++j)
@@ -415,11 +416,17 @@ import_bundle (AppSettings const& conf)
                 std::cout << "Fixing focal length for view '"
                     << fname << "'" << std::endl;
                 cam.flen = -cam.flen;
-                for (int j = 0; j < 9; ++j)
-                    cam.rot[j] = -cam.rot[j];
-                for (int j = 0; j < 3; ++j)
-                    cam.trans[j] = -cam.trans[j];
+                std::for_each(cam.rot, cam.rot + 9,
+                    math::algo::foreach_negate_value<float>);
+                std::for_each(cam.trans, cam.trans + 3,
+                    math::algo::foreach_negate_value<float>);
             }
+
+            /* Convert from Noah Bundler camera conventions. */
+            std::for_each(cam.rot, cam.rot + 6,
+                math::algo::foreach_negate_value<float>);
+            std::for_each(cam.trans, cam.trans + 2,
+                math::algo::foreach_negate_value<float>);
 
             /* Check determinant of rotation matrix. */
             math::Matrix3f rmat(cam.rot);
