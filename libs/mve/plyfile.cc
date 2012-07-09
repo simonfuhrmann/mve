@@ -37,9 +37,9 @@ enum PlyVertexElement
     PLY_V_FLOAT_R = 6,
     PLY_V_FLOAT_G,
     PLY_V_FLOAT_B,
-    PLY_V_FLOAT_U,
+    PLY_V_FLOAT_U = 9,
     PLY_V_FLOAT_V,
-    PLY_V_FLOAT_CONF = 9,
+    PLY_V_FLOAT_CONF = 11,
     PLY_V_FLOAT_IGNORE,
     PLY_V_INT_IGNORE,
     PLY_V_BYTE_IGNORE
