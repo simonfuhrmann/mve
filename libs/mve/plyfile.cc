@@ -37,12 +37,12 @@ enum PlyVertexElement
     PLY_V_FLOAT_R = 6,
     PLY_V_FLOAT_G,
     PLY_V_FLOAT_B,
+    PLY_V_FLOAT_U,
+    PLY_V_FLOAT_V,
     PLY_V_FLOAT_CONF = 9,
     PLY_V_FLOAT_IGNORE,
     PLY_V_INT_IGNORE,
-    PLY_V_BYTE_IGNORE,
-    PLY_V_FLOAT_U,
-    PLY_V_FLOAT_V
+    PLY_V_BYTE_IGNORE
 };
 
 /* Face element enum. */
@@ -450,7 +450,7 @@ load_ply_mesh (std::string const& filename)
         if (want_colors)
             vcolors.push_back(color);
 
-        if(want_tex_coords)
+        if (want_tex_coords)
             tcoords.push_back(tex_coord);
 
         eof = input.eof();

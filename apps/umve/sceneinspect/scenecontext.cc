@@ -535,7 +535,6 @@ SceneContext::create_frusta_renderer (float size)
             colors.push_back(frustum_end_color);
             faces.push_back(idx + 0); faces.push_back(idx + 1 + j);
         }
-
         faces.push_back(idx + 1); faces.push_back(idx + 2);
         faces.push_back(idx + 2); faces.push_back(idx + 4);
         faces.push_back(idx + 4); faces.push_back(idx + 3);
@@ -557,7 +556,6 @@ SceneContext::create_frusta_renderer (float size)
         faces.push_back(idx + 5); faces.push_back(idx + 6);
         faces.push_back(idx + 7); faces.push_back(idx + 8);
         faces.push_back(idx + 9); faces.push_back(idx + 10);
-
     }
 
     this->frusta_renderer = ogl::MeshRenderer::create(mesh);

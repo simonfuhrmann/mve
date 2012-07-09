@@ -952,7 +952,6 @@ QCH_FILE               = mve-help.qch
 
 QHP_NAMESPACE          = de.tu-darmstadt.gris.mve
 
-
 # The QHP_VIRTUAL_FOLDER tag specifies the namespace to use when generating 
 # Qt Help Project output. For more information please see 
 # http://doc.trolltech.com/qthelpproject.html#virtual-folders
