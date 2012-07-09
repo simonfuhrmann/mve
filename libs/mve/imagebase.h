@@ -67,6 +67,12 @@ public:
     /** Returns the amount of channels in the image. */
     std::size_t channels (void) const;
 
+    /**
+     * Re-interprets the dimensions of the image. This will fail and
+     * return false if the total image size does not match the old image.
+     */
+    bool reinterpret (std::size_t new_w, std::size_t new_h, std::size_t new_c);
+
     /** Returns false if one of width, height or channels is 0. */
     bool valid (void) const;
 
@@ -219,6 +225,18 @@ inline std::size_t
 ImageBase::channels (void) const
 {
     return this->c;
+}
+
+inline bool
+ImageBase::reinterpret (std::size_t new_w, std::size_t new_h, std::size_t new_c)
+{
+    if (new_w * new_h * new_c != this->w * this->h * this->c)
+        return false;
+
+    this->w = new_w;
+    this->h = new_h;
+    this->c = new_c;
+    return true;
 }
 
 inline bool
