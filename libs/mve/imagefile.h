@@ -25,6 +25,7 @@ MVE_IMAGE_NAMESPACE_BEGIN
  * libjpg docs: http://www.jpegcameras.com/libjpeg/libjpeg-2.html
  * libtiff docs: http://www.libtiff.org/libtiff.html
  * pfm file docs: http://netpbm.sourceforge.net/doc/pfm.html
+ * ppm file docs: http://en.wikipedia.org/wiki/Netpbm_format
  *
  * TODO
  * - Throw-safe read/write streams (not important)
@@ -164,6 +165,14 @@ load_ppm_16_file (std::string const& filename);
 void
 save_ppm_16_file (FloatImage::ConstPtr image, std::string const& filename);
 
+/* ------------------------- PPM support ------------------------- */
+
+/**
+ * Writes a 8 bit PPM file (1 and 3 channel images only).
+ * May throw util::FileException and std::invalid_argument.
+ */
+void
+save_ppm_file (ByteImage::ConstPtr image, std::string const& filename);
 
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END

@@ -18,18 +18,25 @@ main (int argc, char** argv)
 {
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
-#if 1
+#if 0
+#   define SIZE 31
     /* Test new linear interpolation. */
     mve::ByteImage::Ptr img = mve::image::load_file("/tmp/testpixels.png");
-    mve::ByteImage::Ptr tmp = mve::ByteImage::create(10, 10, 3);
-    for (int y = 0; y < 10; ++y)
-        for (int x = 0; x < 10; ++x)
+    mve::ByteImage::Ptr tmp = mve::ByteImage::create(SIZE, SIZE, 3);
+    util::ClockTimer timer;
+    for (int y = 0; y < SIZE; ++y)
+        for (int x = 0; x < SIZE; ++x)
         {
+            float fx = (float)x / (SIZE/2);
+            float fy = (float)y / (SIZE/2);
+            //std::cout << "Accessing " << fx << " " << fy << std::endl;
             math::Vec3uc px;
-            img->linear_at((float)x/10, (float)y/10, *px);
+            img->linear_at(fx, fy, *px);
             std::copy(*px, *px + 3, &tmp->at(x, y, 0));
         }
-    mve::image::save_file(tmp, "/tmp/testpixels2.png");
+    std::size_t savetime = timer.get_elapsed();
+    std::cout << "Took " << savetime << "ms CPU time." << std::endl;
+    mve::image::save_file(tmp, "/tmp/testpixels3.png");
 #endif
 
 #if 0
@@ -260,18 +267,20 @@ main (int argc, char** argv)
     mve::image::save_file(out, "/tmp/halfsize.png");
 #endif
 
-#if 0
+#if 1
     /* Test double size of image. */
     mve::ByteImage::Ptr img(mve::image::load_file
         //("../../data/testimages/test_scaling_rings.png"));
         //("../../data/testimages/lenna_color.png"));
-        ("../../data/testimages/color_pattern_5x5.png"));
+        //("../../data/testimages/color_pattern_5x5.png"));
+        ("/tmp/img.png"));
     util::ClockTimer t;
-    mve::ByteImage::Ptr out(mve::image::rescale_double_size_supersample<uint8_t>(img));
-    std::cout << "took " << t.get_elapsed() << "ms." << std::endl;
-    mve::image::save_file(out, "/tmp/doubled.png");
+    //mve::ByteImage::Ptr out(mve::image::rescale_double_size_supersample<uint8_t>(img));
+    //std::cout << "took " << t.get_elapsed() << "ms." << std::endl;
+    //mve::image::save_file(out, "/tmp/doubled.png");
 
-    t.reset();
+    //t.reset();
+    mve::ByteImage::Ptr out = mve::ByteImage::create(img->width() * 2, img->height() * 2, img->channels());
     mve::image::rescale_linear<uint8_t>(img, out);
     std::cout << "took " << t.get_elapsed() << "ms." << std::endl;
     mve::image::save_file(out, "/tmp/doubled2.png");
