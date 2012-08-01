@@ -1,13 +1,13 @@
 Introduction
 ======================================================================
 
-This is the MVE users guide for building, installation and other topics.
+This is the MVE users guide for building, installation and operation.
 MVE is developed at the TU Darmstadt, specifically in the GRIS department,
 for more details visit the following websites:
 
-    http://www.tu-darmstadt.de/
-    http://www.gris.tu-darmstadt.de/
     http://www.gris.tu-darmstadt.de/projects/multiview-environment/
+    http://www.gris.tu-darmstadt.de/
+    http://www.tu-darmstadt.de/
 
 The libraries and applications has been developed by, or received
 contributions from, the following persons:
@@ -49,8 +49,8 @@ Requirements to compile and run MVE or UVME are:
     - libjpeg (for MVE, http://www.ijg.org/)
     - libpng (for MVE, http://www.libpng.org/pub/png/libpng.html)
     - libtiff (for MVE, http://www.libtiff.org/)
-    - OpenGL (for libogl in MVE and UMVE)
-    - QT 4 (for UMVE, exact version unknown, http://qt.nokia.com)
+    - OpenGL (only for libogl in MVE and UMVE)
+    - QT 4 (only for UMVE, http://qt.nokia.com)
 
 To conclude, building and executing under Linux and OSX is as easy as:
 
@@ -61,7 +61,7 @@ To conclude, building and executing under Linux and OSX is as easy as:
     # qmake && make -j8
     # ./umve
 
-Building under MS Windows may work aswell. However, documenting this
+Building under MS Windows may work as well. However, documenting this
 process is currently out of scope of this document.
 
 
@@ -82,7 +82,7 @@ does not support creation of scenes. Use "makescene" for that.
 Apart from UMVE, most time-consuming operations are also available as
 console applications and can be executed on systems without graphical user
 interface. One example is "dmrecon", which is the console version of the
-MVS reconstruction. The "mveshell" is a command line replacement for UMVE,
+MVS reconstruction. The "mveshell" is a command line alternative for UMVE,
 but does not yet cover all of its functionality.
 
 
@@ -100,7 +100,7 @@ that the "shader" directory is located just next to the binary.
 Licensing
 ======================================================================
 
-Please see the COPYING.txt file for further licensing information.
+Please see the COPYING.txt file for licensing information.
 
 
 Hacking MVE
