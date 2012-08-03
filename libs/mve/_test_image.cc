@@ -18,25 +18,45 @@ main (int argc, char** argv)
 {
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
-#if 0
-#   define SIZE 31
+#if 1
     /* Test new linear interpolation. */
-    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/testpixels.png");
-    mve::ByteImage::Ptr tmp = mve::ByteImage::create(SIZE, SIZE, 3);
+    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/warped-mve.png");
+    float w = (float)img->width();
+    float h = (float)img->height();
+    int num = 0;
     util::ClockTimer timer;
-    for (int y = 0; y < SIZE; ++y)
-        for (int x = 0; x < SIZE; ++x)
+
+    float x = 0.0f;
+    float y = 0.0f;
+    {
+        uint8_t px[3];
+        for (int i = 0; i < 10000000; ++i, ++num)
         {
-            float fx = (float)x / (SIZE/2);
-            float fy = (float)y / (SIZE/2);
-            //std::cout << "Accessing " << fx << " " << fy << std::endl;
-            math::Vec3uc px;
-            img->linear_at(fx, fy, *px);
-            std::copy(*px, *px + 3, &tmp->at(x, y, 0));
+            x += 0.00002f;
+            y += 0.00002f;
+            img->linear_at(x, y, px);
         }
-    std::size_t savetime = timer.get_elapsed();
-    std::cout << "Took " << savetime << "ms CPU time." << std::endl;
-    mve::image::save_file(tmp, "/tmp/testpixels3.png");
+    }
+    std::cout << "Performed uint8 " << num << " lookups in "
+        << timer.get_elapsed() << "ms." << std::endl;
+
+    mve::FloatImage::Ptr fimg = mve::image::byte_to_float_image(img);
+    timer.reset();
+    num = 0;
+
+    x = 0.0f;
+    y = 0.0f;
+    {
+        float px[3];
+        for (int i = 0; i < 10000000; ++i, ++num)
+        {
+            x += 0.00002f;
+            y += 0.00002f;
+            fimg->linear_at(x, y, px);
+        }
+    }
+    std::cout << "Performed float " << num << " lookups in "
+        << timer.get_elapsed() << "ms." << std::endl;
 #endif
 
 #if 0
@@ -267,7 +287,7 @@ main (int argc, char** argv)
     mve::image::save_file(out, "/tmp/halfsize.png");
 #endif
 
-#if 1
+#if 0
     /* Test double size of image. */
     mve::ByteImage::Ptr img(mve::image::load_file
         //("../../data/testimages/test_scaling_rings.png"));
