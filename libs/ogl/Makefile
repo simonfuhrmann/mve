@@ -26,4 +26,4 @@ clean: FORCE
 
 FORCE:
 
-include Makefile.dep
+-include Makefile.dep
