@@ -16,9 +16,16 @@
 int
 main (int argc, char** argv)
 {
-    std::signal(SIGSEGV, util::system::signal_segfault_handler);
+    //std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
 #if 1
+    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/image.png");
+    mve::image::save_ppm_file(img, "/tmp/image.ppm");
+    img = mve::image::load_ppm_file("/tmp/image.ppm");
+    mve::image::save_file(img, "/tmp/image2.png");
+#endif
+
+#if 0
     /* Test new linear interpolation. */
     mve::ByteImage::Ptr img = mve::image::load_file("/tmp/warped-mve.png");
     float w = (float)img->width();

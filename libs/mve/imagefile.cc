@@ -121,11 +121,6 @@ save_file (FloatImage::Ptr image, std::string const& filename)
         save_pfm_file(image, filename);
         return;
     }
-    else if (fext4 == ".ppm")
-    {
-    save_ppm_16_file(image, filename);
-    }
-
 
     throw util::Exception("Output filetype not supported");
 }
@@ -652,10 +647,12 @@ save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
         throw util::Exception("Error writing TIFF image");
 }
 
+#endif /* MVE_NO_TIFF_SUPPORT */
+
 /* ---------------------------------------------------------------- */
 
 /*
- * PFM file format for float images
+ * PFM file format for float images.
  * http://netpbm.sourceforge.net/doc/pfm.html
  * FIXME: Convert to C++ I/O (std::fstream)
  */
@@ -751,121 +748,100 @@ save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
     std::fwrite(image->get_byte_pointer(), 1, image->get_byte_size(), fp);
     std::fclose(fp);
 }
+
 /* ---------------------------------------------------------------- */
 
 /*
- * PPM16 file format for 16 bit float images
- * converts values to a range of 0.0 ... 1.0
- * http://netpbm.sourceforge.net/doc/pfm.html
- * FIXME: Convert to C++ I/O (std::fstream)
+ * PPM file format for 8 and 16 bit images. The bit8 argument is set to
+ * true, 8 bit PPMs with maxval set to less than 256 are loaded.
+ * Otherwise, 16 bit PPMs with maxval less than 65536 are loaded.
+ * http://netpbm.sourceforge.net/doc/ppm.html
  */
-
-FloatImage::Ptr
-load_ppm_16_file (std::string const& filename)
+ImageBase::Ptr
+load_ppm_file_intern (std::string const& filename, bool bit8)
 {
-    FILE *fp = std::fopen(filename.c_str(), "rb");
-    if (!fp)
+    std::ifstream in(filename.c_str());
+    if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 
-    unsigned int width = 0;
-    unsigned int height = 0;
-    unsigned int channels = 0;
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    int maxval = 0;
 
     char signature[2];
-    std::fread(signature, 1, 2, fp);
+    in.read(signature, 2);
 
     // check signature and determine channels
-    if (signature[0] == 'P' && signature[1] == '6')
-    {
+    if (signature[0] == 'P' && signature[1] == '5')
+        channels = 1;
+    else if (signature[0] == 'P' && signature[1] == '6')
         channels = 3;
-    }
     else
     {
-        std::fclose(fp);
+        in.close();
         throw util::Exception("PPM signature did not match");
     }
 
-    // read width and height
-    std::fscanf(fp, "%u %u", &width, &height);
-    // read scale
-    unsigned int maxVal = 0;
-    std::fscanf(fp, "%u\n", &maxVal);
+    /* Read width and height as well as max value. */
+    in >> width >> height >> maxval;
 
-    // create image
-    FloatImage::Ptr image = FloatImage::create();
-    image->allocate(width, height, channels);
+    /* Read final whitespace character. */
+    char temp;
+    in.read(&temp, 1);
 
-    std::vector<unsigned short> tmpimage(width*height*channels);
-
-    // fill image with data from file
-    std::fread(&(tmpimage[0]), 2, tmpimage.size(), fp);
-    std::fclose(fp);
-    float fmaxVal = maxVal;
-    for (std::size_t i = 0; i < width*height*channels; ++i )
+    /* Check image width and height. Shouldn't be too large. */
+    if (width * height > 268435356)
     {
-        image->at(i) = (float)util::system::betoh(tmpimage[i])/fmaxVal;
+        in.close();
+        throw util::Exception("Image too friggin huge");
     }
 
-    return image;
+    ImageBase::Ptr ret;
+
+    /* Check max value. Should be in [256, 65535]. */
+    if (maxval < 256 && bit8)
+    {
+        /* Read image content. */
+        ByteImage::Ptr image = ByteImage::create(width, height, channels);
+        in.read(image->get_byte_pointer(), image->get_byte_size());
+        ret = image;
+    }
+    else if (maxval < 65536 && !bit8)
+    {
+        /* Read image content. */
+        RawImage::Ptr image = RawImage::create(width, height, channels);
+        in.read(image->get_byte_pointer(), image->get_byte_size());
+        ret = image;
+    }
+    else
+    {
+        in.close();
+        throw util::Exception("PPM max value is invalid");
+    }
+
+    in.close();
+    return ret;
 }
 
 /* ---------------------------------------------------------------- */
 
-void
-save_ppm_16_file (FloatImage::ConstPtr image, std::string const& filename)
+RawImage::Ptr
+load_ppm_16_file (std::string const& filename)
 {
-    if (!image.get())
-        throw std::invalid_argument("NULL image given");
-    if (image->channels() != 3)
-        throw util::Exception("Can only handle 3 channel images");
+    return load_ppm_file_intern(filename, false);
+}
 
-    FILE *fp = std::fopen(filename.c_str(), "wb");
-    if (!fp)
-        throw util::FileException(filename, std::strerror(errno));
-
-    unsigned int width = image->width();
-    unsigned int height = image->height();
-
-    // beware of whitespaces!
-    std::fprintf(fp, "P6\n");
-    std::fprintf(fp, "%u %u\n", width, height);
-
-    unsigned int maxVal = 65535;
-    float fmaxVal = maxVal;
-    std::fprintf(fp, "%u\n", maxVal);
-
-    std::vector<unsigned short> tmpimage(width*height*3);
-
-    // convert float image to shorts
-    // values are scaled from min ... max to 0.0 ... 1.0 during conversion
-
-    float min = std::numeric_limits<float>::max();
-    float max = std::numeric_limits<float>::min();
-
-    for(std::size_t i = 0; i < width*height*3; ++i )
-    {
-        float ival = image->at(i);
-        min = std::min(min, ival);
-        max = std::max(ival, max);
-    }
-
-    float s = fmaxVal/(max-min);
-    if (max == min) s = fmaxVal;
-
-    for(std::size_t i = 0; i < width*height*3; ++i )
-    {
-        unsigned short v =  (unsigned short) ((image->at(i)-min)*s);
-        tmpimage[i] = util::system::betoh(v);
-    }
-
-    std::fwrite(&(tmpimage[0]), 2, tmpimage.size(), fp);
-    std::fclose(fp);
+ByteImage::Ptr
+load_ppm_file (std::string const& filename)
+{
+    return load_ppm_file_intern(filename, true);
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-save_ppm_file (ByteImage::ConstPtr image, std::string const& filename)
+save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
 {
     if (!image.get())
         throw std::invalid_argument("NULL image given");
@@ -884,12 +860,35 @@ save_ppm_file (ByteImage::ConstPtr image, std::string const& filename)
     else
         throw std::runtime_error("Supports 1 and 3 channel images only");
 
-    out << image->width() << " " << image->height() << " 255\n";
+    int maxval = 0;
+    if (image->get_type() == IMAGE_TYPE_UINT8)
+        maxval = 255;
+    else if (image->get_type() == IMAGE_TYPE_UINT16)
+        maxval = 65535;
+    else
+    {
+        out.close();
+        throw util::Exception("Invalid image format");
+    }
+
+    out << image->width() << " " << image->height() << " " << maxval << "\n";
     out.write(image->get_byte_pointer(), image->get_byte_size());
     out.close();
 }
 
-#endif /* MVE_NO_TIFF_SUPPORT */
+/* ---------------------------------------------------------------- */
+
+void
+save_ppm_16_file (RawImage::ConstPtr image, std::string const& filename)
+{
+    save_ppm_file_intern(image, filename);
+}
+
+void
+save_ppm_file (ByteImage::ConstPtr image, std::string const& filename)
+{
+    save_ppm_file_intern(image, filename);
+}
 
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END

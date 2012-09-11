@@ -155,17 +155,24 @@ save_pfm_file (FloatImage::ConstPtr image, std::string const& filename);
  * Loads a 16 bit PPM file.
  * May throw util::FileException and util::Exception.
  */
-FloatImage::Ptr
+RawImage::Ptr
 load_ppm_16_file (std::string const& filename);
 
 /**
- * Save a 16 bit PPM file.
+ * Save a 16 bit PPM file (1 and 3 channel images only).
  * May throw util::FileException and util::Exception.
  */
 void
-save_ppm_16_file (FloatImage::ConstPtr image, std::string const& filename);
+save_ppm_16_file (RawImage::ConstPtr image, std::string const& filename);
 
 /* ------------------------- PPM support ------------------------- */
+
+/**
+ * Loads a 8 bit PPM file.
+ * May throw util::FileException and util::Exception.
+ */
+ByteImage::Ptr
+load_ppm_file (std::string const& filename);
 
 /**
  * Writes a 8 bit PPM file (1 and 3 channel images only).
