@@ -25,6 +25,8 @@
 #   include <tiffio.h>
 #endif
 
+#define PPM_MAX_PIXEL_AMOUNT (16384 * 16384)
+
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
@@ -791,7 +793,7 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
     in.read(&temp, 1);
 
     /* Check image width and height. Shouldn't be too large. */
-    if (width * height > 268435356)
+    if (width * height > PPM_MAX_PIXEL_AMOUNT)
     {
         in.close();
         throw util::Exception("Image too friggin huge");
@@ -799,7 +801,7 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
 
     ImageBase::Ptr ret;
 
-    /* Check max value. Should be in [256, 65535]. */
+    /* Max value should be in <256 for 8 bit and <65535 for 16 bit. */
     if (maxval < 256 && bit8)
     {
         /* Read image content. */
@@ -810,6 +812,7 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
     else if (maxval < 65536 && !bit8)
     {
         /* Read image content. */
+        // FIXME: Check endianess. PPM is big endian.
         RawImage::Ptr image = RawImage::create(width, height, channels);
         in.read(image->get_byte_pointer(), image->get_byte_size());
         ret = image;
@@ -846,19 +849,13 @@ save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
     if (!image.get())
         throw std::invalid_argument("NULL image given");
 
-    if (image->channels() != 1 && image->channels() != 3)
-        throw std::invalid_argument("Supports 1 and 3 channel images only");
-
-    std::ofstream out(filename.c_str());
-    if (!out.good())
-        throw util::FileException(filename, std::strerror(errno));
-
+    std::string magic_number;
     if (image->channels() == 1)
-        out << "P5\n";
+        magic_number = "P5";
     else if (image->channels() == 3)
-        out << "P6\n";
+        magic_number = "P6";
     else
-        throw std::runtime_error("Supports 1 and 3 channel images only");
+        throw std::invalid_argument("Supports 1 and 3 channel images only");
 
     int maxval = 0;
     if (image->get_type() == IMAGE_TYPE_UINT8)
@@ -866,12 +863,15 @@ save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
     else if (image->get_type() == IMAGE_TYPE_UINT16)
         maxval = 65535;
     else
-    {
-        out.close();
-        throw util::Exception("Invalid image format");
-    }
+        throw std::invalid_argument("Invalid image format");
 
+    std::ofstream out(filename.c_str());
+    if (!out.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    out << magic_number << "\n";
     out << image->width() << " " << image->height() << " " << maxval << "\n";
+    // FIXME: Check PPM endianess for 16bit images.
     out.write(image->get_byte_pointer(), image->get_byte_size());
     out.close();
 }

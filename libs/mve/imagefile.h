@@ -26,10 +26,12 @@ MVE_IMAGE_NAMESPACE_BEGIN
  * libtiff docs: http://www.libtiff.org/libtiff.html
  * pfm file docs: http://netpbm.sourceforge.net/doc/pfm.html
  * ppm file docs: http://en.wikipedia.org/wiki/Netpbm_format
+ * more ppm file docs: http://netpbm.sourceforge.net/doc/#formats
  *
  * TODO
  * - Throw-safe read/write streams (not important)
  * - Read and display PNG embedded "keywords" (author, comment, etc.)
+ * - Fix PPM endianess
  */
 
 /**
