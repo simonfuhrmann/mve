@@ -16,9 +16,34 @@
 int
 main (int argc, char** argv)
 {
-    //std::signal(SIGSEGV, util::system::signal_segfault_handler);
+    std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
 #if 1
+    // 16 bit PPM test.
+    mve::RawImage::Ptr img = mve::RawImage::create(3, 1, 3);
+
+    img->at(0, 0, 0) = 0xff00;  // Visible after converting to 8 bit.
+    img->at(0, 0, 1) = 0x0000;
+    img->at(0, 0, 2) = 0x0000;
+
+    img->at(1, 0, 0) = 0x0000;
+    img->at(1, 0, 1) = 0xffff;  // Visible after converting to 8 bit.
+    img->at(1, 0, 2) = 0x0000;
+
+    img->at(2, 0, 0) = 0x0000;
+    img->at(2, 0, 1) = 0x0000;
+    img->at(2, 0, 2) = 0x00ff;  // Invisible after converting to 8 bit.
+
+    mve::image::save_ppm_16_file(img, "/tmp/rawimage.ppm");
+
+    img = mve::image::load_ppm_16_file("/tmp/rawimage.ppm");
+    mve::ByteImage::Ptr tmp = mve::ByteImage::create(3, 1, 3);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        tmp->at(i) = (uint8_t)(img->at(i) >> 8);
+    mve::image::save_file(tmp, "/tmp/converted.png");
+#endif
+
+#if 0
     mve::ByteImage::Ptr img = mve::image::load_file("/tmp/image.png");
     mve::image::save_ppm_file(img, "/tmp/image.ppm");
     img = mve::image::load_ppm_file("/tmp/image.ppm");

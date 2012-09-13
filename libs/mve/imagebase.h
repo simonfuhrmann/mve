@@ -100,6 +100,7 @@ template <typename T>
 class TypedImageBase : public ImageBase
 {
 public:
+    typedef T ValueType;
     typedef util::RefPtr<TypedImageBase<T> > Ptr;
     typedef util::RefPtr<TypedImageBase<T> const> ConstPtr;
     typedef std::vector<T> ImageData;

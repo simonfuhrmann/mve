@@ -811,10 +811,11 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
     }
     else if (maxval < 65536 && !bit8)
     {
-        /* Read image content. */
-        // FIXME: Check endianess. PPM is big endian.
+        /* Read image content, convert from big-endian to host order. */
         RawImage::Ptr image = RawImage::create(width, height, channels);
         in.read(image->get_byte_pointer(), image->get_byte_size());
+        for (std::size_t i = 0; i < image->get_value_amount(); ++i)
+            image->at(i) = util::system::betoh(image->at(i));
         ret = image;
     }
     else
@@ -871,8 +872,22 @@ save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
 
     out << magic_number << "\n";
     out << image->width() << " " << image->height() << " " << maxval << "\n";
-    // FIXME: Check PPM endianess for 16bit images.
-    out.write(image->get_byte_pointer(), image->get_byte_size());
+
+    if (image->get_type() == IMAGE_TYPE_UINT8)
+    {
+        /* Byte images can be saved as-is. */
+        out.write(image->get_byte_pointer(), image->get_byte_size());
+    }
+    else
+    {
+        /* PPM is big-endian, so we need to convert 16 bit data. */
+        RawImage::ConstPtr handle = image;
+        for (std::size_t i = 0; i < handle->get_value_amount(); ++i)
+        {
+            RawImage::ValueType value = util::system::betoh(handle->at(i));
+            out.write((char const*)(&value), sizeof(RawImage::ValueType));
+        }
+    }
     out.close();
 }
 
