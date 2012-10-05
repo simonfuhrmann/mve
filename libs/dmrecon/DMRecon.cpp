@@ -172,7 +172,7 @@ void DMRecon::analyzeFeatures()
         for (std::size_t j = 0; j < features[i].refs.size(); ++j)
         {
             std::size_t id = features[i].refs[j].img_id;
-            if (views[id]->pointInFrustum(featurePos))
+            if (views[id] != NULL && views[id]->pointInFrustum(featurePos))
                 views[id]->addFeature(i);
         }
     }
