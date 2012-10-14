@@ -60,6 +60,11 @@ load_file (std::string const& filename)
         catch (util::Exception& e) {}
 #endif
 
+        try
+        { return load_ppm_file(filename); }
+        catch (util::FileException& e) { throw; }
+        catch (util::Exception& e) {}
+
         throw util::Exception("Cannot determine image format");
     }
     catch (util::FileException& e)

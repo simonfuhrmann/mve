@@ -33,7 +33,7 @@ UTIL_NAMESPACE_BEGIN
  * currently only 32 bit integer types are supported.
  * http://msdn.microsoft.com/en-us/library/ms686360(v=vs.85).aspx
  *
- * Docs: http://gcc.gnu.org/onlinedocs/gcc/Atomic-Builtins.html
+ * Docs: http://gcc.gnu.org/onlinedocs/gcc-4.4.1/gcc/Atomic-Builtins.html
  */
 template <typename T>
 class Atomic
@@ -53,20 +53,19 @@ public:
     /**
      * Increments the atomic variable only if the value is zero.
      * The call is blocking as long as the variable is not equal to zero.
-     * The blocking is implemented using active waiting.
+     * WARNING: The blocking is implemented using active waiting.
      */
     void mutex_up (void);
+
     /**
      * Decrements the atomic variable only if the value is one.
      * The call is blocking as long as the variable is not equal to one.
-     * The blocking is implemented using active waiting.
+     * WARNING: The blocking is implemented using active waiting.
      */
     void mutex_down (void);
 
     /** Returns the value. */
     T const& operator* (void) const;
-    /** Returns the value (with non-atomic write access). */
-    T& operator* (void);
 };
 
 /* ---------------------------------------------------------------- */
@@ -106,12 +105,7 @@ Atomic<T>::increment (void)
     // "This function is supported only on Itanium-based systems."
     return InterlockedAdd((LONG volatile*)&this->val, 1);
 #else
-    while (true)
-    {
-        T tmp(this->val);
-        if (__sync_bool_compare_and_swap(&this->val, tmp, tmp + 1))
-            return tmp + 1;
-    }
+    return __sync_add_and_fetch(&this->val, 1);
 #endif
 }
 
@@ -122,12 +116,7 @@ Atomic<T>::decrement (void)
 #ifdef _WIN32
     return InterlockedAdd((LONG volatile*)&this->val, -1);
 #else
-    while (true)
-    {
-        T tmp(this->val);
-        if (__sync_bool_compare_and_swap(&this->val, tmp, tmp - 1))
-            return tmp - 1;
-    }
+    return __sync_sub_and_fetch(&this->val, 1);
 #endif
 }
 
@@ -168,13 +157,6 @@ Atomic<T>::mutex_down (void)
 template <typename T>
 inline T const&
 Atomic<T>::operator* (void) const
-{
-    return this->val;
-}
-
-template <typename T>
-inline T&
-Atomic<T>::operator* (void)
 {
     return this->val;
 }
