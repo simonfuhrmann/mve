@@ -380,30 +380,32 @@ load_ply_mesh (std::string const& filename)
 
     for (std::size_t i = 0; i < v_format.size(); ++i)
     {
-        if (v_format[i] == PLY_V_UCHAR_R
-            || v_format[i] == PLY_V_UCHAR_G
-            || v_format[i] == PLY_V_UCHAR_B
-            || v_format[i] == PLY_V_FLOAT_R
-            || v_format[i] == PLY_V_FLOAT_G
-            || v_format[i] == PLY_V_FLOAT_B)
+        switch (v_format[i])
         {
-            want_colors = true;
-        }
+            case PLY_V_UCHAR_R:
+            case PLY_V_UCHAR_G:
+            case PLY_V_UCHAR_B:
+            case PLY_V_FLOAT_R:
+            case PLY_V_FLOAT_G:
+            case PLY_V_FLOAT_B:
+                want_colors = true;
+                break;
 
-        if (v_format[i] == PLY_V_FLOAT_NX
-            || v_format[i] == PLY_V_FLOAT_NY
-            || v_format[i] == PLY_V_FLOAT_NZ)
-        {
-            want_vnormals = true;
-        }
+            case PLY_V_FLOAT_NX:
+            case PLY_V_FLOAT_NY:
+            case PLY_V_FLOAT_NZ:
+                want_vnormals = true;
+                break;
 
-        if (v_format[i] == PLY_V_FLOAT_U
-            || v_format[i] == PLY_V_FLOAT_V)
-        {
-            want_tex_coords = true;
+            case PLY_V_FLOAT_U:
+            case PLY_V_FLOAT_V:
+                want_tex_coords = true;
+                break;
+
+            default:
+                break;
         }
     }
-
 
     /* Start reading the vertex data. */
     std::cout << "Reading PLY: " << num_vertices << " verts..." << std::flush;
