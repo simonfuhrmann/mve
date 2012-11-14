@@ -6,7 +6,6 @@
 #include <cstring>
 #include <cerrno>
 
-#include "util/clocktimer.h"
 #include "util/arguments.h"
 #include "util/tokenizer.h"
 

@@ -8,7 +8,7 @@
 #include <ctime>
 
 #include "defines.h"
-#include "hrtimer.h"
+#include "timer.h"
 #include "system.h"
 
 #define FRAME_TIMER_BUSY_WAITING 0
@@ -32,7 +32,7 @@ private:
     std::size_t max_fps; // Maximum frames per second
     std::size_t frame_count; // Amount of calls to nextFrame
 
-    HRTimer timer; // High-resolution timer
+    WallTimer timer; // High-resolution timer
 
 private:
     std::size_t now (void) const;

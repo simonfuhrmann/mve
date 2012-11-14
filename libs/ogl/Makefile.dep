@@ -1,31 +1,31 @@
 cam2d.o: cam2d.cc ../math/matrixtools.h ../math/defines.h \
- ../math/matrix.h ../math/algo.h ../math/vector.h opengl.h cam2d.h \
- ../math/vector.h defines.h events.h camera.h ../math/matrix.h
+  ../math/matrix.h ../math/algo.h ../math/vector.h opengl.h cam2d.h \
+  defines.h events.h camera.h
 camtrackball.o: camtrackball.cc ../math/matrixtools.h ../math/defines.h \
- ../math/matrix.h ../math/algo.h ../math/vector.h ../math/quaternion.h \
- opengl.h camtrackball.h ../math/vector.h defines.h events.h camera.h \
- ../math/matrix.h
+  ../math/matrix.h ../math/algo.h ../math/vector.h ../math/quaternion.h \
+  opengl.h camtrackball.h defines.h events.h camera.h
 events.o: events.cc defines.h events.h
 meshrenderer.o: meshrenderer.cc opengl.h meshrenderer.h ../util/refptr.h \
- ../util/defines.h ../util/atomic.h ../mve/trianglemesh.h \
- ../math/vector.h ../math/defines.h ../math/algo.h ../mve/defines.h \
- defines.h shaderprogram.h ../math/matrix.h ../math/vector.h \
- vertexarray.h vertexbuffer.h
+  ../util/defines.h ../util/atomic.h ../mve/trianglemesh.h \
+  ../math/vector.h ../math/defines.h ../math/algo.h ../mve/defines.h \
+  defines.h shaderprogram.h ../math/matrix.h vertexarray.h \
+  vertexbuffer.h
 rendertools.o: rendertools.cc ../mve/trianglemesh.h ../math/vector.h \
- ../math/defines.h ../math/algo.h ../util/refptr.h ../util/defines.h \
- ../util/atomic.h ../mve/defines.h meshrenderer.h defines.h opengl.h \
- shaderprogram.h ../math/matrix.h ../math/vector.h vertexarray.h \
- vertexbuffer.h rendertools.h
+  ../math/defines.h ../math/algo.h ../util/refptr.h ../util/defines.h \
+  ../util/atomic.h ../mve/defines.h meshrenderer.h defines.h opengl.h \
+  shaderprogram.h ../math/matrix.h vertexarray.h vertexbuffer.h \
+  rendertools.h
 shaderprogram.o: shaderprogram.cc ../util/exception.h ../util/defines.h \
- ../util/fs.h shaderprogram.h ../util/refptr.h ../util/atomic.h \
- ../math/vector.h ../math/defines.h ../math/algo.h ../math/matrix.h \
- ../math/vector.h defines.h opengl.h
+  ../util/fs.h shaderprogram.h ../util/refptr.h ../util/atomic.h \
+  ../math/vector.h ../math/defines.h ../math/algo.h ../math/matrix.h \
+  defines.h opengl.h
 texture.o: texture.cc texture.h ../util/refptr.h ../util/defines.h \
- ../util/atomic.h ../mve/image.h ../math/algo.h ../math/defines.h \
- ../mve/defines.h ../mve/imagebase.h ../util/string.h defines.h opengl.h
+  ../util/atomic.h ../mve/image.h ../math/algo.h ../math/defines.h \
+  ../mve/defines.h ../mve/imagebase.h ../util/string.h defines.h \
+  opengl.h
 vertexarray.o: vertexarray.cc vertexarray.h ../util/refptr.h \
- ../util/defines.h ../util/atomic.h defines.h opengl.h shaderprogram.h \
- ../math/vector.h ../math/defines.h ../math/algo.h ../math/matrix.h \
- ../math/vector.h vertexbuffer.h
+  ../util/defines.h ../util/atomic.h defines.h opengl.h shaderprogram.h \
+  ../math/vector.h ../math/defines.h ../math/algo.h ../math/matrix.h \
+  vertexbuffer.h
 vertexbuffer.o: vertexbuffer.cc vertexbuffer.h ../util/refptr.h \
- ../util/defines.h ../util/atomic.h defines.h opengl.h
+  ../util/defines.h ../util/atomic.h defines.h opengl.h

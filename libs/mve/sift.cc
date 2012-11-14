@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cerrno>
 
-#include "util/clocktimer.h"
+#include "util/timer.h"
 #include "math/matrix.h"
 #include "math/matrixtools.h"
 

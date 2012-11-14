@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "util/string.h"
-#include "util/clocktimer.h"
+#include "util/timer.h"
 
 #include "image.h"
 #include "imagefile.h"

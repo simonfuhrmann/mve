@@ -3,7 +3,7 @@
 
 #include "util/exception.h"
 #include "util/inifile.h"
-#include "util/hrtimer.h"
+#include "util/timer.h"
 #include "util/fs.h"
 
 #include "scene.h"
@@ -157,7 +157,7 @@ Scene::get_bundle_mem_usage (void)
 void
 Scene::init_views (void)
 {
-    util::HRTimer timer;
+    util::WallTimer timer;
 
     /* Iterate over all mve files and create view. */
     util::fs::Directory dir;

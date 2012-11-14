@@ -2,7 +2,7 @@
 #include <limits>
 
 #include "util/fs.h"
-#include "util/clocktimer.h"
+#include "util/timer.h"
 #include "util/frametimer.h"
 #include "ogl/opengl.h"
 #include "ogl/keysyms.h"

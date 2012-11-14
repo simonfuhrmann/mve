@@ -11,8 +11,7 @@
 #include "string.h"
 #include "tokenizer.h"
 #include "inifile.h"
-#include "clocktimer.h"
-#include "hrtimer.h"
+#include "timer.h"
 #include "frametimer.h"
 #include "arguments.h"
 
@@ -102,7 +101,7 @@ std::cout << x << std::endl;
 
 #if 0
     /* Test timer and sleep. */
-    util::HRTimer hrtimer;
+    util::WallTimer walltimer;
     util::ClockTimer clocktimer;
 
     //for (std::size_t i = 0; i < (1<<25); ++i)
@@ -110,7 +109,7 @@ std::cout << x << std::endl;
     for (std::size_t i = 0; i < (1<<10); ++i)
         util::system::sleep(1);
 
-    std::cout << "Real-time: " << hrtimer.get_elapsed() << "ms" << std::endl;
+    std::cout << "Real-time: " << walltimer.get_elapsed() << "ms" << std::endl;
     std::cout << "CPU time: " << clocktimer.get_elapsed() << "ms" << std::endl;
 
 #endif

@@ -7,8 +7,7 @@
 #include "imagefile.h"
 #include "imageexif.h"
 #include "surf.h"
-#include "util/hrtimer.h"
-#include "util/clocktimer.h"
+#include "util/timer.h"
 #include "util/system.h"
 #include "util/fs.h"
 #include "math/vector.h"
@@ -223,8 +222,8 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-    util::ClockTimer timer;
-    util::HRTimer hrtimer;
+    util::ClockTimer ctimer;
+    util::WallTimer wtimer;
     mve::ByteImage::Ptr img(mve::image::load_file
         //("../../data/testimages/diaz_color.png"));
         //("/tmp/_testnoise.png"));
@@ -232,8 +231,8 @@ main (int argc, char** argv)
 
     img = mve::image::nl_means_filter<uint8_t>(img, 5.0f);
     mve::image::save_file(img, "/tmp/nlmeans_out.png");
-    std::cout << "took " << timer.get_elapsed() << "ms cpu time" << std::endl;
-    std::cout << "took " << hrtimer.get_elapsed() << "ms real time" << std::endl;
+    std::cout << "took " << ctimer.get_elapsed() << "ms cpu time" << std::endl;
+    std::cout << "took " << wtimer.get_elapsed() << "ms real time" << std::endl;
 #endif
 
 #if 0

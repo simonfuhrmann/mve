@@ -3,7 +3,7 @@
 
 #define USE_GNU_READLINE
 #ifdef USE_GNU_READLINE
-#   include <malloc.h>
+#   include <stdlib.h>
 #   include <readline/readline.h>
 #   include <readline/history.h>
 #endif

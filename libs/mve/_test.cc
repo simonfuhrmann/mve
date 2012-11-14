@@ -2,9 +2,8 @@
 #include <iostream>
 
 #include "util/string.h"
-#include "util/clocktimer.h"
+#include "util/timer.h"
 #include "util/system.h"
-
 #include "math/vector.h"
 #include "math/matrix.h"
 
