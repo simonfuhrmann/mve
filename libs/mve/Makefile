@@ -14,7 +14,7 @@ libmve: ${OBJECTS}
 	chmod a+x ${LIBRARY}
 
 test: libmve FORCE
-	${CXX} -o ${TESTBIN} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS} -fopenmp -rdynamic
+	${CXX} -o ${TESTBIN} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}

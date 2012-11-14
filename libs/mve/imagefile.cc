@@ -667,58 +667,64 @@ save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
 FloatImage::Ptr
 load_pfm_file (std::string const& filename)
 {
-    FILE *fp = std::fopen(filename.c_str(), "rb");
-    if (!fp)
+    std::ifstream in(filename.c_str());
+    if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 
-    unsigned int width = 0;
-    unsigned int height = 0;
-    unsigned int channels = 0;
-
     char signature[2];
-    std::fread(signature, 1, 2, fp);
+    in.read(signature, 2);
 
     // check signature and determine channels
-    if (signature[0] == 'P' && signature[1] == 'F')
-        channels = 3;
-    else if (signature[0] == 'P' && signature[1] == 'f')
+    int channels = 0;
+    if (signature[0] == 'P' && signature[1] == 'f')
         channels = 1;
+    else if (signature[0] == 'P' && signature[1] == 'F')
+        channels = 3;
     else
     {
-        std::fclose(fp);
-        throw util::Exception("PFM signature did not match");
+        in.close();
+        throw util::Exception("PPM signature did not match");
     }
 
-    // read width and height
-    std::fscanf(fp, "%u %u", &width, &height);
-    // read scale
-    float scale = 0.0f;
-    std::fscanf(fp, "%f\n", &scale);
+    /* Read width and height as well as max value. */
+    int width = 0;
+    int height = 0;
+    float scale = -1.0;
+    in >> width >> height >> scale;
 
-    // create image
-    FloatImage::Ptr image = FloatImage::create();
-    image->allocate(width, height, channels);
+    /* Read final whitespace character. */
+    char temp;
+    in.read(&temp, 1);
 
-    // fill image with data from file
-    std::fread(image->get_byte_pointer(), 1, image->get_byte_size(), fp);
-    std::fclose(fp);
+    /* Check image width and height. Shouldn't be too large. */
+    if (width * height > PPM_MAX_PIXEL_AMOUNT)
+    {
+        in.close();
+        throw util::Exception("Image too friggin huge");
+    }
 
-    // TODO: scale handling
+    FloatImage::Ptr ret = FloatImage::create(width, height, channels);
+    in.read(ret->get_byte_pointer(), ret->get_byte_size());
+    in.close();
+
+    /* Handle endianess. BE if scale > 0, LE if scale < 0. */
     if (scale < 0.0f)
     {
-        std::transform(image->get_data().begin(), image->get_data().end(),
-        image->get_data().begin(),
-        (float(*)(float const&))util::system::letoh<float>);
-        scale *= -1.0f;
+        std::transform(ret->get_data().begin(), ret->get_data().end(),
+            ret->get_data().begin(),
+            (float(*)(float const&))util::system::letoh<float>);
+        scale = -scale;
     }
     else
     {
-        std::transform(image->get_data().begin(), image->get_data().end(),
-        image->get_data().begin(),
-        (float(*)(float const&))util::system::betoh<float>);
+        std::transform(ret->get_data().begin(), ret->get_data().end(),
+            ret->get_data().begin(),
+            (float(*)(float const&))util::system::betoh<float>);
     }
 
-    return image;
+   // TODO: scale handling
+
+   return ret;
 }
 
 /* ---------------------------------------------------------------- */
@@ -729,31 +735,28 @@ save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
     if (!image.get())
         throw std::invalid_argument("NULL image given");
 
-    FILE *fp = std::fopen(filename.c_str(), "wb");
-    if (!fp)
+    std::string magic_number;
+    if (image->channels() == 1)
+        magic_number = "Pf";
+    else if (image->channels() == 3)
+        magic_number = "PF";
+    else
+        throw std::invalid_argument("Supports 1 and 3 channel images only");
+
+#ifdef HOST_BYTEORDER_LE
+    std::string scale = "-1.0"; // we currently don't support scales
+#else
+    std::string scale = "1.0"; // we currently don't support scales
+#endif
+
+    std::ofstream out(filename.c_str());
+    if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 
-    /* Determine color type to be written. */
-    switch (image->channels())
-    {
-        case 1: std::fprintf(fp, "Pf\n"); break;
-        case 3: std::fprintf(fp, "PF\n"); break;
-        default:
-        {
-            std::fclose(fp);
-            throw util::Exception("Can only handle 1 or 3 channel images");
-        }
-    }
-
-    std::fprintf(fp, "%u %u\n",
-        (unsigned int)image->width(), (unsigned int)image->height());
-#ifdef HOST_BYTEORDER_LE
-    std::fprintf(fp, "-1.000000\n"); // we currently don't support scales
-#else
-    std::fprintf(fp, "1.000000\n"); // we currently don't support scales
-#endif
-    std::fwrite(image->get_byte_pointer(), 1, image->get_byte_size(), fp);
-    std::fclose(fp);
+    out << magic_number << "\n";
+    out << image->width() << " " << image->height() << " " << scale << "\n";
+    out.write(image->get_byte_pointer(), image->get_byte_size());
+    out.close();
 }
 
 /* ---------------------------------------------------------------- */
@@ -771,15 +774,11 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 
-    int width = 0;
-    int height = 0;
-    int channels = 0;
-    int maxval = 0;
-
     char signature[2];
     in.read(signature, 2);
 
     // check signature and determine channels
+    int channels = 0;
     if (signature[0] == 'P' && signature[1] == '5')
         channels = 1;
     else if (signature[0] == 'P' && signature[1] == '6')
@@ -791,6 +790,9 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
     }
 
     /* Read width and height as well as max value. */
+    int width = 0;
+    int height = 0;
+    int maxval = 0;
     in >> width >> height >> maxval;
 
     /* Read final whitespace character. */

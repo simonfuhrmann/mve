@@ -18,6 +18,22 @@ main (int argc, char** argv)
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
 #if 1
+    // Reader and writer for PFM.
+    mve::FloatImage::Ptr img = mve::FloatImage::create(100, 100, 3);
+    for (int i = 0; i < 100 * 100 * 3; ++i)
+      img->at(i) = ::rand() / 1000.0f;
+
+    mve::image::save_pfm_file(img, "/tmp/file.pfm");
+    mve::FloatImage::Ptr check = mve::image::load_pfm_file("/tmp/file.pfm");
+
+    std::cout << "Sizes: " << check->width() << " " << check->height() << " " << check->channels() << std::endl;
+    for (int i = 0; i < 100 * 100 * 3; ++i)
+        if (check->at(i) != img->at(i))
+            std::cout << "Images DO NOT MATCH!" << std::endl;
+    std::cout << "Done!" << std::endl;
+#endif
+
+#if 0
     // 16 bit PPM test.
     mve::RawImage::Ptr img = mve::RawImage::create(3, 1, 3);
 

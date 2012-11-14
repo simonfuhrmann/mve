@@ -610,13 +610,9 @@ load_ply_mesh (std::string const& filename)
 
     /* Close the file stream. */
     input.close();
-
     std::cout << " done." << std::endl;
-
     if (eof)
-    {
-        std::cout << "Premature EOF detected!" << std::endl;
-    }
+        std::cout << "WARNING: Premature EOF detected!" << std::endl;
 
     return mesh;
 }
