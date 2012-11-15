@@ -25,17 +25,15 @@ MVE_GEOM_NAMESPACE_BEGIN
  * underlying representation.
  *
  * The accessor must support the following operations:
- * - Iterating over the tets: bool accessor.next()
+ * - Iterating over the cubes: bool accessor.next()
  * - Accessing the SDF values: accessor.sdf[8]
- * - Accessing the Tet vertex IDs: accessor.vid[8]
- * - Accessint the Tet vertex positions: accessor.pos[8][3]
- *
- * - NEW: Determining color support: bool accessor.has_colors()
- * - NEW: Accessing Tet vertex colors: accessor.color[4][3]
+ * - Accessing the cube vertex IDs: accessor.vid[8]
+ * - Accessint the cube vertex positions: accessor.pos[8][3]
+ * - Determining color support: bool accessor.has_colors()
+ * - Accessing Tet vertex colors: accessor.color[4][3]
  *
  * The first call to next() must initialize the accessor.
  * next() must return false if there is no next element, true otherwise.
- * The accessor is supposed to iterate over valid voxels only.
  */
 template <typename T>
 TriangleMesh::Ptr
