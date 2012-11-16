@@ -25,7 +25,7 @@ SceneContext::SceneContext (void)
     , draw_sfmpoints_cb("Draw SfM points")
     , draw_camfrusta_cb("Draw camera frusta")
     , draw_curfrustum_cb("Draw viewing direction")
-    , draw_mesh_shading_cb("Mesh shading")
+    , draw_mesh_lighting_cb("Mesh lighting")
     , clear_color(0, 0, 0)
     , clear_color_cb("Background color")
     , draw_wireframe_cb("Draw wireframe")
@@ -85,7 +85,7 @@ SceneContext::SceneContext (void)
     /* Create mesh rendering layout. */
     QVBoxLayout* mesh_rendering_layout = new QVBoxLayout();
     mesh_rendering_layout->setSpacing(0);
-    mesh_rendering_layout->addWidget(&this->draw_mesh_shading_cb);
+    mesh_rendering_layout->addWidget(&this->draw_mesh_lighting_cb);
     mesh_rendering_layout->addWidget(&this->draw_wireframe_cb);
     mesh_rendering_layout->addWidget(&this->draw_meshcolor_cb);
 
@@ -168,7 +168,7 @@ SceneContext::SceneContext (void)
     this->draw_camfrusta_cb.setChecked(true);
     this->draw_curfrustum_cb.setChecked(true);
     this->draw_sfmpoints_cb.setChecked(true);
-    this->draw_mesh_shading_cb.setChecked(true);
+    this->draw_mesh_lighting_cb.setChecked(true);
     this->draw_wireframe_cb.setChecked(false);
     this->draw_meshcolor_cb.setChecked(true);
 
@@ -183,7 +183,7 @@ SceneContext::SceneContext (void)
         this, SLOT(update_gl()));
     this->connect(&this->draw_curfrustum_cb, SIGNAL(toggled(bool)),
         this, SLOT(update_gl()));
-    this->connect(&this->draw_mesh_shading_cb, SIGNAL(toggled(bool)),
+    this->connect(&this->draw_mesh_lighting_cb, SIGNAL(toggled(bool)),
         this, SLOT(update_gl()));
     this->connect(&this->draw_wireframe_cb, SIGNAL(toggled(bool)),
         this, SLOT(update_gl()));
@@ -268,12 +268,18 @@ SceneContext::paint_impl (void)
     //glPointSize(4.0f);
     //glLineWidth(2.0f);
 
+    /* Setup wireframe shader. */
     this->wireframe_shader->bind();
     this->wireframe_shader->send_uniform("viewmat", this->camera.view);
     this->wireframe_shader->send_uniform("projmat", this->camera.proj);
+
+    /* Setup surface shader. */
     this->surface_shader->bind();
     this->surface_shader->send_uniform("viewmat", this->camera.view);
     this->surface_shader->send_uniform("projmat", this->camera.proj);
+    this->surface_shader->bind();
+    this->surface_shader->send_uniform("lighting",
+        static_cast<int>(this->draw_mesh_lighting_cb.isChecked()));
 
     /* Draw axis. */
     if (this->draw_worldaxis_cb.isChecked())
@@ -316,6 +322,7 @@ SceneContext::paint_impl (void)
         }
         else
         {
+            // TODO: Make mesh color configurable.
             math::Vec4f default_color(0.7f, 0.7f, 0.7f, 1.0f);
             mesh_shader->send_uniform("ccolor", default_color);
         }
@@ -323,14 +330,11 @@ SceneContext::paint_impl (void)
         /* If we have a valid renderer, draw it. */
         if (mr.renderer.get())
         {
-            if (this->draw_mesh_shading_cb.isChecked())
-            {
-                mr.renderer->set_shader(mesh_shader);
-                glPolygonOffset(1.0f, -1.0f);
-                glEnable(GL_POLYGON_OFFSET_FILL);
-                mr.renderer->draw();
-                glDisable(GL_POLYGON_OFFSET_FILL);
-            }
+            mr.renderer->set_shader(mesh_shader);
+            glPolygonOffset(1.0f, -1.0f);
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            mr.renderer->draw();
+            glDisable(GL_POLYGON_OFFSET_FILL);
 
             if (this->draw_wireframe_cb.isChecked())
             {
