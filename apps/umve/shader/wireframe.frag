@@ -27,4 +27,3 @@ void main(void)
     else
         gl_FragColor = ccolor;
 }
-

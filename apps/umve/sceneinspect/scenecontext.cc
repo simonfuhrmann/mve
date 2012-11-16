@@ -25,7 +25,6 @@ SceneContext::SceneContext (void)
     , draw_sfmpoints_cb("Draw SfM points")
     , draw_camfrusta_cb("Draw camera frusta")
     , draw_curfrustum_cb("Draw viewing direction")
-    , draw_meshes_cb("Draw meshes")
     , draw_mesh_shading_cb("Mesh shading")
     , clear_color(0, 0, 0)
     , clear_color_cb("Background color")
@@ -86,7 +85,6 @@ SceneContext::SceneContext (void)
     /* Create mesh rendering layout. */
     QVBoxLayout* mesh_rendering_layout = new QVBoxLayout();
     mesh_rendering_layout->setSpacing(0);
-    mesh_rendering_layout->addWidget(&this->draw_meshes_cb);
     mesh_rendering_layout->addWidget(&this->draw_mesh_shading_cb);
     mesh_rendering_layout->addWidget(&this->draw_wireframe_cb);
     mesh_rendering_layout->addWidget(&this->draw_meshcolor_cb);
@@ -170,7 +168,6 @@ SceneContext::SceneContext (void)
     this->draw_camfrusta_cb.setChecked(true);
     this->draw_curfrustum_cb.setChecked(true);
     this->draw_sfmpoints_cb.setChecked(true);
-    this->draw_meshes_cb.setChecked(true);
     this->draw_mesh_shading_cb.setChecked(true);
     this->draw_wireframe_cb.setChecked(false);
     this->draw_meshcolor_cb.setChecked(true);
@@ -185,8 +182,6 @@ SceneContext::SceneContext (void)
     this->connect(&this->draw_camfrusta_cb, SIGNAL(toggled(bool)),
         this, SLOT(update_gl()));
     this->connect(&this->draw_curfrustum_cb, SIGNAL(toggled(bool)),
-        this, SLOT(update_gl()));
-    this->connect(&this->draw_meshes_cb, SIGNAL(toggled(bool)),
         this, SLOT(update_gl()));
     this->connect(&this->draw_mesh_shading_cb, SIGNAL(toggled(bool)),
         this, SLOT(update_gl()));
@@ -231,13 +226,13 @@ SceneContext::init_impl (void)
         (util::fs::get_binary_path()) + "/shader/";
 
     this->surface_shader = ogl::ShaderProgram::create();
-    this->surface_shader->load_all(shader_path + "surface");
+    this->surface_shader->load_all(shader_path + "surface_120");
 
     this->wireframe_shader = ogl::ShaderProgram::create();
-    this->wireframe_shader->load_all(shader_path + "wireframe");
+    this->wireframe_shader->load_all(shader_path + "wireframe_120");
 
     this->texture_shader = ogl::ShaderProgram::create();
-    this->texture_shader->load_all(shader_path + "texture");
+    this->texture_shader->load_all(shader_path + "texture_120");
 
     this->axis_renderer = ogl::create_axis_renderer(this->wireframe_shader);
     this->gui_renderer = ogl::create_fullscreen_quad(this->texture_shader);
@@ -289,68 +284,65 @@ SceneContext::paint_impl (void)
     }
 
     /* Draw meshes. */
-    if (this->draw_meshes_cb.isChecked())
+    QMeshList::MeshList& ml(this->meshlist->get_meshes());
+    for (std::size_t i = 0; i < ml.size(); ++i)
     {
-        QMeshList::MeshList& ml(this->meshlist->get_meshes());
-        for (std::size_t i = 0; i < ml.size(); ++i)
+        MeshRep& mr(ml[i]);
+        if (!mr.active || !mr.mesh.get())
+            continue;
+
+        /* If the renderer is not yet created, do it now! */
+        if (!mr.renderer.get())
         {
-            MeshRep& mr(ml[i]);
-            if (!mr.active || !mr.mesh.get())
-                continue;
+            mr.renderer = ogl::MeshRenderer::create(mr.mesh);
+            if (mr.mesh->get_faces().empty())
+                mr.renderer->set_primitive(GL_POINTS);
+        }
 
-            /* If the renderer is not yet created, do it now! */
-            if (!mr.renderer.get())
+        /* Determine shader to use. Use wireframe shader for points
+         * without normals, use surface shader otherwise. */
+        ogl::ShaderProgram::Ptr mesh_shader;
+        if (mr.mesh->get_vertex_normals().empty())
+            mesh_shader = this->wireframe_shader;
+        else
+            mesh_shader = this->surface_shader;
+
+        /* Setup shader to use mesh color or default color. */
+        mesh_shader->bind();
+        if (this->draw_meshcolor_cb.isChecked() && mr.mesh->has_vertex_colors())
+        {
+            math::Vec4f null_color(0.0f);
+            mesh_shader->send_uniform("ccolor", null_color);
+        }
+        else
+        {
+            math::Vec4f default_color(0.7f, 0.7f, 0.7f, 1.0f);
+            mesh_shader->send_uniform("ccolor", default_color);
+        }
+
+        /* If we have a valid renderer, draw it. */
+        if (mr.renderer.get())
+        {
+            if (this->draw_mesh_shading_cb.isChecked())
             {
-                mr.renderer = ogl::MeshRenderer::create(mr.mesh);
-                if (mr.mesh->get_faces().empty())
-                    mr.renderer->set_primitive(GL_POINTS);
+                mr.renderer->set_shader(mesh_shader);
+                glPolygonOffset(1.0f, -1.0f);
+                glEnable(GL_POLYGON_OFFSET_FILL);
+                mr.renderer->draw();
+                glDisable(GL_POLYGON_OFFSET_FILL);
             }
 
-            /* Determine shader to use. Use wireframe shader for points
-             * without normals, use surface shader otherwise. */
-            ogl::ShaderProgram::Ptr mesh_shader;
-            if (mr.mesh->get_vertex_normals().empty())
-                mesh_shader = this->wireframe_shader;
-            else
-                mesh_shader = this->surface_shader;
-
-            /* Setup shader to use mesh color or default color. */
-            mesh_shader->bind();
-            if (this->draw_meshcolor_cb.isChecked() && mr.mesh->has_vertex_colors())
+            if (this->draw_wireframe_cb.isChecked())
             {
-                math::Vec4f null_color(0.0f);
-                mesh_shader->send_uniform("ccolor", null_color);
-            }
-            else
-            {
-                math::Vec4f default_color(0.7f, 0.7f, 0.7f, 1.0f);
-                mesh_shader->send_uniform("ccolor", default_color);
-            }
-
-            /* If we have a valid renderer, draw it. */
-            if (mr.renderer.get())
-            {
-                if (this->draw_mesh_shading_cb.isChecked())
-                {
-                    mr.renderer->set_shader(mesh_shader);
-                    glPolygonOffset(1.0f, -1.0f);
-                    glEnable(GL_POLYGON_OFFSET_FILL);
-                    mr.renderer->draw();
-                    glDisable(GL_POLYGON_OFFSET_FILL);
-                }
-
-                if (this->draw_wireframe_cb.isChecked())
-                {
-                    this->wireframe_shader->bind();
-                    this->wireframe_shader->send_uniform("ccolor",
-                        math::Vec4f(0.0f, 0.0f, 0.0f, 0.5f));
-                    mr.renderer->set_shader(this->wireframe_shader);
-                    glEnable(GL_BLEND);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    mr.renderer->draw();
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                    glDisable(GL_BLEND);
-                }
+                this->wireframe_shader->bind();
+                this->wireframe_shader->send_uniform("ccolor",
+                    math::Vec4f(0.0f, 0.0f, 0.0f, 0.5f));
+                mr.renderer->set_shader(this->wireframe_shader);
+                glEnable(GL_BLEND);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                mr.renderer->draw();
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glDisable(GL_BLEND);
             }
         }
     }

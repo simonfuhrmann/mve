@@ -57,7 +57,6 @@ private:
     QCheckBox draw_sfmpoints_cb;
     QCheckBox draw_camfrusta_cb;
     QCheckBox draw_curfrustum_cb;
-    QCheckBox draw_meshes_cb;
     QCheckBox draw_mesh_shading_cb;
     QColor clear_color;
     QCheckBox clear_color_cb;
