@@ -14,11 +14,11 @@
 #include <vector>
 
 #include "math/vector.h"
+#include "mve/image.h"
 
 #include "defines.h"
-#include "image.h"
 
-MVE_NAMESPACE_BEGIN
+SFM_NAMESPACE_BEGIN
 
 /**
  * Representation of a SIFT octave.
@@ -274,6 +274,6 @@ Sift::get_descriptors (void) const
     return this->descriptors;
 }
 
-MVE_NAMESPACE_END
+SFM_NAMESPACE_END
 
 #endif /* MVE_SIFTLIB_HEADER */

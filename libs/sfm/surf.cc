@@ -1,12 +1,13 @@
 #include <iostream>
 
-#include "image.h"
-#include "imagetools.h"
-#include "imagefile.h" // TMP
+#include "mve/image.h"
+#include "mve/imagetools.h"
+#include "mve/imagefile.h" // TMP
 
+#include "defines.h"
 #include "surf.h"
 
-MVE_NAMESPACE_BEGIN
+SFM_NAMESPACE_BEGIN
 
 /* Kernel sizes (cols) for the octaves (rows). */
 int kernel[4][4] =
@@ -135,9 +136,9 @@ Surf::filter_dxx (int fs, int x, int y)
         return 0;
 
     Surf::SatType ret = 0;
-    ret += image::integral_image_area<SatType>(this->sat, x1, y1, x2-1, y2);
-    ret -= 2 * image::integral_image_area<SatType>(this->sat, x2, y1, x3, y2);
-    ret += image::integral_image_area<SatType>(this->sat, x3+1, y1, x4, y2);
+    ret += mve::image::integral_image_area<SatType>(this->sat, x1, y1, x2-1, y2);
+    ret -= 2 * mve::image::integral_image_area<SatType>(this->sat, x2, y1, x3, y2);
+    ret += mve::image::integral_image_area<SatType>(this->sat, x3+1, y1, x4, y2);
     return ret;
 }
 
@@ -158,9 +159,9 @@ Surf::filter_dyy (int fs, int x, int y)
         return 0;
 
     Surf::SatType ret = 0;
-    ret += image::integral_image_area<SatType>(this->sat, x1, y1, x2, y2-1);
-    ret -= 2 * image::integral_image_area<SatType>(this->sat, x1, y2, x2, y3);
-    ret += image::integral_image_area<SatType>(this->sat, x1, y3+1, x2, y4);
+    ret += mve::image::integral_image_area<SatType>(this->sat, x1, y1, x2, y2-1);
+    ret -= 2 * mve::image::integral_image_area<SatType>(this->sat, x1, y2, x2, y3);
+    ret += mve::image::integral_image_area<SatType>(this->sat, x1, y3+1, x2, y4);
     return ret;
 }
 
@@ -182,10 +183,10 @@ Surf::filter_dxy (int fs, int x, int y)
         return 0;
 
     Surf::SatType ret = 0;
-    ret += image::integral_image_area<SatType>(this->sat, x1, y1, x2, y2);
-    ret -= image::integral_image_area<SatType>(this->sat, x3, y1, x4, y2);
-    ret += image::integral_image_area<SatType>(this->sat, x1, y3, x2, y4);
-    ret -= image::integral_image_area<SatType>(this->sat, x3, y3, x4, y4);
+    ret += mve::image::integral_image_area<SatType>(this->sat, x1, y1, x2, y2);
+    ret -= mve::image::integral_image_area<SatType>(this->sat, x3, y1, x4, y2);
+    ret += mve::image::integral_image_area<SatType>(this->sat, x1, y3, x2, y4);
+    ret -= mve::image::integral_image_area<SatType>(this->sat, x3, y3, x4, y4);
     return ret;
 }
 
@@ -222,4 +223,4 @@ Surf::extrema_detection (SurfOctave::RespImage::Ptr samples[3], int o, int s)
 }
 #endif
 
-MVE_NAMESPACE_END
+SFM_NAMESPACE_END

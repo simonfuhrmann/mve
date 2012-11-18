@@ -6,12 +6,12 @@
 #include "util/timer.h"
 #include "math/matrix.h"
 #include "math/matrixtools.h"
+#include "mve/imagefile.h"
+#include "mve/imagetools.h"
 
-#include "imagefile.h"
-#include "imagetools.h"
 #include "sift.h"
 
-MVE_NAMESPACE_BEGIN
+SFM_NAMESPACE_BEGIN
 
 void
 Sift::process (void)
@@ -960,4 +960,4 @@ Sift::dump_octaves (void)
     }
 }
 
-MVE_NAMESPACE_END
+SFM_NAMESPACE_END

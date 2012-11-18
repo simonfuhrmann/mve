@@ -6,12 +6,12 @@
 #define MVE_SURFLIB_HEADER
 
 #include <vector>
-//#include <cinttypes>
+
+#include "mve/image.h"
 
 #include "defines.h"
-#include "image.h"
 
-MVE_NAMESPACE_BEGIN
+SFM_NAMESPACE_BEGIN
 
 /*
  * Representation of a SURF octave.
@@ -52,7 +52,7 @@ public:
     typedef std::vector<SurfOctave> SurfOctaves;
 
 private:
-    ByteImage::ConstPtr orig;
+    mve::ByteImage::ConstPtr orig;
     SatImage::Ptr sat;
     SurfOctaves octaves;
     SurfKeypoints keypoints;
@@ -70,7 +70,7 @@ public:
     Surf (void);
 
     /** Sets the input image. */
-    void set_image (ByteImage::ConstPtr image);
+    void set_image (mve::ByteImage::ConstPtr image);
 
     /** Starts Surf keypoint detection and descriptor extraction. */
     void process (void);
@@ -88,7 +88,7 @@ Surf::Surf (void)
 }
 
 inline void
-Surf::set_image (ByteImage::ConstPtr image)
+Surf::set_image (mve::ByteImage::ConstPtr image)
 {
     this->orig = image;
 }
@@ -99,6 +99,6 @@ Surf::get_keypoints (void) const
     return this->keypoints;
 }
 
-MVE_NAMESPACE_END
+SFM_NAMESPACE_END
 
 #endif /* MVE_SURFLIB_HEADER */
