@@ -389,7 +389,7 @@ Sift::keypoint_localization (void)
             {
                 ix += dx;
                 iy += dy;
-                continue;
+                continue; // FIXME: Can this cause an infinite loop?
             }
 
             /* Accurate location looks good. */
@@ -417,7 +417,7 @@ Sift::keypoint_localization (void)
         kp.scale = this->keypoint_absolute_scale(kp);
 
         // FIXME: since fx,fy are allowed to be larger than 0.5, kp.x
-        // is NOT a proper rounded versino of kp.ix.
+        // is NOT a proper rounded version of kp.ix.
 
         /*
          * Discard keypoints with:

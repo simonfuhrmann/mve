@@ -7,14 +7,14 @@ TESTSRC := _test.cc
 TESTBIN := test
 
 EXT_INCL := -I..
-EXT_LIBS := -L. -L../util -lmve -lutil -lpng -ljpeg -ltiff
+EXT_LIBS := -L. -L../mve -L../util -lmve -lutil -lpng -ljpeg -ltiff
 
 libsfm: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}
 	chmod a+x ${LIBRARY}
 
 test: libsfm FORCE
-	${CXX} -o ${TESTBIN} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
+	${CXX} -o ${TESTBIN} ${OBJECTS} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}

@@ -1486,12 +1486,12 @@ integral_image_area (typename Image<T>::ConstPtr sat,
     std::size_t wc = w * c; // row stride
 
     T ret = sat->at(y2 * wc + x2 * c + cc); // bottom-right
+    if (x1 > 0 && y1 > 0)
+        ret += sat->at((y1-1) * wc + (x1-1) * c + cc); // top-left
     if (x1 > 0)
         ret -= sat->at(y2 * wc + (x1-1) * c + cc); // bottom-left
     if (y1 > 0)
         ret -= sat->at((y1-1) * wc + x2 * c + cc); // top-right
-    if (x1 > 0 && y1 > 0)
-        ret += sat->at((y1-1) * wc + (x1-1) * c + cc); // top-left
     return ret;
 }
 

@@ -5,6 +5,7 @@
 #ifndef MVE_SURFLIB_HEADER
 #define MVE_SURFLIB_HEADER
 
+#include <sys/types.h>
 #include <vector>
 
 #include "mve/image.h"
@@ -29,10 +30,10 @@ struct SurfOctave
  */
 struct SurfKeypoint
 {
-    int o; ///< Octave index of the keypoint
-    int ix; ///< Initially detected keypoint X coordinate
-    int iy; ///< Initially detected keypoint X coordinate
-    int is; ///< Scale space sample index within octave in {0, 1}
+    int octave; ///< Octave index of the keypoint
+    float sample; ///< Scale space sample index within octave in [0, 3]
+    float x; ///< Detected keypoint X coordinate
+    float y; ///< Detected keypoint X coordinate
 };
 
 /**
@@ -51,39 +52,48 @@ public:
     typedef std::vector<SurfKeypoint> SurfKeypoints;
     typedef std::vector<SurfOctave> SurfOctaves;
 
-private:
-    mve::ByteImage::ConstPtr orig;
-    SatImage::Ptr sat;
-    SurfOctaves octaves;
-    SurfKeypoints keypoints;
-
-private:
-    void create_octaves (void);
-    void extrema_detection (void);
-    void extrema_detection (SurfOctave::RespImage::Ptr* samples, int o, int s);
-    void create_response_map (int o, int k);
-    SatType filter_dxx (int fs, int x, int y);
-    SatType filter_dyy (int fs, int x, int y);
-    SatType filter_dxy (int fs, int x, int y);
-
 public:
     Surf (void);
 
     /** Sets the input image. */
     void set_image (mve::ByteImage::ConstPtr image);
+    /** Sets the hessian threshold, defaults to 10.0. */
+    void set_contrast_threshold (float thres);
 
     /** Starts Surf keypoint detection and descriptor extraction. */
     void process (void);
 
     /** Returns the list of keypoints. */
     SurfKeypoints const& get_keypoints (void) const;
+
+private:
+    void create_octaves (void);
+
+    void create_response_map (int o, int k);
+    SatType filter_dxx (int fs, int x, int y);
+    SatType filter_dyy (int fs, int x, int y);
+    SatType filter_dxy (int fs, int x, int y);
+
+    void extrema_detection (void);
+    void check_maximum (int o, int s, int x, int y);
+
+    void keypoint_localization_and_filtering (void);
+    bool keypoint_localization (SurfKeypoint* kp);
+
+private:
+    mve::ByteImage::ConstPtr orig;
+    float contrast_thres;
+
+    SatImage::Ptr sat;
+    SurfOctaves octaves;
+    SurfKeypoints keypoints;
 };
 
 /* ---------------------------------------------------------------- */
 
 inline
 Surf::Surf (void)
-    // Init
+    : contrast_thres(10.0f)
 {
 }
 
@@ -97,6 +107,12 @@ inline Surf::SurfKeypoints const&
 Surf::get_keypoints (void) const
 {
     return this->keypoints;
+}
+
+inline void
+Surf::set_contrast_threshold (float thres)
+{
+    this->contrast_thres = thres;
 }
 
 SFM_NAMESPACE_END
