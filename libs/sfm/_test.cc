@@ -29,7 +29,7 @@ int main (void)
     {
         sfm::SurfKeypoint const& kp = keypoints[i];
         image->at((int)kp.x, (int)kp.y, 0) = 255;
-        image->at((int)kp.x, (int)kp.y, 1) = (int)(kp.sample * 50.0);
+        image->at((int)kp.x, (int)kp.y, 1) = (int)(kp.octave * 75.0);
         image->at((int)kp.x, (int)kp.y, 2) = 0;
     }
 

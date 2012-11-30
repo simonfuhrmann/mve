@@ -1,5 +1,5 @@
 /*
- * Definitions for the MVE namespace.
+ * Definitions for the "sfm" library.
  */
 
 #ifndef SFM_DEFINES_HEADER
@@ -14,7 +14,6 @@
 #endif
 
 /** Structure-from-Motion library. */
-SFM_NAMESPACE_BEGIN
-SFM_NAMESPACE_END
+SFM_NAMESPACE_BEGIN SFM_NAMESPACE_END
 
 #endif /* MVE_DEFINES_HEADER */
