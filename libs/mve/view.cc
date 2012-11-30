@@ -270,9 +270,9 @@ View::parse_header_line (std::string const& header_line)
         MVEFileProxy p;
         p.is_image = true;
         p.name = tokens[1];
-        p.width = util::string::convert<std::size_t>(tokens[2]);
-        p.height = util::string::convert<std::size_t>(tokens[3]);
-        p.channels = util::string::convert<std::size_t>(tokens[4]);
+        p.width = util::string::convert<int>(tokens[2]);
+        p.height = util::string::convert<int>(tokens[3]);
+        p.channels = util::string::convert<int>(tokens[4]);
         p.datatype = tokens[5];
         int type_size = util::string::size_for_type_string(p.datatype);
         if (!type_size)
@@ -288,7 +288,7 @@ View::parse_header_line (std::string const& header_line)
         MVEFileProxy p;
         p.is_image = false;
         p.name = tokens[1];
-        p.width = util::string::convert<std::size_t>(tokens[2]);
+        p.width = util::string::convert<int>(tokens[2]);
         p.height = 1;
         p.channels = 1;
         p.datatype = "uint8";
@@ -678,7 +678,7 @@ View::get_embedding (std::string const& name)
 bool
 View::remove_embedding (std::string const& name)
 {
-    std::size_t num_erased = 0;
+    int num_erased = 0;
     for (Proxies::iterator iter = this->proxies.begin();
         iter != this->proxies.end();)
     {

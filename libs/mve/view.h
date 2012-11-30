@@ -47,9 +47,9 @@ struct MVEFileProxy
     bool is_dirty; ///< Indicates that embedding has changed
 
     /* Image/data properties as present in file. */
-    std::size_t width; ///< Width of image (or length of data).
-    std::size_t height; ///< Height of image (or 0 for data).
-    std::size_t channels; ///< Channels of image (or 0 for data).
+    int width; ///< Width of image (or length of data).
+    int height; ///< Height of image (or 0 for data).
+    int channels; ///< Channels of image (or 0 for data).
     std::string datatype; ///< String rep. of image datatype.
 
     /* Properties that links the embedding to a storage location. */

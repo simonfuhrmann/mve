@@ -49,9 +49,6 @@ public:
     typedef util::RefPtr<ImageBase> Ptr;
     typedef util::RefPtr<ImageBase const> ConstPtr;
 
-protected:
-    std::size_t w, h, c;
-
 public:
     /** Initializes members with 0. */
     ImageBase (void);
@@ -61,17 +58,17 @@ public:
     virtual ImageBase::Ptr duplicate (void) const;
 
     /** Returns the width of the image. */
-    std::size_t width (void) const;
+    int width (void) const;
     /** Returns the height of the image. */
-    std::size_t height (void) const;
+    int height (void) const;
     /** Returns the amount of channels in the image. */
-    std::size_t channels (void) const;
+    int channels (void) const;
 
     /**
      * Re-interprets the dimensions of the image. This will fail and
      * return false if the total image size does not match the old image.
      */
-    bool reinterpret (std::size_t new_w, std::size_t new_h, std::size_t new_c);
+    bool reinterpret (int new_w, int new_h, int new_c);
 
     /** Returns false if one of width, height or channels is 0. */
     bool valid (void) const;
@@ -86,6 +83,9 @@ public:
     virtual char* get_byte_pointer (void);
     /** Returns a string representation of the image data type. */
     virtual char const* get_type_string (void) const;
+
+protected:
+    int w, h, c;
 };
 
 /* ---------------------------------------------------------------- */
@@ -105,9 +105,6 @@ public:
     typedef util::RefPtr<TypedImageBase<T> const> ConstPtr;
     typedef std::vector<T> ImageData;
 
-protected:
-    ImageData data;
-
 public:
     /** Default ctor creates an empty image. */
     TypedImageBase (void);
@@ -125,7 +122,7 @@ public:
     virtual ImageBase::Ptr duplicate (void) const;
 
     /** Allocates new image space, clearing previous content. */
-    void allocate (std::size_t width, std::size_t height, std::size_t chans);
+    void allocate (int width, int height, int chans);
 
     /**
      * Resizes the underlying image data vector.
@@ -134,7 +131,7 @@ public:
      * still consumes the original amount of memory. Use allocate()
      * instead if the previous data is not important.
      */
-    void resize (std::size_t width, std::size_t height, std::size_t chans);
+    void resize (int width, int height, int chans);
 
     /** Clears the image data from memory. */
     virtual void clear (void);
@@ -174,9 +171,9 @@ public:
     T const* end (void) const;
 
     /** Returns the amount of pixels in the image (w * h). */
-    std::size_t get_pixel_amount (void) const;
+    int get_pixel_amount (void) const;
     /** Returns the amount of values in the image (w * h * c). */
-    std::size_t get_value_amount (void) const;
+    int get_value_amount (void) const;
 
     /** Returns the size of the image in bytes (w * h * c * BPV). */
     std::size_t get_byte_size (void) const;
@@ -189,6 +186,9 @@ public:
 
     // Assignment already works with default operator=
     //TypedImageBase<T>& operator= (TypedImageBase<T> const& other);
+
+protected:
+    ImageData data;
 };
 
 /* ================================================================ */
@@ -210,26 +210,26 @@ ImageBase::duplicate (void) const
     return ImageBase::Ptr(new ImageBase(*this));
 }
 
-inline std::size_t
+inline int
 ImageBase::width (void) const
 {
     return this->w;
 }
 
-inline std::size_t
+inline int
 ImageBase::height (void) const
 {
     return this->h;
 }
 
-inline std::size_t
+inline int
 ImageBase::channels (void) const
 {
     return this->c;
 }
 
 inline bool
-ImageBase::reinterpret (std::size_t new_w, std::size_t new_h, std::size_t new_c)
+ImageBase::reinterpret (int new_w, int new_h, int new_c)
 {
     if (new_w * new_h * new_c != this->w * this->h * this->c)
         return false;
@@ -297,10 +297,7 @@ inline
 TypedImageBase<T>::TypedImageBase (TypedImageBase<O> const& other)
 {
     this->allocate(other.width(), other.height(), other.channels());
-    typename TypedImageBase<O>::ImageData const& odata(other.get_data());
-    //std::transform(odata.begin(), odata.end(), data.begin(), static_cast<T>);
-    for (std::size_t i = 0; i < odata.size(); ++i)
-        this->data[i] = static_cast<T>(odata[i]);
+    std::copy(other.begin(), other.end(), this->begin());
 }
 
 template <typename T>
@@ -402,8 +399,7 @@ TypedImageBase<T>::get_type_string (void) const
 
 template <typename T>
 inline void
-TypedImageBase<T>::allocate (std::size_t width,
-    std::size_t height, std::size_t chans)
+TypedImageBase<T>::allocate (int width, int height, int chans)
 {
     this->clear();
     this->resize(width, height, chans);
@@ -411,8 +407,7 @@ TypedImageBase<T>::allocate (std::size_t width,
 
 template <typename T>
 inline void
-TypedImageBase<T>::resize (std::size_t width,
-    std::size_t height, std::size_t chans)
+TypedImageBase<T>::resize (int width, int height, int chans)
 {
     this->w = width;
     this->h = height;
@@ -504,14 +499,14 @@ TypedImageBase<T>::end (void) const
 }
 
 template <typename T>
-inline std::size_t
-TypedImageBase<T>::get_pixel_amount (void) const
+inline int
+TypedImageBase<T>::get_pixel_amount(void) const
 {
     return this->w * this->h;
 }
 
 template <typename T>
-inline std::size_t
+inline int
 TypedImageBase<T>::get_value_amount (void) const
 {
     return this->data.size();

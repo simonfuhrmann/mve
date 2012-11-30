@@ -835,8 +835,8 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 
-    std::size_t w = depth_map->width();
-    std::size_t h = depth_map->height();
+    int w = depth_map->width();
+    int h = depth_map->height();
     math::Matrix3f invproj;
     camera.fill_inverse_projection(*invproj, w, h);
 
