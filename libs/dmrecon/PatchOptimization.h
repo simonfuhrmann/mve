@@ -28,8 +28,8 @@ public:
     PatchOptimization(
         SingleViewPtrList const& _views,
         Settings const& _settings,
-        std::size_t _x,          // Pixel position
-        std::size_t _y,
+        int _x,          // Pixel position
+        int _y,
         float _depth,
         float _dzI,
         float _dzJ,
@@ -53,8 +53,8 @@ private:
     SingleViewPtrList const& views;
     Settings const& settings;
     // initial values and settings
-    const std::size_t midx;
-    const std::size_t midy;
+    const int midx;
+    const int midy;
 
     float depth;
     float dzI, dzJ;                 // represents patch normal

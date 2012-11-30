@@ -28,15 +28,15 @@ public:
     PatchSampler(
         SingleViewPtrList const& _views,
         Settings const& _settings,
-        std::size_t _x,          // pixel position
-        std::size_t _y,
+        int _x,          // pixel position
+        int _y,
         float _depth,
         float _dzI,
         float _dzJ);
 
     /** Smart pointer PatchSampler constructor. */
     static PatchSampler::Ptr create(SingleViewPtrList const& views,
-        Settings const& settings, std::size_t x, std::size_t _y,
+        Settings const& settings, int x, int _y,
         float _depth, float _dzI, float _dzJ);
 
     /** Draw color samples and derivatives in neighbor view v */
@@ -136,7 +136,7 @@ public:
 
 inline PatchSampler::Ptr
 PatchSampler::create(SingleViewPtrList const& views, Settings const& settings,
-    std::size_t x, std::size_t y, float depth, float dzI, float dzJ)
+    int x, int y, float depth, float dzI, float dzJ)
 {
     return PatchSampler::Ptr(new PatchSampler
         (views, settings, x, y, depth, dzI, dzJ));

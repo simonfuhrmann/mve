@@ -13,8 +13,8 @@ MVS_NAMESPACE_BEGIN
 PatchOptimization::PatchOptimization(
     SingleViewPtrList const& _views,
     Settings const& _settings,
-    std::size_t _x,          // Pixel position
-    std::size_t _y,
+    int _x,          // Pixel position
+    int _y,
     float _depth,
     float _dzI,
     float _dzJ,
@@ -83,7 +83,7 @@ PatchOptimization::computeColorScale()
         Samples const & nCol = sampler->getNeighColorSamples(*id);
         if (!sampler->success[*id])
             return;
-        for (std::size_t c = 0; c < 3; ++c) {
+        for (int c = 0; c < 3; ++c) {
             // for each color channel
             float ab = 0.f;
             float aa = 0.f;

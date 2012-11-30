@@ -11,8 +11,8 @@ MVS_NAMESPACE_BEGIN
 PatchSampler::PatchSampler(
     SingleViewPtrList const& _views,
     Settings const& _settings,
-    std::size_t _x,          // pixel position
-    std::size_t _y,
+    int _x,          // pixel position
+    int _y,
     float _depth,
     float _dzI,
     float _dzJ)
@@ -53,8 +53,7 @@ PatchSampler::PatchSampler(
     std::size_t count = 0;
     for (int j = topLeft[1]; j <= bottomRight[1]; ++j)
         for (int i = topLeft[0]; i <= bottomRight[0]; ++i)
-            masterViewDirs[count++] = refV->viewRay
-                (std::size_t(i), std::size_t(j));
+            masterViewDirs[count++] = refV->viewRay(i, j);
 
     /* initialize master color samples and 3d patch points */
     success[settings.refViewNr] = true;
@@ -102,8 +101,8 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
 
     /* request according undistorted color image */
     util::RefPtr<mve::ImageBase> img(views[v]->getPyramidImg(mmLevel));
-    std::size_t w = img->width();
-    std::size_t h = img->height();
+    int w = img->width();
+    int h = img->height();
 
     /* compute image position and gradient direction for each sample
        point in neighbor image v */
@@ -209,7 +208,7 @@ PatchSampler::getSAD(std::size_t v, math::Vec3f const& cs)
 
     float sum = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i) {
-        for (std::size_t c = 0; c < 3; ++c) {
+        for (int c = 0; c < 3; ++c) {
             sum += fabs(cs[c] * neighColorSamples[v][i][c] -
                 masterColorSamples[i][c]);
         }
@@ -227,7 +226,7 @@ PatchSampler::getSSD(std::size_t v, math::Vec3f const& cs)
 
     float sum = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i) {
-        for (std::size_t c = 0; c < 3; ++c) {
+        for (int c = 0; c < 3; ++c) {
             float diff = cs[c] * neighColorSamples[v][i][c] -
                 masterColorSamples[i][c];
             sum += diff * diff;
@@ -366,8 +365,8 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
     }
     mmLevel = std::min(views[v]->getMaxLevel(), mmLevel);
     util::RefPtr<mve::ImageBase> img(views[v]->getPyramidImg(mmLevel));
-    std::size_t w = img->width();
-    std::size_t h = img->height();
+    int w = img->width();
+    int h = img->height();
 
     color.resize(nrSamples);
     imgPos.resize(nrSamples);

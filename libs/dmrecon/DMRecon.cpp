@@ -133,7 +133,7 @@ void DMRecon::start()
 
     // Output percentage of filled pixels
     {
-        std::size_t nrPix = this->width * this->height;
+        int nrPix = this->width * this->height;
         float percent = (float) progress.filled / (float) nrPix;
         std::cout << "Filled " << progress.filled << " pixels, i.e. "
                   << util::string::get_fixed(percent * 100.f, 1)
@@ -241,8 +241,8 @@ void DMRecon::processFeatures()
             continue;
         }
         math::Vec2f pixPosF = refV->worldToScreen(featPos);
-        std::size_t x = round(pixPosF[0]);
-        std::size_t y = round(pixPosF[1]);
+        int x = round(pixPosF[0]);
+        int y = round(pixPosF[1]);
         float initDepth = (featPos - refV->camPos).norm();
         PatchOptimization patch(views, settings, x, y, initDepth,
             0.f, 0.f, neighViews, IndexSet());
@@ -328,7 +328,7 @@ DMRecon::processQueue()
         ++count;
         float x = tmpData.x;
         float y = tmpData.y;
-        std::size_t index = y * this->width + x;
+        int index = y * this->width + x;
         if (refV->confImg->at(index) > tmpData.confidence) {
             continue ;
         }
