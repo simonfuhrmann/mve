@@ -3,11 +3,17 @@ include ../../Makefile.inc
 SOURCES := $(wildcard [^_]*.cc)
 OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 LIBRARY := libmve.a
-TESTSRC := _test_image.cc
-TESTBIN := test
 
 EXT_INCL := -I..
 EXT_LIBS := -L. -L../util -lmve -lutil -lpng -ljpeg -ltiff
+
+TEST_SRC := _test.cc
+TEST_BIN := test
+
+GTEST_SRCS := $(wildcard _gtest_*.cc)
+GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
+GTEST_INCL := -I${GTEST_PATH}/include
+GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main
 
 libmve: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}
@@ -15,6 +21,12 @@ libmve: ${OBJECTS}
 
 test: libmve FORCE
 	${CXX} -o ${TESTBIN} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
+
+gtest: ${GTEST_OBJS}
+	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
+
+_gtest_%.o: _gtest_%.cc
+	${CXX} -c -o $@ $< ${GTEST_INCL} ${EXT_INCL}
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}

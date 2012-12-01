@@ -209,7 +209,7 @@ Surf::extrema_detection (void)
 
 /* ---------------------------------------------------------------- */
 
-#if 0
+#if 1
 void
 Surf::extrema_detection (SurfOctave::RespImage::Ptr samples[3], int o, int s)
 {

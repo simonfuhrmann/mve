@@ -1,5 +1,5 @@
 /*
- * Light-weight image class for arbitrary size and value types.
+ * Light-weight image data structure for arbitrary size and value types.
  * Written by Simon Fuhrmann.
  */
 
@@ -27,11 +27,7 @@ typedef Image<int> IntImage;
 
 /**
  * Multi-channel image class of arbitrary but homogenous data type.
- * Although this class is heavily used in the View class, it can be used as
- * stand-alone class for image loading, storing and processing.
- *
- * Image data is stored in interleaved order, i.e. "RGBRGB..."
- * instead of planar order "RR..GG..BB..".
+ * Image data is interleaved, i.e. "RGBRGB...", not planar "RR..GG..BB..".
  */
 template <typename T>
 class Image : public TypedImageBase<T>
@@ -40,6 +36,7 @@ public:
     typedef util::RefPtr<Image<T> > Ptr;
     typedef util::RefPtr<Image<T> const> ConstPtr;
     typedef std::vector<T> ImageData;
+    typedef T ValueType;
 
 public:
     /** Default ctor creates an empty image. */
@@ -168,7 +165,7 @@ Image<T>::add_channels (int num_channels, T const& value)
     this->resize(this->width(), this->height(),
         this->channels() + num_channels);
 
-    int src_ptr = this->get_value_amount();
+    int src_ptr = this->width() * this->height() * old_chans;
     int dest_ptr = this->get_value_amount();
 
     while (dest_ptr > 0)
@@ -191,6 +188,8 @@ template <typename T>
 inline void
 Image<T>::swap_channels (int c1, int c2)
 {
+    if (c1 == c2 || c1 >= this->channels() || c2 >= this->channels())
+        return;
     for (int i = 0; i < this->get_value_amount(); i += this->channels())
         std::swap(this->data[i + c1], this->data[i + c2]);
 }
@@ -216,7 +215,7 @@ template <typename T>
 /*inline*/ void
 Image<T>::delete_channel (int chan)
 {
-    if (chan >= this->channels())
+    if (chan < 0 || chan >= this->channels())
         return;
 
     int dest_ptr = 0;
@@ -341,65 +340,61 @@ template <typename T>
 T
 Image<T>::linear_at (float x, float y, int channel) const
 {
-    x = std::max(0.0f, std::min((float)(this->w - 1), x));
-    y = std::max(0.0f, std::min((float)(this->h - 1), y));
-    int x1 = static_cast<int>(std::floor(x));
-    int x2 = static_cast<int>(std::ceil(x));
-    int y1 = static_cast<int>(std::floor(y));
-    int y2 = static_cast<int>(std::ceil(y));
-    float wx2 = x - std::floor(x);
-    float wx1 = 1.0f - wx2;
-    float wy2 = y - std::floor(y);
-    float wy1 = 1.0f - wy2;
-    int row1 = y1 * this->w * this->c;
-    int row2 = y2 * this->w * this->c;
-    return math::algo::interpolate<T>(at(row1 + x1 * this->c + channel),
-        at(row1 + x2 * this->c + channel),
-        at(row2 + x1 * this->c + channel),
-        at(row2 + x2 * this->c + channel),
-        wx1 * wy1, wx2 * wy1, wx1 * wy2, wx2 * wy2);
+    x = std::max(0.0f, std::min(static_cast<float>(this->w - 1), x));
+    y = std::max(0.0f, std::min(static_cast<float>(this->h - 1), y));
+
+    const int floor_x = static_cast<int>(x);
+    const int floor_y = static_cast<int>(y);
+    const int floor_xp1 = std::min(floor_x + 1, this->w - 1);
+    const int floor_yp1 = std::min(floor_y + 1, this->h - 1);
+
+    const float w1 = x - static_cast<float>(floor_x);
+    const float w0 = 1.0f - w1;
+    const float w3 = y - static_cast<float>(floor_y);
+    const float w2 = 1.0f - w3;
+
+    const int rowstride = this->w * this->c;
+    const int row1 = floor_y * rowstride;
+    const int row2 = floor_yp1 * rowstride;
+    const int col1 = floor_x * this->c;
+    const int col2 = floor_xp1 * this->c;
+
+    return math::algo::interpolate<T>
+        (this->at(row1 + col1 + channel), this->at(row1 + col2 + channel),
+        this->at(row2 + col1 + channel), this->at(row2 + col2 + channel),
+        w0 * w2, w1 * w2, w0 * w3, w1 * w3);
 }
 
 template <typename T>
 void
 Image<T>::linear_at (float x, float y, T* px) const
 {
-    /* Determine the four pixels and weights. */
-    int pos[4];
-    float w[4];
-    {
-        x = std::max(0.0f, std::min((float)(this->w - 1), x));
-        y = std::max(0.0f, std::min((float)(this->h - 1), y));
+    x = std::max(0.0f, std::min(static_cast<float>(this->w - 1), x));
+    y = std::max(0.0f, std::min(static_cast<float>(this->h - 1), y));
 
-        int floor_x = static_cast<int>(x);
-        int floor_y = static_cast<int>(y);
-        int floor_xp1 = std::min(floor_x + 1, this->w - 1);
-        int floor_yp1 = std::min(floor_y + 1, this->h - 1);
+    const int floor_x = static_cast<int>(x);
+    const int floor_y = static_cast<int>(y);
+    const int floor_xp1 = std::min(floor_x + 1, this->w - 1);
+    const int floor_yp1 = std::min(floor_y + 1, this->h - 1);
 
-        w[1] = x - static_cast<float>(floor_x);
-        w[0] = 1.0f - w[1];
-        w[3] = y - static_cast<float>(floor_y);
-        w[2] = 1.0f - w[3];
+    const float w1 = x - static_cast<float>(floor_x);
+    const float w0 = 1.0f - w1;
+    const float w3 = y - static_cast<float>(floor_y);
+    const float w2 = 1.0f - w3;
 
-        int rowstride(this->w * this->c);
-        int row1 = floor_y * rowstride;
-        int row2 = floor_yp1 * rowstride;
-        int col1 = floor_x * this->c;
-        int col2 = floor_xp1 * this->c;
+    const int rowstride = this->w * this->c;
+    const int row1 = floor_y * rowstride;
+    const int row2 = floor_yp1 * rowstride;
+    const int col1 = floor_x * this->c;
+    const int col2 = floor_xp1 * this->c;
 
-        pos[0] = row1 + col1;
-        pos[1] = row1 + col2;
-        pos[2] = row2 + col1;
-        pos[3] = row2 + col2;
-    }
-
-    /* Copy interpolated value to output buffer. */
+    /* Copy interpolated channel values to output buffer. */
     for (int cc = 0; cc < this->c; ++cc)
     {
         px[cc] = math::algo::interpolate<T>
-            (this->at(pos[0] + cc), this->at(pos[1] + cc),
-            this->at(pos[2] + cc), this->at(pos[3] + cc),
-            w[0] * w[2], w[1] * w[2], w[0] * w[3], w[1] * w[3]);
+            (this->at(row1 + col1 + cc), this->at(row1 + col2 + cc),
+            this->at(row2 + col1 + cc), this->at(row2 + col2 + cc),
+            w0 * w2, w1 * w2, w0 * w3, w1 * w3);
     }
 }
 

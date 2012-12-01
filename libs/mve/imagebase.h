@@ -64,23 +64,23 @@ public:
     /** Returns the amount of channels in the image. */
     int channels (void) const;
 
+    /** Returns false if one of width, height or channels is 0. */
+    bool valid (void) const;
+
     /**
      * Re-interprets the dimensions of the image. This will fail and
      * return false if the total image size does not match the old image.
      */
     bool reinterpret (int new_w, int new_h, int new_c);
 
-    /** Returns false if one of width, height or channels is 0. */
-    bool valid (void) const;
-
-    /** Value type information. Returns UNKNOWN if not overwritten. */
-    virtual ImageType get_type (void) const;
     /** Generic byte size information. Returns 0 if not overwritten. */
     virtual std::size_t get_byte_size (void) const;
     /** Pointer to image data. Returns 0 if not overwritten. */
     virtual char const* get_byte_pointer (void) const;
     /** Pointer to image data. Returns 0 if not overwritten. */
     virtual char* get_byte_pointer (void);
+    /** Value type information. Returns UNKNOWN if not overwritten. */
+    virtual ImageType get_type (void) const;
     /** Returns a string representation of the image data type. */
     virtual char const* get_type_string (void) const;
 
@@ -126,9 +126,9 @@ public:
 
     /**
      * Resizes the underlying image data vector.
-     * Note that this leaves the remaining image data unchanged.
+     * Note: This leaves the existing/remaining image data unchanged.
      * Warning: If the image is shrunk, the data vector is resized but
-     * still consumes the original amount of memory. Use allocate()
+     * may still consume the original amount of memory. Use allocate()
      * instead if the previous data is not important.
      */
     void resize (int width, int height, int chans);
@@ -138,10 +138,6 @@ public:
 
     /** Fills the data with a constant value. */
     void fill (T const& value);
-
-    /** TODO Fills the data with constant value per channel. */
-    // Better place in mve::Image because knows about image structure?
-    //void fill (T const* values);
 
     /** Swaps the contents of the images. */
     void swap (TypedImageBase<T>& other);
@@ -229,6 +225,12 @@ ImageBase::channels (void) const
 }
 
 inline bool
+ImageBase::valid (void) const
+{
+    return this->w && this->h && this->c;
+}
+
+inline bool
 ImageBase::reinterpret (int new_w, int new_h, int new_c)
 {
     if (new_w * new_h * new_c != this->w * this->h * this->c)
@@ -238,18 +240,6 @@ ImageBase::reinterpret (int new_w, int new_h, int new_c)
     this->h = new_h;
     this->c = new_c;
     return true;
-}
-
-inline bool
-ImageBase::valid (void) const
-{
-    return this->w && this->h && this->c;
-}
-
-inline ImageType
-ImageBase::get_type (void) const
-{
-    return IMAGE_TYPE_UNKNOWN;
 }
 
 inline std::size_t
@@ -268,6 +258,12 @@ inline char*
 ImageBase::get_byte_pointer (void)
 {
     return 0;
+}
+
+inline ImageType
+ImageBase::get_type (void) const
+{
+    return IMAGE_TYPE_UNKNOWN;
 }
 
 inline char const*
