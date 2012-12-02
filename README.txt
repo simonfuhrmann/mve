@@ -44,7 +44,7 @@ typing "make" in the corresponding directory of the application. For
 some applications, "qmake" is used as build system. In these cases, such as
 for UMVE, type "qmake" followed by "make" to build the application.
 
-Requirements to compile and run MVE or UVME are:
+Requirements to compile and run MVE / UVME are:
 
     - libjpeg (for MVE, http://www.ijg.org/)
     - libpng (for MVE, http://www.libpng.org/pub/png/libpng.html)
@@ -108,17 +108,21 @@ Hacking MVE
 
 Just a few notes on developing MVE itself.
 
-Developing library functionality is typically done by creating or using an
-already existing test file in order to execute and test the new
-functionality. Test files have an underscore ("_") as first character in
-the file name. Due to Makefile rules, these files are not build and linked
-when compiling the libraries. A call to "make test" will build one of these
-files (configure this in the Makefile).
+HACKING. Developing library functionality is done by adding a new app to
+the "apps/" directory (copy and edit a Makefile!), or in the "_test.cc"
+file in one of the library directories ("make test" to build it). Due to
+Makefile rules, files that start with an underscore ("_") are not build and
+linked into the library.
 
-You are welcome to send in contributions to MVE that add new functionality
-or fix bugs. Note that only contributions that meet the quality standards of
-the libraries are likely to go into the official code base.
+TESTING. Unit tests are performed with googletest; it can be obtained from:
+http://code.google.com/p/googletest/
+In order to build and execute MVE unit tests, export GTEST_PATH to the path
+of your local googletest copy, then: 1. cd $GTEST_PATH/make, 2. make,
+3. rename "gtest_main.a" to "libgtest_main.a", 4. "make gtest" in MVE.
 
+CONTRIBUTING. You are welcome to send in contributions to MVE that add new
+functionality or fix bugs. Note that only contributions that meet the quality
+standards of the libraries are likely to go into the official code base.
 All contributions will be published under the same license as MVE (see
 COPYING.txt for further details), and contributed code is up to future
 changes in licensing or licensing to third parties on an individual basis.
