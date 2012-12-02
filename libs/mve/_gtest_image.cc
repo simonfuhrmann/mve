@@ -143,10 +143,10 @@ TEST(ImageTest, ImageAccess)
     img.at(2) = 23; // (1,0,0);
     img.at(5) = 33; // (0,1,1);
 
-    ASSERT_EQ(23, img.at(1, 0));  // TODO: Not a huge fan of this accessor! Delete?
-    ASSERT_EQ(23, img.at(1, 0, 0));
-    ASSERT_EQ(33, img.at(2, 1));
-    ASSERT_EQ(33, img.at(0, 1, 1));
+    EXPECT_EQ(23, img.at(1, 0));  // TODO: Not a huge fan of this accessor! Delete?
+    EXPECT_EQ(23, img.at(1, 0, 0));
+    EXPECT_EQ(33, img.at(2, 1));
+    EXPECT_EQ(33, img.at(0, 1, 1));
 }
 
 TEST(ImageTest, ImageAddChannels)
@@ -158,30 +158,66 @@ TEST(ImageTest, ImageAddChannels)
     img.allocate(1, 1, 1);
     img.at(0) = 23;
     img.add_channels(1, 13);
-    ASSERT_EQ(23, img.at(0));
-    ASSERT_EQ(13, img.at(1));
+    EXPECT_EQ(23, img.at(0));
+    EXPECT_EQ(13, img.at(1));
 
     // Two pixel, actual move required.
     img.allocate(2, 1, 1);
     img.at(0) = 23;
     img.at(1) = 33;
     img.add_channels(1, 43);
-    ASSERT_EQ(23, img.at(0));
-    ASSERT_EQ(43, img.at(1));
-    ASSERT_EQ(33, img.at(2));
-    ASSERT_EQ(43, img.at(3));
+    EXPECT_EQ(23, img.at(0));
+    EXPECT_EQ(43, img.at(1));
+    EXPECT_EQ(33, img.at(2));
+    EXPECT_EQ(43, img.at(3));
 
     // Move with two new channels.
     img.allocate(2, 1, 1);
     img.at(0) = 23;
     img.at(1) = 33;
     img.add_channels(2, 43);
-    ASSERT_EQ(23, img.at(0));
-    ASSERT_EQ(43, img.at(1));
-    ASSERT_EQ(43, img.at(2));
-    ASSERT_EQ(33, img.at(3));
-    ASSERT_EQ(43, img.at(4));
-    ASSERT_EQ(43, img.at(5));
+    EXPECT_EQ(23, img.at(0));
+    EXPECT_EQ(43, img.at(1));
+    EXPECT_EQ(43, img.at(2));
+    EXPECT_EQ(33, img.at(3));
+    EXPECT_EQ(43, img.at(4));
+    EXPECT_EQ(43, img.at(5));
+}
+
+TEST(ImageTest, ImageCopyChannel)
+{
+    /* One pixel, simple test. */
+    mve::IntImage img;
+    img.allocate(1, 1, 2);
+    img.at(0) = 23;
+    img.at(1) = 33;
+    img.copy_channel(0, 1);
+    EXPECT_EQ(2, img.channels());
+    EXPECT_EQ(23, img.at(0));
+    EXPECT_EQ(23, img.at(1));
+
+    /* One pixel, copy and add channel. */
+    img.allocate(1, 1, 2);
+    img.at(0) = 23;
+    img.at(1) = 33;
+    img.copy_channel(0, -1);
+    EXPECT_EQ(3, img.channels());
+    EXPECT_EQ(23, img.at(0));
+    EXPECT_EQ(33, img.at(1));
+    EXPECT_EQ(23, img.at(2));
+
+
+    /* Test with two pixel */
+    img.allocate(2, 1, 2);
+    img.at(0) = 23;
+    img.at(1) = 24;
+    img.at(2) = 25;
+    img.at(3) = 26;
+    img.copy_channel(0, 1);
+    EXPECT_EQ(23, img.at(0));
+    EXPECT_EQ(23, img.at(1));
+    EXPECT_EQ(25, img.at(2));
+    EXPECT_EQ(25, img.at(3));
 }
 
 TEST(ImageTest, ImageSwapChannels)
@@ -192,8 +228,8 @@ TEST(ImageTest, ImageSwapChannels)
     img.at(0) = 23;
     img.at(1) = 33;
     img.swap_channels(0, 1);
-    ASSERT_EQ(33, img.at(0));
-    ASSERT_EQ(23, img.at(1));
+    EXPECT_EQ(33, img.at(0));
+    EXPECT_EQ(23, img.at(1));
 
     /* Test with two pixel */
     img.allocate(2, 1, 2);
@@ -202,10 +238,10 @@ TEST(ImageTest, ImageSwapChannels)
     img.at(2) = 25;
     img.at(3) = 26;
     img.swap_channels(0, 1);
-    ASSERT_EQ(24, img.at(0));
-    ASSERT_EQ(23, img.at(1));
-    ASSERT_EQ(26, img.at(2));
-    ASSERT_EQ(25, img.at(3));
+    EXPECT_EQ(24, img.at(0));
+    EXPECT_EQ(23, img.at(1));
+    EXPECT_EQ(26, img.at(2));
+    EXPECT_EQ(25, img.at(3));
 }
 
 TEST(ImageTest, ImgaeDeleteChannel)
@@ -216,19 +252,19 @@ TEST(ImageTest, ImgaeDeleteChannel)
     img.at(0) = 23;
     img.at(1) = 33;
     img.delete_channel(1);
-    ASSERT_EQ(1, img.width());
-    ASSERT_EQ(1, img.height());
-    ASSERT_EQ(1, img.channels());
-    ASSERT_EQ(23, img.at(0));
+    EXPECT_EQ(1, img.width());
+    EXPECT_EQ(1, img.height());
+    EXPECT_EQ(1, img.channels());
+    EXPECT_EQ(23, img.at(0));
 
     img.allocate(1, 1, 2);
     img.at(0) = 23;
     img.at(1) = 33;
     img.delete_channel(0);
-    ASSERT_EQ(1, img.width());
-    ASSERT_EQ(1, img.height());
-    ASSERT_EQ(1, img.channels());
-    ASSERT_EQ(33, img.at(0));
+    EXPECT_EQ(1, img.width());
+    EXPECT_EQ(1, img.height());
+    EXPECT_EQ(1, img.channels());
+    EXPECT_EQ(33, img.at(0));
 
     /* Two pixel, move required. */
     img.allocate(1, 2, 2);
@@ -238,11 +274,11 @@ TEST(ImageTest, ImgaeDeleteChannel)
     img.at(3) = 26;
 
     img.delete_channel(1);
-    ASSERT_EQ(1, img.width());
-    ASSERT_EQ(2, img.height());
-    ASSERT_EQ(1, img.channels());
-    ASSERT_EQ(23, img.at(0));
-    ASSERT_EQ(25, img.at(1));
+    EXPECT_EQ(1, img.width());
+    EXPECT_EQ(2, img.height());
+    EXPECT_EQ(1, img.channels());
+    EXPECT_EQ(23, img.at(0));
+    EXPECT_EQ(25, img.at(1));
 }
 
 TEST(ImageTest, ImageLinearAccess)
@@ -253,16 +289,16 @@ TEST(ImageTest, ImageLinearAccess)
         img.at(i) = static_cast<float>(i);
 
     // Linear access with single channel. Remove this on?
-    ASSERT_EQ(0.0f, img.linear_at(0.0f, 0.0f, 0));
-    ASSERT_EQ(1.0f, img.linear_at(0.0f, 0.0f, 1));
-    ASSERT_EQ(2.0f, img.linear_at(1.0f, 0.0f, 0));
-    ASSERT_EQ(3.0f, img.linear_at(0.5f, 0.5, 0));
+    EXPECT_EQ(0.0f, img.linear_at(0.0f, 0.0f, 0));
+    EXPECT_EQ(1.0f, img.linear_at(0.0f, 0.0f, 1));
+    EXPECT_EQ(2.0f, img.linear_at(1.0f, 0.0f, 0));
+    EXPECT_EQ(3.0f, img.linear_at(0.5f, 0.5, 0));
 
     float px[2];
     img.linear_at(0.0f, 1.0f, px);
-    ASSERT_EQ(4.0f, px[0]);
-    ASSERT_EQ(5.0f, px[1]);
+    EXPECT_EQ(4.0f, px[0]);
+    EXPECT_EQ(5.0f, px[1]);
     img.linear_at(0.25f, 0.25f, px);
-    ASSERT_EQ(1.5f, px[0]);
-    ASSERT_EQ(2.5f, px[1]);
+    EXPECT_EQ(1.5f, px[0]);
+    EXPECT_EQ(2.5f, px[1]);
 }
