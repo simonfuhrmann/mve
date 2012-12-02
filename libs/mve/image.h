@@ -158,57 +158,58 @@ template <typename T>
 /*inline*/ void
 Image<T>::add_channels (int num_channels, T const& value)
 {
-    if (num_channels <= 0)
+    if (num_channels <= 0 || !this->valid())
         return;
 
-    int old_chans = this->channels();
-    this->resize(this->width(), this->height(),
-        this->channels() + num_channels);
-
-    int src_ptr = this->width() * this->height() * old_chans;
-    int dest_ptr = this->get_value_amount();
-
-    while (dest_ptr > 0)
+    std::vector<T> tmp(this->w * this->h * (this->c + num_channels));
+    typename std::vector<T>::iterator dest_ptr = tmp.end();
+    typename std::vector<T>::const_iterator src_ptr = this->data.end();
+    const int pixels = this->get_pixel_amount();
+    for (int p = 0; p < pixels; ++p)
     {
         for (int i = 0; i < num_channels; ++i)
-        {
-            dest_ptr -= 1;
-            this->at(dest_ptr) = value;
-        }
-        for (int i = 0; i < old_chans; ++i)
-        {
-            dest_ptr -= 1;
-            src_ptr -= 1;
-            this->at(dest_ptr) = this->at(src_ptr);
-        }
+            *(--dest_ptr) = value;
+        for (int i = 0; i < this->c; ++i)
+            *(--dest_ptr) = *(--src_ptr);
     }
+
+    this->c += num_channels;
+    std::swap(this->data, tmp);
 }
 
 template <typename T>
 inline void
 Image<T>::swap_channels (int c1, int c2)
 {
-    if (c1 == c2 || c1 >= this->channels() || c2 >= this->channels())
+    if (!this->valid() || c1 == c2
+        || c1 >= this->channels() || c2 >= this->channels())
         return;
-    for (int i = 0; i < this->get_value_amount(); i += this->channels())
-        std::swap(this->data[i + c1], this->data[i + c2]);
+
+    typename std::vector<T>::iterator iter1 = this->data.begin() + c1;
+    typename std::vector<T>::iterator iter2 = this->data.begin() + c2;
+    int pixels = this->get_pixel_amount();
+    for (int i = 0; i < pixels; ++i, iter1 += this->c, iter2 += this->c)
+        std::swap(*iter1, *iter2);
 }
 
 template <typename T>
 /*inline*/ void
 Image<T>::copy_channel (int src, int dest)
 {
-    if (src == dest)
+    if (!this->valid() || src == dest)
         return;
 
-    if (dest == -1)
+    if (dest < 0)
     {
         dest = this->channels();
         this->add_channels(1);
     }
 
-    for (int i = 0; i < this->get_value_amount(); i += this->channels())
-        this->data[i + dest] = this->data[i + src];
+    typename std::vector<T>::iterator src_iter = this->data.begin() + src;
+    typename std::vector<T>::iterator dst_iter = this->data.begin() + dest;
+    int pixels = this->get_pixel_amount();
+    for (int i = 0; i < pixels; ++i, src_iter += this->c, dst_iter += this->c)
+        *dst_iter = *src_iter;
 }
 
 template <typename T>
@@ -218,18 +219,14 @@ Image<T>::delete_channel (int chan)
     if (chan < 0 || chan >= this->channels())
         return;
 
-    int dest_ptr = 0;
-    int src_ptr = 0;
-    while (src_ptr < this->get_value_amount())
+    typename std::vector<T>::iterator src_iter = this->data.begin();
+    typename std::vector<T>::iterator dst_iter = this->data.begin();
+    for (int i = 0; src_iter != this->data.end(); ++i)
     {
-        if (src_ptr % this->channels() == chan)
-            src_ptr += 1;
+        if (i % this->c == chan)
+            src_iter++;
         else
-        {
-            this->at(dest_ptr) = this->at(src_ptr);
-            src_ptr += 1;
-            dest_ptr += 1;
-        }
+            *(dst_iter++) = *(src_iter++);
     }
     this->resize(this->width(), this->height(), this->channels() - 1);
 }

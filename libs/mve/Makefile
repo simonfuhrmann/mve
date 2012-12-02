@@ -8,7 +8,7 @@ EXT_INCL := -I..
 EXT_LIBS := -L. -L../util -lmve -lutil -lpng -ljpeg -ltiff
 
 TEST_SRC := _test.cc
-TEST_BIN := test
+TEST_BIN := _test
 
 GTEST_SRCS := $(wildcard _gtest_*.cc)
 GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
@@ -20,7 +20,7 @@ libmve: ${OBJECTS}
 	chmod a+x ${LIBRARY}
 
 test: libmve FORCE
-	${CXX} -o ${TESTBIN} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
+	${CXX} -o ${TEST_BIN} ${TEST_SRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
 
 gtest: ${GTEST_OBJS}
 	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
