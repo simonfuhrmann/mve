@@ -178,7 +178,7 @@ Image<T>::add_channels (int num_channels, T const& value)
 }
 
 template <typename T>
-inline void
+void
 Image<T>::swap_channels (int c1, int c2)
 {
     if (!this->valid() || c1 == c2
@@ -193,7 +193,7 @@ Image<T>::swap_channels (int c1, int c2)
 }
 
 template <typename T>
-/*inline*/ void
+void
 Image<T>::copy_channel (int src, int dest)
 {
     if (!this->valid() || src == dest)
@@ -213,7 +213,7 @@ Image<T>::copy_channel (int src, int dest)
 }
 
 template <typename T>
-/*inline*/ void
+void
 Image<T>::delete_channel (int chan)
 {
     if (chan < 0 || chan >= this->channels())
