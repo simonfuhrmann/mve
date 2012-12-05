@@ -13,6 +13,17 @@
 
 SFM_NAMESPACE_BEGIN
 
+namespace
+{
+    /* Kernel sizes per octave (given in 1/3 of the full size). */
+    int const kernel_sizes[4][4] =
+    {
+        {  3,  5,  7,  9 },  //  9  15  21  27
+        {  5,  9, 13, 17 },  // 15  27  39  51
+        {  9, 17, 25, 33 },  // 27  51  75  99
+        { 17, 33, 49, 65 }   // 51  99 147 195
+    };
+}  // namespace
 
 /* ---------------------------------------------------------------- */
 
@@ -20,6 +31,7 @@ void
 Surf::process (void)
 {
     this->keypoints.clear();
+    this->descriptors.clear();
     this->octaves.clear();
     this->sat.reset();
 
@@ -67,7 +79,6 @@ Surf::process (void)
     std::cout << "Localization and filtering took "
         << timer.get_elapsed() << " ms." << std::endl;
 
-
 #if 1
     {
         std::cout << "Keypoints: " << this->keypoints.size() << ", per octave:";
@@ -79,6 +90,16 @@ Surf::process (void)
          std::cout << std::endl;
     }
 #endif
+
+    /* Compute the SURF descriptor for the keypoint location. */
+    timer.reset();
+    this->descriptor_assignment();
+    std::cout << "Descriptor assignment took "
+        << timer.get_elapsed() << " ms. " << std::endl;
+
+    /* Cleanup. */
+    this->sat.reset();
+    this->octaves.clear();
 }
 
 /* ---------------------------------------------------------------- */
@@ -113,17 +134,8 @@ Surf::create_response_map (int o, int k)
      */
     typedef SurfOctave::RespType RespType;
 
-    /* Kernel sizes per octave (given in 1/3 of the full size). */
-    int const kernel[4][4] =
-    {
-        {  3,  5,  7,  9 },  // 9 15 21 27
-        {  5,  9, 13, 17 },  // 15 27 39 51
-        {  9, 17, 25, 33 },  // 27 51 75 99
-        { 17, 33, 49, 65 }   // 51 99 147 195
-    };
-
     /* Filter size. The actual kernel side length is 3 * fs. */
-    int const fs = kernel[o][k];
+    int const fs = kernel_sizes[o][k];
     /* The sample spacing for the octaves. */
     int const step = math::algo::fastpow(2, o);
     /* Weight to balance between real gaussian kernel and approximated one. */
@@ -160,7 +172,10 @@ Surf::create_response_map (int o, int k)
             RespType dxx_t = static_cast<RespType>(dxx) * inv_karea;
             RespType dyy_t = static_cast<RespType>(dyy) * inv_karea;
             RespType dxy_t = static_cast<RespType>(dxy) * inv_karea;
+            /* Compute the determinant of the hessian. */
             img->at(i) = dxx_t * dyy_t - weight * dxy_t * dxy_t;
+            /* The laplacian can be computed as dxx_t + dyy_t. */
+            // float laplacian = dxx_t + dyy_t;
         }
 
 #if 0
@@ -287,8 +302,6 @@ Surf::extrema_detection (void)
                 for (int x = 1; x + 1 < width; ++x)
                     if (ptr[x] > ptr[x-1] && ptr[x] > ptr[x + 1])
                         this->check_maximum(o, s, x, y);
-                    else if (ptr[x] < ptr[x-1] && ptr[x] < ptr[x + 1])
-                        this->check_maximum(o, s, x, y);
         }
     }
 }
@@ -307,34 +320,22 @@ Surf::check_maximum(int o, int s, int x, int y)
     SurfOctave::RespType const* ptr;
     int const off = x + y * w;
 
-    bool largest = true;
-    bool smallest = true;
-
     // Perform NMS check on the candidate sample first.
     ptr = this->octaves[o].imgs[s]->get_data_pointer() + off;
     SurfOctave::RespType value = ptr[0];
-    for (int i = 0; (largest || smallest) && i < 8; ++i)
-    {
-        largest &= value > ptr[off1[i]];
-        smallest &= value < ptr[off1[i]];
-    }
+    for (int i = 0; i < 8; ++i)
+        if (ptr[off1[i]] >= value)
+            return;
     // Perform NMS check on the above sample.
     ptr = this->octaves[o].imgs[s - 1]->get_data_pointer() + off;
-    for (int i = 0; (largest || smallest) && i < 9; ++i)
-    {
-        largest &= value > ptr[off2[i]];
-        smallest &= value < ptr[off2[i]];
-    }
+    for (int i = 0; i < 9; ++i)
+        if (ptr[off2[i]] >= value)
+            return;
     // Perform NMS check on the below sample.
     ptr = this->octaves[o].imgs[s + 1]->get_data_pointer() + off;
-    for (int i = 0; (largest || smallest) && i < 9; ++i)
-    {
-        largest &= value > ptr[off2[i]];
-        smallest &= value < ptr[off2[i]];
-    }
-
-    if (!largest && !smallest)
-        return;
+    for (int i = 0; i < 9; ++i)
+        if (ptr[off2[i]] >= value)
+            return;
 
     // Seems like we found a keypoint.
     SurfKeypoint kp;
@@ -370,7 +371,7 @@ Surf::keypoint_localization (SurfKeypoint* kp)
 {
     int const sample = static_cast<int>(kp->sample);
     int const w = this->octaves[kp->octave].imgs[sample]->width();
-    int const h = this->octaves[kp->octave].imgs[sample]->height();
+    //int const h = this->octaves[kp->octave].imgs[sample]->height();
     int off = static_cast<int>(kp->x) + static_cast<int>(kp->y) * w;
     SurfOctave::RespType const *s0, *s1, *s2;
     s0 = this->octaves[kp->octave].imgs[sample - 1]->get_data_pointer() + off;
@@ -414,9 +415,15 @@ Surf::keypoint_localization (SurfKeypoint* kp)
     mat_a = math::matrix_inverse(mat_a, det_a);
     math::Vec3d vec_x = mat_a * vec_b;
 
-    if (std::abs(vec_x[0]) > 1.0f || std::abs(vec_x[1]) > 1.0f || std::abs(vec_x[2]) > 1.0f)
+    /* Reject keypoint if location is too far off original point. */
+    if (vec_x.maximum() > 0.5 || vec_x.minimum() < -0.5f)
+        return false;
+
+    /* Compute actual DoG value at accurate keypoint x. */
+    float dog_value = N9[1][4] - 0.5 * vec_b.dot(vec_x);
+    if (dog_value < this->contrast_thres)
     {
-        //std::cout <<"Large: " << vec_x << std::endl;
+        //std::cout << "Rejection keypoint: Contrast Thres" << std::endl;
         return false;
     }
 
@@ -424,7 +431,8 @@ Surf::keypoint_localization (SurfKeypoint* kp)
     float sampling = static_cast<float>(math::algo::fastpow(2, kp->octave));
     kp->x = (kp->x + vec_x[0]) * sampling;
     kp->y = (kp->y + vec_x[1]) * sampling;
-    kp->sample += vec_x[2];
+    // OpenSURF code: ipt.scale = static_cast<float>((0.1333f) * (m->filter + xi * filterStep));
+    kp->sample += vec_x[2]; // Is this correct? No! FIXME!
 
     if (kp->x < 0.0f || kp->x + 1.0f > this->orig->width()
         || kp->y < 0.0f || kp->y + 1.0f > this->orig->height())
@@ -433,15 +441,124 @@ Surf::keypoint_localization (SurfKeypoint* kp)
         return false;
     }
 
-    /* Compute actual DoG value at accurate keypoint x. */
-    float val = N9[1][4] - 0.5 * vec_b.dot(vec_x);
-    if (std::abs(val) < this->contrast_thres)
-    {
-        //std::cout << "Rejection keypoint: Contrast Thres" << std::endl;
-        return false;
-    }
 
     return true;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Surf::descriptor_assignment (void)
+{
+    this->descriptors.clear();
+    this->descriptors.reserve(keypoints.size());
+    for (std::size_t i = 0; i < this->keypoints.size(); ++i)
+    {
+        SurfKeypoint const& kp = this->keypoints[i];
+
+        // Copy over the basic information to the descriptor.
+        SurfDescriptor descr;
+        descr.x = kp.x;
+        descr.y = kp.y;
+
+        // The scale is obtained from the filter size. The smallest filter in
+        // SURF has size 9 and corresponds to a scale of 1.2. Thus, the
+        // scale of a filter with size X has a scale of X * 1.2 / 9.
+        int sample = static_cast<int>(kp.sample + 0.5f);
+        descr.scale = 3 * kernel_sizes[kp.octave][sample] * 1.2f / 9.0f;
+
+        /* Find the orientation of the keypoint. */
+        this->descriptor_orientation(&descr);
+
+        /* Compute descriptor relative to orientation. */
+        this->descriptor_computation(&descr);
+    }
+}
+
+/* ---------------------------------------------------------------- */
+
+bool
+Surf::descriptor_orientation (SurfDescriptor* descr)
+{
+    const int descr_x = static_cast<int>(descr->x + 0.5f);
+    const int descr_y = static_cast<int>(descr->y + 0.5f);
+    const int descr_scale = static_cast<int>(descr->scale);
+    const int width = this->sat->width();
+    const int height = this->sat->height();
+
+    /* At least a 12 * scale pixel kernel for the support circle is needed.
+     * Additionally, computing the Haar Wavelet response uses a kernel size
+     * of 4 * scale pixel. That makes a total of (6 + 2) * scale pixel on
+     * either side of the kernel spacing. One additional pixel is needed
+     * to the upper-left side to simplify integral image access.
+     */
+    const int spacing = 8 * scale + 1;
+    if (descr_x < spacing || descr_y < spacing
+        || descr_x + spacing >= width || descr_y + spacing >= height)
+        return false;
+
+    float dx[109], dy[109];
+
+    // Iterate over the pixels of a circle with radius 6 * scale.
+    // Compute Haar Wavelet responses in x- and y-direction.
+    for (int ry = -6, i = 0; ry <= 6; ++ry)
+        for (int rx = -6; rx <= 6; ++rx)
+        {
+            if (rx * rx + ry * ry > 36)
+                continue;
+            this->filter_dx_dy(descr_x + rx * descr_scale,
+                descr_y + ry * descr_scale, 2 * descr_scale,
+                dx + i, dy + i);
+            i += 1;
+        }
+
+
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Surf::filter_dx_dy(int x, int y, int fs, float* dx, float* dy)
+{
+    int const width = this->sat->width();
+    SatType const* ptr = this->sat->begin();
+
+    /*
+     * To have a center pixel, filter size needs to be odd.
+     * To ensure symmetry in the filters, we include the center row in
+     * both sides of the dy filter, and the center column in both sides
+     * of the dx filter, which cancels them out. However, this costs
+     * four additional lookups.
+     */
+    SatType const* iter = ptr + (x - fs - 1) + (y - fs - 1) * width;
+    SatType x1 = *iter; iter += fs;
+    SatType x2 = *iter; iter += 1;
+    SatType x3 = *iter; iter += fs;
+    SatType x4 = *iter; iter += (width - 1) * (2 * fs + 1);
+
+    SatType x5 = *iter; iter += fs;
+    SatType x6 = *iter; iter += 1;
+    SatType x7 = *iter; iter += fs;
+    SatType x8 = *iter;
+
+    iter = ptr + (x - fs - 1) + (y - 1) * width;
+    SatType y1 = *iter; iter += 2 * fs + 1;
+    SatType y2 = *iter; iter += width - 2 * fs - 1;
+    SatType y3 = *iter; iter += 2 * fs + 1;
+    SatType y4 = *iter;
+
+// TODO Test indices!
+
+    *dx = static_cast<float>((x7 + x1 - x3 - x5) - (x8 + x2 - x4 - x6));
+    *dy = static_cast<float>((y4 + x1 - y3 - x4) - (x8 + y1 - x5 - y2));
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Surf::descriptor_computation (SurfDescriptor* descr)
+{
+
 }
 
 SFM_NAMESPACE_END

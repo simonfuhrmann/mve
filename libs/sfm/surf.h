@@ -14,17 +14,6 @@
 
 SFM_NAMESPACE_BEGIN
 
-/*
- * Representation of a SURF octave.
- */
-struct SurfOctave
-{
-    typedef float RespType; ///< Type for the Hessian response value
-    typedef mve::Image<RespType> RespImage; ///< Hessian response map type
-    typedef std::vector<RespImage::Ptr> RespImages; ///< Vector of response images
-    RespImages imgs;
-};
-
 /**
  * Representation of a SURF keypoint.
  */
@@ -34,6 +23,29 @@ struct SurfKeypoint
     float sample; ///< Scale space sample index within octave in [0, 3]
     float x; ///< Detected keypoint X coordinate
     float y; ///< Detected keypoint X coordinate
+};
+
+/**
+ * Representation of a SURF descriptor.
+ */
+struct SurfDescriptor
+{
+    float x;
+    float y;
+    float scale;
+    float orientation;
+    std::vector<signed char> data;
+};
+
+/*
+ * Representation of a SURF octave.
+ */
+struct SurfOctave
+{
+    typedef float RespType; ///< Type for the Hessian response value
+    typedef mve::Image<RespType> RespImage; ///< Hessian response map type
+    typedef std::vector<RespImage::Ptr> RespImages; ///< Vector of response images
+    RespImages imgs;
 };
 
 /**
@@ -50,6 +62,7 @@ public:
     typedef int64_t SatType; ///< Signed type for the SAT image values
     typedef mve::Image<SatType> SatImage; ///< SAT image type
     typedef std::vector<SurfKeypoint> SurfKeypoints;
+    typedef std::vector<SurfDescriptor> SurfDescriptors;
     typedef std::vector<SurfOctave> SurfOctaves;
 
 public:
@@ -80,6 +93,11 @@ private:
     void keypoint_localization_and_filtering (void);
     bool keypoint_localization (SurfKeypoint* kp);
 
+    void descriptor_assignment (void);
+    bool descriptor_orientation (SurfDescriptor* descr);
+    void descriptor_computation (SurfDescriptor* descr);
+    void filter_dx_dy(int x, int y, int fs, float* dx, float* dy);
+
 private:
     mve::ByteImage::ConstPtr orig;
     float contrast_thres;
@@ -87,6 +105,7 @@ private:
     SatImage::Ptr sat;
     SurfOctaves octaves;
     SurfKeypoints keypoints;
+    SurfDescriptors descriptors;
 };
 
 /* ---------------------------------------------------------------- */
