@@ -20,8 +20,8 @@ MVS_NAMESPACE_BEGIN
 
 struct QueueData
 {
-    std::size_t x;              // pixel position
-    std::size_t y;
+    int x;              // pixel position
+    int y;
     float confidence;
     float depth;
     float dz_i, dz_j;
@@ -55,8 +55,8 @@ private:
     std::priority_queue<QueueData> prQueue;
     IndexSet neighViews;
     std::vector<SingleViewPtr> imgNeighbors;
-    std::size_t width;
-    std::size_t height;
+    int width;
+    int height;
     Progress progress;
     std::ofstream log;
 

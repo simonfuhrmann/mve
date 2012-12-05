@@ -35,16 +35,13 @@ int main (int argc, char** argv)
 
 
 #if 1
-    
-    int a = -1;
-    unsigned int b = math::algo::fastpow(2,31)+20;
-    using namespace util::system;
-    std::cout << b << std::endl;
-    std::cout << (unsigned int) betoh(betoh(b)) << std::endl;
-    
-    
-    
-
+    // Timing test for image operations.
+    util::WallTimer timer;
+    for (int i = 0; i < 100; ++i) {
+        mve::FloatImage img(1000, 1000, 5);
+        img.delete_channel(3);
+    }
+    std::cout << "Took: " << timer.get_elapsed() << std::endl;
 #endif
 
 

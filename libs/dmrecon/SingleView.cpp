@@ -61,8 +61,8 @@ SingleView::createImagePyramid()
 
     /* create image pyramid */
     mve::ImageType type = this->color_image->get_type();
-    std::size_t curr_width = width;
-    std::size_t curr_height = height;
+    int curr_width = width;
+    int curr_height = height;
     mve::ImageBase::Ptr img = this->color_image;
     mve::CameraInfo cam(view->get_camera());
     while (std::min(curr_width, curr_height) >= 30) {
@@ -137,7 +137,7 @@ SingleView::prepareRecon(float scale)
 }
 
 math::Vec3f
-SingleView::viewRay(std::size_t x, std::size_t y, int level) const
+SingleView::viewRay(int x, int y, int level) const
 {
     return this->viewRay(float(x), float(y), level);
 }
@@ -173,7 +173,7 @@ SingleView::loadColorImage(std::string const& name)
     assert(this->width == this->color_image->width());
     assert(this->height == this->color_image->height());
 
-    std::size_t channels = this->color_image->channels();
+    int channels = this->color_image->channels();
     mve::ImageType type = this->color_image->get_type();
 
     switch (type)

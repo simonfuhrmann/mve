@@ -14,77 +14,6 @@
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
-/**
- *
- */
-#define DILATE_MEDIAN 0
-float
-dilate_depth (FloatImage::ConstPtr dm,
-    std::size_t cx, std::size_t cy, std::size_t ks)
-{
-    std::size_t w = dm->width();
-    std::size_t h = dm->height();
-    std::size_t x1, x2, y1, y2;
-    math::algo::kernel_region(cx, cy, ks, w, h, x1, x2, y1, y2);
-
-#if DILATE_MEDIAN
-    std::vector<float> values;
-    values.reserve(ks * ks);
-#else
-    float total_depth = 0.0f;
-    std::size_t valid_pixels = 0;
-#endif
-    for (std::size_t y = y1; y <= y2; ++y)
-        for (std::size_t x = x1; x <= x2; ++x)
-        {
-            /* Skip center pixel. */
-            if (x == cx && y == cy)
-                continue;
-
-            /* Remember non-zero depth values. */
-            float depth = dm->at(x, y, 0);
-            if (depth != 0.0f)
-            {
-#if DILATE_MEDIAN
-                values.push_back(depth);
-#else
-                total_depth += depth;
-                valid_pixels += 1;
-#endif
-            }
-        }
-
-#if DILATE_MEDIAN
-    std::sort(values.begin(), values.end());
-    return (values.empty() ? 0.0f : values[values.size() / 2]);
-#else
-    return valid_pixels ? (total_depth / (float)valid_pixels) : 0.0f;
-#endif
-}
-
-/* ---------------------------------------------------------------- */
-
-FloatImage::Ptr
-depthmap_fill (FloatImage::ConstPtr dm)
-{
-    FloatImage::Ptr ret(FloatImage::create(*dm));
-
-    std::size_t ks = 5; // TODO Make input
-
-    std::size_t w = dm->width();
-    std::size_t h = dm->height();
-
-    std::size_t i = 0;
-    for (std::size_t y = 0; y < h; ++y)
-        for (std::size_t x = 0; x < w; ++x, ++i)
-            if (dm->at(i, 0) == 0.0f)
-                ret->at(i, 0) = dilate_depth(dm, x, y, ks);
-
-    return ret;
-}
-
-/* ---------------------------------------------------------------- */
-
 void
 depthmap_cleanup_grow (FloatImage::ConstPtr dm, FloatImage::Ptr ret,
     std::vector<bool>& visited,
@@ -170,7 +99,6 @@ depthmap_cleanup (FloatImage::ConstPtr dm, std::size_t thres)
                 continue;
             depthmap_cleanup_grow(dm, ret, visited, x, y, thres);
         }
-
 
     return ret;
 }
@@ -493,8 +421,8 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     if (!dm.get())
         throw std::invalid_argument("NULL depthmap given");
 
-    std::size_t w = dm->width();
-    std::size_t h = dm->height();
+    int w = dm->width();
+    int h = dm->height();
 
     if (ci.get() && (ci->width() != w || ci->height() != h))
         throw std::invalid_argument("Color image dimension mismatch");
@@ -512,8 +440,8 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     mve::TriangleMesh::VertexList const& verts(mesh->get_vertices());
     colors.resize(verts.size());
 
-    std::size_t num_pixel = vids.get_pixel_amount();
-    for (std::size_t i = 0; i < num_pixel; ++i)
+    int num_pixel = vids.get_pixel_amount();
+    for (int i = 0; i < num_pixel; ++i)
     {
         if (vids[i] == MATH_MAX_UINT)
             continue;
@@ -595,23 +523,23 @@ rangegrid_triangulate (Image<unsigned int> const& grid, TriangleMesh::Ptr mesh)
     if (!mesh.get())
         throw std::invalid_argument("NULL mesh given");
 
-    std::size_t w(grid.width());
-    std::size_t h(grid.height());
+    int w = grid.width();
+    int h = grid.height();
 
     TriangleMesh::VertexList const& verts(mesh->get_vertices());
     TriangleMesh::FaceList& faces(mesh->get_faces());
 
-    for (std::size_t y = 0; y < h - 1; ++y)
-        for (std::size_t x = 0; x < w - 1; ++x)
+    for (int y = 0; y < h - 1; ++y)
+        for (int x = 0; x < w - 1; ++x)
         {
-            std::size_t i = y * w + x;
+            int i = y * w + x;
 
             unsigned int vid[4] = { grid[i], grid[i + 1],
                 grid[i + w], grid[i + w + 1] };
 
             /* Create a mask representation of the available indices. */
             int mask = 0;
-            std::size_t indices = 0;
+            int indices = 0;
             for (int j = 0; j < 4; ++j)
                 if (vid[j] != static_cast<unsigned int>(-1))
                 {
@@ -748,7 +676,7 @@ depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
                 for (std::size_t j = 0; j < info.faces.size(); ++j)
                     for (int k = 0; k < 3; ++k)
                     {
-                        std::size_t fidx(info.faces[j] * 3 + k);
+                        int fidx = info.faces[j] * 3 + k;
                         faces[fidx] = 0;
                         dlist[fidx] = true;
                     }

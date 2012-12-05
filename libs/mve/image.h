@@ -1,5 +1,5 @@
 /*
- * Light-weight image class for arbitrary size and value types.
+ * Light-weight image data structure for arbitrary size and value types.
  * Written by Simon Fuhrmann.
  */
 
@@ -27,11 +27,7 @@ typedef Image<int> IntImage;
 
 /**
  * Multi-channel image class of arbitrary but homogenous data type.
- * Although this class is heavily used in the View class, it can be used as
- * stand-alone class for image loading, storing and processing.
- *
- * Image data is stored in interleaved order, i.e. "RGBRGB..."
- * instead of planar order "RR..GG..BB..".
+ * Image data is interleaved, i.e. "RGBRGB...", not planar "RR..GG..BB..".
  */
 template <typename T>
 class Image : public TypedImageBase<T>
@@ -40,13 +36,14 @@ public:
     typedef util::RefPtr<Image<T> > Ptr;
     typedef util::RefPtr<Image<T> const> ConstPtr;
     typedef std::vector<T> ImageData;
+    typedef T ValueType;
 
 public:
     /** Default ctor creates an empty image. */
     Image (void);
 
     /** Allocating ctor. */
-    Image (std::size_t width, std::size_t height, std::size_t channels);
+    Image (int width, int height, int channels);
 
     /** Template copy ctor converts from another image. */
     template <typename O>
@@ -56,38 +53,37 @@ public:
     static typename Image<T>::Ptr create (void);
 
     /** Allocating smart pointer image constructor. */
-    static typename Image<T>::Ptr create (std::size_t width,
-        std::size_t height, std::size_t channels);
+    static typename Image<T>::Ptr create (int width, int height, int channels);
 
     /** Smart pointer image copy constructor. */
     static typename Image<T>::Ptr create (Image<T> const& other);
 
     // TODO: Test features
     /** Adds 'amount' channels to the back with default value 'value'. */
-    void add_channels (std::size_t amount, T const& value = T(0));
+    void add_channels (int amount, T const& value = T(0));
     /** Swaps channels 'c1' and 'c2'. */
-    void swap_channels (std::size_t c1, std::size_t c2);
+    void swap_channels (int c1, int c2);
     /** Copies channel from src to dest. "-1" for dest creates new channel. */
-    void copy_channel (std::size_t src, std::size_t dest);
+    void copy_channel (int src, int dest);
     /** Deletes a channel from the image. */
-    void delete_channel (std::size_t channel);
+    void delete_channel (int channel);
 
     /** Linear indexing of image data. */
-    T const& at (std::size_t index) const;
+    T const& at (int index) const;
     /** Linear indexing of channel data. */
-    T const& at (std::size_t index, std::size_t channel) const;
+    T const& at (int index, int channel) const;
     /** 2D indexing of image data, more expensive. */
-    T const& at (std::size_t x, std::size_t y, std::size_t channel) const;
+    T const& at (int x, int y, int channel) const;
 
     /** Linear indexing of image data. */
-    T& at (std::size_t index);
+    T& at (int index);
     /** Linear indexing of channel data. */
-    T& at (std::size_t index, std::size_t channel);
+    T& at (int index, int channel);
     /** 2D indexing of image data, more expensive. */
-    T& at (std::size_t x, std::size_t y, std::size_t channel);
+    T& at (int x, int y, int channel);
 
     /** Linear interpolation (more expensive) for a single color channel. */
-    T linear_at (float x, float y, std::size_t channel) const;
+    T linear_at (float x, float y, int channel) const;
 
     /**
      * Linear interpolation (more expensive) for all color channels.
@@ -97,15 +93,15 @@ public:
     void linear_at (float x, float y, T* px) const;
 
     // TODO operators for data access (operators & refptr?)
-    T& operator[] (std::size_t index);
-    T const& operator[] (std::size_t index) const;
+    T& operator[] (int index);
+    T const& operator[] (int index) const;
 
-    T const& operator() (std::size_t index) const;
-    T const& operator() (std::size_t index, std::size_t channel) const;
-    T const& operator() (std::size_t x, std::size_t y, std::size_t channel) const;
-    T& operator() (std::size_t index);
-    T& operator() (std::size_t index, std::size_t channel);
-    T& operator() (std::size_t x, std::size_t y, std::size_t channel);
+    T const& operator() (int index) const;
+    T const& operator() (int index, int channel) const;
+    T const& operator() (int x, int y, int channel) const;
+    T& operator() (int index);
+    T& operator() (int index, int channel);
+    T& operator() (int x, int y, int channel);
 };
 
 MVE_NAMESPACE_END
@@ -124,7 +120,7 @@ Image<T>::Image (void)
 
 template <typename T>
 inline
-Image<T>::Image (std::size_t width, std::size_t height, std::size_t channels)
+Image<T>::Image (int width, int height, int channels)
 {
     this->allocate(width, height, channels);
 }
@@ -146,7 +142,7 @@ Image<T>::create (void)
 
 template <typename T>
 inline typename Image<T>::Ptr
-Image<T>::create (std::size_t width, std::size_t height, std::size_t channels)
+Image<T>::create (int width, int height, int channels)
 {
     return Ptr(new Image<T>(width, height, channels));
 }
@@ -160,249 +156,242 @@ Image<T>::create (Image<T> const& other)
 
 template <typename T>
 /*inline*/ void
-Image<T>::add_channels (std::size_t num_channels, T const& value)
+Image<T>::add_channels (int num_channels, T const& value)
 {
-    std::size_t old_chans = this->channels();
-    std::size_t src_ptr = this->get_value_amount();
-
-    this->resize(this->width(), this->height(),
-        this->channels() + num_channels);
-
-    std::size_t dest_ptr = this->get_value_amount();
-
-    while (dest_ptr > 0) // Exits if dest_ptr == 0
-    {
-        for (std::size_t i = 0; i < num_channels; ++i)
-        {
-            dest_ptr -= 1;
-            this->at(dest_ptr) = value;
-        }
-        for (std::size_t i = 0; i < old_chans; ++i)
-        {
-            dest_ptr -= 1;
-            src_ptr -= 1;
-            this->at(dest_ptr) = this->at(src_ptr);
-        }
-    }
-}
-
-template <typename T>
-inline void
-Image<T>::swap_channels (std::size_t c1, std::size_t c2)
-{
-    for (std::size_t i = 0; i < this->data.size(); i += this->channels())
-        std::swap(this->data[i + c1], this->data[i + c2]);
-}
-
-template <typename T>
-/*inline*/ void
-Image<T>::copy_channel (std::size_t src, std::size_t dest)
-{
-    if (src == dest)
+    if (num_channels <= 0 || !this->valid())
         return;
 
-    if (dest == (std::size_t)-1)
+    std::vector<T> tmp(this->w * this->h * (this->c + num_channels));
+    typename std::vector<T>::iterator dest_ptr = tmp.end();
+    typename std::vector<T>::const_iterator src_ptr = this->data.end();
+    const int pixels = this->get_pixel_amount();
+    for (int p = 0; p < pixels; ++p)
     {
-      dest = this->channels();
-      this->add_channels(1);
+        for (int i = 0; i < num_channels; ++i)
+            *(--dest_ptr) = value;
+        for (int i = 0; i < this->c; ++i)
+            *(--dest_ptr) = *(--src_ptr);
     }
 
-    for (std::size_t i = 0; i < this->data.size(); i += this->channels())
-        this->data[i + dest] = this->data[i + src];
+    this->c += num_channels;
+    std::swap(this->data, tmp);
 }
 
 template <typename T>
-/*inline*/ void
-Image<T>::delete_channel (std::size_t chan)
+void
+Image<T>::swap_channels (int c1, int c2)
 {
-    if (chan >= this->channels())
+    if (!this->valid() || c1 == c2
+        || c1 >= this->channels() || c2 >= this->channels())
         return;
 
-    std::size_t dest_ptr = 0;
-    std::size_t src_ptr = 0;
-    while (src_ptr < this->get_value_amount())
+    typename std::vector<T>::iterator iter1 = this->data.begin() + c1;
+    typename std::vector<T>::iterator iter2 = this->data.begin() + c2;
+    int pixels = this->get_pixel_amount();
+    for (int i = 0; i < pixels; ++i, iter1 += this->c, iter2 += this->c)
+        std::swap(*iter1, *iter2);
+}
+
+template <typename T>
+void
+Image<T>::copy_channel (int src, int dest)
+{
+    if (!this->valid() || src == dest)
+        return;
+
+    if (dest < 0)
     {
-        if (src_ptr % this->channels() == chan)
-            src_ptr += 1;
+        dest = this->channels();
+        this->add_channels(1);
+    }
+
+    typename std::vector<T>::iterator src_iter = this->data.begin() + src;
+    typename std::vector<T>::iterator dst_iter = this->data.begin() + dest;
+    int pixels = this->get_pixel_amount();
+    for (int i = 0; i < pixels; ++i, src_iter += this->c, dst_iter += this->c)
+        *dst_iter = *src_iter;
+}
+
+template <typename T>
+void
+Image<T>::delete_channel (int chan)
+{
+    if (chan < 0 || chan >= this->channels())
+        return;
+
+    typename std::vector<T>::iterator src_iter = this->data.begin();
+    typename std::vector<T>::iterator dst_iter = this->data.begin();
+    for (int i = 0; src_iter != this->data.end(); ++i)
+    {
+        if (i % this->c == chan)
+            src_iter++;
         else
-        {
-            this->at(dest_ptr) = this->at(src_ptr);
-            src_ptr += 1;
-            dest_ptr += 1;
-        }
+            *(dst_iter++) = *(src_iter++);
     }
     this->resize(this->width(), this->height(), this->channels() - 1);
 }
 
 template <typename T>
 inline T const&
-Image<T>::at (std::size_t index) const
+Image<T>::at (int index) const
 {
     return this->data[index];
 }
 
 template <typename T>
 inline T const&
-Image<T>::at (std::size_t index, std::size_t channel) const
+Image<T>::at (int index, int channel) const
 {
-    std::size_t off = index * this->channels() + channel;
+    int off = index * this->channels() + channel;
     return this->data[off];
 }
 
 template <typename T>
 inline T const&
-Image<T>::at (std::size_t x, std::size_t y, std::size_t channel) const
+Image<T>::at (int x, int y, int channel) const
 {
-    std::size_t off = channel
-        + x * this->channels()
-        + y * this->channels() * this->width();
+    int off = channel + this->channels() * (x + y * this->width());
     return this->data[off];
 }
 
 template <typename T>
 inline T&
-Image<T>::at (std::size_t index)
+Image<T>::at (int index)
 {
     return this->data[index];
 }
 
 template <typename T>
 inline T&
-Image<T>::at (std::size_t index, std::size_t channel)
+Image<T>::at (int index, int channel)
 {
-    std::size_t off = index * this->channels() + channel;
+    int off = index * this->channels() + channel;
     return this->data[off];
 }
 
 template <typename T>
 inline T&
-Image<T>::at (std::size_t x, std::size_t y, std::size_t channel)
+Image<T>::at (int x, int y, int channel)
 {
-    std::size_t off = channel
-        + x * this->channels()
-        + y * this->channels() * this->width();
+    int off = channel + this->channels() * (x + y * this->width());
     return this->data[off];
 }
 
 template <typename T>
 inline T&
-Image<T>::operator[] (std::size_t index)
+Image<T>::operator[] (int index)
 {
     return this->data[index];
 }
 
 template <typename T>
 inline T const&
-Image<T>::operator[] (std::size_t index) const
+Image<T>::operator[] (int index) const
 {
     return this->data[index];
 }
 
 template <typename T>
 inline T const&
-Image<T>::operator() (std::size_t index) const
+Image<T>::operator() (int index) const
 {
     return this->at(index);
 }
 
 template <typename T>
 inline T const&
-Image<T>::operator() (std::size_t index, std::size_t channel) const
+Image<T>::operator() (int index, int channel) const
 {
     return this->at(index, channel);
 }
 
 template <typename T>
 inline T const&
-Image<T>::operator() (std::size_t x, std::size_t y, std::size_t channel) const
+Image<T>::operator() (int x, int y, int channel) const
 {
     return this->at(x, y, channel);
 }
 
 template <typename T>
 inline T&
-Image<T>::operator() (std::size_t index)
+Image<T>::operator() (int index)
 {
     return this->at(index);
 }
 
 template <typename T>
 inline T&
-Image<T>::operator() (std::size_t index, std::size_t channel)
+Image<T>::operator() (int index, int channel)
 {
     return this->at(index, channel);
 }
 
 template <typename T>
 inline T&
-Image<T>::operator() (std::size_t x, std::size_t y, std::size_t channel)
+Image<T>::operator() (int x, int y, int channel)
 {
     return this->at(x, y, channel);
 }
 
 template <typename T>
 T
-Image<T>::linear_at (float x, float y, std::size_t channel) const
+Image<T>::linear_at (float x, float y, int channel) const
 {
-    x = std::max(0.0f, std::min((float)(this->w - 1), x));
-    y = std::max(0.0f, std::min((float)(this->h - 1), y));
-    std::size_t x1 = (std::size_t)std::floor(x);
-    std::size_t x2 = (std::size_t)std::ceil(x);
-    std::size_t y1 = (std::size_t)std::floor(y);
-    std::size_t y2 = (std::size_t)std::ceil(y);
-    float wx2 = x - std::floor(x);
-    float wx1 = 1.0f - wx2;
-    float wy2 = y - std::floor(y);
-    float wy1 = 1.0f - wy2;
-    std::size_t row1 = y1 * this->w * this->c;
-    std::size_t row2 = y2 * this->w * this->c;
-    return math::algo::interpolate<T>(at(row1 + x1 * this->c + channel),
-        at(row1 + x2 * this->c + channel),
-        at(row2 + x1 * this->c + channel),
-        at(row2 + x2 * this->c + channel),
-        wx1 * wy1, wx2 * wy1, wx1 * wy2, wx2 * wy2);
+    x = std::max(0.0f, std::min(static_cast<float>(this->w - 1), x));
+    y = std::max(0.0f, std::min(static_cast<float>(this->h - 1), y));
+
+    const int floor_x = static_cast<int>(x);
+    const int floor_y = static_cast<int>(y);
+    const int floor_xp1 = std::min(floor_x + 1, this->w - 1);
+    const int floor_yp1 = std::min(floor_y + 1, this->h - 1);
+
+    const float w1 = x - static_cast<float>(floor_x);
+    const float w0 = 1.0f - w1;
+    const float w3 = y - static_cast<float>(floor_y);
+    const float w2 = 1.0f - w3;
+
+    const int rowstride = this->w * this->c;
+    const int row1 = floor_y * rowstride;
+    const int row2 = floor_yp1 * rowstride;
+    const int col1 = floor_x * this->c;
+    const int col2 = floor_xp1 * this->c;
+
+    return math::algo::interpolate<T>
+        (this->at(row1 + col1 + channel), this->at(row1 + col2 + channel),
+        this->at(row2 + col1 + channel), this->at(row2 + col2 + channel),
+        w0 * w2, w1 * w2, w0 * w3, w1 * w3);
 }
 
 template <typename T>
 void
 Image<T>::linear_at (float x, float y, T* px) const
 {
-    /* Determine the four pixels and weights. */
-    std::size_t pos[4];
-    float w[4];
-    {
-        x = std::max(0.0f, std::min((float)(this->w - 1), x));
-        y = std::max(0.0f, std::min((float)(this->h - 1), y));
+    x = std::max(0.0f, std::min(static_cast<float>(this->w - 1), x));
+    y = std::max(0.0f, std::min(static_cast<float>(this->h - 1), y));
 
-        std::size_t floor_x = (std::size_t)x;
-        std::size_t floor_y = (std::size_t)y;
-        std::size_t floor_xp1 = std::min(floor_x + 1, this->w - 1);
-        std::size_t floor_yp1 = std::min(floor_y + 1, this->h - 1);
+    const int floor_x = static_cast<int>(x);
+    const int floor_y = static_cast<int>(y);
+    const int floor_xp1 = std::min(floor_x + 1, this->w - 1);
+    const int floor_yp1 = std::min(floor_y + 1, this->h - 1);
 
-        w[1] = x - (float)floor_x;
-        w[0] = 1.0f - w[1];
-        w[3] = y - (float)floor_y;
-        w[2] = 1.0f - w[3];
+    const float w1 = x - static_cast<float>(floor_x);
+    const float w0 = 1.0f - w1;
+    const float w3 = y - static_cast<float>(floor_y);
+    const float w2 = 1.0f - w3;
 
-        std::size_t rowstride(this->w * this->c);
-        std::size_t row1 = floor_y * rowstride;
-        std::size_t row2 = floor_yp1 * rowstride;
-        std::size_t col1 = floor_x * this->c;
-        std::size_t col2 = floor_xp1 * this->c;
+    const int rowstride = this->w * this->c;
+    const int row1 = floor_y * rowstride;
+    const int row2 = floor_yp1 * rowstride;
+    const int col1 = floor_x * this->c;
+    const int col2 = floor_xp1 * this->c;
 
-        pos[0] = row1 + col1;
-        pos[1] = row1 + col2;
-        pos[2] = row2 + col1;
-        pos[3] = row2 + col2;
-    }
-
-    /* Copy interpolated value to output buffer. */
-    for (std::size_t cc = 0; cc < this->c; ++cc)
+    /* Copy interpolated channel values to output buffer. */
+    for (int cc = 0; cc < this->c; ++cc)
     {
         px[cc] = math::algo::interpolate<T>
-            (this->at(pos[0] + cc), this->at(pos[1] + cc),
-            this->at(pos[2] + cc), this->at(pos[3] + cc),
-            w[0] * w[2], w[1] * w[2], w[0] * w[3], w[1] * w[3]);
+            (this->at(row1 + col1 + cc), this->at(row1 + col2 + cc),
+            this->at(row2 + col1 + cc), this->at(row2 + col2 + cc),
+            w0 * w2, w1 * w2, w0 * w3, w1 * w3);
     }
 }
 

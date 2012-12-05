@@ -16,11 +16,11 @@ libutil: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}
 	chmod a+x ${LIBRARY}
 
-gtest:
-	${CXX} _test_refptr.cc -o _test_refptr ${GTEST_INCL} ${GTEST_LIBS}
-
 test: ${OBJECTS} FORCE
 	${CXX} ${TESTSRC} -o ${TESTBIN} ${OBJECTS} ${EXT_INCL} ${EXT_LIBS}
+
+gtest:
+	${CXX} _test_refptr.cc -o _test_refptr ${GTEST_INCL} ${GTEST_LIBS}
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}

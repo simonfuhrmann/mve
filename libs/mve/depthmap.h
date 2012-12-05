@@ -17,19 +17,6 @@ MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
 /**
- * WORK IN PROGRESS
- * Simple algorithm that takes depth map and returns a filled depth
- * map by filling some unreconstructed values. Zero depth values are
- * considered unreconstructed.
- *
- * The algorithm places a kernel on each unreconstructed depth value
- * and copies the median of valid depth values to that position (erosion).
- * To avoid growing the surface, values at the boundary are removed again.
- */
-FloatImage::Ptr
-depthmap_fill (FloatImage::ConstPtr dm);
-
-/**
  * Algorithm to clean small confident islands in the depth maps.
  * Islands that are smaller than 'thres' pixels are removed.
  * Zero depth values are considered unreconstructed.

@@ -203,9 +203,9 @@ load_png_file (std::string const& filename)
     png_read_update_info(png, png_info);
 
     /* Create image. */
-    std::size_t width = png_get_image_width(png, png_info);
-    std::size_t height = png_get_image_height(png, png_info);
-    std::size_t channels = png_get_channels(png, png_info);
+    int width = png_get_image_width(png, png_info);
+    int height = png_get_image_height(png, png_info);
+    int channels = png_get_channels(png, png_info);
     ByteImage::Ptr image = ByteImage::create();
     image->allocate(width, height, channels);
     ByteImage::ImageData& data = image->get_data();
@@ -213,7 +213,7 @@ load_png_file (std::string const& filename)
     /* Setup row pointers. */
     std::vector<png_bytep> row_pointers;
     row_pointers.resize(height);
-    for (std::size_t i = 0; i < height; ++i)
+    for (int i = 0; i < height; ++i)
         row_pointers[i] = &data[i * width * channels];
 
     /* Read the whole PNG in memory. */
@@ -286,7 +286,7 @@ save_png_file (ByteImage::Ptr image, std::string const& filename)
     std::vector<png_bytep> row_pointers;
     row_pointers.resize(image->height());
     ByteImage::ImageData& data = image->get_data();
-    for (std::size_t i = 0; i < row_pointers.size(); ++i)
+    for (int i = 0; i < image->height(); ++i)
         row_pointers[i] = &data[i * image->width() * image->channels()];
 
     /* Setup transformations. */
@@ -366,9 +366,9 @@ load_jpg_file (std::string const& filename, std::string* exif)
         }
 
         /* Create image. */
-        std::size_t width = cinfo.image_width;
-        std::size_t height = cinfo.image_height;
-        std::size_t channels = cinfo.jpeg_color_space;
+        int width = cinfo.image_width;
+        int height = cinfo.image_height;
+        int channels = cinfo.jpeg_color_space;
         image = ByteImage::create(width, height, channels);
         ByteImage::ImageData& data = image->get_data();
 
@@ -821,7 +821,7 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
         /* Read image content, convert from big-endian to host order. */
         RawImage::Ptr image = RawImage::create(width, height, channels);
         in.read(image->get_byte_pointer(), image->get_byte_size());
-        for (std::size_t i = 0; i < image->get_value_amount(); ++i)
+        for (int i = 0; i < image->get_value_amount(); ++i)
             image->at(i) = util::system::betoh(image->at(i));
         ret = image;
     }
@@ -889,7 +889,7 @@ save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
     {
         /* PPM is big-endian, so we need to convert 16 bit data. */
         RawImage::ConstPtr handle = image;
-        for (std::size_t i = 0; i < handle->get_value_amount(); ++i)
+        for (int i = 0; i < handle->get_value_amount(); ++i)
         {
             RawImage::ValueType value = util::system::betoh(handle->at(i));
             out.write((char const*)(&value), sizeof(RawImage::ValueType));

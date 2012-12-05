@@ -35,7 +35,7 @@ public:
     std::string createFileName(float scale) const;
     void createImagePyramid();
     float footPrint(math::Vec3f const& point);
-    math::Vec3f viewRay(std::size_t x, std::size_t y, int level = 0) const;
+    math::Vec3f viewRay(int x, int y, int level = 0) const;
     math::Vec3f viewRay(float x, float y, int level) const;
     void loadColorImage(std::string const& name);
     bool pointInFrustum(math::Vec3f const& wp);
@@ -70,21 +70,21 @@ private:
 
     /** real image */
     mve::ImageBase::Ptr color_image;
-    std::size_t width;
-    std::size_t height;
+    int width;
+    int height;
 
     /** scaled image for reconstruction */
     float scale_factor;
     mve::ImageBase::Ptr scaled_image;
-    std::size_t scaled_width;
-    std::size_t scaled_height;
+    int scaled_width;
+    int scaled_height;
     math::Matrix3f proj_scaled;
     math::Matrix3f invproj_scaled;
 
     /** image pyramid */
     std::vector<mve::ImageBase::Ptr> img_pyramid;
-    std::vector<std::size_t> widths;
-    std::vector<std::size_t> heights;
+    std::vector<int> widths;
+    std::vector<int> heights;
 
     /** projective matrices for image pyramid */
     std::vector< math::Matrix3f > projs;
