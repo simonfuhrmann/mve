@@ -45,7 +45,7 @@ Surf::process (void)
 
     /* Build summed area table (SAT). */
     timer.reset();
-    this->sat = mve::image::integral_image<uint8_t,SatType>(this->orig);
+    this->create_integral_image();
     std::cout << "Creating SAT image took "
         << timer.get_elapsed() << " ms." << std::endl;
 
@@ -105,6 +105,14 @@ Surf::process (void)
 /* ---------------------------------------------------------------- */
 
 void
+Surf::create_integral_image (void)
+{
+    this->sat = mve::image::integral_image<uint8_t,SatType>(this->orig);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 Surf::create_octaves (void)
 {
     /* Prepare octaves. */
@@ -113,9 +121,9 @@ Surf::create_octaves (void)
         this->octaves[i].imgs.resize(4);
 
     /* Create octaves. */
-    for (int o = 0; o < 4; ++o)
-        for (int k = 0; k < 4; ++k)
-            this->create_response_map(o, k);
+    for (int octave = 0; octave < 4; ++octave)
+        for (int sample = 0; sample < 4; ++sample)
+            this->create_response_map(octave, sample);
 }
 
 /* ---------------------------------------------------------------- */
@@ -140,8 +148,8 @@ Surf::create_response_map (int o, int k)
     int const step = math::algo::fastpow(2, o);
     /* Weight to balance between real gaussian kernel and approximated one. */
     RespType const weight = 0.912;  // See SURF 3.3 (4).
-    /* The kernel width in pixel is fs * 3. Compute inverse kernel area. */
-    RespType const inv_karea = 1.0 / (fs * fs * 3 * 3);
+    /* NormalizationKernel width is 3 * fs, height is 2 * fs - 1. */
+    RespType const inv_karea = 1.0 / (fs * (2 * fs - 1));
 
     /* Original dimensions and octave dimensions. */
     int const w = this->orig->width();
@@ -468,10 +476,14 @@ Surf::descriptor_assignment (void)
         descr.scale = 3 * kernel_sizes[kp.octave][sample] * 1.2f / 9.0f;
 
         /* Find the orientation of the keypoint. */
-        this->descriptor_orientation(&descr);
+        if (!this->descriptor_orientation(&descr))
+            continue;
 
         /* Compute descriptor relative to orientation. */
-        this->descriptor_computation(&descr);
+        if (!this->descriptor_computation(&descr))
+            continue;
+
+        this->descriptors.push_back(descr);
     }
 }
 
@@ -480,45 +492,113 @@ Surf::descriptor_assignment (void)
 bool
 Surf::descriptor_orientation (SurfDescriptor* descr)
 {
-    const int descr_x = static_cast<int>(descr->x + 0.5f);
-    const int descr_y = static_cast<int>(descr->y + 0.5f);
-    const int descr_scale = static_cast<int>(descr->scale);
-    const int width = this->sat->width();
-    const int height = this->sat->height();
+    int const descr_x = static_cast<int>(descr->x + 0.5f);
+    int const descr_y = static_cast<int>(descr->y + 0.5f);
+    int const descr_scale = static_cast<int>(descr->scale);
+    int const width = this->sat->width();
+    int const height = this->sat->height();
 
-    /* At least a 12 * scale pixel kernel for the support circle is needed.
+    /*
+     * Pre-computed gaussian weights for the window. The gaussian
+     * is computed as exp((dx^2 + dy^2) / (2 * sigma^2) with sigma = 2.5.
+     */
+    float const gaussian[109] = { 0.0658748, 0.0982736, 0.12493, 0.135335,
+        0.12493, 0.0982736, 0.0658748, 0.0773047, 0.135335, 0.201897, 0.256661,
+        0.278037, 0.256661, 0.201897, 0.135335, 0.0773047, 0.0658748, 0.135335,
+        0.236928, 0.353455, 0.449329, 0.486752, 0.449329, 0.353455, 0.236928,
+        0.135335, 0.0658748, 0.0982736, 0.201897, 0.353455, 0.527292, 0.67032,
+        0.726149, 0.67032, 0.527292, 0.353455, 0.201897, 0.0982736, 0.12493,
+        0.256661, 0.449329, 0.67032, 0.852144, 0.923116, 0.852144, 0.67032,
+        0.449329, 0.256661, 0.12493, 0.135335, 0.278037, 0.486752, 0.726149,
+        0.923116, 1, 0.923116, 0.726149, 0.486752, 0.278037, 0.135335, 0.12493,
+        0.256661, 0.449329, 0.67032, 0.852144, 0.923116, 0.852144, 0.67032,
+        0.449329, 0.256661, 0.12493, 0.0982736, 0.201897, 0.353455, 0.527292,
+        0.67032, 0.726149, 0.67032, 0.527292, 0.353455, 0.201897, 0.0982736,
+        0.0658748, 0.135335, 0.236928, 0.353455, 0.449329, 0.486752, 0.449329,
+        0.353455, 0.236928, 0.135335, 0.0658748, 0.0773047, 0.135335, 0.201897,
+        0.256661, 0.278037, 0.256661, 0.201897, 0.135335, 0.0773047, 0.0658748,
+        0.0982736, 0.12493, 0.135335, 0.12493, 0.0982736, 0.0658748 };
+
+    /*
+     * At least a 12 * scale pixel kernel for the support circle is needed.
      * Additionally, computing the Haar Wavelet response uses a kernel size
      * of 4 * scale pixel. That makes a total of (6 + 2) * scale pixel on
      * either side of the kernel spacing. One additional pixel is needed
      * to the upper-left side to simplify integral image access.
      */
-    const int spacing = 8 * scale + 1;
+    int const spacing = 8 * descr_scale + 1;
     if (descr_x < spacing || descr_y < spacing
         || descr_x + spacing >= width || descr_y + spacing >= height)
         return false;
 
-    float dx[109], dy[109];
+    /* The number of samples is constant, depending on radius. */
+#define NUM_SAMPLES 109
+    float dx[NUM_SAMPLES], dy[NUM_SAMPLES];
 
-    // Iterate over the pixels of a circle with radius 6 * scale.
-    // Compute Haar Wavelet responses in x- and y-direction.
-    for (int ry = -6, i = 0; ry <= 6; ++ry)
-        for (int rx = -6; rx <= 6; ++rx)
+    /*
+     * Iterate over the pixels of a circle with radius 6 * scale
+     * and compute Haar Wavelet responses in x- and y-direction.
+     */
+    for (int ry = -5, index = 0; ry <= 5; ++ry)
+        for (int rx = -5; rx <= 5; ++rx)
         {
-            if (rx * rx + ry * ry > 36)
+            if (rx * rx + ry * ry >= 36)
                 continue;
             this->filter_dx_dy(descr_x + rx * descr_scale,
                 descr_y + ry * descr_scale, 2 * descr_scale,
-                dx + i, dy + i);
-            i += 1;
+                dx + index, dy + index);
+            dx[index] *= gaussian[index];
+            dy[index] *= gaussian[index];
+            index += 1;
         }
 
+    /*
+     * Iterate in a sliding window over the 109 extracted samples
+     * in order to find a dominant orientation for the keypoint.
+     */
+    double const window_increment = MATH_PI / 8.0;
+    double const window_halfsize = MATH_PI / 6.0;
+    double best_dx = 0.0, best_dy = 0.0;
+    double best_length = 0.0f;
+    for (double deg = -MATH_PI; deg < MATH_PI; deg += window_increment)
+    {
+        /* Evaluate samples for this window. */
+        double const win_start = deg - window_halfsize;
+        double const win_end = deg + window_halfsize;
+        double sum_dx = 0.0f, sum_dy = 0.0f;
+        for (int i = 0; i < NUM_SAMPLES; ++i)
+        {
+            double const sample_deg = std::atan2(dy[i], dx[i]);
+            double const sample_deg_p = sample_deg + 2.0 * MATH_PI;
+            double const sample_deg_m = sample_deg - 2.0 * MATH_PI;
+            if ((sample_deg > win_start && sample_deg < win_end)
+                || (sample_deg_p > win_start && sample_deg_p < win_end)
+                || (sample_deg_m > win_start && sample_deg_m < win_end))
+            {
+                sum_dx += dx[i];
+                sum_dy += dy[i];
+            }
+        }
 
+        /* Total vector length of dx/dy sums defines dominance. */
+        double const length = sum_dx * sum_dx + sum_dy * sum_dy;
+        if (length > best_length)
+        {
+            best_dx = sum_dx;
+            best_dy = sum_dy;
+            best_length = length;
+        }
+    }
+
+    /* TODO: Threshold vector length? */
+    descr->orientation = std::atan2(best_dy, best_dx);
+    return true;
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-Surf::filter_dx_dy(int x, int y, int fs, float* dx, float* dy)
+Surf::filter_dx_dy (int x, int y, int fs, float* dx, float* dy)
 {
     int const width = this->sat->width();
     SatType const* ptr = this->sat->begin();
@@ -528,7 +608,7 @@ Surf::filter_dx_dy(int x, int y, int fs, float* dx, float* dy)
      * To ensure symmetry in the filters, we include the center row in
      * both sides of the dy filter, and the center column in both sides
      * of the dx filter, which cancels them out. However, this costs
-     * four additional lookups.
+     * four additional lookups (12 instead of 8).
      */
     SatType const* iter = ptr + (x - fs - 1) + (y - fs - 1) * width;
     SatType x1 = *iter; iter += fs;
@@ -547,15 +627,16 @@ Surf::filter_dx_dy(int x, int y, int fs, float* dx, float* dy)
     SatType y3 = *iter; iter += 2 * fs + 1;
     SatType y4 = *iter;
 
-// TODO Test indices!
-
-    *dx = static_cast<float>((x7 + x1 - x3 - x5) - (x8 + x2 - x4 - x6));
-    *dy = static_cast<float>((y4 + x1 - y3 - x4) - (x8 + y1 - x5 - y2));
+    // Normalize filter by size "(2 * fs + 1) * fs" and normalize discrete
+    // derivative with distance between the Wavelet box centers "fs + 1".
+    float norm = static_cast<float>((2 * fs + 1) * fs * (fs + 1));
+    *dx = static_cast<float>((x8 + x2 - x4 - x6) - (x7 + x1 - x3 - x5)) / norm;
+    *dy = static_cast<float>((x8 + y1 - x5 - y2) - (y4 + x1 - y3 - x4)) / norm;
 }
 
 /* ---------------------------------------------------------------- */
 
-void
+bool
 Surf::descriptor_computation (SurfDescriptor* descr)
 {
 

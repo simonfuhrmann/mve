@@ -1,6 +1,16 @@
 /*
  * SURF implementation.
  * Written by Simon Fuhrmann.
+ *
+ * This collection of classes implement the SURF keypoint detector and
+ * descriptor as described in:
+ *
+ *   Speeded-Up Robust Features (SURF)
+ *   by Herbert Bay, Andreas Ess, Tinne Tuytelaars, and Luc Van Gool
+ *
+ * Some useful references:
+ * - "Resolving Implementation Ambiguity and Improving SURF" by Peter Abeles
+ * - SURF Article at http://www.ipol.im/pub/pre/H2/
  */
 #ifndef MVE_SURFLIB_HEADER
 #define MVE_SURFLIB_HEADER
@@ -79,7 +89,8 @@ public:
     /** Returns the list of keypoints. */
     SurfKeypoints const& get_keypoints (void) const;
 
-private:
+protected:
+    void create_integral_image (void);
     void create_octaves (void);
 
     void create_response_map (int o, int k);
@@ -95,7 +106,7 @@ private:
 
     void descriptor_assignment (void);
     bool descriptor_orientation (SurfDescriptor* descr);
-    void descriptor_computation (SurfDescriptor* descr);
+    bool descriptor_computation (SurfDescriptor* descr);
     void filter_dx_dy(int x, int y, int fs, float* dx, float* dy);
 
 private:
