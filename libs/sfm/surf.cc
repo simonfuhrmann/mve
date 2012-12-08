@@ -33,21 +33,8 @@ Surf::process (void)
     this->keypoints.clear();
     this->descriptors.clear();
     this->octaves.clear();
-    this->sat.reset();
 
     util::WallTimer timer;
-
-    /* Desaturate input image. */
-    if (this->orig->channels() != 1 && this->orig->channels() != 3)
-        throw std::invalid_argument("Gray or color image expected");
-    if (this->orig->channels() == 3)
-        this->orig = mve::image::desaturate<uint8_t>(this->orig, mve::image::DESATURATE_LIGHTNESS);
-
-    /* Build summed area table (SAT). */
-    timer.reset();
-    this->create_integral_image();
-    std::cout << "Creating SAT image took "
-        << timer.get_elapsed() << " ms." << std::endl;
 
     /* Compute Hessian response maps and find SS maxima (SURF 3.3). */
     timer.reset();
@@ -105,9 +92,20 @@ Surf::process (void)
 /* ---------------------------------------------------------------- */
 
 void
-Surf::create_integral_image (void)
+Surf::set_image (mve::ByteImage::ConstPtr image)
 {
-    this->sat = mve::image::integral_image<uint8_t,SatType>(this->orig);
+    /* Desaturate input image. */
+    if (image->channels() != 1 && image->channels() != 3)
+        throw std::invalid_argument("Gray or color image expected");
+    if (image->channels() == 3)
+        image = mve::image::desaturate<uint8_t>(image,
+            mve::image::DESATURATE_LIGHTNESS);
+
+    /* Build summed area table (SAT). */
+    //util::WallTimer timer;
+    this->sat = mve::image::integral_image<uint8_t,SatType>(image);
+    //std::cout << "Creating SAT image took "
+    //    << timer.get_elapsed() << " ms." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
@@ -152,8 +150,8 @@ Surf::create_response_map (int o, int k)
     RespType const inv_karea = 1.0 / (fs * (2 * fs - 1));
 
     /* Original dimensions and octave dimensions. */
-    int const w = this->orig->width();
-    int const h = this->orig->height();
+    int const w = this->sat->width();
+    int const h = this->sat->height();
     int ow = w;
     int oh = h;
     for (int i = 0; i < o; ++i)
@@ -319,8 +317,10 @@ Surf::extrema_detection (void)
 void
 Surf::check_maximum(int o, int s, int x, int y)
 {
-    // Assumes that given coordinates are within bounds and a 1 pixel
-    // boundary for comarisons in x, y and s direction.
+    /*
+     * Assumes that given coordinates are within bounds and a 1 pixel
+     * boundary for comarisons in x, y and s direction.
+     */
     int const w = this->octaves[o].imgs[s]->width();
     int off1[8] = { -w - 1, -w, -w + 1, -1,    +1, w - 1, w, w + 1 };
     int off2[9] = { -w - 1, -w, -w + 1, -1, 0, +1, w - 1, w, w + 1 };
@@ -328,24 +328,24 @@ Surf::check_maximum(int o, int s, int x, int y)
     SurfOctave::RespType const* ptr;
     int const off = x + y * w;
 
-    // Perform NMS check on the candidate sample first.
+    /* Perform NMS check on the candidate sample first. */
     ptr = this->octaves[o].imgs[s]->get_data_pointer() + off;
     SurfOctave::RespType value = ptr[0];
     for (int i = 0; i < 8; ++i)
         if (ptr[off1[i]] >= value)
             return;
-    // Perform NMS check on the above sample.
+    /* Perform NMS check on the above sample. */
     ptr = this->octaves[o].imgs[s - 1]->get_data_pointer() + off;
     for (int i = 0; i < 9; ++i)
         if (ptr[off2[i]] >= value)
             return;
-    // Perform NMS check on the below sample.
+    /* Perform NMS check on the below sample. */
     ptr = this->octaves[o].imgs[s + 1]->get_data_pointer() + off;
     for (int i = 0; i < 9; ++i)
         if (ptr[off2[i]] >= value)
             return;
 
-    // Seems like we found a keypoint.
+    /* Seems like we found a keypoint. */
     SurfKeypoint kp;
     kp.octave = o;
     kp.sample = static_cast<float>(s);
@@ -442,13 +442,12 @@ Surf::keypoint_localization (SurfKeypoint* kp)
     // OpenSURF code: ipt.scale = static_cast<float>((0.1333f) * (m->filter + xi * filterStep));
     kp->sample += vec_x[2]; // Is this correct? No! FIXME!
 
-    if (kp->x < 0.0f || kp->x + 1.0f > this->orig->width()
-        || kp->y < 0.0f || kp->y + 1.0f > this->orig->height())
+    if (kp->x < 0.0f || kp->x + 1.0f > this->sat->width()
+        || kp->y < 0.0f || kp->y + 1.0f > this->sat->height())
     {
         //std::cout << "Rejection keypoint: OOB " << kp->x << " " << kp->y  << " / " << vec_x[0] << " " << vec_x[1] << std::endl;
         return false;
     }
-
 
     return true;
 }
@@ -464,14 +463,16 @@ Surf::descriptor_assignment (void)
     {
         SurfKeypoint const& kp = this->keypoints[i];
 
-        // Copy over the basic information to the descriptor.
+        /* Copy over the basic information to the descriptor. */
         SurfDescriptor descr;
         descr.x = kp.x;
         descr.y = kp.y;
 
-        // The scale is obtained from the filter size. The smallest filter in
-        // SURF has size 9 and corresponds to a scale of 1.2. Thus, the
-        // scale of a filter with size X has a scale of X * 1.2 / 9.
+        /*
+         * The scale is obtained from the filter size. The smallest filter in
+         * SURF has size 9 and corresponds to a scale of 1.2. Thus, the
+         * scale of a filter with size X has a scale of X * 1.2 / 9.
+         */
         int sample = static_cast<int>(kp.sample + 0.5f);
         descr.scale = 3 * kernel_sizes[kp.octave][sample] * 1.2f / 9.0f;
 
@@ -480,7 +481,7 @@ Surf::descriptor_assignment (void)
             continue;
 
         /* Compute descriptor relative to orientation. */
-        if (!this->descriptor_computation(&descr))
+        if (!this->descriptor_computation(&descr, this->upright_descriptor))
             continue;
 
         this->descriptors.push_back(descr);
@@ -499,7 +500,7 @@ Surf::descriptor_orientation (SurfDescriptor* descr)
     int const height = this->sat->height();
 
     /*
-     * Pre-computed gaussian weights for the window. The gaussian
+     * Pre-computed gaussian weights for the (circular) window. The gaussian
      * is computed as exp((dx^2 + dy^2) / (2 * sigma^2) with sigma = 2.5.
      */
     float const gaussian[109] = { 0.0658748, 0.0982736, 0.12493, 0.135335,
@@ -590,7 +591,7 @@ Surf::descriptor_orientation (SurfDescriptor* descr)
         }
     }
 
-    /* TODO: Threshold vector length? */
+    /* TODO: Threshold on the vector length? */
     descr->orientation = std::atan2(best_dy, best_dx);
     return true;
 }
@@ -627,8 +628,10 @@ Surf::filter_dx_dy (int x, int y, int fs, float* dx, float* dy)
     SatType y3 = *iter; iter += 2 * fs + 1;
     SatType y4 = *iter;
 
-    // Normalize filter by size "(2 * fs + 1) * fs" and normalize discrete
-    // derivative with distance between the Wavelet box centers "fs + 1".
+    /*
+     * Normalize filter by size "(2 * fs + 1) * fs" and normalize discrete
+     * derivative with distance between the Wavelet box centers "fs + 1".
+     */
     float norm = static_cast<float>((2 * fs + 1) * fs * (fs + 1));
     *dx = static_cast<float>((x8 + x2 - x4 - x6) - (x7 + x1 - x3 - x5)) / norm;
     *dy = static_cast<float>((x8 + y1 - x5 - y2) - (y4 + x1 - y3 - x4)) / norm;
@@ -637,9 +640,74 @@ Surf::filter_dx_dy (int x, int y, int fs, float* dx, float* dy)
 /* ---------------------------------------------------------------- */
 
 bool
-Surf::descriptor_computation (SurfDescriptor* descr)
+Surf::descriptor_computation (SurfDescriptor* descr, bool upright)
 {
+    int const descr_scale = static_cast<int>(descr->scale);
+    int const width = this->sat->width();
+    int const height = this->sat->height();
 
+    /*
+     * Size of the descriptor is 20s (10s to each side). The Wavelet filter
+     * have size 2s (1s to each side), plus one additional pixel for simpler
+     * integral image lookup. Since the window can be rotated, 4s additional
+     * pixel are needed.
+     */
+    float const spacing = static_cast<float>(15 * descr_scale + 1);
+    if (descr->x < spacing || descr->y < spacing
+        || descr->x + spacing >= width || descr->y + spacing > height)
+        return false;
+
+    float sin_ori = 0.0f, cos_ori = 1.0f;
+    if (!upright)
+    {
+        sin_ori = std::sin(descr->orientation);
+        cos_ori = std::cos(descr->orientation);
+    }
+
+    /* Interest point region has size 20 * scale. */
+    descr->data.clear();
+    descr->data.resize(64, 0.0f);
+    float* descr_iter = &descr->data[0];
+    for (int y = -10; y < 10; ++y)
+    {
+        for (int x = -10; x < 10; ++x)
+        {
+            /* Rotate sample coordinate. */
+            int rot_x = static_cast<int>(math::algo::round(descr->x
+                + (cos_ori * x - sin_ori * y) * descr_scale));
+            int rot_y = static_cast<int>(math::algo::round(descr->y
+                + (sin_ori * x + cos_ori * y) * descr_scale));
+
+            /* Obtain and rotate gradient. */
+            float dx, dy;
+            this->filter_dx_dy(rot_x, rot_y, descr_scale, &dx, &dy);
+            float ori_dx = cos_ori * dx - sin_ori * dy;
+            float ori_dy = sin_ori * dx + cos_ori * dy;
+
+            /* Keypoints are weighted with a Gaussian, sigma = 3.3*s. */
+            float weight = std::exp(static_cast<float>(x * x + y * y)
+                / math::algo::fastpow(2.0f * 3.3f, 2));
+            *(descr_iter++) += weight * ori_dx;
+            *(descr_iter++) += weight * ori_dy;
+            *(descr_iter++) += weight * std::abs(ori_dx);
+            *(descr_iter++) += weight * std::abs(ori_dy);
+
+            if ((x + 10) % 5 != 4)
+                descr_iter -= 4;
+        }
+        if ((y + 10) % 5 != 4)
+            descr_iter -= 4 * 4;
+    }
+
+    /* Normalize descriptor. */
+    float norm = 0.0f;
+    for (int i = 0; i < 64; ++i)
+        norm += descr->data[i] * descr->data[i];
+    norm = MATH_EPSILON_EQ(norm, 0.0f, 1e-8) ? 1.0f : std::sqrt(norm);
+    for (int i = 0; i < 64; ++i)
+        descr->data[i] /= norm;
+
+    return true;
 }
 
 SFM_NAMESPACE_END

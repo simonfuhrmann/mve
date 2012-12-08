@@ -11,6 +11,9 @@
  * Some useful references:
  * - "Resolving Implementation Ambiguity and Improving SURF" by Peter Abeles
  * - SURF Article at http://www.ipol.im/pub/pre/H2/
+ *
+ * Things still TODO:
+ * - N9 Neighborhood is implemented twice. Re-use code.
  */
 #ifndef MVE_SURFLIB_HEADER
 #define MVE_SURFLIB_HEADER
@@ -44,7 +47,7 @@ struct SurfDescriptor
     float y;
     float scale;
     float orientation;
-    std::vector<signed char> data;
+    std::vector<float> data;
 };
 
 /*
@@ -82,6 +85,8 @@ public:
     void set_image (mve::ByteImage::ConstPtr image);
     /** Sets the hessian threshold, defaults to 10.0. */
     void set_contrast_threshold (float thres);
+    /** Sets whether to generate the upright descriptor version. */
+    void set_upright_descriptor (bool upright);
 
     /** Starts Surf keypoint detection and descriptor extraction. */
     void process (void);
@@ -90,7 +95,6 @@ public:
     SurfKeypoints const& get_keypoints (void) const;
 
 protected:
-    void create_integral_image (void);
     void create_octaves (void);
 
     void create_response_map (int o, int k);
@@ -106,12 +110,12 @@ protected:
 
     void descriptor_assignment (void);
     bool descriptor_orientation (SurfDescriptor* descr);
-    bool descriptor_computation (SurfDescriptor* descr);
+    bool descriptor_computation (SurfDescriptor* descr, bool upright);
     void filter_dx_dy(int x, int y, int fs, float* dx, float* dy);
 
 private:
-    mve::ByteImage::ConstPtr orig;
     float contrast_thres;
+    bool upright_descriptor;
 
     SatImage::Ptr sat;
     SurfOctaves octaves;
@@ -124,13 +128,8 @@ private:
 inline
 Surf::Surf (void)
     : contrast_thres(10.0f)
+    , upright_descriptor(false)
 {
-}
-
-inline void
-Surf::set_image (mve::ByteImage::ConstPtr image)
-{
-    this->orig = image;
 }
 
 inline Surf::SurfKeypoints const&
@@ -143,6 +142,12 @@ inline void
 Surf::set_contrast_threshold (float thres)
 {
     this->contrast_thres = thres;
+}
+
+inline void
+Surf::set_upright_descriptor (bool upright)
+{
+    this->upright_descriptor = upright;
 }
 
 SFM_NAMESPACE_END
