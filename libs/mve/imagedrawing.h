@@ -6,6 +6,9 @@
 #ifndef MVE_IMAGEDRAWING_HEADER
 #define MVE_IMAGEDRAWING_HEADER
 
+#include <algorithm>
+#include <cmath>
+
 #include "defines.h"
 #include "mve/image.h"
 
@@ -34,13 +37,13 @@ void
 draw_line (Image<T>& image, int x0, int y0, int x1, int y1, T const* color)
 {
     /* http://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm */
-    const int chans = image.channels();
-    const int row_stride = image.width() * chans;
+    int const chans = image.channels();
+    int const row_stride = image.width() * chans;
 
-    const int dx = std::abs(x1 - x0);
-    const int dy = std::abs(y1 - y0) ;
-    const int sx = x0 < x1 ? 1 : -1;
-    const int sy = y0 < y1 ? 1 : -1;
+    int const dx = std::abs(x1 - x0);
+    int const dy = std::abs(y1 - y0) ;
+    int const sx = x0 < x1 ? 1 : -1;
+    int const sy = y0 < y1 ? 1 : -1;
     int err = dx - dy;
 
     T* ptr = &image.at(x0, y0, 0);
@@ -49,14 +52,13 @@ draw_line (Image<T>& image, int x0, int y0, int x1, int y1, T const* color)
         std::copy(color, color + chans, ptr);
         if (x0 == x1 && y0 == y1)
             break;
-        int e2 = 2 * err;
+        int const e2 = 2 * err;
         if (e2 > -dy)
         {
             err -= dy;
             x0 += sx;
             ptr += sx * chans;
         }
-
         if (e2 < dx)
         {
             err += dx;
