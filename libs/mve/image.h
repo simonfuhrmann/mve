@@ -11,6 +11,7 @@
 
 #include "util/refptr.h"
 #include "math/algo.h"
+
 #include "defines.h"
 #include "imagebase.h"
 
@@ -58,7 +59,6 @@ public:
     /** Smart pointer image copy constructor. */
     static typename Image<T>::Ptr create (Image<T> const& other);
 
-    // TODO: Test features
     /** Adds 'amount' channels to the back with default value 'value'. */
     void add_channels (int amount, T const& value = T(0));
     /** Swaps channels 'c1' and 'c2'. */
