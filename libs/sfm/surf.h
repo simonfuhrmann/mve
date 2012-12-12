@@ -94,6 +94,8 @@ public:
     /** Returns the list of keypoints. */
     SurfKeypoints const& get_keypoints (void) const;
 
+    void draw_features (mve::ByteImage::Ptr image);
+
 protected:
     void create_octaves (void);
 

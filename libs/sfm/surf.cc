@@ -6,6 +6,7 @@
 #include "math/matrixtools.h"
 #include "mve/image.h"
 #include "mve/imagetools.h"
+#include "mve/imagedrawing.h"
 #include "mve/imagefile.h" // TMP
 
 #include "defines.h"
@@ -674,9 +675,11 @@ Surf::descriptor_computation (SurfDescriptor* descr, bool upright)
         {
             /* Rotate sample coordinate. */
             int rot_x = static_cast<int>(math::algo::round(descr->x
-                + (cos_ori * x - sin_ori * y) * descr_scale));
+                + (cos_ori * (x + 0.5f) - sin_ori * (y + 0.5f))
+                * descr_scale));
             int rot_y = static_cast<int>(math::algo::round(descr->y
-                + (sin_ori * x + cos_ori * y) * descr_scale));
+                + (sin_ori * (x + 0.5f) + cos_ori * (y + 0.5f))
+                * descr_scale));
 
             /* Obtain and rotate gradient. */
             float dx, dy;
@@ -708,6 +711,72 @@ Surf::descriptor_computation (SurfDescriptor* descr, bool upright)
         descr->data[i] /= norm;
 
     return true;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Surf::draw_features (mve::ByteImage::Ptr image)
+{
+    if (image->channels() == 1)
+    {
+        image->copy_channel(0, -1);
+        image->copy_channel(0, -1);
+    }
+    if (image->channels() != 3)
+        return;
+
+    /* Grayscale the image, this makes the features more visible. */
+    for (unsigned char* ptr = image->begin(); ptr != image->end(); )
+    {
+        float sum = 0.0f;
+        for (int chan = 0; chan < 3; ++chan)
+            sum += ptr[chan];
+        sum /= 3.0f;
+        for (int chan = 0; chan < 3; ++chan)
+            *(ptr++) = static_cast<unsigned char>(sum + 0.5f);
+    }
+
+    /* Draw a box and orientation for each feature. */
+    unsigned char const box_color[3] = { 255, 255, 0 };
+    unsigned char const ori_color[3] = { 255, 255, 0 };
+    float const len = 2.0f;
+    for (int i = 0; i < this->descriptors.size(); ++i)
+    {
+        SurfDescriptor const& descr = this->descriptors[i];
+        float const sin_ori = std::sin(descr.orientation);
+        float const cos_ori = std::cos(descr.orientation);
+        /* Coordinates for the four box corners. */
+        float const x0 = (cos_ori * -len - sin_ori * -len) * descr.scale;
+        float const y0 = (sin_ori * -len + cos_ori * -len) * descr.scale;
+        float const x1 = (cos_ori * +len - sin_ori * -len) * descr.scale;
+        float const y1 = (sin_ori * +len + cos_ori * -len) * descr.scale;
+        float const x2 = (cos_ori * +len - sin_ori * +len) * descr.scale;
+        float const y2 = (sin_ori * +len + cos_ori * +len) * descr.scale;
+        float const x3 = (cos_ori * -len - sin_ori * +len) * descr.scale;
+        float const y3 = (sin_ori * -len + cos_ori * +len) * descr.scale;
+        /* Coordinate to draw the orientation line. */
+        float const x4 = (cos_ori * len) * descr.scale;
+        float const y4 = (sin_ori * len) * descr.scale;
+        float const x = descr.x;
+        float const y = descr.y;
+
+        mve::image::draw_line(*image, static_cast<int>(x + x0 + 0.5f),
+            static_cast<int>(y + y0 + 0.5f), static_cast<int>(x + x1 + 0.5f),
+            static_cast<int>(y + y1 + 0.5f), box_color);
+        mve::image::draw_line(*image, static_cast<int>(x + x1 + 0.5f),
+            static_cast<int>(y + y1 + 0.5f), static_cast<int>(x + x2 + 0.5f),
+            static_cast<int>(y + y2 + 0.5f), box_color);
+        mve::image::draw_line(*image, static_cast<int>(x + x2 + 0.5f),
+            static_cast<int>(y + y2 + 0.5f), static_cast<int>(x + x3 + 0.5f),
+            static_cast<int>(y + y3 + 0.5f), box_color);
+        mve::image::draw_line(*image, static_cast<int>(x + x3 + 0.5f),
+            static_cast<int>(y + y3 + 0.5f), static_cast<int>(x + x0 + 0.5f),
+            static_cast<int>(y + y0 + 0.5f), box_color);
+        mve::image::draw_line(*image, static_cast<int>(x + 0.5f),
+            static_cast<int>(y + 0.5f), static_cast<int>(x + x4 + 0.5f),
+            static_cast<int>(y + y4 + 0.5f), ori_color);
+    }
 }
 
 SFM_NAMESPACE_END
