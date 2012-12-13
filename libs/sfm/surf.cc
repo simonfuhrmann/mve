@@ -49,7 +49,7 @@ Surf::process (void)
     std::cout << "Extrema detection took "
         << timer.get_elapsed() << " ms." << std::endl;
 
-#if 1
+#if 0
     {
         std::cout << "Keypoints: " << this->keypoints.size() << ", per octave:";
         std::vector<int> keypoints_per_octave(this->octaves.size(), 0);
@@ -67,7 +67,7 @@ Surf::process (void)
     std::cout << "Localization and filtering took "
         << timer.get_elapsed() << " ms." << std::endl;
 
-#if 1
+#if 0
     {
         std::cout << "Keypoints: " << this->keypoints.size() << ", per octave:";
         std::vector<int> keypoints_per_octave(this->octaves.size(), 0);
@@ -84,6 +84,8 @@ Surf::process (void)
     this->descriptor_assignment();
     std::cout << "Descriptor assignment took "
         << timer.get_elapsed() << " ms. " << std::endl;
+    std::cout << "Computed " << this->descriptors.size()
+        << " descriptors." << std::endl;
 
     /* Cleanup. */
     this->sat.reset();
@@ -702,11 +704,13 @@ Surf::descriptor_computation (SurfDescriptor* descr, bool upright)
             descr_iter -= 4 * 4;
     }
 
-    /* Normalize descriptor. */
+    /* Normalize descriptor, reject too small descriptors. */
     float norm = 0.0f;
     for (int i = 0; i < 64; ++i)
         norm += descr->data[i] * descr->data[i];
-    norm = MATH_EPSILON_EQ(norm, 0.0f, 1e-8) ? 1.0f : std::sqrt(norm);
+    if (MATH_EPSILON_EQ(norm, 0.0f, 1e-8))  // TODO: Play with this.
+        return false;
+    norm = std::sqrt(norm);
     for (int i = 0; i < 64; ++i)
         descr->data[i] /= norm;
 
@@ -741,7 +745,7 @@ Surf::draw_features (mve::ByteImage::Ptr image)
     unsigned char const box_color[3] = { 255, 255, 0 };
     unsigned char const ori_color[3] = { 255, 255, 0 };
     float const len = 2.0f;
-    for (int i = 0; i < this->descriptors.size(); ++i)
+    for (std::size_t i = 0; i < this->descriptors.size(); ++i)
     {
         SurfDescriptor const& descr = this->descriptors[i];
         float const sin_ori = std::sin(descr.orientation);

@@ -93,6 +93,8 @@ public:
 
     /** Returns the list of keypoints. */
     SurfKeypoints const& get_keypoints (void) const;
+    /** Returns the list of descriptors. */
+    SurfDescriptors const& get_descriptors (void) const;
 
     void draw_features (mve::ByteImage::Ptr image);
 
@@ -134,12 +136,6 @@ Surf::Surf (void)
 {
 }
 
-inline Surf::SurfKeypoints const&
-Surf::get_keypoints (void) const
-{
-    return this->keypoints;
-}
-
 inline void
 Surf::set_contrast_threshold (float thres)
 {
@@ -150,6 +146,18 @@ inline void
 Surf::set_upright_descriptor (bool upright)
 {
     this->upright_descriptor = upright;
+}
+
+inline Surf::SurfKeypoints const&
+Surf::get_keypoints (void) const
+{
+    return this->keypoints;
+}
+
+inline Surf::SurfDescriptors const&
+Surf::get_descriptors (void) const
+{
+    return this->descriptors;
 }
 
 SFM_NAMESPACE_END
