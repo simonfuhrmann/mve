@@ -1,10 +1,10 @@
-// Test cases for the image class and related features.
+// Test cases for the SURF feature detector.
 // Written by Simon Fuhrmann.
 
 #include <gtest/gtest.h>
 
 #include "sfm/surf.h"
-
+#if 0
 class SurfTest : public sfm::Surf, public testing::Test
 {
 };
@@ -303,3 +303,4 @@ TEST_F(SurfTest, TestDescriptorComputation)
         else if (i % 4 == 2)
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dy|
 }
+#endif

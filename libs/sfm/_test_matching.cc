@@ -5,7 +5,7 @@
 #include "mve/imagefile.h"
 
 #include "surf.h"
-#include "nearestneighbor.h"
+
 #include "matching.h"
 
 // TODO: Move to its own file in util.
@@ -94,18 +94,18 @@ main (int argc, char** argv)
     }
 
     /* Perform matching. */
-    sfm::NearestNeighbor<short> nn;
-    nn.set_element_dimensions(64);
-    nn.set_elements(match_descr_2.aligned, descr2.size());
+    sfm::MatchingOptions matchopts;
+    matchopts.descriptor_length = 64;
+    matchopts.lowe_ratio_threshold = 0.8f;
+    sfm::MatchingResult matchresult;
 
-    sfm::NearestNeighbor<short>::Result nn_result;
     util::WallTimer timer;
-    short const* query_pointer = match_descr_1.aligned;
-    for (std::size_t i = 0; i < descr1.size(); ++i, query_pointer += 64)
-        nn.find(query_pointer, &nn_result);
+    sfm::match_features(matchopts, match_descr_1.aligned, descr1.size(),
+        match_descr_2.aligned, descr2.size(), &matchresult);
+    sfm::remove_inconsistent_matches(&matchresult);
     std::cout << "Two-view matching took " << timer.get_elapsed() << "ms." << std::endl;
-    std::cout << "NN ID " << nn_result.index_1st_best
-        << ", dist " << nn_result.dist_1st_best << std::endl;
+
+    /* Visualize matches. */
 
 
     return 0;

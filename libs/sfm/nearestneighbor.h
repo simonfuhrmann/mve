@@ -8,6 +8,9 @@
 
 #include "defines.h"
 
+/* Whether to use SSE optimizations. */
+#define ENABLE_SSE2 1
+
 SFM_NAMESPACE_BEGIN
 
 /**
@@ -22,7 +25,7 @@ SFM_NAMESPACE_BEGIN
  * inner product <Q, Ci> corresponding to the smallest distance. Here, SSE2
  * parallel integer instructions are used to accellerate the search.
  *
- * TODO: does only work with certian element sizes... explain.
+ * TODO: SSE does only work with certian element sizes... explain.
  */
 template <typename T>
 class NearestNeighbor

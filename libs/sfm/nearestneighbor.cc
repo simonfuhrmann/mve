@@ -15,15 +15,16 @@
  * - emmintrin.h     X86 SSE2
  *
  * MMX/SSE Data Types:
- * - MMX: __m64 64 bits of integers.
+ * - MMX:  __m64 64 bits of integers.
  * - SSE1: __m128 128 bits: four single precision floats.
  * - SSE2: __m128i 128 bits of packed integers, __m128d 128 bits: two doubles.
  *
- * __MMX__ -- X86 MMX
- * __SSE__ -- X86 SSE
- * __SSE2__ -- X86 SSE2
- * __VEC__ -- altivec functions
- * __ARM_NEON__ -- neon functions
+ * Macros to check for availability:
+ * - X86 MMX            __MMX__
+ * - X86 SSE            __SSE__
+ * - X86 SSE2           __SSE2__
+ * - altivec functions  __VEC__
+ * - neon functions     __ARM_NEON__
  */
 #include <iostream>
 #include <emmintrin.h>
@@ -31,8 +32,6 @@
 #include "nearestneighbor.h"
 
 SFM_NAMESPACE_BEGIN
-
-#define ENABLE_SSE_VERSION 1
 
 template <>
 void
@@ -45,7 +44,7 @@ NearestNeighbor<short>::find (short const* query,
     result->index_1st_best = 0;
     result->index_2nd_best = 0;
 
-#if ENABLE_SSE_VERSION && defined(__SSE2__)
+#if ENABLE_SSE2 && defined(__SSE2__)
     /*
      * SSE inner product implementation.
      * Note that query and result should be 16 byte aligned.

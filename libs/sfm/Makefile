@@ -19,6 +19,12 @@ libsfm: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}
 	chmod a+x ${LIBRARY}
 
+test: libsfm FORCE
+	${CXX} -o ${TESTBIN} ${OBJECTS} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
+
+gtest: ${GTEST_OBJS}
+	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
+
 _gtest_%.o: _gtest_%.cc
 	${CXX} -c -o $@ $< ${GTEST_INCL} ${EXT_INCL}
 
@@ -30,12 +36,6 @@ depend:
 
 clean: FORCE
 	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
-
-test: libsfm FORCE
-	${CXX} -o ${TESTBIN} ${OBJECTS} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
-
-gtest: ${GTEST_OBJS}
-	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
 
 FORCE:
 
