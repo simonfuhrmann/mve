@@ -5,8 +5,8 @@
 #include "mve/imagefile.h"
 
 #include "surf.h"
-
 #include "matching.h"
+#include "matchingvisualizer.h"
 
 // TODO: Move to its own file in util.
 template <typename T, uintptr_t MODULO = 16>
@@ -63,6 +63,8 @@ main (int argc, char** argv)
     }
 
     sfm::Surf surf;
+    surf.set_contrast_threshold(100.0f);
+
     surf.set_image(image1);
     surf.process();
     sfm::Surf::SurfDescriptors const& descr1 = surf.get_descriptors();
@@ -105,8 +107,25 @@ main (int argc, char** argv)
     sfm::remove_inconsistent_matches(&matchresult);
     std::cout << "Two-view matching took " << timer.get_elapsed() << "ms." << std::endl;
 
-    /* Visualize matches. */
+    /* Prepare data structures to draw matches. */
+    std::vector<std::pair<int, int> > loc1;
+    std::vector<std::pair<int, int> > loc2;
+    for (int i = 0; i < matchresult.matches_1_2.size(); ++i)
+    {
+        int const j = matchresult.matches_1_2[i];
+        if (j >= 0)
+        {
+            loc1.push_back(std::make_pair(descr1[i].x, descr1[i].y));
+            loc2.push_back(std::make_pair(descr2[j].x, descr2[j].y));
+        }
+    }
 
+    /* Visualize matches. */
+    mve::ByteImage::Ptr debug1 = sfm::visualizer_draw_features(image1, loc1);
+    mve::ByteImage::Ptr debug2 = sfm::visualizer_draw_features(image2, loc2);
+    mve::ByteImage::Ptr debug3 = sfm::visualizer_draw_matching(debug1, debug2,
+        loc1, loc2);
+    mve::image::save_file(debug3, "/tmp/featurematching.png");
 
     return 0;
 }
