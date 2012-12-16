@@ -62,11 +62,18 @@ int_to_byte_image (IntImage::ConstPtr image);
 
 /**
  * Generic conversion between image types without scaling or clamping.
- * This is useful to convert float to double and vice versa.
+ * This is useful to convert between float and double.
  */
 template <typename SRC, typename DST>
 typename Image<DST>::Ptr
 type_to_type_image (typename Image<SRC>::ConstPtr image);
+
+/**
+ * Finds the smallest and largest value in the given image.
+ */
+template <typename T>
+void
+find_min_max_value (typename mve::Image<T>::Ptr image, T* vmin, T* vmax);
 
 /**
  * Normalizes a float image IN-PLACE such that all values are [0, 1].
@@ -443,6 +450,26 @@ type_to_type_image (typename Image<SRC>::ConstPtr image)
     DST* dst_buf = out->get_data_pointer();
     std::copy(src_buf, src_buf + size, dst_buf);
     return out;
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+void
+find_min_max_value (typename mve::Image<T>::Ptr image, T* vmin, T* vmax)
+{
+    *vmin = std::numeric_limits<T>::max();
+    *vmax = std::numeric_limits<T>::is_signed
+        ? -std::numeric_limits<T>::max()
+        : std::numeric_limits<T>::min();
+
+    for (T const* ptr = image->begin(); ptr != image->end(); ++ptr)
+    {
+        if (*ptr < *vmin)
+            *vmin = *ptr;
+        if (*ptr > *vmax)
+            *vmax = *ptr;
+    }
 }
 
 /* ---------------------------------------------------------------- */

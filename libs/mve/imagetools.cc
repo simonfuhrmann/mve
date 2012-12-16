@@ -88,18 +88,15 @@ int_to_byte_image (IntImage::ConstPtr image)
 void
 float_image_normalize (FloatImage::Ptr image)
 {
-    float vmin = std::numeric_limits<float>::max();
-    float vmax = std::numeric_limits<float>::min();
-
-    int values = image->get_value_amount();
-    for (int i = 0; i < values; ++i)
+    float vmin, vmax;
+    find_min_max_value<float>(image, &vmin, &vmax);
+    if (vmin >= vmax)
     {
-        vmin = std::min(vmin, image->at(i));
-        vmax = std::max(vmax, image->at(i));
+        image->fill(0.0f);
+        return;
     }
-
-    for (int i = 0; i < values; ++i)
-        image->at(i) = (image->at(i) - vmin) / (vmax - vmin);
+    for (float* ptr = image->begin(); ptr != image->end(); ++ptr)
+        *ptr = (*ptr - vmin) / (vmax - vmin);
 }
 
 /* ---------------------------------------------------------------- */
