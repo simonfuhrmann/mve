@@ -80,3 +80,34 @@ TEST(ImageToolsTest, FloatImageNormalize)
     EXPECT_EQ(0.5f, fimg->at(2));
     EXPECT_EQ(1.0f, fimg->at(3));
 }
+
+TEST(ImageToolsTest, ImageRotateAngle)
+{
+    unsigned char const color_black_1[] = { 0 };
+
+    mve::ByteImage::Ptr i1 = mve::ByteImage::create(1, 1, 1);
+    i1->fill(127);
+    i1 = mve::image::rotate(i1, MATH_PI / 4.0f, color_black_1);
+    EXPECT_EQ(127, i1->at(0));
+
+    mve::ByteImage::Ptr i2 = mve::ByteImage::create(2, 2, 1);
+    i2->fill(127);
+    i2 = mve::image::rotate(i2, MATH_PI / 4.0f, color_black_1);
+    for (int i = 0; i < 4; ++i)
+        EXPECT_EQ(127, i2->at(i));
+
+    mve::ByteImage::Ptr i3 = mve::ByteImage::create(3, 3, 1);
+    i3->fill(127);
+    i3 = mve::image::rotate(i3, MATH_PI / 4.0f, color_black_1);
+    for (int i = 0; i < 9; ++i)
+        EXPECT_EQ(127, i3->at(i));
+
+    mve::ByteImage::Ptr i4 = mve::ByteImage::create(4, 4, 1);
+    i4->fill(127);
+    i4 = mve::image::rotate(i4, MATH_PI / 4.0f, color_black_1);
+    for (int i = 0; i < 16; ++i)
+        if (i == 0 || i == 3 || i == 12 || i == 15)
+            EXPECT_EQ(color_black_1[0], i4->at(i));
+        else
+            EXPECT_EQ(127, i4->at(i));
+}

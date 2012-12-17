@@ -266,6 +266,16 @@ template <typename T>
 typename Image<T>::Ptr
 rotate (typename Image<T>::ConstPtr image, RotateType type);
 
+/**
+ * Returns an image created by rotating the input image by the given amount
+ * of degrees (in radian) in clock-wise direction. The size of the output
+ * image is the same as the input image, pixels may be rotated outside
+ * the view port and new pixels are filled with the provided fill color.
+ */
+template <typename T>
+typename Image<T>::Ptr
+rotate (typename Image<T>::ConstPtr image, float angle, T const* fill_color);
+
 /** Image flipping type. */
 enum FlipType
 {
@@ -1175,6 +1185,39 @@ rotate (typename Image<T>::ConstPtr image, RotateType type)
             std::copy(in_pixel, in_pixel + ic, out_pixel);
         }
 
+    return ret;
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+typename Image<T>::Ptr
+rotate (typename Image<T>::ConstPtr image, float angle, T const* fill_color)
+{
+    if (!image.get())
+        throw std::invalid_argument("NULL image given");
+
+    int const w = image->width();
+    int const h = image->height();
+    int const c = image->channels();
+    float const w2 = static_cast<float>(w - 1) / 2.0f;
+    float const h2 = static_cast<float>(h - 1) / 2.0f;
+    typename Image<T>::Ptr ret = Image<T>::create(w, h, c);
+
+    float const sin_angle = std::sin(-angle);
+    float const cos_angle = std::cos(-angle);
+    T* ret_ptr = ret->begin();
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x, ret_ptr += c)
+        {
+            float const sample_x = cos_angle * (x - w2) - sin_angle * (y - h2) + w2;
+            float const sample_y = sin_angle * (x - w2) + cos_angle * (y - h2) + h2;
+            if (sample_x < -0.5f || sample_x > w - 0.5f
+                || sample_y < -0.5f || sample_y > h - 0.5f)
+                std::copy(fill_color, fill_color + c, ret_ptr);
+            else
+                image->linear_at(sample_x, sample_y, ret_ptr);
+        }
     return ret;
 }
 
