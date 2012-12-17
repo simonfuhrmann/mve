@@ -946,6 +946,9 @@ typename Image<T>::Ptr
 crop (typename Image<T>::ConstPtr image, int width, int height,
     int left, int top, T const* fill_color)
 {
+    if (width < 0 || height < 0 || !image.get())
+        throw std::invalid_argument("Invalid width/height or NULL image given");
+
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(width, height, image->channels());
 
