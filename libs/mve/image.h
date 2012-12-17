@@ -52,12 +52,13 @@ public:
 
     /** Smart pointer image constructor. */
     static typename Image<T>::Ptr create (void);
-
     /** Allocating smart pointer image constructor. */
     static typename Image<T>::Ptr create (int width, int height, int channels);
-
     /** Smart pointer image copy constructor. */
     static typename Image<T>::Ptr create (Image<T> const& other);
+
+    /** Fills every pixel of the image with the given color. */
+    void fill_color (T const* color);
 
     /** Adds 'amount' channels to the back with default value 'value'. */
     void add_channels (int amount, T const& value = T(0));
@@ -152,6 +153,14 @@ inline typename Image<T>::Ptr
 Image<T>::create (Image<T> const& other)
 {
     return Ptr(new Image<T>(other));
+}
+
+template <typename T>
+inline void
+Image<T>::fill_color (T const* color)
+{
+    for (T* ptr = this->begin(); ptr != this->end(); ptr += this->c)
+        std::copy(color, color + this->c, ptr);
 }
 
 template <typename T>

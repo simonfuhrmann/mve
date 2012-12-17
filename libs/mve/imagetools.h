@@ -113,12 +113,12 @@ image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam);
 /**
  * Returns a sub-image by cropping against a rectangular region.
  * Region may exceed the input image dimensions, new pixel values
- * are initialized with zero.
+ * are initialized with the given color.
  */
 template <typename T>
 typename Image<T>::Ptr
-crop (typename Image<T>::ConstPtr image, int left, int top,
-    int width, int height);
+crop (typename Image<T>::ConstPtr image, int width, int height,
+    int left, int top, T const* fill_color);
 
 /** Rescale interpolation type. */
 enum RescaleInterpolation
@@ -943,29 +943,35 @@ rescale_gaussian (typename Image<T>::ConstPtr img,
 
 template <typename T>
 typename Image<T>::Ptr
-crop (typename Image<T>::ConstPtr img,
-    int left, int top, int width, int height)
+crop (typename Image<T>::ConstPtr image, int width, int height,
+    int left, int top, T const* fill_color)
 {
     typename Image<T>::Ptr out(Image<T>::create());
-    out->allocate(width, height, img->channels());
+    out->allocate(width, height, image->channels());
 
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
+    int const iw = image->width();
+    int const ih = image->height();
+    int const ic = image->channels();
 
-    for (int y = 0; y < height; ++y)
-        for (int x = 0; x < width; ++x)
-        {
-            int ix = left + x;
-            int iy = top + y;
-            for (int c = 0; c < ic; ++c)
-            {
-                T value(0);
-                if (ix < iw && iy < ih)
-                    value = img->at(ix,iy,c);
-                out->at(x,y,c) = value;
-            }
-        }
+    /* Output image with fill color if new pixels are revealed. */
+    if (left < 0 || top < 0 || left + width > iw || top + height > ih)
+        out->fill_color(fill_color);
+
+    /* Check if input and output have no overlap. */
+    if (left >= iw || left <= -width || top >= ih || top <= -height)
+        return out;
+
+    /* Copy horizontal overlap for each overlapping row. */
+    int const overlap = ic * (std::min(iw, left + width) - std::max(0, left));
+    for (int y = std::max(0, -top); y < height; ++y)
+    {
+        int lookup_y = top + y;
+        if (lookup_y >= iw)
+            break;
+        T* out_ptr = &out->at(left < 0 ? -left : 0, y, 0);
+        T const* in_ptr = &image->at(left > 0 ? left : 0, lookup_y, 0);
+        std::copy(in_ptr, in_ptr + overlap, out_ptr);
+    }
 
     return out;
 }

@@ -302,3 +302,12 @@ TEST(ImageTest, ImageLinearAccess)
     EXPECT_EQ(1.5f, px[0]);
     EXPECT_EQ(2.5f, px[1]);
 }
+
+TEST(ImageTest, ImageFillColor)
+{
+    mve::FloatImage img(2, 2, 3);
+    float color[] = { 1.0f, 2.0f, 3.0f };
+    img.fill_color(color);
+    for (int i = 0; i < img.get_value_amount(); ++i)
+        EXPECT_EQ(color[i % 3], img.at(i));
+}

@@ -470,28 +470,28 @@ template <typename T>
 inline T*
 TypedImageBase<T>::begin (void)
 {
-    return &this->data[0];
+    return this->data.empty() ? NULL : &this->data[0];
 }
 
 template <typename T>
 inline T const*
 TypedImageBase<T>::begin (void) const
 {
-    return &this->data[0];
+    return this->data.empty() ? NULL : &this->data[0];
 }
 
 template <typename T>
 inline T*
 TypedImageBase<T>::end (void)
 {
-    return &this->data[0] + this->data.size();
+    return this->data.empty() ? NULL : this->begin() + this->data.size();
 }
 
 template <typename T>
 inline T const*
 TypedImageBase<T>::end (void) const
 {
-    return &this->data[0] + this->data.size();
+    return this->data.empty() ? NULL : this->begin() + this->data.size();
 }
 
 template <typename T>
