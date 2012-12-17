@@ -111,3 +111,90 @@ TEST(ImageToolsTest, ImageRotateAngle)
         else
             EXPECT_EQ(127, i4->at(i));
 }
+
+TEST(ImageToolsTest, ImageCropInside)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+    img = mve::image::crop<uint8_t>(img, 2, 2, 1, 1, NULL);
+    EXPECT_EQ(2, img->width());
+    EXPECT_EQ(2, img->height());
+    EXPECT_EQ(2, img->channels());
+    EXPECT_EQ(10, img->at(0));
+    EXPECT_EQ(11, img->at(1));
+    EXPECT_EQ(12, img->at(2));
+    EXPECT_EQ(13, img->at(3));
+    EXPECT_EQ(18, img->at(4));
+    EXPECT_EQ(19, img->at(5));
+    EXPECT_EQ(20, img->at(6));
+    EXPECT_EQ(21, img->at(7));
+}
+
+TEST(ImageToolsTest, ImageCropOutside1)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+    uint8_t color[] = { 63, 127 };
+    img = mve::image::crop<uint8_t>(img, 2, 2, -2, -2, color);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        if (i % 2 == 0)
+            EXPECT_EQ(63, img->at(i));
+        else
+            EXPECT_EQ(127, img->at(i));
+}
+
+TEST(ImageToolsTest, ImageCropOutside2)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+    uint8_t color[] = { 63, 127 };
+    img = mve::image::crop<uint8_t>(img, 2, 2, 4, 4, color);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        if (i % 2 == 0)
+            EXPECT_EQ(63, img->at(i));
+        else
+            EXPECT_EQ(127, img->at(i));
+}
+
+TEST(ImageToolsTest, CropImageOverlap1)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+    uint8_t color[] = { 63, 127 };
+    img = mve::image::crop<uint8_t>(img, 2, 2, -1, -1, color);
+    EXPECT_EQ(2, img->width());
+    EXPECT_EQ(2, img->height());
+    EXPECT_EQ(2, img->channels());
+    EXPECT_EQ(63, img->at(0));
+    EXPECT_EQ(127, img->at(1));
+    EXPECT_EQ(63, img->at(2));
+    EXPECT_EQ(127, img->at(3));
+    EXPECT_EQ(63, img->at(4));
+    EXPECT_EQ(127, img->at(5));
+    EXPECT_EQ(0, img->at(6));
+    EXPECT_EQ(1, img->at(7));
+}
+
+TEST(ImageToolsTest, CropImageOverlap2)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+    uint8_t color[] = { 63, 127 };
+    img = mve::image::crop<uint8_t>(img, 2, 2, 3, 3, color);
+    EXPECT_EQ(2, img->width());
+    EXPECT_EQ(2, img->height());
+    EXPECT_EQ(2, img->channels());
+    EXPECT_EQ(30, img->at(0));
+    EXPECT_EQ(31, img->at(1));
+    EXPECT_EQ(63, img->at(2));
+    EXPECT_EQ(127, img->at(3));
+    EXPECT_EQ(63, img->at(4));
+    EXPECT_EQ(127, img->at(5));
+    EXPECT_EQ(63, img->at(6));
+    EXPECT_EQ(127, img->at(7));
+}
