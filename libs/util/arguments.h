@@ -1,3 +1,8 @@
+/*
+ * Command line argument parser.
+ * Written by Simon Fuhrmann
+ */
+
 #ifndef MVE_ARGUMENTS_HEADER
 #define MVE_ARGUMENTS_HEADER
 

@@ -18,12 +18,17 @@ MVE_IMAGE_NAMESPACE_BEGIN
 /**
  * Draws a line from (x0,y0) to (x1,y1) with given color on the image.
  * Length of the color array is expected to be the number of channels.
- * No boundary checks are performed.
+ * TODO: No boundary checks are performed yet.
  */
 template <typename T>
 void
 draw_line (Image<T>& image, int x1, int y1, int x2, int y2, T const* color);
 
+/**
+ * Draws a circle with midpoint (x,y) and given 'radius' on the image.
+ * Length of the color array is expected to be the number of channels.
+ * TODO: No boundary checks are performed yet.
+ */
 template <typename T>
 void
 draw_circle (Image<T>& image, int x, int y, int radius, T const* color);
