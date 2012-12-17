@@ -7,6 +7,17 @@
 
 SFM_NAMESPACE_BEGIN
 
+namespace
+{
+    unsigned char color_table[12][3] =
+    {
+        { 255, 0, 0 }, { 0, 255, 0 }, { 0, 0, 255 },
+        { 255, 255, 0 }, { 255, 0, 255 }, { 0, 255, 255 },
+        { 127, 255, 0 }, { 255, 127, 0 }, { 127, 0, 255 },
+        { 255, 0, 127 }, { 0, 127, 255 }, { 0, 255, 127 }
+    };
+}  // namespace
+
 mve::ByteImage::Ptr
 visualizer_draw_features (mve::ByteImage::ConstPtr image,
     std::vector<std::pair<int, int> > const& matches)
@@ -26,10 +37,14 @@ visualizer_draw_features (mve::ByteImage::ConstPtr image,
     {
         int x = matches[i].first;
         int y = matches[i].second;
+        if (x < 0 || y < 0 || x >= image->width() || y >= image->height())
+        {
+            std::cerr << "Warning: Feature out of bounds: "
+                << x << " " << y << std::endl;
+            continue;
+        }
         // TODO Draw circle
-        ret->at(x, y, 0) = 255;
-        ret->at(x, y, 1) = 0;
-        ret->at(x, y, 2) = 0;
+        mve::image::draw_circle(*ret, x, y, 3, color_table[3]);
     }
     return ret;
 }
@@ -71,15 +86,15 @@ visualizer_draw_matching (mve::ByteImage::ConstPtr image1,
         }
         out_ptr += img2_width * 3;
     }
-#if 1
+
     /* Draw matches. */
-    unsigned char const color_yellow[] = { 255, 255, 0 };
     for (std::size_t i = 0; i < matches1.size() && i < matches2.size(); ++i)
     {
         mve::image::draw_line(*ret, matches1[i].first, matches1[i].second,
-            matches2[i].first + img1_width, matches2[i].second, color_yellow);
+            matches2[i].first + img1_width, matches2[i].second,
+            color_table[i % 12]);
     }
-#endif
+
     return ret;
 }
 

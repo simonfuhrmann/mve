@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "sfm/surf.h"
-#if 0
+
 class SurfTest : public sfm::Surf, public testing::Test
 {
 };
@@ -303,4 +303,22 @@ TEST_F(SurfTest, TestDescriptorComputation)
         else if (i % 4 == 2)
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dy|
 }
-#endif
+
+TEST_F(SurfTest, TestRotationInvariance)
+{
+    // Mock Descriptor.
+    sfm::SurfDescriptor descr;
+    descr.scale = 1.2;
+    descr.x = 25;
+    descr.y = 25;
+    descr.orientation = MATH_PI / 2.0;
+
+    this->set_image(create_gradient_y_image(50, false));
+    this->descriptor_computation(&descr, false);
+
+    for (int i = 0; i < 64; ++i)
+        if (i % 2 == 0)
+            EXPECT_GT(descr.data[i], 1e-5f);
+        else
+            EXPECT_NEAR(0.0f, descr.data[i], 1e-5f);
+}

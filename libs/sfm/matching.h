@@ -7,6 +7,7 @@
 #define SFM_MATCHING_HEADER
 
 #include <vector>
+#include <limits>
 
 #include "defines.h"
 
@@ -30,6 +31,13 @@ struct MatchingOptions
      * is ambiguous. Defaults to 0.8. Set to 1.0 to disable test.
      */
     float lowe_ratio_threshold;
+
+    /**
+     * Does not accept matches with distances larger than this value.
+     * This needs to be tuned to the descriptor and data type used.
+     * Disabled by default.
+     */
+    float distance_threshold;
 };
 
 /**
@@ -71,6 +79,7 @@ MatchingOptions::MatchingOptions (void)
 {
     this->descriptor_length = 64;
     this->lowe_ratio_threshold = 0.8f;
+    this->distance_threshold = std::numeric_limits<float>::max();
 }
 
 SFM_NAMESPACE_END

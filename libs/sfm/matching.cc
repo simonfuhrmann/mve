@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "math/algo.h"
 #include "nearestneighbor.h"
 #include "matching.h"
 
@@ -30,6 +31,8 @@ match_features<short> (MatchingOptions const& options,
     for (std::size_t i = 0; i < set_1_size; ++i, query_pointer += 64)
     {
         nn.find(query_pointer, &nn_result);
+        if (nn_result.dist_1st_best > options.distance_threshold)
+            continue;
         if (static_cast<float>(nn_result.dist_1st_best)
             / static_cast<float>(nn_result.dist_2nd_best)
             > options.lowe_ratio_threshold)
@@ -44,6 +47,8 @@ match_features<short> (MatchingOptions const& options,
     for (std::size_t i = 0; i < set_2_size; ++i, query_pointer += 64)
     {
         nn.find(query_pointer, &nn_result);
+        if (nn_result.dist_1st_best > options.distance_threshold)
+            continue;
         if (static_cast<float>(nn_result.dist_1st_best)
             / static_cast<float>(nn_result.dist_2nd_best)
             > options.lowe_ratio_threshold)

@@ -2,6 +2,7 @@
 
 #include "util/timer.h"
 #include "mve/image.h"
+#include "mve/imagetools.h"
 #include "mve/imagefile.h"
 
 #include "surf.h"
@@ -55,6 +56,7 @@ main (int argc, char** argv)
         image1 = mve::image::load_file(argv[1]);
         std::cout << "Loading " << argv[2] << "..." << std::endl;
         image2 = mve::image::load_file(argv[2]);
+        image2 = mve::image::rescale_double_size_supersample<unsigned char>(image2);
     }
     catch (std::exception& e)
     {
@@ -62,17 +64,24 @@ main (int argc, char** argv)
         return 1;
     }
 
-    sfm::Surf surf;
-    surf.set_contrast_threshold(100.0f);
+    /* Run SURF feature detection */
+    sfm::Surf::SurfDescriptors descr1, descr2;
+    {
+        sfm::Surf surf;
+        surf.set_contrast_threshold(500.0f);
 
-    surf.set_image(image1);
-    surf.process();
-    sfm::Surf::SurfDescriptors const& descr1 = surf.get_descriptors();
+        surf.set_image(image1);
+        surf.process();
+        descr1 = surf.get_descriptors();
+        //surf.draw_features(image1);
+        //mve::image::save_file(image1, "/tmp/surf-features-1.png");
 
-    surf.set_image(image2);
-    surf.process();
-    sfm::Surf::SurfDescriptors const& descr2 = surf.get_descriptors();
-
+        surf.set_image(image2);
+        surf.process();
+        descr2 = surf.get_descriptors();
+        //surf.draw_features(image2);
+        //mve::image::save_file(image2, "/tmp/surf-features-2.png");
+    }
 
     /*
      * Convert the descriptors to aligned short arrays.
@@ -98,7 +107,8 @@ main (int argc, char** argv)
     /* Perform matching. */
     sfm::MatchingOptions matchopts;
     matchopts.descriptor_length = 64;
-    matchopts.lowe_ratio_threshold = 0.8f;
+    matchopts.lowe_ratio_threshold = 0.9f;
+    matchopts.distance_threshold = 3000.0f;
     sfm::MatchingResult matchresult;
 
     util::WallTimer timer;
@@ -110,7 +120,7 @@ main (int argc, char** argv)
     /* Prepare data structures to draw matches. */
     std::vector<std::pair<int, int> > loc1;
     std::vector<std::pair<int, int> > loc2;
-    for (int i = 0; i < matchresult.matches_1_2.size(); ++i)
+    for (std::size_t i = 0; i < matchresult.matches_1_2.size(); ++i)
     {
         int const j = matchresult.matches_1_2[i];
         if (j >= 0)
@@ -119,6 +129,7 @@ main (int argc, char** argv)
             loc2.push_back(std::make_pair(descr2[j].x, descr2[j].y));
         }
     }
+    std::cout << "Kept " << loc1.size() << " consistent matches." << std::endl;
 
     /* Visualize matches. */
     mve::ByteImage::Ptr debug1 = sfm::visualizer_draw_features(image1, loc1);

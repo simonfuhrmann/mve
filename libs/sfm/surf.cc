@@ -189,11 +189,11 @@ Surf::create_response_map (int o, int k)
 
 #if 0
     std::cout << "Saving response map " << o << "." << k << std::endl;
-    mve::ByteImage::Ptr outimg = mve::ByteImage::create(ow, oh, 1);
-    for (int i = 0; i < ow * oh; ++i)
-        outimg->at(i) = math::algo::clamp(img->at(i) * 0.5, -128.0, 127.0) + 128;
+    float vmin, vmax;
+    mve::image::find_min_max_value<float>(img, &vmin, &vmax);
+    mve::ByteImage::Ptr outimg = mve::image::float_to_byte_image(img, vmin, vmax);
     std::stringstream ss;
-    ss << "/tmp/response-after/response-" << o << "-" << k << ".png";
+    ss << "/tmp/response-" << o << "-" << k << ".png";
     mve::image::save_file(outimg, ss.str());
 #endif
 
@@ -686,11 +686,11 @@ Surf::descriptor_computation (SurfDescriptor* descr, bool upright)
             /* Obtain and rotate gradient. */
             float dx, dy;
             this->filter_dx_dy(rot_x, rot_y, descr_scale, &dx, &dy);
-            float ori_dx = cos_ori * dx - sin_ori * dy;
-            float ori_dy = sin_ori * dx + cos_ori * dy;
+            float ori_dx = cos_ori * dx + sin_ori * dy;
+            float ori_dy = -sin_ori * dx + cos_ori * dy;
 
             /* Keypoints are weighted with a Gaussian, sigma = 3.3*s. */
-            float weight = std::exp(static_cast<float>(x * x + y * y)
+            float weight = std::exp(-static_cast<float>(x * x + y * y)
                 / math::algo::fastpow(2.0f * 3.3f, 2));
             *(descr_iter++) += weight * ori_dx;
             *(descr_iter++) += weight * ori_dy;
