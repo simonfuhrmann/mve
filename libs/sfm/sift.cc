@@ -690,7 +690,6 @@ Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
     int ix = static_cast<int>(kp.x + 0.5f);
     int iy = static_cast<int>(kp.y + 0.5f);
     int is = static_cast<int>(math::algo::round(kp.s)); // kp.s can be neg.
-//    int is = static_cast<int>(math::algo::round(0.5f)); // kp.s can be neg.
     float dxf = kp.x - static_cast<float>(ix);
     float dyf = kp.y - static_cast<float>(iy);
     float sigma = this->keypoint_relative_scale(kp);
@@ -838,94 +837,6 @@ Sift::keypoint_absolute_scale (Keypoint const& kp)
 {
     return this->pre_smoothing * std::pow(2.0f,
         kp.o + (kp.s + 1.0f) / this->octave_samples);
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-Sift::write_keyfile (std::string const& filename)
-{
-    std::ofstream out(filename.c_str());
-    if (!out.good())
-        throw std::runtime_error(std::strerror(errno));
-
-    if (this->descriptors.empty())
-    {
-        out << "0 0" << std::endl;
-        out.close();
-        return;
-    }
-
-    /* Write header. */
-    {
-        Descriptor const& first = this->descriptors.front();
-        out << this->descriptors.size() << " " << first.vec.dim() << std::endl;
-    }
-
-    /* Write all descriptors. */
-    for (std::size_t i = 0; i < this->descriptors.size(); ++i)
-    {
-        Descriptor const& desc(this->descriptors[i]);
-        Keypoint const& kp(desc.k);
-        float factor = std::pow(2.0f, (float)kp.o);
-        float kpx = factor * (kp.x + 0.5f) - 0.5f;
-        float kpy = factor * (kp.y + 0.5f) - 0.5f;
-        out << kpx << " " << kpy << " " << kp.scale
-            << " " << desc.orientation << std::endl << "   ";
-        for (int j = 0; j < 128; ++j)
-            out << " " << (int)(desc.vec[j] * 255.0f);
-        out << std::endl;
-    }
-
-    out.close();
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-Sift::read_keyfile (std::string const& filename)
-{
-    std::ifstream in(filename.c_str());
-    if (!in.good())
-        throw std::runtime_error(std::strerror(errno));
-
-    this->octaves.clear(); // we can't fill these
-    this->keypoints.clear(); // we can only fill part of them
-    this->descriptors.clear(); // should be able to fill all of them
-
-    /* Read header. */
-    {
-        size_t numDescriptors, dim;
-        in >> numDescriptors >> dim;
-        this->descriptors.resize(numDescriptors);
-    }
-
-    /* Read all descriptors. */
-    for (std::size_t i = 0; i < this->descriptors.size(); ++i)
-    {
-        Descriptor desc;
-        Keypoint kp;
-        float kpx, kpy;
-
-        in >> kpx >> kpy >> kp.scale >> desc.orientation;
-
-        kp.x = kpx;
-        kp.y = kpy;
-        kp.o = 0;
-        kp.s = 0;
-
-        int d[128];
-        for (int j = 0; j < 128; ++j)
-            in >> d[j];
-
-        for (int j = 0; j < 128; ++j)
-            desc.vec[j] = ((float)d[j])/255.0f;
-
-        this->keypoints.push_back(kp);
-        desc.k = kp;
-        descriptors[i] = desc;
-    }
-    in.close();
 }
 
 /* ---------------------------------------------------------------- */

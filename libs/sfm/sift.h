@@ -5,11 +5,16 @@
  * Notes:
  * - The implementation allows a minmum octave of -1 only
  * - The descriptor extration supports 128 dimensions only
+ * - Coordinates in the keypoint are relative to the octave.
+ *   Abosulte coordinates are obtained by (TODO why? explain):
+ *   (x + 0.5, y + 0.5) * 2^octave - (0.5, 0.5).
+ *
  *
  * TODO:
  * - Refactor Keypoint to only have floating point coordinate
  * - Refactor Descriptor to use std::vector
- * - Move keypoint scale to descriptor, is this possible?
+ * - Refactor Descriptor to use coordinates, no KP copy
+ * - Move keypoint scale to descriptor
  * - Save memory by finding a more efficent code path to create octaves
  */
 #ifndef MVE_SIFTLIB_HEADER
@@ -127,17 +132,6 @@ public:
 
     /** Returns the list of descriptors. */
     Descriptors const& get_descriptors (void) const;
-
-    /**
-     * Writes keypoint file in Lowe format. The file syntax is:
-     *     <num keypoints> <descr. dimension>
-     *     <x> <y> <scale> <orientation> <128 integers in {0 ... 255}>
-     *     ...
-     */
-    void write_keyfile (std::string const& filename);
-
-    /** Reads keypoint file in Lowe format. See above for file syntax. */
-    void read_keyfile (std::string const& filename);
 
 protected:
     /**
