@@ -6,6 +6,11 @@
  * - The implementation allows a minmum octave of -1 only
  * - The descriptor extration supports 128 dimensions only
  *
+ * TODO:
+ * - Refactor Keypoint to only have floating point coordinate
+ * - Refactor Descriptor to use std::vector
+ * - Move keypoint scale to descriptor, is this possible?
+ * - Save memory by finding a more efficent code path to create octaves
  */
 #ifndef MVE_SIFTLIB_HEADER
 #define MVE_SIFTLIB_HEADER
@@ -21,59 +26,6 @@
 SFM_NAMESPACE_BEGIN
 
 /**
- * Representation of a SIFT octave.
- */
-struct SiftOctave
-{
-    typedef std::vector<mve::FloatImage::Ptr> ImageVector;
-
-    ImageVector img; ///< S+3 images per octave
-    ImageVector dog; ///< S+2 difference of gaussian images
-    ImageVector grad; ///< S+3 gradient images
-    ImageVector ori; ///< S+3 orientation images
-};
-
-/**
- * Representation of a SIFT keypoint.
- *
- * The keypoint locations are relative to the resampled size in
- * the image pyramid. To get the size relative to the input image,
- * each of (ix,iy,x,y) need to be multiplied with 2^o, where o
- * is the octave index of the keypoint. The octave index is -1 for the
- * upsampled image, 0 for the input image and >0 for subsampled images.
- * Note that the scale of the KP is already relative to the input image.
- */
-struct SiftKeypoint
-{
-    int o; ///< Octave index of the keypoint
-
-    int ix; ///< initially detected keypoint X coordinate
-    int iy; ///< initially detected keypoint Y coordinate
-    int is; ///< scale space sample index in {0 ... S-1}
-
-    float x; ///< fitted X coordinate
-    float y; ///< fitted Y coordinate
-    float s; ///< fitted scale index within octave in [-1,S]
-
-    float scale; ///< the scale (or sigma) of the keypoint
-};
-
-/**
- * Representation of the SIFT descriptor.
- *
- * A descriptor contains the keypoint it was generated from, a
- * predominant orientation and the 128-dimensional descriptor string.
- */
-struct SiftDescriptor
-{
-    typedef math::Vector<float, 128> FeatureVector;
-
-    SiftKeypoint k;
-    float orientation; ///< Orientation of the KP in [0, 2PI]
-    FeatureVector vec; ///< The feature vector
-};
-
-/**
  * Implementation of the SIFT feature detector and descriptor.
  * The implementation follows the description of the journal article:
  *
@@ -87,49 +39,45 @@ struct SiftDescriptor
  */
 class Sift
 {
+    /**
+     * Representation of a SIFT keypoint.
+     *
+     * The keypoint locations are relative to the resampled size in
+     * the image pyramid. To get the size relative to the input image,
+     * each of (ix,iy,x,y) need to be multiplied with 2^o, where o
+     * is the octave index of the keypoint. The octave index is -1 for the
+     * upsampled image, 0 for the input image and >0 for subsampled images.
+     * Note that the scale of the KP is already relative to the input image.
+     */
+    struct Keypoint
+    {
+        int o; ///< Octave index of the keypoint
+        int ix; ///< initially detected keypoint X coordinate
+        int iy; ///< initially detected keypoint Y coordinate
+        int is; ///< scale space sample index in {0 ... S-1}
+        float x; ///< fitted X coordinate
+        float y; ///< fitted Y coordinate
+        float s; ///< fitted scale index within octave in [-1,S]
+        float scale; ///< the scale (or sigma) of the keypoint
+    };
+
+    /**
+     * Representation of the SIFT descriptor.
+     *
+     * A descriptor contains the keypoint it was generated from, a
+     * predominant orientation and the 128-dimensional descriptor string.
+     */
+    struct Descriptor
+    {
+        typedef math::Vector<float, 128> FeatureVector;
+        Keypoint k;
+        float orientation; ///< Orientation of the KP in [0, 2PI]
+        FeatureVector vec; ///< The feature vector
+    };
+
 public:
-    typedef std::vector<SiftOctave> SiftOctaves;
-    typedef std::vector<SiftKeypoint> SiftKeypoints;
-    typedef std::vector<SiftDescriptor> SiftDescriptors;
-
-private:
-    mve::FloatImage::ConstPtr orig; // Original input image
-
-    /* Octave parameters. */
-    int min_octave; // Minimum octave, defaults to -1.
-    int max_octave; // Maximum octave, defaults to 5.
-    int octave_samples; // Samples in each octave, default = 3
-    float pre_smoothing; // The amount of pre-smoothing, default = 1.6
-    float inherent_blur; // The blur inherent in images, default = 0.5
-
-    /* Keypoint filtering parameters. */
-    float contrast_thres; // Feature contrast threshold
-    float edge_ratio_thres; // Ratio of principal curvatures threshold
-
-    /* Working data. */
-    SiftOctaves octaves; // The image pyramid (the octaves)
-    SiftKeypoints keypoints; // Detected keypoints
-    SiftDescriptors descriptors; // Final SIFT descriptors
-
-private:
-    void create_octaves (void);
-    void add_octave (mve::FloatImage::ConstPtr image,
-        float has_sigma, float target_sigma);
-    void extrema_detection (void);
-    std::size_t extrema_detection (mve::FloatImage::ConstPtr s[3],
-        int oi, int si);
-    void keypoint_localization (void);
-
-    void descriptor_generation (void);
-    void generate_grad_ori_images (SiftOctave* octave);
-    void orientation_assignment (SiftKeypoint const& kp,
-        SiftOctave const* octave, std::vector<float>& orientations);
-    void descriptor_assignment (SiftDescriptor& desc, SiftOctave* octave);
-
-    float keypoint_relative_scale (SiftKeypoint const& kp);
-    float keypoint_absolute_scale (SiftKeypoint const& kp);
-
-    void dump_octaves (void); // for debugging
+    typedef std::vector<Keypoint> Keypoints;
+    typedef std::vector<Descriptor> Descriptors;
 
 public:
     Sift (void);
@@ -175,16 +123,10 @@ public:
     void process (void);
 
     /** Returns the list of keypoints. */
-    SiftKeypoints& get_keypoints (void);
+    Keypoints const& get_keypoints (void) const;
 
     /** Returns the list of descriptors. */
-    SiftDescriptors& get_descriptors (void);
-
-    /** Returns the list of keypoints. */
-    SiftKeypoints const& get_keypoints (void) const;
-
-    /** Returns the list of descriptors. */
-    SiftDescriptors const& get_descriptors (void) const;
+    Descriptors const& get_descriptors (void) const;
 
     /**
      * Writes keypoint file in Lowe format. The file syntax is:
@@ -197,6 +139,60 @@ public:
     /** Reads keypoint file in Lowe format. See above for file syntax. */
     void read_keyfile (std::string const& filename);
 
+protected:
+    /**
+     * Representation of a SIFT octave.
+     */
+    struct Octave
+    {
+        typedef std::vector<mve::FloatImage::Ptr> ImageVector;
+        ImageVector img; ///< S+3 images per octave
+        ImageVector dog; ///< S+2 difference of gaussian images
+        ImageVector grad; ///< S+3 gradient images
+        ImageVector ori; ///< S+3 orientation images
+    };
+
+protected:
+    typedef std::vector<Octave> Octaves;
+
+protected:
+    void create_octaves (void);
+    void add_octave (mve::FloatImage::ConstPtr image,
+        float has_sigma, float target_sigma);
+    void extrema_detection (void);
+    std::size_t extrema_detection (mve::FloatImage::ConstPtr s[3],
+        int oi, int si);
+    void keypoint_localization (void);
+
+    void descriptor_generation (void);
+    void generate_grad_ori_images (Octave* octave);
+    void orientation_assignment (Keypoint const& kp,
+        Octave const* octave, std::vector<float>& orientations);
+    void descriptor_assignment (Descriptor& desc, Octave* octave);
+
+    float keypoint_relative_scale (Keypoint const& kp);
+    float keypoint_absolute_scale (Keypoint const& kp);
+
+    void dump_octaves (void); // for debugging
+
+private:
+    mve::FloatImage::ConstPtr orig; // Original input image
+
+    /* Octave parameters. */
+    int min_octave; // Minimum octave, defaults to -1.
+    int max_octave; // Maximum octave, defaults to 5.
+    int octave_samples; // Samples in each octave, default = 3
+    float pre_smoothing; // The amount of pre-smoothing, default = 1.6
+    float inherent_blur; // The blur inherent in images, default = 0.5
+
+    /* Keypoint filtering parameters. */
+    float contrast_thres; // Feature contrast threshold
+    float edge_ratio_thres; // Ratio of principal curvatures threshold
+
+    /* Working data. */
+    Octaves octaves; // The image pyramid (the octaves)
+    Keypoints keypoints; // Detected keypoints
+    Descriptors descriptors; // Final SIFT descriptors
 };
 
 /* ---------------------------------------------------------------- */
@@ -250,25 +246,13 @@ Sift::set_pre_smoothing (float sigma)
     this->pre_smoothing = sigma;
 }
 
-inline Sift::SiftKeypoints&
-Sift::get_keypoints (void)
-{
-    return this->keypoints;
-}
-
-inline Sift::SiftDescriptors&
-Sift::get_descriptors (void)
-{
-    return this->descriptors;
-}
-
-inline Sift::SiftKeypoints const&
+inline Sift::Keypoints const&
 Sift::get_keypoints (void) const
 {
     return this->keypoints;
 }
 
-inline Sift::SiftDescriptors const&
+inline Sift::Descriptors const&
 Sift::get_descriptors (void) const
 {
     return this->descriptors;

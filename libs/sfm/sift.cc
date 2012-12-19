@@ -157,9 +157,6 @@ Sift::create_octaves (void)
     {
         //std::cout << "Creating octave " << i << "..." << std::endl;
         this->add_octave(img, img_sigma, this->pre_smoothing);
-        //SiftOctave const& oct(this->octaves.back());
-        //mve::FloatImage::ConstPtr prev(oct.img[this->octave_samples]);
-        //img = mve::image::rescale_half_size_subsample<float>(prev);
         img = mve::image::rescale_half_size_gaussian<float>(img);
         img_sigma = this->pre_smoothing;
     }
@@ -184,8 +181,8 @@ Sift::add_octave (mve::FloatImage::ConstPtr image,
         : mve::FloatImage::Ptr(image->duplicate()));
 
     /* Create the new octave and add initial image. */
-    this->octaves.push_back(SiftOctave());
-    SiftOctave& oct = this->octaves.back();
+    this->octaves.push_back(Octave());
+    Octave& oct = this->octaves.back();
     oct.img.push_back(base);
 
     /* 'k' is the constant factor between the scales in scale space. */
@@ -227,7 +224,7 @@ Sift::extrema_detection (void)
     /* Detect keypoints in each octave... */
     for (std::size_t i = 0; i < this->octaves.size(); ++i)
     {
-        SiftOctave const& oct(this->octaves[i]);
+        Octave const& oct(this->octaves[i]);
         /* In each octave, take three subsequent DoG images and detect. */
         for (int s = 0; s < (int)oct.dog.size() - 2; ++s)
         {
@@ -282,7 +279,7 @@ Sift::extrema_detection (mve::FloatImage::ConstPtr s[3], int oi, int si)
                 continue;
 
             /* Yummy. Add detected scale space extremum. */
-            SiftKeypoint kp;
+            Keypoint kp;
             kp.o = oi;
             kp.ix = x;
             kp.iy = y;
@@ -314,10 +311,10 @@ Sift::keypoint_localization (void)
     for (std::size_t i = 0; i < this->keypoints.size(); ++i)
     {
         /* Copy keypoint. */
-        SiftKeypoint kp(this->keypoints[i]);
+        Keypoint kp(this->keypoints[i]);
 
         /* Get corresponding octave and DoG images. */
-        SiftOctave const& oct(this->octaves[kp.o - this->min_octave]);
+        Octave const& oct(this->octaves[kp.o - this->min_octave]);
         mve::FloatImage::ConstPtr dogs[3] =
         {
             oct.dog[kp.is + 0], oct.dog[kp.is + 1], oct.dog[kp.is + 2]
@@ -476,12 +473,12 @@ Sift::descriptor_generation (void)
      * never decreased again, which is enforced during the algorithm.
      */
     int octave_index = this->min_octave - 1;
-    SiftOctave* octave = 0;
+    Octave* octave = 0;
 
     /* Walk over all keypoints and compute descriptors. */
     for (std::size_t i = 0; i < this->keypoints.size(); ++i)
     {
-        SiftKeypoint const& kp(this->keypoints[i]);
+        Keypoint const& kp(this->keypoints[i]);
 
         /* Generate new gradient and orientation images if octave changed. */
         if (kp.o < octave_index)
@@ -506,7 +503,7 @@ Sift::descriptor_generation (void)
         /* Feature vector extraction. */
         for (std::size_t j = 0; j < orientations.size(); ++j)
         {
-            SiftDescriptor desc;
+            Descriptor desc;
             desc.k = kp;
             desc.orientation = orientations[j];
             this->descriptor_assignment(desc, octave);
@@ -518,7 +515,7 @@ Sift::descriptor_generation (void)
 /* ---------------------------------------------------------------- */
 
 void
-Sift::generate_grad_ori_images (SiftOctave* octave)
+Sift::generate_grad_ori_images (Octave* octave)
 {
     octave->grad.clear();
     octave->grad.reserve(octave->img.size());
@@ -573,8 +570,8 @@ Sift::generate_grad_ori_images (SiftOctave* octave)
 /* ---------------------------------------------------------------- */
 
 void
-Sift::orientation_assignment (SiftKeypoint const& kp,
-    SiftOctave const* octave, std::vector<float>& orientations)
+Sift::orientation_assignment (Keypoint const& kp,
+    Octave const* octave, std::vector<float>& orientations)
 {
     int const nbins = 36;
     float const nbinsf = static_cast<float>(nbins);
@@ -676,7 +673,7 @@ Sift::orientation_assignment (SiftKeypoint const& kp,
 /* ---------------------------------------------------------------- */
 
 void
-Sift::descriptor_assignment (SiftDescriptor& desc, SiftOctave* octave)
+Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
 {
     /*
      * The final feature vector has size PXB * PXB * OHB.
@@ -687,7 +684,7 @@ Sift::descriptor_assignment (SiftDescriptor& desc, SiftOctave* octave)
     int const PXB = 4; // Pixel bins with 4x4 bins
     int const OHB = 8; // Orientation histogram with 8 bins
 
-    SiftKeypoint const& kp(desc.k);
+    Keypoint const& kp(desc.k);
 
     /* Integral x and y coordinates and closest scale sample. */
     int ix = static_cast<int>(kp.x + 0.5f);
@@ -830,14 +827,14 @@ Sift::descriptor_assignment (SiftDescriptor& desc, SiftOctave* octave)
  */
 
 float
-Sift::keypoint_relative_scale (SiftKeypoint const& kp)
+Sift::keypoint_relative_scale (Keypoint const& kp)
 {
     return this->pre_smoothing * std::pow(2.0f,
         (kp.s + 1.0f) / this->octave_samples);
 }
 
 float
-Sift::keypoint_absolute_scale (SiftKeypoint const& kp)
+Sift::keypoint_absolute_scale (Keypoint const& kp)
 {
     return this->pre_smoothing * std::pow(2.0f,
         kp.o + (kp.s + 1.0f) / this->octave_samples);
@@ -861,15 +858,15 @@ Sift::write_keyfile (std::string const& filename)
 
     /* Write header. */
     {
-        SiftDescriptor const& first = this->descriptors.front();
+        Descriptor const& first = this->descriptors.front();
         out << this->descriptors.size() << " " << first.vec.dim() << std::endl;
     }
 
     /* Write all descriptors. */
     for (std::size_t i = 0; i < this->descriptors.size(); ++i)
     {
-        SiftDescriptor const& desc(this->descriptors[i]);
-        SiftKeypoint const& kp(desc.k);
+        Descriptor const& desc(this->descriptors[i]);
+        Keypoint const& kp(desc.k);
         float factor = std::pow(2.0f, (float)kp.o);
         float kpx = factor * (kp.x + 0.5f) - 0.5f;
         float kpy = factor * (kp.y + 0.5f) - 0.5f;
@@ -906,8 +903,8 @@ Sift::read_keyfile (std::string const& filename)
     /* Read all descriptors. */
     for (std::size_t i = 0; i < this->descriptors.size(); ++i)
     {
-        SiftDescriptor desc;
-        SiftKeypoint kp;
+        Descriptor desc;
+        Keypoint kp;
         float kpx, kpy;
 
         in >> kpx >> kpy >> kp.scale >> desc.orientation;
@@ -941,7 +938,7 @@ Sift::dump_octaves (void)
     /* Dumps all octaves to disc, for debugging purposes. */
     for (std::size_t i = 0; i < this->octaves.size(); ++i)
     {
-        SiftOctave const& oct(this->octaves[i]);
+        Octave const& oct(this->octaves[i]);
         for (std::size_t j = 0; j < oct.img.size(); ++j)
         {
             std::stringstream ss;

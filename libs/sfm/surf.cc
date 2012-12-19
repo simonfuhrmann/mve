@@ -141,7 +141,7 @@ Surf::create_response_map (int o, int k)
      * Note: filter size 'fs' is defined as filter width / 3.
      * For details, see SURF 3.2.
      */
-    typedef SurfOctave::RespType RespType;
+    typedef Octave::RespType RespType;
 
     /* Filter size. The actual kernel side length is 3 * fs. */
     int const fs = kernel_sizes[o][k];
@@ -164,7 +164,7 @@ Surf::create_response_map (int o, int k)
     }
 
     /* Generate the response maps. */
-    SurfOctave::RespImage::Ptr img = SurfOctave::RespImage::create(ow, oh, 1);
+    Octave::RespImage::Ptr img = Octave::RespImage::create(ow, oh, 1);
     int const border = fs + fs / 2 + 1;
     for (int y = 0, i = 0; y < h; y += step)
         for (int x = 0; x < w; x += step, ++i)
@@ -305,8 +305,8 @@ Surf::extrema_detection (void)
         int const height = this->octaves[o].imgs[0]->height();
         for (std::size_t s = 1; s < 3; ++s)
         {
-            SurfOctave::RespImage::ConstPtr ss = this->octaves[o].imgs[s];
-            SurfOctave::RespType const* ptr = &ss->at(0);
+            Octave::RespImage::ConstPtr ss = this->octaves[o].imgs[s];
+            Octave::RespType const* ptr = &ss->at(0);
             for (int y = 0; y < height; ++y, ptr += width)
                 for (int x = 1; x + 1 < width; ++x)
                     if (ptr[x] > ptr[x-1] && ptr[x] > ptr[x + 1])
@@ -328,12 +328,12 @@ Surf::check_maximum(int o, int s, int x, int y)
     int off1[8] = { -w - 1, -w, -w + 1, -1,    +1, w - 1, w, w + 1 };
     int off2[9] = { -w - 1, -w, -w + 1, -1, 0, +1, w - 1, w, w + 1 };
 
-    SurfOctave::RespType const* ptr;
+    Octave::RespType const* ptr;
     int const off = x + y * w;
 
     /* Perform NMS check on the candidate sample first. */
     ptr = this->octaves[o].imgs[s]->get_data_pointer() + off;
-    SurfOctave::RespType value = ptr[0];
+    Octave::RespType value = ptr[0];
     for (int i = 0; i < 8; ++i)
         if (ptr[off1[i]] >= value)
             return;
@@ -349,7 +349,7 @@ Surf::check_maximum(int o, int s, int x, int y)
             return;
 
     /* Seems like we found a keypoint. */
-    SurfKeypoint kp;
+    Keypoint kp;
     kp.octave = o;
     kp.sample = static_cast<float>(s);
     kp.x = static_cast<float>(x);
@@ -362,11 +362,11 @@ Surf::check_maximum(int o, int s, int x, int y)
 void
 Surf::keypoint_localization_and_filtering (void)
 {
-    SurfKeypoints filtered_keypoints;
+    Keypoints filtered_keypoints;
     filtered_keypoints.reserve(this->keypoints.size());
     for (std::size_t i = 0; i < this->keypoints.size(); ++i)
     {
-        SurfKeypoint kp = this->keypoints[i];
+        Keypoint kp = this->keypoints[i];
         bool solve_good = this->keypoint_localization(&kp);
         if (!solve_good)
             continue;
@@ -378,13 +378,13 @@ Surf::keypoint_localization_and_filtering (void)
 /* ---------------------------------------------------------------- */
 
 bool
-Surf::keypoint_localization (SurfKeypoint* kp)
+Surf::keypoint_localization (Keypoint* kp)
 {
     int const sample = static_cast<int>(kp->sample);
     int const w = this->octaves[kp->octave].imgs[sample]->width();
     //int const h = this->octaves[kp->octave].imgs[sample]->height();
     int off = static_cast<int>(kp->x) + static_cast<int>(kp->y) * w;
-    SurfOctave::RespType const *s0, *s1, *s2;
+    Octave::RespType const *s0, *s1, *s2;
     s0 = this->octaves[kp->octave].imgs[sample - 1]->get_data_pointer() + off;
     s1 = this->octaves[kp->octave].imgs[sample]->get_data_pointer() + off;
     s2 = this->octaves[kp->octave].imgs[sample + 1]->get_data_pointer() + off;
@@ -464,10 +464,10 @@ Surf::descriptor_assignment (void)
     this->descriptors.reserve(keypoints.size());
     for (std::size_t i = 0; i < this->keypoints.size(); ++i)
     {
-        SurfKeypoint const& kp = this->keypoints[i];
+        Keypoint const& kp = this->keypoints[i];
 
         /* Copy over the basic information to the descriptor. */
-        SurfDescriptor descr;
+        Descriptor descr;
         descr.x = kp.x;
         descr.y = kp.y;
 
@@ -494,7 +494,7 @@ Surf::descriptor_assignment (void)
 /* ---------------------------------------------------------------- */
 
 bool
-Surf::descriptor_orientation (SurfDescriptor* descr)
+Surf::descriptor_orientation (Descriptor* descr)
 {
     int const descr_x = static_cast<int>(descr->x + 0.5f);
     int const descr_y = static_cast<int>(descr->y + 0.5f);
@@ -643,7 +643,7 @@ Surf::filter_dx_dy (int x, int y, int fs, float* dx, float* dy)
 /* ---------------------------------------------------------------- */
 
 bool
-Surf::descriptor_computation (SurfDescriptor* descr, bool upright)
+Surf::descriptor_computation (Descriptor* descr, bool upright)
 {
     int const descr_scale = static_cast<int>(descr->scale);
     int const width = this->sat->width();
@@ -747,7 +747,7 @@ Surf::draw_features (mve::ByteImage::Ptr image)
     float const len = 2.0f;
     for (std::size_t i = 0; i < this->descriptors.size(); ++i)
     {
-        SurfDescriptor const& descr = this->descriptors[i];
+        Descriptor const& descr = this->descriptors[i];
         float const sin_ori = std::sin(descr.orientation);
         float const cos_ori = std::cos(descr.orientation);
         /* Coordinates for the four box corners. */

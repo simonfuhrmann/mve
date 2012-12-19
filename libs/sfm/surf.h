@@ -2,17 +2,11 @@
  * SURF implementation.
  * Written by Simon Fuhrmann.
  *
- * This collection of classes implement the SURF keypoint detector and
- * descriptor as described in:
- *
- *   Speeded-Up Robust Features (SURF)
- *   by Herbert Bay, Andreas Ess, Tinne Tuytelaars, and Luc Van Gool
- *
  * Some useful references:
  * - "Resolving Implementation Ambiguity and Improving SURF" by Peter Abeles
  * - SURF Article at http://www.ipol.im/pub/pre/H2/
  *
- * Things still TODO:
+ * TODO:
  * - N9 Neighborhood is implemented twice. Re-use code.
  */
 #ifndef MVE_SURFLIB_HEADER
@@ -28,41 +22,10 @@
 SFM_NAMESPACE_BEGIN
 
 /**
- * Representation of a SURF keypoint.
- */
-struct SurfKeypoint
-{
-    int octave; ///< Octave index of the keypoint
-    float sample; ///< Scale space sample index within octave in [0, 3]
-    float x; ///< Detected keypoint X coordinate
-    float y; ///< Detected keypoint X coordinate
-};
-
-/**
- * Representation of a SURF descriptor.
- */
-struct SurfDescriptor
-{
-    float x;
-    float y;
-    float scale;
-    float orientation;
-    std::vector<float> data;
-};
-
-/*
- * Representation of a SURF octave.
- */
-struct SurfOctave
-{
-    typedef float RespType; ///< Type for the Hessian response value
-    typedef mve::Image<RespType> RespImage; ///< Hessian response map type
-    typedef std::vector<RespImage::Ptr> RespImages; ///< Vector of response images
-    RespImages imgs;
-};
-
-/**
- * Unfinished SURF implementation.
+ * Implementation of the SURF feature detector and descriptor as described in:
+ *
+ *   Speeded-Up Robust Features (SURF)
+ *   by Herbert Bay, Andreas Ess, Tinne Tuytelaars, and Luc Van Gool
  *
  * Since SURF relies on summed area tables (SAT), it can currently only
  * be used with integer images, in particular byte images. For floating
@@ -72,11 +35,32 @@ struct SurfOctave
 class Surf
 {
 public:
-    typedef int64_t SatType; ///< Signed type for the SAT image values
-    typedef mve::Image<SatType> SatImage; ///< SAT image type
-    typedef std::vector<SurfKeypoint> SurfKeypoints;
-    typedef std::vector<SurfDescriptor> SurfDescriptors;
-    typedef std::vector<SurfOctave> SurfOctaves;
+    /**
+     * Representation of a SURF keypoint.
+     */
+    struct Keypoint
+    {
+        int octave; ///< Octave index of the keypoint
+        float sample; ///< Scale space sample index within octave in [0, 3]
+        float x; ///< Detected keypoint X coordinate
+        float y; ///< Detected keypoint X coordinate
+    };
+
+    /**
+     * Representation of a SURF descriptor.
+     */
+    struct Descriptor
+    {
+        float x;
+        float y;
+        float scale;
+        float orientation;
+        std::vector<float> data;
+    };
+
+public:
+    typedef std::vector<Keypoint> Keypoints;
+    typedef std::vector<Descriptor> Descriptors;
 
 public:
     Surf (void);
@@ -92,11 +76,28 @@ public:
     void process (void);
 
     /** Returns the list of keypoints. */
-    SurfKeypoints const& get_keypoints (void) const;
+    Keypoints const& get_keypoints (void) const;
     /** Returns the list of descriptors. */
-    SurfDescriptors const& get_descriptors (void) const;
+    Descriptors const& get_descriptors (void) const;
 
     void draw_features (mve::ByteImage::Ptr image);
+
+protected:
+    /*
+     * Representation of a SURF octave.
+     */
+    struct Octave
+    {
+        typedef float RespType; ///< Type for the Hessian response value
+        typedef mve::Image<RespType> RespImage; ///< Hessian response map type
+        typedef std::vector<RespImage::Ptr> RespImages; ///< Vector of response images
+        RespImages imgs;
+    };
+
+protected:
+    typedef int64_t SatType; ///< Signed type for the SAT image values
+    typedef mve::Image<SatType> SatImage; ///< SAT image type
+    typedef std::vector<Octave> Octaves;
 
 protected:
     void create_octaves (void);
@@ -110,11 +111,11 @@ protected:
     void check_maximum (int o, int s, int x, int y);
 
     void keypoint_localization_and_filtering (void);
-    bool keypoint_localization (SurfKeypoint* kp);
+    bool keypoint_localization (Surf::Keypoint* kp);
 
     void descriptor_assignment (void);
-    bool descriptor_orientation (SurfDescriptor* descr);
-    bool descriptor_computation (SurfDescriptor* descr, bool upright);
+    bool descriptor_orientation (Descriptor* descr);
+    bool descriptor_computation (Descriptor* descr, bool upright);
     void filter_dx_dy(int x, int y, int fs, float* dx, float* dy);
 
 private:
@@ -122,9 +123,9 @@ private:
     bool upright_descriptor;
 
     SatImage::Ptr sat;
-    SurfOctaves octaves;
-    SurfKeypoints keypoints;
-    SurfDescriptors descriptors;
+    Octaves octaves;
+    Keypoints keypoints;
+    Descriptors descriptors;
 };
 
 /* ---------------------------------------------------------------- */
@@ -148,13 +149,13 @@ Surf::set_upright_descriptor (bool upright)
     this->upright_descriptor = upright;
 }
 
-inline Surf::SurfKeypoints const&
+inline Surf::Keypoints const&
 Surf::get_keypoints (void) const
 {
     return this->keypoints;
 }
 
-inline Surf::SurfDescriptors const&
+inline Surf::Descriptors const&
 Surf::get_descriptors (void) const
 {
     return this->descriptors;

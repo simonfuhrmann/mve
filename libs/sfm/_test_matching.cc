@@ -15,7 +15,7 @@ uint8_t const color_black[] = { 0, 0, 0 };
 
 void
 two_view_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2,
-    sfm::Surf::SurfDescriptors* descr1, sfm::Surf::SurfDescriptors* descr2,
+    sfm::Surf::Descriptors* descr1, sfm::Surf::Descriptors* descr2,
     sfm::MatchingResult* matching)
 {
     /* Run SURF feature detection */
@@ -75,8 +75,8 @@ void
 visualize_matches (std::string const& filename,
     mve::ByteImage::ConstPtr image1,
     mve::ByteImage::ConstPtr image2,
-    sfm::Surf::SurfDescriptors const& descr1,
-    sfm::Surf::SurfDescriptors const& descr2,
+    sfm::Surf::Descriptors const& descr1,
+    sfm::Surf::Descriptors const& descr2,
     sfm::MatchingResult const& matching)
 {
     /* Prepare data structures to draw matches. */
@@ -164,14 +164,14 @@ main (int argc, char** argv)
     {
         image2 = mve::image::rotate<uint8_t>(image1, i * MATH_PI / 180.0, color_black);
 
-        sfm::Surf::SurfDescriptors descr1, descr2;
+        sfm::Surf::Descriptors descr1, descr2;
         sfm::MatchingResult matchresult;
         two_view_matching(image1, image2, &descr1, &descr2, &matchresult);
         std::string filename = "/tmp/featurematching_" + util::string::get_filled(i, 3, '0') + ".png";
         visualize_matches(filename, image1, image2, descr1, descr2, matchresult);
 
         int num_matches = 0;
-        for (int i = 0; i < matchresult.matches_1_2.size(); ++i)
+        for (std::size_t i = 0; i < matchresult.matches_1_2.size(); ++i)
             if (matchresult.matches_1_2[i] >= 0)
                 num_matches += 1;
         gnuplot_data << i << " " << num_matches << std::endl;
