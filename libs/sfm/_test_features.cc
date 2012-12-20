@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "util/fs.h"
 #include "util/timer.h"
 #include "mve/image.h"
 #include "mve/imagetools.h"
@@ -20,10 +21,11 @@ main (int argc, char** argv)
 
     /* Load image. */
     mve::ByteImage::Ptr image;
+    std::string image_filename = argv[1];
     try
     {
-        std::cout << "Loading " << argv[1] << "..." << std::endl;
-        image = mve::image::load_file(argv[1]);
+        std::cout << "Loading " << image_filename << "..." << std::endl;
+        image = mve::image::load_file(image_filename);
     }
     catch (std::exception& e)
     {
@@ -94,8 +96,15 @@ main (int argc, char** argv)
         sift_drawing, sfm::Visualizer::RADIUS_BOX_ORIENTATION);
 
     /* Save the two images for SIFT and SURF. */
-    mve::image::save_file(surf_image, "/tmp/surf_features.png");
-    mve::image::save_file(sift_image, "/tmp/sift_features.png");
+    std::string surf_out_fname = "/tmp/" + util::fs::replace_extension
+        (util::fs::get_file_component(image_filename), "surf.png");
+    std::string sift_out_fname = "/tmp/" + util::fs::replace_extension
+        (util::fs::get_file_component(image_filename), "sift.png");
+
+    std::cout << "Writing output file: " << surf_out_fname << std::endl;
+    mve::image::save_file(surf_image, surf_out_fname);
+    std::cout << "Writing output file: " << sift_out_fname << std::endl;
+    mve::image::save_file(sift_image, sift_out_fname);
 
     return 0;
 }
