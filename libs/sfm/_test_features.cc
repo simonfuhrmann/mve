@@ -7,6 +7,7 @@
 
 #include "surf.h"
 #include "sift.h"
+#include "visualizer.h"
 
 int
 main (int argc, char** argv)
@@ -64,8 +65,37 @@ main (int argc, char** argv)
         sift_keypoints = sift.get_keypoints();
     }
 
-    // TODO: Create common feature drawing code, remove impl. specific code.
-    // TODO: Save two images for SIFT and SURF.
+    /* Draw features. */
+    std::vector<sfm::Visualizer::Keypoint> surf_drawing;
+    for (std::size_t i = 0; i < surf_descr.size(); ++i)
+    {
+        sfm::Visualizer::Keypoint kp;
+        kp.orientation = surf_descr[i].orientation;
+        kp.radius = surf_descr[i].scale;
+        kp.x = surf_descr[i].x;
+        kp.y = surf_descr[i].y;
+        surf_drawing.push_back(kp);
+    }
+
+    std::vector<sfm::Visualizer::Keypoint> sift_drawing;
+    for (std::size_t i = 0; i < sift_descr.size(); ++i)
+    {
+        sfm::Visualizer::Keypoint kp;
+        kp.orientation = sift_descr[i].orientation;
+        kp.radius = sift_descr[i].scale;
+        kp.x = sift_descr[i].x;
+        kp.y = sift_descr[i].y;
+        sift_drawing.push_back(kp);
+    }
+
+    mve::ByteImage::Ptr surf_image = sfm::Visualizer::draw_keypoints(image,
+        surf_drawing, sfm::Visualizer::RADIUS_BOX_ORIENTATION);
+    mve::ByteImage::Ptr sift_image = sfm::Visualizer::draw_keypoints(image,
+        sift_drawing, sfm::Visualizer::RADIUS_BOX_ORIENTATION);
+
+    /* Save the two images for SIFT and SURF. */
+    mve::image::save_file(surf_image, "/tmp/surf_features.png");
+    mve::image::save_file(sift_image, "/tmp/sift_features.png");
 
     return 0;
 }

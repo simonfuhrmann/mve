@@ -503,8 +503,12 @@ Sift::descriptor_generation (void)
         /* Feature vector extraction. */
         for (std::size_t j = 0; j < orientations.size(); ++j)
         {
+            float const scale_factor = std::pow(2.0f, kp.o);
             Descriptor desc;
             desc.k = kp;
+            desc.x = scale_factor * (kp.x + 0.5f) - 0.5f;
+            desc.y = scale_factor * (kp.y + 0.5f) - 0.5f;
+            desc.scale = kp.scale;
             desc.orientation = orientations[j];
             this->descriptor_assignment(desc, octave);
             this->descriptors.push_back(desc);

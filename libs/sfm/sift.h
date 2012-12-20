@@ -74,10 +74,12 @@ class Sift
      */
     struct Descriptor
     {
-        typedef math::Vector<float, 128> FeatureVector;
-        Keypoint k;
+        Keypoint k;  // TODO: To be removed!
+        float x;
+        float y;
+        float scale;
         float orientation; ///< Orientation of the KP in [0, 2PI]
-        FeatureVector vec; ///< The feature vector
+        math::Vector<float, 128> vec; ///< The feature vector
     };
 
 public:

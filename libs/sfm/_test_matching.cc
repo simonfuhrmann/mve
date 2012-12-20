@@ -71,41 +71,6 @@ two_view_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2,
 
 }
 
-void
-visualize_matches (std::string const& filename,
-    mve::ByteImage::ConstPtr image1,
-    mve::ByteImage::ConstPtr image2,
-    sfm::Surf::Descriptors const& descr1,
-    sfm::Surf::Descriptors const& descr2,
-    sfm::MatchingResult const& matching)
-{
-    /* Prepare data structures to draw matches. */
-    std::vector<std::pair<int, int> > loc1;
-    std::vector<std::pair<int, int> > loc2;
-    for (std::size_t i = 0; i < matching.matches_1_2.size(); ++i)
-    {
-        // TMP: Reject matches due to boundary.
-        if (descr1[i].x < 120 || descr1[i].x > image1->width() - 120
-            || descr1[i].y < 120 || descr1[i].y > image1->height() - 120)
-            continue;
-
-        int const j = matching.matches_1_2[i];
-        if (j >= 0)
-        {
-            loc1.push_back(std::make_pair(descr1[i].x, descr1[i].y));
-            loc2.push_back(std::make_pair(descr2[j].x, descr2[j].y));
-        }
-    }
-    std::cout << "Kept " << loc1.size() << " consistent matches." << std::endl;
-
-    /* Visualize matches. */
-    mve::ByteImage::Ptr debug1 = sfm::visualizer_draw_features(image1, loc1);
-    mve::ByteImage::Ptr debug2 = sfm::visualizer_draw_features(image2, loc2);
-    mve::ByteImage::Ptr debug3 = sfm::visualizer_draw_matching(debug1, debug2,
-        loc1, loc2);
-    mve::image::save_file(debug3, filename);
-}
-
 
 int
 main (int argc, char** argv)
@@ -141,7 +106,7 @@ main (int argc, char** argv)
     sfm::Surf::SurfDescriptors descr1, descr2;
     sfm::MatchingResult matchresult;
     two_view_matching(image1, image2, &descr1, &descr2, &matchresult);
-    visualize_matches("/tmp/featurematching.png", image1, image2, descr1, descr2, matchresult);
+    //visualize_matches("/tmp/featurematching.png", image1, image2, descr1, descr2, matchresult);
 
 #else
     /* Benchmarking. */
@@ -167,8 +132,8 @@ main (int argc, char** argv)
         sfm::Surf::Descriptors descr1, descr2;
         sfm::MatchingResult matchresult;
         two_view_matching(image1, image2, &descr1, &descr2, &matchresult);
-        std::string filename = "/tmp/featurematching_" + util::string::get_filled(i, 3, '0') + ".png";
-        visualize_matches(filename, image1, image2, descr1, descr2, matchresult);
+        //std::string filename = "/tmp/featurematching_" + util::string::get_filled(i, 3, '0') + ".png";
+        //visualize_matches(filename, image1, image2, descr1, descr2, matchresult);
 
         int num_matches = 0;
         for (std::size_t i = 0; i < matchresult.matches_1_2.size(); ++i)

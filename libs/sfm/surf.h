@@ -80,8 +80,6 @@ public:
     /** Returns the list of descriptors. */
     Descriptors const& get_descriptors (void) const;
 
-    void draw_features (mve::ByteImage::Ptr image);
-
 protected:
     /*
      * Representation of a SURF octave.
