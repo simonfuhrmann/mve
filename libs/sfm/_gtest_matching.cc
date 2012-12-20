@@ -1,4 +1,4 @@
-// Test cases for the image class and related features.
+// Test cases for feature matching.
 // Written by Simon Fuhrmann.
 
 #include <gtest/gtest.h>
