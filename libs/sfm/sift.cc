@@ -585,52 +585,52 @@ Sift::orientation_assignment (Keypoint const& kp,
     std::fill(hist, hist + nbins, 0.0f);
 
     /* Integral x and y coordinates and closest scale sample. */
-    int ix = static_cast<int>(kp.x + 0.5f);
-    int iy = static_cast<int>(kp.y + 0.5f);
-    int is = static_cast<int>(math::algo::round(kp.s));
-    float sigma = this->keypoint_relative_scale(kp);
-
-    //if (is < -1 || is > this->octave_samples)
-    //    throw std::runtime_error("SIFT internal: scale index out of bounds. clamp necessary!");
+    int const ix = static_cast<int>(kp.x + 0.5f);
+    int const iy = static_cast<int>(kp.y + 0.5f);
+    int const is = static_cast<int>(math::algo::round(kp.s));
+    float const sigma = this->keypoint_relative_scale(kp);
 
     /* Images with its dimension for the keypoint. */
     mve::FloatImage::ConstPtr grad(octave->grad[is + 1]);
     mve::FloatImage::ConstPtr ori(octave->ori[is + 1]);
-    int const w = grad->width();
-    int const h = grad->height();
+    int const width = grad->width();
+    int const height = grad->height();
 
     /*
-     * Compute window size w, the full window has 2*w+1 pixel.
+     * Compute window size 'win', the full window has  2 * win + 1  pixel.
      * The factor 3 makes the window large enough such that the gaussian
      * has very little weight beyond the window. The value 1.5 is from
-     * the SIFT paper.
+     * the SIFT paper. If the window goes beyond the image boundaries,
+     * the keypoint is discarded.
      */
     float const sigma_factor = 1.5f;
     int win = static_cast<int>(sigma * sigma_factor * 3.0f);
-    int center = iy * w + ix;
-    float dxf = kp.x - static_cast<float>(ix);
-    float dyf = kp.y - static_cast<float>(iy);
-    float maxdist = static_cast<float>(win*win) + 0.5f;
+    if (ix < win || ix + win >= width || iy < win || iy + win >= height)
+        return;
+
+    /* Center of keypoint index. */
+    int center = iy * width + ix;
+    float const dxf = kp.x - static_cast<float>(ix);
+    float const dyf = kp.y - static_cast<float>(iy);
+    float const maxdist = static_cast<float>(win*win) + 0.5f;
 
     /* Populate histogram over window, intersected with (1,1), (w-2,h-2). */
-    int dimx[2] = { std::max(-win, 1 - ix), std::min(win, w - ix - 2) };
-    int dimy[2] = { std::max(-win, 1 - iy), std::min(win, h - iy - 2) };
-    for (int dy = dimy[0]; dy <= dimy[1]; ++dy)
+    for (int dy = -win; dy <= win; ++dy)
     {
-        int yoff = dy * w;
-        for (int dx = dimx[0]; dx <= dimx[1]; ++dx)
+        int const yoff = dy * width;
+        for (int dx = -win; dx <= win; ++dx)
         {
             /* Limit to circular window (centered at accurate keypoint). */
-            float dist = MATH_POW2(dx-dxf) + MATH_POW2(dy-dyf);
+            float const dist = MATH_POW2(dx-dxf) + MATH_POW2(dy-dyf);
             if (dist > maxdist)
                 continue;
 
             float gm = grad->at(center + yoff + dx); // gradient magnitude
             float go = ori->at(center + yoff + dx); // gradient orientation
-            float w = math::algo::gaussian_xx(dist, sigma * sigma_factor);
+            float weight = math::algo::gaussian_xx(dist, sigma * sigma_factor);
             int bin = static_cast<int>(nbinsf * go / (2.0f * MATH_PI));
             bin = math::algo::clamp(bin, 0, nbins - 1);
-            hist[bin] += gm * w;
+            hist[bin] += gm * weight;
         }
     }
 
@@ -691,23 +691,22 @@ Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
     Keypoint const& kp(desc.k);
 
     /* Integral x and y coordinates and closest scale sample. */
-    int ix = static_cast<int>(kp.x + 0.5f);
-    int iy = static_cast<int>(kp.y + 0.5f);
-    int is = static_cast<int>(math::algo::round(kp.s)); // kp.s can be neg.
-    float dxf = kp.x - static_cast<float>(ix);
-    float dyf = kp.y - static_cast<float>(iy);
-    float sigma = this->keypoint_relative_scale(kp);
+    int const ix = static_cast<int>(kp.x + 0.5f);
+    int const iy = static_cast<int>(kp.y + 0.5f);
+    int const is = static_cast<int>(math::algo::round(kp.s)); // can be neg.
+    float const dxf = kp.x - static_cast<float>(ix);
+    float const dyf = kp.y - static_cast<float>(iy);
+    float const sigma = this->keypoint_relative_scale(kp);
 
     /* Images with its dimension for the keypoint. */
     mve::FloatImage::ConstPtr grad(octave->grad[is + 1]);
     mve::FloatImage::ConstPtr ori(octave->ori[is + 1]);
-    int const w = grad->width();
-    int const h = grad->height();
+    int const width = grad->width();
+    int const height = grad->height();
 
     /* Clear feature vector. */
     desc.vec.fill(0.0f);
 
-#if 1
     /* Rotation constants given by descriptor orientation. */
     float const sino = std::sin(desc.orientation);
     float const coso = std::cos(desc.orientation);
@@ -720,8 +719,10 @@ Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
      * rotated, we need to multiply with sqrt(2). The window size is:
      * 2W = sqrt(2) * 3 * sigma * (PXB + 1).
      */
-    float binsize = 3.0f * sigma;
-    int win = std::sqrt(2.0f) * binsize * (float)(PXB + 1) * 0.5f;
+    float const binsize = 3.0f * sigma;
+    int win = MATH_SQRT2 * binsize * (float)(PXB + 1) * 0.5f;
+    if (ix < win || ix + win >= width || iy < win || iy + win >= height)
+        return;
 
     /*
      * Iterate over the window, intersected with the image region
@@ -729,24 +730,22 @@ Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
      * not defined at the boundary pixels. Add all samples to the
      * corresponding bin.
      */
-    int center = iy * w + ix; // Center pixel at KP location
-    int dimx[2] = { std::max(-win, 1 - ix), std::min(win, w - ix - 2) };
-    int dimy[2] = { std::max(-win, 1 - iy), std::min(win, h - iy - 2) };
-    for (int dy = dimy[0]; dy <= dimy[1]; ++dy)
+    int const center = iy * width + ix; // Center pixel at KP location
+    for (int dy = -win; dy <= win; ++dy)
     {
-        int yoff = dy * w;
-        for (int dx = dimx[0]; dx <= dimx[1]; ++dx)
+        int const yoff = dy * width;
+        for (int dx = -win; dx <= win; ++dx)
         {
             /* Get pixel gradient magnitude and orientation. */
-            float mod = grad->at(center + yoff + dx);
-            float angle = ori->at(center + yoff + dx);
+            float const mod = grad->at(center + yoff + dx);
+            float const angle = ori->at(center + yoff + dx);
             float theta = angle - desc.orientation;
             if (theta < 0.0f)
                 theta += 2.0f * MATH_PI;
 
             /* Compute fractional coordinates w.r.t. the window. */
-            float winx = (float)dx - dxf;
-            float winy = (float)dy - dyf;
+            float const winx = (float)dx - dxf;
+            float const winy = (float)dy - dyf;
 
             /*
              * Compute normalized coordinates w.r.t. bins. The window
@@ -778,7 +777,7 @@ Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
             int byi[2] = { (int)std::floor(biny), (int)std::floor(biny) + 1 };
             int bti[2] = { (int)std::floor(bint), (int)std::floor(bint) + 1 };
 
-            float w[3][2] = {
+            float weights[3][2] = {
                 { (float)bxi[1] - binx, 1.0f - ((float)bxi[1] - binx) },
                 { (float)byi[1] - biny, 1.0f - ((float)byi[1] - biny) },
                 { (float)bti[1] - bint, 1.0f - ((float)bti[1] - bint) }
@@ -802,11 +801,11 @@ Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
                             continue;
 
                         int idx = bti[t] + bxi[x] * xstride + byi[y] * ystride;
-                        desc.vec[idx] += contrib * w[0][x] * w[1][y] * w[2][t];
+                        desc.vec[idx] += contrib * weights[0][x]
+                            * weights[1][y] * weights[2][t];
                     }
         }
     }
-#endif
 
     /* Normalize the feature vector. */
     desc.vec.normalize();
