@@ -280,14 +280,10 @@ Sift::extrema_detection (mve::FloatImage::ConstPtr s[3], int oi, int si)
 
             /* Yummy. Add detected scale space extremum. */
             Keypoint kp;
-            kp.o = oi;
-            kp.ix = x;
-            kp.iy = y;
-            kp.is = si;
-            kp.x = static_cast<float>(kp.ix);
-            kp.y = static_cast<float>(kp.iy);
-            kp.s = static_cast<float>(kp.is);
-            //kp.scale = this->keypoint_absolute_scale(kp);
+            kp.octave = oi;
+            kp.x = static_cast<float>(x);
+            kp.y = static_cast<float>(y);
+            kp.sample = static_cast<float>(si);
             this->keypoints.push_back(kp);
             detected += 1;
         }
@@ -314,18 +310,18 @@ Sift::keypoint_localization (void)
         Keypoint kp(this->keypoints[i]);
 
         /* Get corresponding octave and DoG images. */
-        Octave const& oct(this->octaves[kp.o - this->min_octave]);
+        Octave const& oct(this->octaves[kp.octave - this->min_octave]);
+        int sample = static_cast<int>(kp.sample);
         mve::FloatImage::ConstPtr dogs[3] =
-        {
-            oct.dog[kp.is + 0], oct.dog[kp.is + 1], oct.dog[kp.is + 2]
-        };
+        { oct.dog[sample + 0], oct.dog[sample + 1], oct.dog[sample + 2] };
 
         /* Shorthand for image width and height. */
         int const w = dogs[0]->width();
         int const h = dogs[0]->height();
         /* The integer and floating point location of the keypoints. */
-        int ix = kp.ix;
-        int iy = kp.iy;
+        int ix = static_cast<int>(kp.x);
+        int iy = static_cast<int>(kp.y);
+        int is = static_cast<int>(kp.sample);
         float fx, fy, fs;
         /* The first and second order derivatives. */
         float Dx, Dy, Ds;
@@ -386,7 +382,7 @@ Sift::keypoint_localization (void)
             {
                 ix += dx;
                 iy += dy;
-                continue; // FIXME: Can this cause an infinite loop?
+                continue;
             }
 
             /* Accurate location looks good. */
@@ -406,15 +402,9 @@ Sift::keypoint_localization (void)
         /*
          * Set accurate final keypoint location.
          */
-        kp.ix = ix;
-        kp.iy = iy;
         kp.x = (float)ix + fx;
         kp.y = (float)iy + fy;
-        kp.s = (float)kp.is + fs;
-        kp.scale = this->keypoint_absolute_scale(kp);
-
-        // FIXME: since fx,fy are allowed to be larger than 0.5, kp.x
-        // is NOT a proper rounded version of kp.ix.
+        kp.sample = (float)is + fs;
 
         /*
          * Discard keypoints with:
@@ -428,7 +418,7 @@ Sift::keypoint_localization (void)
         if (std::abs(val) < this->contrast_thres
             || hessian_score < 0.0f || hessian_score > score_thres
             || std::abs(fx) > 1.5f || std::abs(fy) > 1.5f || std::abs(fs) > 1.0f
-            || kp.s < -1.0f || kp.s > (float)(this->octave_samples)
+            || kp.sample < -1.0f || kp.sample > (float)this->octave_samples
             || kp.x < 0.0f || kp.x > (float)(w - 1)
             || kp.y < 0.0f || kp.y > (float)(h - 1))
         {
@@ -481,11 +471,11 @@ Sift::descriptor_generation (void)
         Keypoint const& kp(this->keypoints[i]);
 
         /* Generate new gradient and orientation images if octave changed. */
-        if (kp.o < octave_index)
+        if (kp.octave < octave_index)
             throw std::runtime_error("Decreasing octave index!");
-        if (kp.o > octave_index)
+        if (kp.octave > octave_index)
         {
-            octave_index = kp.o;
+            octave_index = kp.octave;
             if (octave)
             {
                 octave->grad.clear();
@@ -503,14 +493,13 @@ Sift::descriptor_generation (void)
         /* Feature vector extraction. */
         for (std::size_t j = 0; j < orientations.size(); ++j)
         {
-            float const scale_factor = std::pow(2.0f, kp.o);
+            float const scale_factor = std::pow(2.0f, kp.octave);
             Descriptor desc;
-            desc.k = kp;
             desc.x = scale_factor * (kp.x + 0.5f) - 0.5f;
             desc.y = scale_factor * (kp.y + 0.5f) - 0.5f;
-            desc.scale = kp.scale;
+            desc.scale = this->keypoint_absolute_scale(kp);
             desc.orientation = orientations[j];
-            this->descriptor_assignment(desc, octave);
+            this->descriptor_assignment(kp, desc, octave);
             this->descriptors.push_back(desc);
         }
     }
@@ -587,7 +576,7 @@ Sift::orientation_assignment (Keypoint const& kp,
     /* Integral x and y coordinates and closest scale sample. */
     int const ix = static_cast<int>(kp.x + 0.5f);
     int const iy = static_cast<int>(kp.y + 0.5f);
-    int const is = static_cast<int>(math::algo::round(kp.s));
+    int const is = static_cast<int>(math::algo::round(kp.sample));
     float const sigma = this->keypoint_relative_scale(kp);
 
     /* Images with its dimension for the keypoint. */
@@ -677,7 +666,8 @@ Sift::orientation_assignment (Keypoint const& kp,
 /* ---------------------------------------------------------------- */
 
 void
-Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
+Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
+    Octave const* octave)
 {
     /*
      * The final feature vector has size PXB * PXB * OHB.
@@ -688,12 +678,10 @@ Sift::descriptor_assignment (Descriptor& desc, Octave* octave)
     int const PXB = 4; // Pixel bins with 4x4 bins
     int const OHB = 8; // Orientation histogram with 8 bins
 
-    Keypoint const& kp(desc.k);
-
     /* Integral x and y coordinates and closest scale sample. */
     int const ix = static_cast<int>(kp.x + 0.5f);
     int const iy = static_cast<int>(kp.y + 0.5f);
-    int const is = static_cast<int>(math::algo::round(kp.s)); // can be neg.
+    int const is = static_cast<int>(math::algo::round(kp.sample));
     float const dxf = kp.x - static_cast<float>(ix);
     float const dyf = kp.y - static_cast<float>(iy);
     float const sigma = this->keypoint_relative_scale(kp);
@@ -832,14 +820,14 @@ float
 Sift::keypoint_relative_scale (Keypoint const& kp)
 {
     return this->pre_smoothing * std::pow(2.0f,
-        (kp.s + 1.0f) / this->octave_samples);
+        (kp.sample + 1.0f) / this->octave_samples);
 }
 
 float
 Sift::keypoint_absolute_scale (Keypoint const& kp)
 {
     return this->pre_smoothing * std::pow(2.0f,
-        kp.o + (kp.s + 1.0f) / this->octave_samples);
+        kp.octave + (kp.sample + 1.0f) / this->octave_samples);
 }
 
 /* ---------------------------------------------------------------- */

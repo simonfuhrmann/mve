@@ -56,14 +56,14 @@ class Sift
      */
     struct Keypoint
     {
-        int o; ///< Octave index of the keypoint
-        int ix; ///< initially detected keypoint X coordinate
-        int iy; ///< initially detected keypoint Y coordinate
-        int is; ///< scale space sample index in {0 ... S-1}
-        float x; ///< fitted X coordinate
-        float y; ///< fitted Y coordinate
-        float s; ///< fitted scale index within octave in [-1,S]
-        float scale; ///< the scale (or sigma) of the keypoint
+        /** Octave index of the keypoint. Can be negative. */
+        int octave;
+        /** Sample index. Initally integer in {0 ... S-1}, later in [-1,S]. */
+        float sample;
+        /** Keypoint x-coordinate. Initially integer, later sub-pixel. */
+        float x;
+        /** Keypoint y-coordinate. Initially integer, later sub-pixel. */
+        float y;
     };
 
     /**
@@ -74,10 +74,9 @@ class Sift
      */
     struct Descriptor
     {
-        Keypoint k;  // TODO: To be removed!
         float x;
         float y;
-        float scale;
+        float scale; ///< the scale (or sigma) of the keypoint
         float orientation; ///< Orientation of the KP in [0, 2PI]
         math::Vector<float, 128> vec; ///< The feature vector
     };
@@ -164,7 +163,8 @@ protected:
     void generate_grad_ori_images (Octave* octave);
     void orientation_assignment (Keypoint const& kp,
         Octave const* octave, std::vector<float>& orientations);
-    void descriptor_assignment (Descriptor& desc, Octave* octave);
+    void descriptor_assignment (Keypoint const& kp, Descriptor& desc,
+        Octave const* octave);
 
     float keypoint_relative_scale (Keypoint const& kp);
     float keypoint_absolute_scale (Keypoint const& kp);
