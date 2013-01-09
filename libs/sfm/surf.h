@@ -43,7 +43,7 @@ public:
         int octave; ///< Octave index of the keypoint
         float sample; ///< Scale space sample index within octave in [0, 3]
         float x; ///< Detected keypoint X coordinate
-        float y; ///< Detected keypoint X coordinate
+        float y; ///< Detected keypoint Y coordinate
     };
 
     /**

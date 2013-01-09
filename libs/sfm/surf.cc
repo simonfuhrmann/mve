@@ -66,6 +66,7 @@ Surf::process (void)
     this->keypoint_localization_and_filtering();
     std::cout << "Localization and filtering took "
         << timer.get_elapsed() << " ms." << std::endl;
+    this->octaves.clear();
 
 #if 0
     {
@@ -89,7 +90,6 @@ Surf::process (void)
 
     /* Cleanup. */
     this->sat.reset();
-    this->octaves.clear();
 }
 
 /* ---------------------------------------------------------------- */

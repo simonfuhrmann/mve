@@ -493,8 +493,8 @@ Sift::descriptor_generation (void)
         /* Feature vector extraction. */
         for (std::size_t j = 0; j < orientations.size(); ++j)
         {
-            float const scale_factor = std::pow(2.0f, kp.octave);
             Descriptor desc;
+            float const scale_factor = std::pow(2.0f, kp.octave);
             desc.x = scale_factor * (kp.x + 0.5f) - 0.5f;
             desc.y = scale_factor * (kp.y + 0.5f) - 0.5f;
             desc.scale = this->keypoint_absolute_scale(kp);
