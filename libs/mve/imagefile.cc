@@ -368,7 +368,13 @@ load_jpg_file (std::string const& filename, std::string* exif)
         /* Create image. */
         int width = cinfo.image_width;
         int height = cinfo.image_height;
-        int channels = cinfo.jpeg_color_space;
+        int channels = 0;
+        switch (cinfo.out_color_space)
+        {
+            case JCS_GRAYSCALE: channels = 1; break;
+            case JCS_RGB: channels = 3; break;
+            default: throw util::Exception("Invalid JPEG color space");
+        }
         image = ByteImage::create(width, height, channels);
         ByteImage::ImageData& data = image->get_data();
 
@@ -406,6 +412,9 @@ save_jpg_file (ByteImage::Ptr image, std::string const& filename, int quality)
     if (!image.get())
         throw std::invalid_argument("NULL image given");
 
+    if (image->channels() != 1 && image->channels() != 3)
+        throw util::Exception("Invalid image color space");
+
     FILE* fp = std::fopen(filename.c_str(), "wb");
     if (!fp)
         throw util::FileException(filename, std::strerror(errno));
@@ -430,7 +439,7 @@ save_jpg_file (ByteImage::Ptr image, std::string const& filename, int quality)
         {
             jpeg_destroy_compress(&cinfo);
             std::fclose(fp);
-            throw util::Exception("Cannot determine image color type");
+            throw util::Exception("Invalid image color space");
         }
     }
 
@@ -447,8 +456,6 @@ save_jpg_file (ByteImage::Ptr image, std::string const& filename, int quality)
         jpeg_write_scanlines(&cinfo, &row_pointer, 1);
     }
     jpeg_finish_compress(&cinfo);
-
-    /* Cleanup. */
     jpeg_destroy_compress(&cinfo);
     std::fclose(fp);
 }

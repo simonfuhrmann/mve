@@ -22,7 +22,7 @@ MVE_IMAGE_NAMESPACE_BEGIN
  * ------------------ Image loading and saving --------------------
  *
  * libpng docs: http://www.libpng.org/pub/png/libpng-manual.txt
- * libjpg docs: http://www.jpegcameras.com/libjpeg/libjpeg-2.html
+ * libjpg docs: http://apodeline.free.fr/DOC/libjpeg/libjpeg.html
  * libtiff docs: http://www.libtiff.org/libtiff.html
  * pfm file docs: http://netpbm.sourceforge.net/doc/pfm.html
  * ppm file docs: http://en.wikipedia.org/wiki/Netpbm_format
