@@ -668,8 +668,7 @@ Surf::descriptor_computation (Descriptor* descr, bool upright)
     }
 
     /* Interest point region has size 20 * scale. */
-    descr->data.clear();
-    descr->data.resize(64, 0.0f);
+    descr->data.fill(0.0f);
     float* descr_iter = &descr->data[0];
     for (int y = -10; y < 10; ++y)
     {
@@ -705,14 +704,10 @@ Surf::descriptor_computation (Descriptor* descr, bool upright)
     }
 
     /* Normalize descriptor, reject too small descriptors. */
-    float norm = 0.0f;
-    for (int i = 0; i < 64; ++i)
-        norm += descr->data[i] * descr->data[i];
+    float norm = descr->data.square_norm();
     if (MATH_EPSILON_EQ(norm, 0.0f, 1e-8))  // TODO: Play with this.
         return false;
-    norm = std::sqrt(norm);
-    for (int i = 0; i < 64; ++i)
-        descr->data[i] /= norm;
+    descr->data /= std::sqrt(norm);
 
     return true;
 }

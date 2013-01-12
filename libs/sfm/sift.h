@@ -17,8 +17,8 @@
  * - Move keypoint scale to descriptor
  * - Save memory by finding a more efficent code path to create octaves
  */
-#ifndef MVE_SIFTLIB_HEADER
-#define MVE_SIFTLIB_HEADER
+#ifndef SFM_SIFT_HEADER
+#define SFM_SIFT_HEADER
 
 #include <string>
 #include <vector>
@@ -44,6 +44,7 @@ SFM_NAMESPACE_BEGIN
  */
 class Sift
 {
+public:
     /**
      * Representation of a SIFT keypoint.
      *
@@ -68,9 +69,8 @@ class Sift
 
     /**
      * Representation of the SIFT descriptor.
-     *
-     * A descriptor contains the keypoint it was generated from, a
-     * predominant orientation and the 128-dimensional descriptor string.
+     * The descriptor is created in a rotation invariant way. The resulting
+     * vector is unsigned and normalized, and has 128 dimensions.
      */
     struct Descriptor
     {
@@ -78,7 +78,7 @@ class Sift
         float y;
         float scale; ///< the scale (or sigma) of the keypoint
         float orientation; ///< Orientation of the KP in [0, 2PI]
-        math::Vector<float, 128> vec; ///< The feature vector
+        math::Vector<float, 128> data; ///< The feature vector
     };
 
 public:
@@ -256,4 +256,4 @@ Sift::get_descriptors (void) const
 
 SFM_NAMESPACE_END
 
-#endif /* MVE_SIFTLIB_HEADER */
+#endif /* SFM_SIFT_HEADER */

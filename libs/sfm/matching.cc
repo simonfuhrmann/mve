@@ -5,7 +5,7 @@
 #include "matching.h"
 
 SFM_NAMESPACE_BEGIN
-
+#if 0
 template <>
 void
 match_features<short> (MatchingOptions const& options,
@@ -20,6 +20,8 @@ match_features<short> (MatchingOptions const& options,
     if (set_1_size == 0 || set_2_size == 0)
         return;
 
+    float const square_threshold = options.lowe_ratio_threshold
+        * options.lowe_ratio_threshold;
     NearestNeighbor<short>::Result nn_result;
     NearestNeighbor<short> nn;
     nn.set_element_dimensions(options.descriptor_length);
@@ -35,7 +37,7 @@ match_features<short> (MatchingOptions const& options,
             continue;
         if (static_cast<float>(nn_result.dist_1st_best)
             / static_cast<float>(nn_result.dist_2nd_best)
-            > options.lowe_ratio_threshold)
+            > square_threshold)
             continue;
 
         matches->matches_1_2[i] = nn_result.index_1st_best;
@@ -51,13 +53,13 @@ match_features<short> (MatchingOptions const& options,
             continue;
         if (static_cast<float>(nn_result.dist_1st_best)
             / static_cast<float>(nn_result.dist_2nd_best)
-            > options.lowe_ratio_threshold)
+            > square_threshold)
             continue;
 
         matches->matches_2_1[i] = nn_result.index_1st_best;
     }
 }
-
+#endif
 /* ---------------------------------------------------------------- */
 
 void

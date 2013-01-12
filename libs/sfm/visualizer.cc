@@ -162,7 +162,6 @@ Visualizer::draw_matches (mve::ByteImage::ConstPtr image1,
     mve::ByteImage::ConstPtr image2,
     std::vector<Visualizer::Match> const& matches)
 {
-
     if (image1->channels() != 3 || image2->channels() != 3)
         throw std::invalid_argument("Only 3-channel images allowed");
 
@@ -200,7 +199,8 @@ Visualizer::draw_matches (mve::ByteImage::ConstPtr image1,
     for (std::size_t i = 0; i < matches.size(); ++i)
     {
         mve::image::draw_line(*ret, matches[i].p1[0], matches[i].p1[1],
-            matches[i].p2[0], matches[i].p2[1], color_table[i % 12]);
+            matches[i].p2[0] + img1_width, matches[i].p2[1],
+            color_table[i % 12]);
     }
 
     return ret;

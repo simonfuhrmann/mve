@@ -14,18 +14,26 @@
 SFM_NAMESPACE_BEGIN
 
 /**
+ * Nearest (and second nearset) neighbor search for normalized vectors.
+ *
  * Finding the nearest neighbor for a query Q in a list of candidates Ci
- * boils down to finding the Ci with smallest ||Q - Ci||, or finding the
- * smallest squared distance ||Q - Ci||^2 which is cheaper to compute.
+ * boils down to finding the Ci with smallest distance ||Q - Ci||, or smallest
+ * squared distance ||Q - Ci||^2 (which is cheaper to compute).
  *
- *   ||Q - Ci||^2 = ||Q||^2 + ||Ci||^2 - 2 * Q * Ci.
+ *   ||Q - Ci||^2 = ||Q||^2 + ||Ci||^2 - 2 * <Q | Ci>.
  *
- * Since Q and Ci are normalized, ||Q - Ci||^2 = 2 - 2 * Q * Ci. In high
- * dimensional vector spaces, we want to quickly compute and find the largest
- * inner product <Q, Ci> corresponding to the smallest distance. Here, SSE2
- * parallel integer instructions are used to accellerate the search.
+ * If Q and Ci are expected to be normalized, ||Q - Ci||^2 = 2 - 2 * <Q | Ci>.
+ * Thus, we want to quickly compute and find the largest inner product <Q, Ci>
+ * corresponding to the smallest distance.
  *
- * TODO: SSE does only work with certian element sizes... explain.
+ * A few IMPORTANT notes:
+ *
+ * - SSE2 accellerated dot product is implemented for:
+ *   - short: vector dimension must be a factor of 8 (128 bit SSE2).
+ *   - provide 16 byte aligned elements and query memory for SSE2.
+ *
+ * - Unaccellerated implementations:
+ *   - float: No constraints.
  */
 template <typename T>
 class NearestNeighbor
@@ -41,12 +49,14 @@ public:
 
 public:
     NearestNeighbor (void);
-    /** For SfM, this is the descriptor memory blcok. */
+    /** For SfM, this is the descriptor memory block. */
     void set_elements (T const* elements, int num_elements);
     /** For SfM, this is the descriptor length. */
     void set_element_dimensions (int element_dimensions);
     /** Find the nearest neighbor of 'query'. */
     void find (T const* query, Result* result) const;
+
+    int get_element_dimensions (void) const;
 
 private:
     int dimensions;
@@ -57,6 +67,7 @@ private:
 /* ---------------------------------------------------------------- */
 
 template <typename T>
+inline
 NearestNeighbor<T>::NearestNeighbor (void)
 {
     this->dimensions = 64;
@@ -65,7 +76,7 @@ NearestNeighbor<T>::NearestNeighbor (void)
 }
 
 template <typename T>
-void
+inline void
 NearestNeighbor<T>::set_elements (T const* elements, int num_elements)
 {
     this->elements = elements;
@@ -73,10 +84,17 @@ NearestNeighbor<T>::set_elements (T const* elements, int num_elements)
 }
 
 template <typename T>
-void
+inline void
 NearestNeighbor<T>::set_element_dimensions (int element_dimensions)
 {
     this->dimensions = element_dimensions;
+}
+
+template <typename T>
+inline int
+NearestNeighbor<T>::get_element_dimensions (void) const
+{
+    return this->dimensions;
 }
 
 SFM_NAMESPACE_END

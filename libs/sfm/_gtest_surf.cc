@@ -159,7 +159,7 @@ TEST_F(SurfTest, TestDescriptorNoCrashSmallImages)
 {
     for (int i = 0; i < 20; ++i)
     {
-        sfm::SurfDescriptor descr;
+        sfm::Surf::Descriptor descr;
         descr.scale = 1.2;
         descr.x = i / 2;
         descr.y = i / 2;
@@ -171,7 +171,7 @@ TEST_F(SurfTest, TestDescriptorNoCrashSmallImages)
 TEST_F(SurfTest, TestDescriptorOrientation)
 {
     // Mock Descriptor.
-    sfm::SurfDescriptor descr;
+    sfm::Surf::Descriptor descr;
     descr.scale = 1.2;
     descr.x = 10;
     descr.y = 10;
@@ -222,7 +222,7 @@ TEST_F(SurfTest, TestDescriptorUpright)
 {
     // Make sure the upright descriptor produces the same results as the
     // rotation invariant descriptor with upright orientation (0 deg).
-    sfm::SurfDescriptor descr;
+    sfm::Surf::Descriptor descr;
     descr.scale = 1.2;
     descr.x = 25;
     descr.y = 25;
@@ -256,7 +256,7 @@ TEST_F(SurfTest, TestDescriptorUpright)
 TEST_F(SurfTest, TestDescriptorComputation)
 {
     // Mock Descriptor.
-    sfm::SurfDescriptor descr;
+    sfm::Surf::Descriptor descr;
     descr.scale = 1.2;
     descr.x = 25;
     descr.y = 25;
@@ -307,7 +307,7 @@ TEST_F(SurfTest, TestDescriptorComputation)
 TEST_F(SurfTest, TestRotationInvariance)
 {
     // Mock Descriptor.
-    sfm::SurfDescriptor descr;
+    sfm::Surf::Descriptor descr;
     descr.scale = 1.2;
     descr.x = 25;
     descr.y = 25;

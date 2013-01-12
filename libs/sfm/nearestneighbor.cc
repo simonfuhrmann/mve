@@ -38,9 +38,9 @@ void
 NearestNeighbor<short>::find (short const* query,
     NearestNeighbor<short>::Result* result) const
 {
-    /* Matching result. */
-    result->dist_1st_best = std::numeric_limits<int>::max();
-    result->dist_2nd_best = std::numeric_limits<int>::max();
+    /* Result distances are shamelessly misused to store inner products. */
+    result->dist_1st_best = -std::numeric_limits<short>::max();
+    result->dist_2nd_best = -std::numeric_limits<short>::max();
     result->index_1st_best = 0;
     result->index_2nd_best = 0;
 
@@ -127,6 +127,51 @@ NearestNeighbor<short>::find (short const* query,
     result->dist_2nd_best = std::min(16129, std::max(0, (int)result->dist_2nd_best));
     result->dist_1st_best = 32258 - 2 * result->dist_1st_best;
     result->dist_2nd_best = 32258 - 2 * result->dist_2nd_best;
+}
+
+template <>
+void
+NearestNeighbor<float>::find (float const* query,
+    NearestNeighbor<float>::Result* result) const
+{
+    /* Result distances are shamelessly misused to store inner products. */
+    result->dist_1st_best = -std::numeric_limits<float>::max();
+    result->dist_2nd_best = -std::numeric_limits<float>::max();
+    result->index_1st_best = 0;
+    result->index_2nd_best = 0;
+
+    float const* descr_ptr = this->elements;
+    for (int i = 0; i < this->num_elements; ++i)
+    {
+        float inner_product = 0.0f;
+        for (int i = 0; i < this->dimensions; ++i, ++descr_ptr)
+            inner_product += query[i] * *descr_ptr;
+
+        /* Check if new largest inner product has been found. */
+        if (inner_product > result->dist_2nd_best)
+        {
+            if (inner_product > result->dist_1st_best)
+            {
+                result->index_2nd_best = result->index_1st_best;
+                result->dist_2nd_best = result->dist_1st_best;
+                result->index_1st_best = i;
+                result->dist_1st_best = inner_product;
+            }
+            else
+            {
+                result->index_2nd_best = i;
+                result->dist_2nd_best = inner_product;
+            }
+        }
+    }
+
+    /*
+     * Compute actual distances.
+     */
+    result->dist_1st_best = std::min(1.0f, std::max(0.0f,
+        2.0f - 2.0f * result->dist_1st_best));
+    result->dist_2nd_best = std::min(1.0f, std::max(0.0f,
+        2.0f - 2.0f * result->dist_2nd_best));
 }
 
 SFM_NAMESPACE_END

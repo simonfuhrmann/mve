@@ -9,12 +9,13 @@
  * TODO:
  * - N9 Neighborhood is implemented twice. Re-use code.
  */
-#ifndef MVE_SURFLIB_HEADER
-#define MVE_SURFLIB_HEADER
+#ifndef SFM_SURF_HEADER
+#define SFM_SURF_HEADER
 
 #include <sys/types.h>
 #include <vector>
 
+#include "math/vector.h"
 #include "mve/image.h"
 
 #include "defines.h"
@@ -48,6 +49,8 @@ public:
 
     /**
      * Representation of a SURF descriptor.
+     * The descriptor is created in a rotation invariant way. The resulting
+     * vector is signed and normalized, and has 64 dimensions.
      */
     struct Descriptor
     {
@@ -55,7 +58,7 @@ public:
         float y;
         float scale;
         float orientation;
-        std::vector<float> data;
+        math::Vector<float, 64> data;
     };
 
 public:
@@ -130,7 +133,7 @@ private:
 
 inline
 Surf::Surf (void)
-    : contrast_thres(10.0f)
+    : contrast_thres(500.0f)
     , upright_descriptor(false)
 {
 }
@@ -161,4 +164,4 @@ Surf::get_descriptors (void) const
 
 SFM_NAMESPACE_END
 
-#endif /* MVE_SURFLIB_HEADER */
+#endif /* SFM_SURF_HEADER */

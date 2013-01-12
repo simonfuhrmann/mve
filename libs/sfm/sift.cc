@@ -693,7 +693,7 @@ Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
     int const height = grad->height();
 
     /* Clear feature vector. */
-    desc.vec.fill(0.0f);
+    desc.data.fill(0.0f);
 
     /* Rotation constants given by descriptor orientation. */
     float const sino = std::sin(desc.orientation);
@@ -789,21 +789,21 @@ Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
                             continue;
 
                         int idx = bti[t] + bxi[x] * xstride + byi[y] * ystride;
-                        desc.vec[idx] += contrib * weights[0][x]
+                        desc.data[idx] += contrib * weights[0][x]
                             * weights[1][y] * weights[2][t];
                     }
         }
     }
 
     /* Normalize the feature vector. */
-    desc.vec.normalize();
+    desc.data.normalize();
 
     /* Truncate descriptor values to 0.2. */
     for (int i = 0; i < PXB * PXB * OHB; ++i)
-        desc.vec[i] = std::min(desc.vec[i], 0.2f);
+        desc.data[i] = std::min(desc.data[i], 0.2f);
 
     /* Normalize once again. */
-    desc.vec.normalize();
+    desc.data.normalize();
 }
 
 /* ---------------------------------------------------------------- */
