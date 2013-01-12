@@ -963,7 +963,7 @@ crop (typename Image<T>::ConstPtr image, int width, int height,
 
     /* Copy horizontal overlap for each overlapping row. */
     int const overlap = ic * (std::min(iw, left + width) - std::max(0, left));
-    for (int y = std::max(0, -top); y < height; ++y)
+    for (int y = std::max(0, -top); y < std::min(height, ih - top); ++y)
     {
         int lookup_y = top + y;
         if (lookup_y >= iw)
