@@ -101,8 +101,8 @@ public:
 
     /**
      * Sets the amount of octaves by specifying the minimum octave
-     * and the maximum octave. This defaults to -1 and 5. The minimum
-     * allowed octave is -1.
+     * and the maximum octave. This defaults to 0 and 4.
+     * The minimum allowed octave is -1.
      */
     void set_min_max_octave (int min_octave, int max_octave);
 
@@ -196,7 +196,7 @@ private:
 inline
 Sift::Sift (void)
 {
-    this->min_octave = -1;
+    this->min_octave = 0;
     this->max_octave = 4;
     this->octave_samples = 3;
     this->contrast_thres = 0.02f / (float)this->octave_samples;
