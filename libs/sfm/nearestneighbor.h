@@ -39,6 +39,7 @@ template <typename T>
 class NearestNeighbor
 {
 public:
+    /** Unlike the naming suggests, these are square distances. */
     struct Result
     {
         T dist_1st_best;

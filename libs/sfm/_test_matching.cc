@@ -19,7 +19,7 @@ sfm::MatchingResult
 twoview_matching (std::vector<DESCR> const& descr1,
     std::vector<DESCR> const& descr2)
 {
-#if 1
+#if 0
     /* Convert the descriptors to aligned float arrays. */
     util::AlignedMemory<float, 16> matchset_1(DIM * descr1.size());
     float* out_ptr1 = matchset_1.begin();
@@ -32,21 +32,21 @@ twoview_matching (std::vector<DESCR> const& descr1,
         std::copy(descr2[i].data.begin(), descr2[i].data.end(), out_ptr2);
 #else
     /* Convert the descriptors to aligned short arrays. */
-    util::AlignedMemory<short, 16> matchset_1(64 * descr1->size());
+    util::AlignedMemory<short, 16> matchset_1(DIM * descr1.size());
     short* mem_ptr = matchset_1.begin();
-    for (std::size_t i = 0; i < descr1->size(); ++i)
+    for (std::size_t i = 0; i < descr1.size(); ++i)
     {
-        std::vector<float> const& d = descr1->at(i).data;
-        for (int j = 0; j < 64; ++j)
+        math::Vector<float, DIM> const& d = descr1[i].data;
+        for (int j = 0; j < DIM; ++j)
             *(mem_ptr++) = static_cast<short>(d[j] * 127.0f);
     }
 
-    util::AlignedMemory<short, 16> matchset_2(64 * descr2->size());
+    util::AlignedMemory<short, 16> matchset_2(DIM * descr2.size());
     mem_ptr = matchset_2.begin();
-    for (std::size_t i = 0; i < descr2->size(); ++i)
+    for (std::size_t i = 0; i < descr2.size(); ++i)
     {
-        std::vector<float> const& d = descr2->at(i).data;
-        for (int j = 0; j < 64; ++j)
+        math::Vector<float, DIM> const& d = descr2[i].data;
+        for (int j = 0; j < DIM; ++j)
             *(mem_ptr++) = static_cast<short>(d[j] * 127.0f);
     }
 #endif
@@ -151,7 +151,7 @@ surf_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
         = twoview_matching<sfm::Surf::Descriptor, 64>(descr1, descr2);
     mve::ByteImage::Ptr match_image
         = visualize_matching(matching, image1, image2, descr1, descr2);
-    mve::image::save_file(match_image, "/tmp/matching_surf.png");
+    mve::image::save_file(match_image, "/tmp/matching_surf_char.png");
 }
 
 int
@@ -183,17 +183,19 @@ main (int argc, char** argv)
     }
 
     //sift_matching(image1, image2);
-    //surf_matching(image1, image2);
+    surf_matching(image1, image2);
 
-#if 1
+#if 0
+    /* Benchmarking. */
     image1 = mve::image::crop<uint8_t>(image1, image1->width() + 200, image1->height() + 200, -100, -100, color_black);
     image2 = mve::image::crop<uint8_t>(image2, image2->width() + 200, image2->height() + 200, -100, -100, color_black);
     mve::image::save_file(image1, "/tmp/testcropped.png");
-    std::ofstream gnuplot_data("/tmp/gnuplot-data.txt");
+    std::ofstream gnuplot_data("/tmp/gnuplot-sift2.txt");
     for (int i = 0; i < 360; i += 5)
     {
         mve::ByteImage::Ptr image2b = mve::image::rotate<uint8_t>(image2, i * MATH_PI / 180.0, color_black);
 
+#if 0
         sfm::Surf::Descriptors descr1, descr2;
         sfm::Surf surf;
         surf.set_contrast_threshold(500.0f);
@@ -206,8 +208,22 @@ main (int argc, char** argv)
 
         sfm::MatchingResult matching
             = twoview_matching<sfm::Surf::Descriptor, 64>(descr1, descr2);
-        std::string filename = "/tmp/featurematching_" + util::string::get_filled(i, 3, '0') + ".png";
-        mve::image::save_file(visualize_matching(matching, image1, image2b, descr1, descr2), filename);
+#else
+        sfm::Sift::Descriptors descr1, descr2;
+        sfm::Sift sift;
+        sift.set_min_max_octave(0, 4);
+        sift.set_image(image1);
+        sift.process();
+        descr1 = sift.get_descriptors();
+        sift.set_image(image2b);
+        sift.process();
+        descr2 = sift.get_descriptors();
+
+        sfm::MatchingResult matching
+            = twoview_matching<sfm::Sift::Descriptor, 128>(descr1, descr2);
+#endif
+        //std::string filename = "/tmp/featurematching_" + util::string::get_filled(i, 3, '0') + ".png";
+        //mve::image::save_file(visualize_matching(matching, image1, image2b, descr1, descr2), filename);
 
         int num_matches = 0;
         for (std::size_t i = 0; i < matching.matches_1_2.size(); ++i)

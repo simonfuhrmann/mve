@@ -118,7 +118,7 @@ NearestNeighbor<short>::find (short const* query,
 #endif
 
     /*
-     * Compute actual distances.
+     * Compute actual square distances.
      * The distance with signed 'char' vectors is: 2 * 127^2 - 2 * <Q, Ci>.
      * Unfortunately, the maximum distance is (2*127)^2, which does not fit
      * in a short. Therefore, the distance is clapmed at 127^2.
@@ -166,7 +166,7 @@ NearestNeighbor<float>::find (float const* query,
     }
 
     /*
-     * Compute actual distances.
+     * Compute actual (square) distances.
      */
     result->dist_1st_best = std::min(1.0f, std::max(0.0f,
         2.0f - 2.0f * result->dist_1st_best));
