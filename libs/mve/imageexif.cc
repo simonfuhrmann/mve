@@ -186,9 +186,11 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
         unsigned short type = parse16(buf+offs+2, alignIntel);
         unsigned int ncomp = parse32(buf+offs+4, alignIntel);
         unsigned int coffs = parse32(buf+offs+8, alignIntel);
-        unsigned int buf_off = ifdOffset + coffs;
 
-        if (ifd_is_offset(type, ncomp) && buf_off + ncomp > len)
+        unsigned int buf_off = offs + 8;
+        if (ifd_is_offset(type, ncomp))
+            buf_off = ifdOffset + coffs;
+        if (buf_off + ncomp > len)
             throw std::invalid_argument("EXIF data corrupt (IFD entry)");
 
         switch (tag)
@@ -232,12 +234,14 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
         unsigned short type = parse16(buf+offs+2, alignIntel);
         unsigned int ncomp = parse32(buf+offs+4, alignIntel);
         unsigned int coffs = parse32(buf+offs+8, alignIntel);
-        unsigned int buf_off = ifdOffset + coffs;
         //std::cout << "tag: " << std::hex << "0x" << tag << std::dec
         //    << ", type: " << type << ", ncomp: " << ncomp
         //    << ", coffs: " << coffs << std::endl;
 
-        if (ifd_is_offset(type, ncomp) && buf_off + ncomp > len)
+        unsigned int buf_off = offs + 8;
+        if (ifd_is_offset(type, ncomp))
+            buf_off = ifdOffset + coffs;
+        if (buf_off + ncomp > len)
             throw std::invalid_argument("EXIF data corrupt (SubIFD entry)");
 
         switch (tag)
