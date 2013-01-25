@@ -10,6 +10,8 @@
 
 #include "defines.h"
 #include "vector.h"
+#include "matrix.h"
+#include "matrixtools.h"
 
 MATH_NAMESPACE_BEGIN
 MATH_GEOM_NAMESPACE_BEGIN
