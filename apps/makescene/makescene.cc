@@ -84,7 +84,7 @@ get_thumbnail (mve::ByteImage::ConstPtr image)
 
     mve::ByteImage::Ptr ret = mve::image::rescale<uint8_t>
         (image, mve::image::RESCALE_LINEAR, dw, dh);
-    ret = mve::image::crop<uint8_t>(ret, dl, dt, THUMB_SIZE, THUMB_SIZE, 0);
+    ret = mve::image::crop<uint8_t>(ret, THUMB_SIZE, THUMB_SIZE, dl, dt, 0);
 
     return ret;
 }
