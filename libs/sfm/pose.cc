@@ -1,14 +1,15 @@
+#include <iostream>//tmp
 #include <limits>
 
 #include "pose.h"
-#include "eigenwrapper.h"
+#include "matrixsvd.h"
 
 SFM_NAMESPACE_BEGIN
 
 bool
 pose_8_point (Eight2DPoints const& points_view_1,
     Eight2DPoints const& points_view_2,
-    FundamentalMatrix* /*result*/)
+    FundamentalMatrix* result)
 {
     /*
      * The input points P are normalized such that the mean of the points
@@ -30,13 +31,13 @@ pose_8_point (Eight2DPoints const& points_view_1,
         math::Vector<double, 3> p2 = T2 * points_view_2.row(i);
         A(i, 0) = p2[0] * p1[0];
         A(i, 1) = p2[0] * p1[1];
-        A(i, 2) = p2[0];
+        A(i, 2) = p2[0] * 1.0;
         A(i, 3) = p2[1] * p1[0];
         A(i, 4) = p2[1] * p1[1];
-        A(i, 5) = p2[1];
-        A(i, 6) = p1[0];
-        A(i, 7) = p1[1];
-        A(i, 8) = 1.0;
+        A(i, 5) = p2[1] * 1.0;
+        A(i, 6) = 1.0   * p1[0];
+        A(i, 7) = 1.0   * p1[1];
+        A(i, 8) = 1.0   * 1.0;
     }
 
     /*
@@ -53,6 +54,7 @@ pose_8_point (Eight2DPoints const& points_view_1,
         std::copy(*f, *f + 9, *F);
     }
 
+#if 1
     /*
      * Constraint enforcement. The fundamental matrix F has rank 2. However,
      * the so far computed F may not have rank 2 and we enforce it by
@@ -67,13 +69,16 @@ pose_8_point (Eight2DPoints const& points_view_1,
         S(2, 2) = 0.0;
         F = U * S * V.transposed();
     }
+#endif
 
     /*
      * De-normalize fundamental matrix. Points have been normalized with
      * transformation x' = T * x. Since x1' * F * x2 = 0, de-normalization
      * of F is F' = T1* F T2.
      */
-    F = T1.transposed() * F * T2;
+    F = T2.transposed() * F * T1;
+
+    *result = F;
 
     return true;
 }
