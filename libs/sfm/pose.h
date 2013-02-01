@@ -42,24 +42,47 @@
 
 SFM_NAMESPACE_BEGIN
 
-typedef math::Matrix<double, 8, 3> Eight2DPoints;
-typedef math::Matrix<double, 7, 3> Seven2DPoints;
-typedef math::Matrix<double, 5, 3> Five2DPoints;
+typedef math::Matrix<double, 3, 8> Eight2DPoints;
+typedef math::Matrix<double, 3, 7> Seven2DPoints;
+typedef math::Matrix<double, 3, 5> Five2DPoints;
 typedef math::Matrix<double, 3, 3> FundamentalMatrix;
 typedef math::Matrix<double, 3, 3> EssentialMatrix;
 
 /**
- * Algorithm to compute the fundamental matrix from 8 point correspondences.
- * The implementation closely follows [Sect. 11.2, Hartley, Zisserman, 2004].
+ * The camera pose is P = K [R | t].
+ * K is the calibration matrix, R a rotation matrix and T a translation.
+ *
+ *       | f  0  p1 |    The calibration matrix contains the focal length f,
+ *   K = | 0  f  p2 |    and the principal point p1 and p2.
+ *       | 0  0   1 |
+ *
+ * For pose estimation, the calibration matrix is assumed to be known.
+ * Even a good guess for the focal length and p1/p2 in the image
+ * center may produce reasonable enough results so that bundle adjustment
+ * can recover better parameters.
+ */
+struct CameraPose
+{
+    math::Matrix<double, 3, 3> K;
+    math::Matrix<double, 3, 3> R;
+    math::Vector<double, 3> t;
+
+    void fill_p_matrix (math::Matrix<double, 3, 4>* result) const;
+};
+
+/**
+ * Algorithm to compute the fundamental or essential matrix from 8 image
+ * correspondences. It closely follows [Sect. 11.2, Hartley, Zisserman, 2004].
+ * In case of "normalized image coordinates" (i.e. x* = K^-1 x), this code
+ * computes the unconstrained essential matrix.
+ *
+ * This does not normalize the points, the image coordinates or enforces
+ * constraints on the resulting matrix.
  */
 bool
 pose_8_point (Eight2DPoints const& points_view_1,
     Eight2DPoints const& points_view_2,
     FundamentalMatrix* result);
-
-// TODO: Useful to have 8-point without constraint enforcement? The enforcement
-// costs one SVD. Camera matrices can be extracted in case of normalized
-// input coordinates and Essential Matrix contrtains in one step.
 
 /**
  * NOT YET IMPLEMENTED.
@@ -88,28 +111,50 @@ pose_5_point (Five2DPoints const& points_view_1,
     std::vector<EssentialMatrix>* result);
 
 /**
- * NOT YET IMPLEMENTED.
+ * Constraints the given matrix to have TWO NON-ZERO eigenvalues.
+ * This is done using SVD: F' = USV*, F = UDV* with D = diag(a, b, 0).
+ */
+void
+enforce_fundamental_constraints (FundamentalMatrix* matrix);
+
+/**
+ * Constraints the given matrix to have TWO EQUAL NON-ZERO eigenvalues.
+ * This is done using SVD: F' = USV*, F = UDV* with D = diag(a, a, 0).
+ */
+void
+enforce_essential_constraints (EssentialMatrix* matrix);
+
+/**
  * Retrieves the camera matrices from the essential matrix.
  * This routine recovers P' = [M|m] for the second camera where
  * the first camera is given in canonical form P = [I|0].
  */
-
+void
+pose_from_essential (EssentialMatrix const& matrix,
+    std::vector<CameraPose>* result);
 
 /**
- * Computes a transformation matrix T for a set P of 2D points in homogeneous
- * coordinates such that mean(T*P) = 0 and scale(T*P) = 1 after transformation.
- * Mean is the centroid and scale the range of the largest dimension.
+ * Computes the fundamental matrix corresponding to cam1 and cam2.
+ */
+void
+fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
+    FundamentalMatrix* result);
+
+/**
+ * Computes a transformation T for 2D points P in homogeneous coordinates
+ * such that the mean of the points is zero and the points fit in the unit
+ * square. (The thrid coordinate will still be 1 after normalization.)
  */
 template <typename T, int DIM>
 void
-pose_find_normalization(math::Matrix<T, DIM, 3> const& points,
+pose_find_normalization(math::Matrix<T, 3, DIM> const& points,
     math::Matrix<T, 3, 3>* transformation);
 
 /* ---------------------------------------------------------------- */
 
 template <typename T, int DIM>
 void
-pose_find_normalization(math::Matrix<T, DIM, 3> const& points,
+pose_find_normalization(math::Matrix<T, 3, DIM> const& points,
     math::Matrix<T, 3, 3>* transformation)
 {
     transformation->fill(T(0));
@@ -120,9 +165,9 @@ pose_find_normalization(math::Matrix<T, DIM, 3> const& points,
     {
         for (int j = 0; j < 3; ++j)
         {
-            mean[j] += points(i, j);
-            aabb_min[j] = std::min(aabb_min[j], points(i, j));
-            aabb_max[j] = std::max(aabb_max[j], points(i, j));
+            mean[j] += points(j, i);
+            aabb_min[j] = std::min(aabb_min[j], points(j, i));
+            aabb_max[j] = std::max(aabb_max[j], points(j, i));
         }
     }
     mean /= static_cast<T>(DIM);

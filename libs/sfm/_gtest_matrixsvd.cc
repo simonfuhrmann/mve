@@ -47,7 +47,7 @@ namespace {
 
 } // namespace
 
-// Note: Randomness is a bad thing in test cases! Don't do it!
+// Note: Random is a bad thing in test cases! Don't do it!
 TEST(MatrixSVDTest, ForbiddenRandomTest)
 {
     std::srand(0);

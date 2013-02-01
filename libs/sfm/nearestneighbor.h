@@ -14,7 +14,7 @@
 SFM_NAMESPACE_BEGIN
 
 /**
- * Nearest (and second nearset) neighbor search for normalized vectors.
+ * Nearest (and second nearest) neighbor search for normalized vectors.
  *
  * Finding the nearest neighbor for a query Q in a list of candidates Ci
  * boils down to finding the Ci with smallest distance ||Q - Ci||, or smallest

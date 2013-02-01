@@ -24,6 +24,11 @@ void
 matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, M>* mat_u,
     Matrix<T, M, N>* mat_s, Matrix<T, N, N>* mat_v);
 
+template <typename T, int M, int N>
+void
+matrix_pseudo_inverse (math::Matrix<double, M, N> const& P,
+    math::Matrix<double, N, M>* result);
+
 /* ------------------------ Implementation ------------------------ */
 
 template <typename T, int M, int N>
@@ -51,6 +56,24 @@ matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, M>* mat_u,
     mat_s->fill(T(0));
     for (int i = 0; i < std::min(N, M); ++i)
         (*mat_s)(i, i) = eigen_s(i);
+}
+
+template <typename T, int M, int N>
+void
+matrix_pseudo_inverse (math::Matrix<T, M, N> const& A,
+    math::Matrix<T, N, M>* result)
+{
+    math::Matrix<T, M, M> U;
+    math::Matrix<T, M, N> S;
+    math::Matrix<T, N, N> V;
+    math::matrix_svd(A, &U, &S, &V);
+    for (int i = 0; i < std::min(M, N); ++i)
+        if (MATH_EPSILON_EQ(S(i, i), 0.0, 1e-12))
+            S(i, i) = 0.0;
+        else
+            S(i, i) = 1.0 / S(i, i);
+
+    *result = V * S.transposed() * U.transposed();
 }
 
 MATH_NAMESPACE_END
