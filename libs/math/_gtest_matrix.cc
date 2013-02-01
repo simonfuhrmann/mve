@@ -79,6 +79,29 @@ TEST(MatrixTest, MiscOperations)
     EXPECT_EQ(test.mult(Vec3f(1.0f, 2.0f, 3.0f)), Vec3f(14.0f, 32.0f, 50.0f));
 }
 
+TEST(MatrixTest, MatrixStacking)
+{
+    math::Matrix<float, 1, 1> m(1.0f);
+    math::Matrix<float, 1, 2> m1 = m.hstack(math::Matrix<float, 1, 1>(2.0f));
+    ASSERT_EQ(m1(0,0), 1.0f);
+    ASSERT_EQ(m1(0,1), 2.0f);
+
+    math::Matrix<float, 2, 1> m2 = m.vstack(math::Matrix<float, 1, 1>(3.0f));
+    ASSERT_EQ(m2(0,0), 1.0f);
+    ASSERT_EQ(m2(1,0), 3.0f);
+
+    math::Matrix<float, 2, 1> m3(4.0f);
+    math::Matrix<float, 2, 2> m4 = m2.hstack(m3);
+    ASSERT_EQ(m4(0,0), 1.0f);  ASSERT_EQ(m4(0,1), 4.0f);
+    ASSERT_EQ(m4(1,0), 3.0f);  ASSERT_EQ(m4(1,1), 4.0f);
+
+    math::Matrix<float, 1, 2> m5; m5(0,0) = 5.0f; m5(0,1) = 6.0f;
+    math::Matrix<float, 3, 2> m6 = m4.vstack(m5);
+    ASSERT_EQ(m6(0,0), 1.0f);  ASSERT_EQ(m6(0,1), 4.0f);
+    ASSERT_EQ(m6(1,0), 3.0f);  ASSERT_EQ(m6(1,1), 4.0f);
+    ASSERT_EQ(m6(2,0), 5.0f);  ASSERT_EQ(m6(2,1), 6.0f);
+}
+
 TEST(MatrixToolsTest, DiagonalMatrixTest)
 {
     using namespace math;

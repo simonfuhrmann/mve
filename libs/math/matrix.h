@@ -42,9 +42,6 @@ typedef Matrix<unsigned int, 4, 4> Matrix4ui;
 template <typename T, int N, int M>
 class Matrix
 {
-protected:
-    T m[N * M];
-
 public:
 
     /* ------------------------ Constructors ---------------------- */
@@ -83,6 +80,14 @@ public:
     T minimum (void) const;
     /** Returns the largest element in the matrix. */
     T maximum (void) const;
+
+    /** Stacks this (left) and another matrix (right) horizontally. */
+    template <int O>
+    Matrix<T,N,M+O> hstack (Matrix<T,N,O> const& other);
+
+    /** Stacks this (top) and another matrix (bottom) vertically. */
+    template <int O>
+    Matrix<T,N+O,M> vstack (Matrix<T,O,M> const& other);
 
     /* ---------------------- Unary operators --------------------- */
 
@@ -168,6 +173,9 @@ public:
     Matrix<T,N,M>& operator/= (T const& rhs);
     /** Component-wise division by scalar. */
     Matrix<T,N,M> operator/ (T const& rhs) const;
+
+protected:
+    T m[N * M];
 };
 
 MATH_NAMESPACE_END
@@ -227,13 +235,6 @@ inline bool
 matrix_is_square (Matrix<T,N,N> const& /*m*/)
 {
     return true;
-}
-
-template <typename T, int N, int M>
-inline Matrix<T,M,N>&
-matrix_inplace_transpose (Matrix<T,N,M>& /*matrix*/)
-{
-    throw std::invalid_argument("In-place transpose for square matrices only");
 }
 
 template <typename T, int N>
@@ -305,6 +306,33 @@ Matrix<T,N,M>::col (int index) const
     typedef algo::InterleavedIter<T,M> RowIter;
     Vector<T,N> ret;
     std::copy(RowIter(m + index), RowIter(m + index + M * N), *ret);
+    return ret;
+}
+
+template <typename T, int N, int M>
+template <int O>
+inline Matrix<T,N,M+O>
+Matrix<T,N,M>::hstack (Matrix<T,N,O> const& other)
+{
+    math::Matrix<T,N,M+O> ret;
+    T const* in1 = m;
+    T const* in2 = *other;
+    for (T* out = *ret; in1 < m + M*N; in1 += M, in2 += O, out += O+M)
+    {
+        std::copy(in1, in1 + M, out);
+        std::copy(in2, in2 + O, out + M);
+    }
+    return ret;
+}
+
+template <typename T, int N, int M>
+template <int O>
+inline Matrix<T,N+O,M>
+Matrix<T,N,M>::vstack (Matrix<T,O,M> const& other)
+{
+    Matrix<T,N+O,M> ret;
+    std::copy(m, m + M*N, *ret);
+    std::copy(*other, *other + O*M, *ret + M*N);
     return ret;
 }
 
