@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "math/matrixtools.h"
+#include "sfm/matrixsvd.h"
 #include "sfm/pose.h"
 
 TEST(PoseTest, PointNormalization1)
@@ -109,7 +110,7 @@ TEST(PostTest, Test8Point)
         EXPECT_NEAR((F[i] - F2[i]) / (F[i] + F2[i]), 0.0, 0.05);
 }
 
-TEST(PoseTest, SyntheticPoseTest)
+TEST(PoseTest, SyntheticPoseTest1)
 {
     // Ground truth pose, calibration with focal lenght 1 and 800x600 image.
     // The first camera looks straigt along the z axis.
@@ -135,18 +136,21 @@ TEST(PoseTest, SyntheticPoseTest)
     pose2.t.fill(0.0); pose2.t[0] = 1.0;
     pose2.t = pose2.R * -pose2.t;
 
-    // Both cameras look at the unit cube with center at (0,0,1).
-    // Make up some points in this cube.
-    math::Vec3d x(0.0, 0.0, 1.0);  // Projects in the center of both cameras.
-    math::Vec3f p1 = pose1.K * (pose1.R * x + pose1.t); p1 /= p1[2];
-    math::Vec3f p2 = pose2.K * (pose2.R * x + pose2.t); p2 /= p2[2];
-    std::cout << p1 << std::endl;
-    std::cout << p2 << std::endl;
-
-
-    // TODO Compute fundamental and essential matrix from the pose.
-
-    //sfm::pose_enforce_essential_constraints(Ftmp);
-    //std::vector<sfm::CameraPose> pose;
-    //pose_from_essential(F, &pose);
+    // Compute fundamental for pose.
+    sfm::FundamentalMatrix F;
+    sfm::fundamental_from_pose(pose1, pose2, &F);
+    // Compute essential from fundamental.
+    sfm::EssentialMatrix E = pose2.K.transposed() * F * pose1.K;
+    // Compute pose from essential.
+    std::vector<sfm::CameraPose> poses;
+    pose_from_essential(E, &poses);
+    // Check if one of the poses is the solution.
+    int num_equal_cameras = 0;
+    for (std::size_t i = 0; i < poses.size(); ++i)
+    {
+        bool equal = poses[i].R.is_similar(pose2.R, 1e-14)
+            && poses[i].t.is_similar(pose2.t, 1e-14);
+        num_equal_cameras += equal;
+    }
+    EXPECT_EQ(num_equal_cameras, 1);
 }

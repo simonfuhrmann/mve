@@ -1,26 +1,27 @@
 /*
- * Useful Matlab functions.
- * http://www.csse.uwa.edu.au/~pk/Research/MatlabFns/index.html
+ * Pose estimation functions.
+ * Written by Simon Fuhrmann.
+ *
+ * Useful Matlab functions:
+ * - http://www.csse.uwa.edu.au/~pk/Research/MatlabFns/index.html
  */
 
-#include <iostream>//tmp
 #include <limits>
+
+#include "math/matrixtools.h"
 
 #include "pose.h"
 #include "matrixsvd.h"
 
 SFM_NAMESPACE_BEGIN
 
-void
-CameraPose::fill_p_matrix (math::Matrix<double, 3, 4>* P) const
-{
-    math::Matrix<double, 3, 3> KR = this->K * this->R;
-    math::Vector<double, 3> Kt = this->K * this->t;
-
-}
-
 namespace {
 
+    /**
+     * Creates the cross product matrix [x] for x. With this matrix,
+     * the cross product cross(x, y) can be expressed using matrix
+     * multiplication [x] y.
+     */
     template <typename T>
     void
     cross_product_matrix (math::Vector<T, 3> const& v,
@@ -37,7 +38,13 @@ namespace {
 
 }  // namespace
 
-
+void
+CameraPose::fill_p_matrix (math::Matrix<double, 3, 4>* P) const
+{
+    math::Matrix<double, 3, 3> KR = this->K * this->R;
+    math::Matrix<double, 3, 1> Kt(*(this->K * this->t));
+    *P = KR.hstack(Kt);
+}
 
 bool
 pose_8_point (Eight2DPoints const& points_view_1,
@@ -114,6 +121,14 @@ void
 pose_from_essential (EssentialMatrix const& matrix,
     std::vector<CameraPose>* result)
 {
+    /*
+     * The pose [R|t] for the second camera is extracted from the essential
+     * matrix E and the first camera is given in canonical form [I|0].
+     * The SVD of E = USV is computed. The scale of S' diagonal entries is
+     * irrelevant and S is assumed to be diag(1,1,0).
+     * Details can be found in [Hartley, Zisserman, Sect. 9.6.1].
+     */
+
     math::Matrix<double, 3, 3> W(0.0);
     W(0, 1) = -1.0; W(1, 0) = 1.0; W(2, 2) = 1.0;
     math::Matrix<double, 3, 3> Wt(0.0);
@@ -121,7 +136,14 @@ pose_from_essential (EssentialMatrix const& matrix,
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd(matrix, &U, &S, &V);
-    std::cout << "SVD of E = USV*, matrix S:" << std::endl << S << std::endl;
+
+    // FIXME TODO HELP! What is this?
+    if (math::matrix_determinant(U) < 0.0)
+        for (int i = 0; i < 3; ++i)
+            U(i,2) = -U(i,2);
+    if (math::matrix_determinant(V) < 0.0)
+        for (int i = 0; i < 3; ++i)
+            V(i,2) = -V(i,2);
 
     V.transpose();
     result->clear();
@@ -142,10 +164,10 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
 {
     /*
      * The fundamental matrix is obtained from camera matrices.
-     * See Hartley Zisserman (9.1): F = [e2]x P2 P1^.
-     * Where P1, P2 are the camera matrices, and P^ mean inverse.
-     * [e2] is the epipole in the second camera.
-     *
+     * See Hartley Zisserman (9.1): F = [e2] P2 P1^.
+     * Where P1, P2 are the camera matrices, and P^ is the inverse of P.
+     * e2 is the epipole in the second camera and [e2] is the cross product
+     * matrix for e2.
      */
     math::Matrix<double, 3, 4> P1, P2;
     cam1.fill_p_matrix(&P1);
@@ -153,41 +175,18 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
 
     math::Vec4d c1(cam1.R.transposed() * -cam1.t, 1.0);
     math::Vec3d e2 = P2 * c1;
-    // central projection?
 
     math::Matrix3d ex;
     cross_product_matrix(e2, &ex);
+
+    // FIXME: The values in the fundamental matrix can become huge.
+    // The input projection matrix should be given in unit coodinates,
+    // not pixel coordinates? Test and document that.
 
     math::Matrix<double, 4, 3> P1inv;
     matrix_pseudo_inverse(P1, &P1inv);
 
     *result = ex * P2 * P1inv;
 }
-
-
-
-
-
-
-#if 0
-    /*
-     * The input points P are normalized such that the mean of the points
-     * is zero and the points fit in the unit square. This makes solving
-     * for the fundamental matrix numerically stable. The inverse
-     * transformation is then applied afterwards.
-     */
-    math::Matrix<double, 3, 3> T1, T2;
-    pose_find_normalization(points_view_1, &T1);
-    pose_find_normalization(points_view_2, &T2);
-
-    // ...
-
-    /*
-     * De-normalize fundamental matrix. Points have been normalized with
-     * transformation x' = T * x. Since x1' * F * x2 = 0, de-normalization
-     * of F is F' = T1* F T2.
-     */
-    F = T2.transposed() * F * T1;
-#endif
 
 SFM_NAMESPACE_END

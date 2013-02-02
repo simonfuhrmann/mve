@@ -1,10 +1,10 @@
 /*
- * Estimation of pose between images.
+ * Routines for estimation of pose between two images.
  * Written by Simon Fuhrmann.
  *
- * Pose between two cameras is defined by the fundamental matrix. In the
- * calibrated case, where the cameraa internal parameters (focal length,
- * principal point) are known, pose can be described with the essential
+ * The relation between two cameras is defined by the fundamental matrix.
+ * In the calibrated case, where the camera internal parameters (focal
+ * length, principal point) are known, pose can be described with the essential
  * matrix.
  *
  * The fundamental matrix can be computed from eight point correspondences
@@ -14,17 +14,24 @@
  * If the camera calibration is know, the essential matrix can be computed
  * from as few as five point correspondences -- the 5-point algorithm.
  *
- * Camera matrix can be extracted from the fundamental matrix as described
- * in [Sect 9.5.3, Hartley, Zisserman, 2004] or from the essential matrix
- * as described in [Sect 9.6.2, Hartley, Zisserman, 2004].
+ * The input points to the N-point algorithms should be normalized such that
+ * the mean of the points is zero and the points fit in the unit square. This
+ * makes solving for the fundamental matrix numerically stable. The inverse
+ * transformation can then applied afterwards. That is, for transformations
+ * T1 and T2, the de-normalized fundamental matrix is given by F' = T2* F T1,
+ * where T* is the transpose of T.
  *
- * Properties of the Fundamental Matrix:
+ * Camera matrix can be extracted from the essential matrix as described
+ * in [Sect 9.6.2, Hartley, Zisserman, 2004].
+ *
+ * Properties of the Fundamental matrix F:
  * - Rank 2 homogenous matrix with 7 degrees of freedom, det(F) = 0.
  * - Relates images points x, x' in two cameras: x'^T F x = 0.
  * - If F is the fundamental matrix for camera pair (P,P'), the transpose
  *   F^T is the fundamental matrix for camera pair (P',P).
+ * - Two non-zero singular values.
  *
- * Properties of the Essential Matrix:
+ * Properties of the Essential matrix E:
  * - Rank 2 homogenous matrix with 5 degrees of freedom, det(E) = 0.
  * - Relation to Fundamental matrix: E = K'^T F K.
  * - Relates normalized image points x, x' in two cameras: x'^T E x = 0.
@@ -56,10 +63,10 @@ typedef math::Matrix<double, 3, 3> EssentialMatrix;
  *   K = | 0  f  p2 |    and the principal point p1 and p2.
  *       | 0  0   1 |
  *
- * For pose estimation, the calibration matrix is assumed to be known.
- * Even a good guess for the focal length and p1/p2 in the image
- * center may produce reasonable enough results so that bundle adjustment
- * can recover better parameters.
+ * For pose estimation, the calibration matrix is assumed to be known. This
+ * might not be the case, but even a good guess of the focal length and p1/p2
+ * set to the image center can produce reasonable enough results so that bundle
+ * adjustment can recover better parameters.
  */
 struct CameraPose
 {
@@ -74,7 +81,7 @@ struct CameraPose
  * Algorithm to compute the fundamental or essential matrix from 8 image
  * correspondences. It closely follows [Sect. 11.2, Hartley, Zisserman, 2004].
  * In case of "normalized image coordinates" (i.e. x* = K^-1 x), this code
- * computes the unconstrained essential matrix.
+ * computes the essential matrix.
  *
  * This does not normalize the points, the image coordinates or enforces
  * constraints on the resulting matrix.
@@ -84,8 +91,8 @@ pose_8_point (Eight2DPoints const& points_view_1,
     Eight2DPoints const& points_view_2,
     FundamentalMatrix* result);
 
+#if 0  // This is not yet implemented!
 /**
- * NOT YET IMPLEMENTED.
  * Algorithm to compute the fundamental matrix from 7 point correspondences.
  * The algorithm returns one or three possible solutions.
  * The implementation follows [Sect. 11.2, 11.1.2, Hartley, Zisserman, 2004].
@@ -96,7 +103,6 @@ pose_7_point (Seven2DPoints const& points_view_1,
     std::vector<FundamentalMatrix>* result);
 
 /**
- * NOT YET IMPLEMENTED.
  * Algorithm to compute the essential matrix from 5 point correspondences.
  * The algorithm returns up to ten possible solutions.
  * The literature can be found at: http://vis.uky.edu/~stewe/FIVEPOINT/
@@ -109,6 +115,7 @@ bool
 pose_5_point (Five2DPoints const& points_view_1,
     Five2DPoints const& points_view_2,
     std::vector<EssentialMatrix>* result);
+#endif
 
 /**
  * Constraints the given matrix to have TWO NON-ZERO eigenvalues.
@@ -125,9 +132,13 @@ void
 enforce_essential_constraints (EssentialMatrix* matrix);
 
 /**
- * Retrieves the camera matrices from the essential matrix.
- * This routine recovers P' = [M|m] for the second camera where
- * the first camera is given in canonical form P = [I|0].
+ * Retrieves the camera matrices from the essential matrix. This routine
+ * recovers P' = [M|m] with M = K*R and m = K*t for the second camera where the
+ * first camera is given in canonical form P = [I|0]. The pose can be computed
+ * up to scale and a four-fold ambiguity. That is, the translation has length
+ * one and four possible solutions are provided. Each of the solutions must be
+ * tested: It is sufficient to test if a single point is in front of
+ * both cameras.
  */
 void
 pose_from_essential (EssentialMatrix const& matrix,
@@ -135,6 +146,8 @@ pose_from_essential (EssentialMatrix const& matrix,
 
 /**
  * Computes the fundamental matrix corresponding to cam1 and cam2.
+ * The function relies on the epipole to be visible in the second
+ * camera, thus the cameras must not be in the same location.
  */
 void
 fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
