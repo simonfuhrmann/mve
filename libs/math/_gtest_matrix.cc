@@ -79,6 +79,24 @@ TEST(MatrixTest, MiscOperations)
     EXPECT_EQ(test.mult(Vec3f(1.0f, 2.0f, 3.0f)), Vec3f(14.0f, 32.0f, 50.0f));
 }
 
+TEST(MatrixTest, MatrixNegate)
+{
+    math::Matrix<float,2,3> M1;
+    M1(0,0) = 5.0f; M1(0,1) = 6.0f; M1(0,2) = 1.0f;
+    M1(1,0) = 1.0f; M1(1,1) = 2.0f; M1(1,2) = 3.0f;
+
+    math::Matrix<float,2,3> M2;
+    M2(0,0) = -5.0f; M2(0,1) = -6.0f; M2(0,2) = -1.0f;
+    M2(1,0) = -1.0f; M2(1,1) = -2.0f; M2(1,2) = -3.0f;
+
+    for (int i = 0; i < 6; ++i)
+        EXPECT_EQ(M2[i], M1.negated()[i]);
+
+    M1.negate();
+    for (int i = 0; i < 6; ++i)
+        EXPECT_EQ(M2[i], M1[i]);
+}
+
 TEST(MatrixTest, MatrixStacking)
 {
     math::Matrix<float, 1, 1> m(1.0f);

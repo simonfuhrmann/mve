@@ -91,8 +91,10 @@ public:
 
     /* ---------------------- Unary operators --------------------- */
 
-    /** Determinant of the matrix. Only available for square matrices. */
-    //T determinant (void) const;
+    /** Component-wise negation on self, returns self. */
+    Matrix<T,N,M>& negate (void);
+     /** Returns a component-wise negation on copy of self. */
+    Matrix<T,N,M> negated (void) const;
 
     /** Transpose the current matrix. Only available for square matrices. */
     Matrix<T,M,N>& transpose (void);
@@ -141,6 +143,9 @@ public:
     /** Assignment operator from different type. */
     template <typename O>
     Matrix<T,N,M>& operator= (Matrix<O,N,M> const& rhs);
+
+    /** Component-wise negation. */
+    Matrix<T,N,M> operator- (void) const;
 
     /** Self-substraction with other matrix. */
     Matrix<T,N,M>& operator-= (Matrix<T,N,M> const& rhs);
@@ -339,6 +344,21 @@ Matrix<T,N,M>::vstack (Matrix<T,O,M> const& other)
 /* ------------------------- Unary operators ---------------------- */
 
 template <typename T, int N, int M>
+inline Matrix<T,N,M>&
+Matrix<T,N,M>::negate (void)
+{
+    std::for_each(m, m + N*M, &algo::foreach_negate_value<T>);
+    return *this;
+}
+
+template <typename T, int N, int M>
+inline Matrix<T,N,M>
+Matrix<T,N,M>::negated (void) const
+{
+    return Matrix<T,N,M>(*this).negate();
+}
+
+template <typename T, int N, int M>
 inline Matrix<T,M,N>&
 Matrix<T,N,M>::transpose (void)
 {
@@ -473,6 +493,13 @@ Matrix<T,N,M>::operator= (Matrix<O,N,M> const& rhs)
 {
     std::copy(*rhs, *rhs + N * M, m);
     return *this;
+}
+
+template <typename T, int N, int M>
+inline Matrix<T,N,M>
+Matrix<T,N,M>::operator- (void) const
+{
+    return negated();
 }
 
 template <typename T, int N, int M>

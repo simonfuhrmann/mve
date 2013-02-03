@@ -211,14 +211,14 @@ public:
     /** Comparison operator. */
     bool operator!= (Vector<T,N> const& rhs) const;
 
-    /** Component-wise negation. */
-    Vector<T,N> operator- (void) const;
-
     /** Assignment operator. */
     Vector<T,N>& operator= (Vector<T,N> const& rhs);
     /** Assignment operator from different type. */
     template <typename O>
     Vector<T,N>& operator= (Vector<O,N> const& rhs);
+
+    /** Component-wise negation. */
+    Vector<T,N> operator- (void) const;
 
     /** Self-substraction with other vector. */
     Vector<T,N>& operator-= (Vector<T,N> const& rhs);
@@ -648,13 +648,6 @@ Vector<T,N>::operator!= (Vector<T,N> const& rhs) const
 }
 
 template <typename T, int N>
-inline Vector<T,N>
-Vector<T,N>::operator- (void) const
-{
-    return negated();
-}
-
-template <typename T, int N>
 inline Vector<T,N>&
 Vector<T,N>::operator= (Vector<T,N> const& rhs)
 {
@@ -669,6 +662,13 @@ Vector<T,N>::operator= (Vector<O,N> const& rhs)
 {
     std::copy(*rhs, *rhs + N, v);
     return *this;
+}
+
+template <typename T, int N>
+inline Vector<T,N>
+Vector<T,N>::operator- (void) const
+{
+    return negated();
 }
 
 template <typename T, int N>
