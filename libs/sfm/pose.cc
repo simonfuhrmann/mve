@@ -7,6 +7,7 @@
  */
 
 #include <limits>
+#include <stdexcept>
 
 #include "math/matrixtools.h"
 
@@ -137,7 +138,8 @@ pose_from_essential (EssentialMatrix const& matrix,
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd(matrix, &U, &S, &V);
 
-    // FIXME TODO HELP! What is this?
+    // This seems to ensure that det(R) = 1 (instead of -1).
+    // FIXME: Is this the correct way to do it?
     if (math::matrix_determinant(U) < 0.0)
         for (int i = 0; i < 3; ++i)
             U(i,2) = -U(i,2);
@@ -156,6 +158,10 @@ pose_from_essential (EssentialMatrix const& matrix,
     result->at(1).t = -result->at(0).t;
     result->at(2).t = result->at(0).t;
     result->at(3).t = -result->at(0).t;
+
+    // FIXME: Temporary sanity check.
+    if (!MATH_EPSILON_EQ(math::matrix_determinant(result->at(0).R), 1.0, 1e-3))
+        throw std::runtime_error("Invalid rotation matrix");
 }
 
 void

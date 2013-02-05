@@ -113,7 +113,7 @@ TEST(PostTest, Test8Point)
 TEST(PoseTest, SyntheticPoseTest1)
 {
     // Ground truth pose, calibration with focal lenght 1 and 800x600 image.
-    // The first camera looks straigt along the z axis.
+    // The first camera looks straight along the z axis.
     sfm::CameraPose pose1;
     pose1.K.fill(0.0);
     pose1.K(0,0) = 800.0; pose1.K(1,1) = 800.0;
@@ -148,6 +148,7 @@ TEST(PoseTest, SyntheticPoseTest1)
     int num_equal_cameras = 0;
     for (std::size_t i = 0; i < poses.size(); ++i)
     {
+        //std::cout << "Determinant: " << math::matrix_determinant(poses[i].R) << std::endl;
         bool equal = poses[i].R.is_similar(pose2.R, 1e-14)
             && poses[i].t.is_similar(pose2.t, 1e-14);
         num_equal_cameras += equal;
