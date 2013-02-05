@@ -186,48 +186,9 @@ MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
 
 /* ---------------------------------------------------------------- */
-/* ---------------------------------------------------------------- */
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
-
-#if 0
-
-/* Old code from the ancient days where the K matrix was simple. */
-
-float
-pixel_footprint (std::size_t x, std::size_t y, float depth,
-    std::size_t w, std::size_t h, float focal_len)
-{
-    float D = (float)std::max(w, h);
-    float x2d = (float)x + 0.5f - 0.5f * (float)w;
-    float y2d = (float)y + 0.5f - 0.5f * (float)h;
-    float fl = focal_len * D;
-    float fxy = std::sqrt(x2d * x2d + y2d * y2d + fl * fl);
-
-    return depth / fxy;
-}
-
-math::Vec3f
-pixel_3dpos (std::size_t x, std::size_t y, float depth,
-    std::size_t w, std::size_t h, float focal_len)
-{
-/*
-    math::Vec3f p3d((float)x + 0.5f - 0.5f * (float)w,
-        (float)y + 0.5f - 0.5f * (float)h,
-        focal_len * (float)std::max(w, h));
-*/
-    std::size_t xinv = w - x - 1;
-    math::Vec3f p3d((float)xinv - 0.5f * (float)(w - 1),
-        (float)y - 0.5f * (float)(h - 1),
-        -focal_len * (float)std::max(w, h));
-
-    return p3d.normalized() * depth;
-}
-
-#endif
-
-/* ---------------------------------------------------------------- */
 
 float
 pixel_footprint (std::size_t x, std::size_t y, float depth,
