@@ -1,5 +1,8 @@
 #include <algorithm>
+#include <cstdlib> // for std::rand()
+#include <set>
 
+#include "math/algo.h"
 #include "poseransac.h"
 
 SFM_NAMESPACE_BEGIN
@@ -34,15 +37,76 @@ void
 PoseRansac::estimate_8_point (std::vector<Match> const& matches,
     FundamentalMatrix* fundamental)
 {
-    // TODO
+    /*
+     * Draw 8 random numbers in the interval [0, matches.size() - 1]
+     * without duplicates. This is done by keeping a set with drawn numbers.
+     */
+    std::set<int> result;
+    while (result.size() < 8)
+        result.insert(std::rand() % matches.size());
+
+    math::Matrix<double, 3, 8> pset1, pset2;
+    std::set<int>::const_iterator iter = result.begin();
+    for (int i = 0; i < 8; ++i, ++iter)
+    {
+        Match const& match = matches[*iter];
+        pset1(0, i) = match.p1[0];
+        pset1(1, i) = match.p1[1];
+        pset1(2, i) = 1.0;
+        pset2(0, i) = match.p2[0];
+        pset2(1, i) = match.p2[1];
+        pset2(2, i) = 1.0;
+    }
+
+    /* Compute fundamental matrix using normalized 8-point. */
+    math::Matrix<double, 3, 3> T1, T2;
+    sfm::pose_find_normalization(pset1, &T1);
+    sfm::pose_find_normalization(pset2, &T2);
+    pset1 = T1 * pset1;
+    pset2 = T2 * pset2;
+    sfm::pose_8_point(pset1, pset2, fundamental);
+    sfm::enforce_fundamental_constraints(fundamental);
+    *fundamental = T2.transposed().mult(*fundamental).mult(T1);
 }
 
 void
 PoseRansac::find_inliers (std::vector<Match> const& matches,
     FundamentalMatrix const& fundamental, std::vector<int>* result)
 {
+    double const threshold = 1e-6;
     result->resize(0);
-    // TODO
+    for (std::size_t i = 0; i < matches.size(); ++i)
+    {
+        double error = sampson_distance(fundamental, matches[i]);
+        if (error > threshold)
+            continue;
+        result->push_back(i);
+    }
+}
+
+double
+PoseRansac::sampson_distance (FundamentalMatrix const& F, Match const& m)
+{
+    /*
+     * Computes the Sampson distance SD for a given match and fundamental
+     * matrix. SD is computed as [Sect 11.4.3, Hartley, Zisserman]:
+     *
+     *   SD = (x'Fx)^2 / ( (Fx)_1^2 + (Fx)_2^2 + (x'F)_1^2 + (x'F)_2^2 )
+     */
+
+    double p2_F_p1 = 0.0;
+    p2_F_p1 += m.p2[0] * (m.p1[0] * F[0] + m.p1[1] * F[1] + F[2]);
+    p2_F_p1 += m.p2[1] * (m.p1[0] * F[3] + m.p1[1] * F[4] + F[5]);
+    p2_F_p1 +=     1.0 * (m.p1[0] * F[6] + m.p1[1] * F[7] + F[8]);
+    p2_F_p1 *= p2_F_p1;
+
+    double sum = 0.0;
+    sum += math::algo::fastpow(m.p1[0] * F[0] + m.p1[1] * F[1] + F[2], 2);
+    sum += math::algo::fastpow(m.p1[0] * F[3] + m.p1[1] * F[4] + F[5], 2);
+    sum += math::algo::fastpow(m.p2[0] * F[0] + m.p2[1] * F[3] + F[6], 2);
+    sum += math::algo::fastpow(m.p2[0] * F[1] + m.p2[1] * F[4] + F[7], 2);
+
+    return p2_F_p1 / sum;
 }
 
 SFM_NAMESPACE_END

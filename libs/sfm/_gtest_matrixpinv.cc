@@ -7,7 +7,7 @@
 
 #include "sfm/matrixsvd.h"
 
-TEST(MatrixPseuduInverse, GodenData1)
+TEST(MatrixPseudoInverse, GodenData1)
 {
     double a_values[] = { 2, -4,  5, 6, 0, 3, 2, -4, 5, 6, 0, 3 };
     double a_inv_values[] = { -2, 6, -2, 6, -5, 3, -5, 3, 4, 0, 4, 0 };
@@ -23,7 +23,7 @@ TEST(MatrixPseuduInverse, GodenData1)
             EXPECT_NEAR(Ainv(r, c), result(r, c), 1e-16);
 }
 
-TEST(MatrixPseuduInverse, GodenData2)
+TEST(MatrixPseudoInverse, GodenData2)
 {
     double a_values[] = { 1, 1, 1, 1, 5, 7, 7, 9 };
     double a_inv_values[] = { 2, -0.25, 0.25, 0, 0.25, 0, -1.5, 0.25 };

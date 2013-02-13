@@ -73,7 +73,7 @@ namespace {
 
 }  // namespace
 
-TEST(PostTest, Test8Point)
+TEST(PoseTest, Test8Point)
 {
     sfm::Eight2DPoints p1, p2;
     fill_golden_correspondences(p1, p2);
@@ -226,4 +226,9 @@ TEST(PoseTest, SyntheticPoseTest2)
         num_equal_cameras += equal;
     }
     EXPECT_EQ(num_equal_cameras, 1);
+}
+
+TEST(PoseRansacTest, TestRansac1)
+{
+    // TODO
 }
