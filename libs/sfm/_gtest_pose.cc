@@ -110,31 +110,42 @@ TEST(PostTest, Test8Point)
         EXPECT_NEAR((F[i] - F2[i]) / (F[i] + F2[i]), 0.0, 0.05);
 }
 
+namespace {
+
+    void
+    fill_ground_truth_pose (sfm::CameraPose* pose1, sfm::CameraPose* pose2)
+    {
+        // Calibration with focal lenght 1 and 800x600 image.
+        // The first camera looks straight along the z axis.
+        pose1->K.fill(0.0);
+        pose1->K(0,0) = 800.0; pose1->K(1,1) = 800.0;
+        pose1->K(0,2) = 800.0 / 2.0; pose1->K(1,2) = 600.0 / 2.0;
+        pose1->K(2,2) = 1.0;
+        math::matrix_set_identity(*pose1->R, 3);
+        pose1->t.fill(0.0);
+
+        // The second camera is at (1,0,0) and rotated 45deg to the left.
+        pose2->K.fill(0.0);
+        pose2->K(0,0) = 800.0; pose2->K(1,1) = 800.0;
+        pose2->K(0,2) = 800.0 / 2.0; pose2->K(1,2) = 600.0 / 2.0;
+        pose2->K(2,2) = 1.0;
+        pose2->R.fill(0.0);
+        double const angle = MATH_PI / 4;
+        pose2->R(0,0) = std::cos(angle); pose2->R(0,2) = std::sin(angle);
+        pose2->R(1,1) = 1.0;
+        pose2->R(2,0) = -std::sin(angle); pose2->R(2,2) = std::cos(angle);
+        pose2->t.fill(0.0); pose2->t[0] = 1.0;
+        pose2->t = pose2->R * -pose2->t;
+    }
+
+} // namespace
+
 TEST(PoseTest, SyntheticPoseTest1)
 {
-    // Ground truth pose, calibration with focal lenght 1 and 800x600 image.
-    // The first camera looks straight along the z axis.
-    sfm::CameraPose pose1;
-    pose1.K.fill(0.0);
-    pose1.K(0,0) = 800.0; pose1.K(1,1) = 800.0;
-    pose1.K(0,2) = 800.0 / 2.0; pose1.K(1,2) = 600.0 / 2.0;
-    pose1.K(2,2) = 1.0;
-    math::matrix_set_identity(*pose1.R, 3);
-    pose1.t.fill(0.0);
-
-    // The second camera is at (1,0,0) and rotated 45deg to the left.
-    sfm::CameraPose pose2;
-    pose2.K.fill(0.0);
-    pose2.K(0,0) = 800.0; pose2.K(1,1) = 800.0;
-    pose2.K(0,2) = 800.0 / 2.0; pose2.K(1,2) = 600.0 / 2.0;
-    pose2.K(2,2) = 1.0;
-    pose2.R.fill(0.0);
-    double const angle = MATH_PI / 4;
-    pose2.R(0,0) = std::cos(angle); pose2.R(0,2) = std::sin(angle);
-    pose2.R(1,1) = 1.0;
-    pose2.R(2,0) = -std::sin(angle); pose2.R(2,2) = std::cos(angle);
-    pose2.t.fill(0.0); pose2.t[0] = 1.0;
-    pose2.t = pose2.R * -pose2.t;
+    // This test computes from a given pose the fundamental matrix,
+    // then the essential matrix, then recovers the original pose.
+    sfm::CameraPose pose1, pose2;
+    fill_ground_truth_pose(&pose1, &pose2);
 
     // Compute fundamental for pose.
     sfm::FundamentalMatrix F;
@@ -149,6 +160,67 @@ TEST(PoseTest, SyntheticPoseTest1)
     for (std::size_t i = 0; i < poses.size(); ++i)
     {
         //std::cout << "Determinant: " << math::matrix_determinant(poses[i].R) << std::endl;
+        bool equal = poses[i].R.is_similar(pose2.R, 1e-14)
+            && poses[i].t.is_similar(pose2.t, 1e-14);
+        num_equal_cameras += equal;
+    }
+    EXPECT_EQ(num_equal_cameras, 1);
+}
+
+TEST(PoseTest, SyntheticPoseTest2)
+{
+    // This test computes from a given pose eight corresponding pairs
+    // of 2D projections in the images. These correspondences are used
+    // to compute a fundamental matrix, then the essential matrix, then
+    // recovers the original pose.
+    sfm::CameraPose pose1, pose2;
+    fill_ground_truth_pose(&pose1, &pose2);
+
+    // Eight "random" 3D points.
+    std::vector<math::Vec3d> points3d;
+    points3d.push_back(math::Vec3d(-0.31, -0.42, 1.41));
+    points3d.push_back(math::Vec3d( 0.04,  0.01, 0.82));
+    points3d.push_back(math::Vec3d(-0.25, -0.24, 1.25));
+    points3d.push_back(math::Vec3d( 0.47,  0.22, 0.66));
+    points3d.push_back(math::Vec3d( 0.13,  0.03, 0.89));
+    points3d.push_back(math::Vec3d(-0.13, -0.46, 1.15));
+    points3d.push_back(math::Vec3d( 0.21, -0.23, 1.33));
+    points3d.push_back(math::Vec3d(-0.42,  0.38, 0.62));
+
+    // Re-project in images using ground truth pose.
+    math::Matrix<double, 3, 8> points2d_v1, points2d_v2;
+    for (int i = 0; i < 8; ++i)
+    {
+        math::Vec3d p1 = pose1.K * (pose1.R * points3d[i] + pose1.t);
+        math::Vec3d p2 = pose2.K * (pose2.R * points3d[i] + pose2.t);
+        p1 /= p1[2];
+        p2 /= p2[2];
+        for (int j = 0; j < 3; ++j)
+        {
+            points2d_v1(j, i) = p1[j];
+            points2d_v2(j, i) = p2[j];
+        }
+    }
+
+    // Compute fundamental using stabilized 8-point algorithm.
+    math::Matrix<double, 3, 3> T1, T2;
+    sfm::pose_find_normalization(points2d_v1, &T1);
+    sfm::pose_find_normalization(points2d_v2, &T2);
+    points2d_v1 = T1 * points2d_v1;
+    points2d_v2 = T2 * points2d_v2;
+    sfm::FundamentalMatrix F;
+    sfm::pose_8_point(points2d_v1, points2d_v2, &F);
+    sfm::enforce_fundamental_constraints(&F);
+    F = T2.transposed() * F * T1;
+    // Compute essential from fundamental.
+    sfm::EssentialMatrix E = pose2.K.transposed() * F * pose1.K;
+    // Compute pose from essential.
+    std::vector<sfm::CameraPose> poses;
+    pose_from_essential(E, &poses);
+    // Check if one of the poses is the solution.
+    int num_equal_cameras = 0;
+    for (std::size_t i = 0; i < poses.size(); ++i)
+    {
         bool equal = poses[i].R.is_similar(pose2.R, 1e-14)
             && poses[i].t.is_similar(pose2.t, 1e-14);
         num_equal_cameras += equal;
