@@ -95,7 +95,7 @@ public:
 
     /**
      * Sets the amount of samples per octave. This defaults to 3
-     * and results to 6 blurred images and 5 DoG images per octave.
+     * and results in 6 blurred and 5 DoG images per octave.
      */
     void set_samples_per_octave (int samples);
 

@@ -47,6 +47,15 @@ CameraPose::fill_p_matrix (math::Matrix<double, 3, 4>* P) const
     *P = KR.hstack(Kt);
 }
 
+void
+CameraPose::set_k_matrix (double flen, double px, double py)
+{
+    this->K.fill(0.0);
+    this->K[0] = flen; this->K[2] = px;
+    this->K[4] = flen; this->K[5] = py;
+    this->K[8] = 1.0;
+}
+
 bool
 pose_8_point (Eight2DPoints const& points_view_1,
     Eight2DPoints const& points_view_2,

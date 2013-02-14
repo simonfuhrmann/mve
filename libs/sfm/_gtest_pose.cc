@@ -6,6 +6,7 @@
 #include "math/matrixtools.h"
 #include "sfm/matrixsvd.h"
 #include "sfm/pose.h"
+#include "sfm/poseransac.h"
 
 TEST(PoseTest, PointNormalization1)
 {
@@ -117,18 +118,12 @@ namespace {
     {
         // Calibration with focal lenght 1 and 800x600 image.
         // The first camera looks straight along the z axis.
-        pose1->K.fill(0.0);
-        pose1->K(0,0) = 800.0; pose1->K(1,1) = 800.0;
-        pose1->K(0,2) = 800.0 / 2.0; pose1->K(1,2) = 600.0 / 2.0;
-        pose1->K(2,2) = 1.0;
+        pose1->set_k_matrix(800, 800 / 2, 600 / 2);
         math::matrix_set_identity(*pose1->R, 3);
         pose1->t.fill(0.0);
 
         // The second camera is at (1,0,0) and rotated 45deg to the left.
-        pose2->K.fill(0.0);
-        pose2->K(0,0) = 800.0; pose2->K(1,1) = 800.0;
-        pose2->K(0,2) = 800.0 / 2.0; pose2->K(1,2) = 600.0 / 2.0;
-        pose2->K(2,2) = 1.0;
+        pose2->set_k_matrix(800, 800 / 2, 600 / 2);
         pose2->R.fill(0.0);
         double const angle = MATH_PI / 4;
         pose2->R(0,0) = std::cos(angle); pose2->R(0,2) = std::sin(angle);
@@ -202,7 +197,7 @@ TEST(PoseTest, SyntheticPoseTest2)
         }
     }
 
-    // Compute fundamental using stabilized 8-point algorithm.
+    // Compute fundamental using normalized 8-point algorithm.
     math::Matrix<double, 3, 3> T1, T2;
     sfm::pose_find_normalization(points2d_v1, &T1);
     sfm::pose_find_normalization(points2d_v2, &T2);
@@ -228,7 +223,59 @@ TEST(PoseTest, SyntheticPoseTest2)
     EXPECT_EQ(num_equal_cameras, 1);
 }
 
+#if 0  // This test case is not in use because it is not deterministic.
 TEST(PoseRansacTest, TestRansac1)
 {
-    // TODO
+    // This test computes from a given pose eight corresponding pairs
+    // of 2D projections in the images. These correspondences are used
+    // to compute a fundamental matrix, then the essential matrix, then
+    // recovers the original pose.
+    sfm::CameraPose pose1, pose2;
+    fill_ground_truth_pose(&pose1, &pose2);
+
+    // Some "random" 3D points.
+    std::vector<math::Vec3d> points3d;
+    points3d.push_back(math::Vec3d(-0.31, -0.42, 1.41));
+    points3d.push_back(math::Vec3d( 0.04,  0.01, 0.82));
+    points3d.push_back(math::Vec3d(-0.25, -0.24, 1.25));
+    points3d.push_back(math::Vec3d( 0.47,  0.22, 0.66));
+    points3d.push_back(math::Vec3d( 0.13,  0.03, 0.89));
+    points3d.push_back(math::Vec3d(-0.13, -0.46, 1.15));
+    points3d.push_back(math::Vec3d( 0.21, -0.23, 1.33));
+    points3d.push_back(math::Vec3d(-0.42,  0.38, 0.62));
+    points3d.push_back(math::Vec3d(-0.22, -0.38, 0.52));
+    //points3d.push_back(math::Vec3d( 0.15,  0.12, 1.12));
+
+    // Re-project in images using ground truth pose.
+    std::vector<sfm::PoseRansac::Match> matches;
+    for (int i = 0; i < points3d.size(); ++i)
+    {
+        math::Vec3d p1 = pose1.K * (pose1.R * points3d[i] + pose1.t);
+        math::Vec3d p2 = pose2.K * (pose2.R * points3d[i] + pose2.t);
+        p1 /= p1[2];
+        p2 /= p2[2];
+
+        sfm::PoseRansac::Match match;
+        match.p1[0] = p1[0] / p1[2];
+        match.p1[1] = p1[1] / p1[2];
+        match.p2[0] = p2[0] / p2[2];
+        match.p2[1] = p2[1] / p2[2];
+        matches.push_back(match);
+    }
+    matches[points3d.size()-1].p2[0] -= 15.0;
+    matches[points3d.size()-1].p2[1] += 33.0;
+    //matches[points3d.size()-2].p1[0] += 25.0;
+    //matches[points3d.size()-2].p1[1] -= 13.0;
+
+    sfm::PoseRansac::Options opts;
+    opts.max_iterations = 50;
+    opts.threshold = 1.0;
+    opts.already_normalized = false;
+    sfm::PoseRansac ransac(opts);
+    sfm::PoseRansac::Result result;
+    std::srand(std::time(0));
+    ransac.estimate(matches, &result);
+
+    EXPECT_EQ(8, result.inliers.size());
 }
+#endif

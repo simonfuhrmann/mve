@@ -19,7 +19,7 @@ sfm::MatchingResult
 twoview_matching (std::vector<DESCR> const& descr1,
     std::vector<DESCR> const& descr2)
 {
-#if 0
+#if 1
     /* Convert the descriptors to aligned float arrays. */
     util::AlignedMemory<float, 16> matchset_1(DIM * descr1.size());
     float* out_ptr1 = matchset_1.begin();
@@ -123,7 +123,10 @@ sift_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
         = twoview_matching<sfm::Sift::Descriptor, 128>(descr1, descr2);
     mve::ByteImage::Ptr match_image
         = visualize_matching(matching, image1, image2, descr1, descr2);
-    mve::image::save_file(match_image, "/tmp/matching_sift.png");
+
+    std::string output_filename = "/tmp/matching_sift.png";
+    std::cout << "Saving visualization to " << output_filename << std::endl;
+    mve::image::save_file(match_image, output_filename);
 }
 
 void
@@ -151,7 +154,9 @@ surf_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
         = twoview_matching<sfm::Surf::Descriptor, 64>(descr1, descr2);
     mve::ByteImage::Ptr match_image
         = visualize_matching(matching, image1, image2, descr1, descr2);
-    mve::image::save_file(match_image, "/tmp/matching_surf_char.png");
+    std::string output_filename = "/tmp/matching_surf.png";
+    std::cout << "Saving visualization to " << output_filename << std::endl;
+    mve::image::save_file(match_image, output_filename);
 }
 
 int
@@ -182,7 +187,7 @@ main (int argc, char** argv)
         return 1;
     }
 
-    //sift_matching(image1, image2);
+    sift_matching(image1, image2);
     surf_matching(image1, image2);
 
 #if 0

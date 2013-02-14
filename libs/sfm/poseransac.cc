@@ -1,18 +1,29 @@
 #include <algorithm>
 #include <cstdlib> // for std::rand()
+#include <iostream> // TMP
 #include <set>
+#include <stdexcept>
 
 #include "math/algo.h"
 #include "poseransac.h"
 
 SFM_NAMESPACE_BEGIN
 
+PoseRansac::Options::Options (void)
+    : max_iterations(100)
+    , threshold(1e-3)
+    , already_normalized(true)
+{
+}
+
+PoseRansac::PoseRansac (Options const& options)
+    : opts(options)
+{
+}
+
 void
 PoseRansac::estimate (std::vector<Match> const& matches, Result* result)
 {
-    if (matches.size() < 8)
-        throw std::invalid_argument("At least 8 matches required");
-
     std::vector<int> inliers;
     inliers.reserve(matches.size());
     for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
@@ -37,6 +48,9 @@ void
 PoseRansac::estimate_8_point (std::vector<Match> const& matches,
     FundamentalMatrix* fundamental)
 {
+    if (matches.size() < 8)
+        throw std::invalid_argument("At least 8 matches required");
+
     /*
      * Draw 8 random numbers in the interval [0, matches.size() - 1]
      * without duplicates. This is done by keeping a set with drawn numbers.
@@ -44,6 +58,13 @@ PoseRansac::estimate_8_point (std::vector<Match> const& matches,
     std::set<int> result;
     while (result.size() < 8)
         result.insert(std::rand() % matches.size());
+
+    {
+        std::set<int>::const_iterator iter = result.begin();
+        std::cout << "Drawn IDs: " << *(iter++) << " " << *(iter++) << " "
+            << *(iter++) << " " << *(iter++) << " " << *(iter++) << " "
+            << *(iter++) << " " << *(iter++) << " " << *(iter++) << std::endl;
+    }
 
     math::Matrix<double, 3, 8> pset1, pset2;
     std::set<int>::const_iterator iter = result.begin();
@@ -60,27 +81,35 @@ PoseRansac::estimate_8_point (std::vector<Match> const& matches,
 
     /* Compute fundamental matrix using normalized 8-point. */
     math::Matrix<double, 3, 3> T1, T2;
-    sfm::pose_find_normalization(pset1, &T1);
-    sfm::pose_find_normalization(pset2, &T2);
-    pset1 = T1 * pset1;
-    pset2 = T2 * pset2;
+    if (!this->opts.already_normalized)
+    {
+        sfm::pose_find_normalization(pset1, &T1);
+        sfm::pose_find_normalization(pset2, &T2);
+        pset1 = T1 * pset1;
+        pset2 = T2 * pset2;
+    }
+
     sfm::pose_8_point(pset1, pset2, fundamental);
     sfm::enforce_fundamental_constraints(fundamental);
-    *fundamental = T2.transposed().mult(*fundamental).mult(T1);
+
+    if (!this->opts.already_normalized)
+    {
+        *fundamental = T2.transposed().mult(*fundamental).mult(T1);
+    }
 }
 
 void
 PoseRansac::find_inliers (std::vector<Match> const& matches,
     FundamentalMatrix const& fundamental, std::vector<int>* result)
 {
-    double const threshold = 1e-6;
     result->resize(0);
+    double const squared_thres = this->opts.threshold * this->opts.threshold;
     for (std::size_t i = 0; i < matches.size(); ++i)
     {
         double error = sampson_distance(fundamental, matches[i]);
-        if (error > threshold)
-            continue;
-        result->push_back(i);
+        //std::cout << "Sampson error for match " << i << ": " << error << std::endl;
+        if (error < squared_thres)
+            result->push_back(i);
     }
 }
 

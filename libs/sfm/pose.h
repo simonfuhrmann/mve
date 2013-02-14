@@ -59,13 +59,13 @@ typedef math::Matrix<double, 3, 3> EssentialMatrix;
  * The camera pose is P = K [R | t].
  * K is the calibration matrix, R a rotation matrix and T a translation.
  *
- *       | f  0  p1 |    The calibration matrix contains the focal length f,
- *   K = | 0  f  p2 |    and the principal point p1 and p2.
+ *       | f  0  px |    The calibration matrix contains the focal length f,
+ *   K = | 0  f  py |    and the principal point px and py.
  *       | 0  0   1 |
  *
  * For pose estimation, the calibration matrix is assumed to be known. This
- * might not be the case, but even a good guess of the focal length and p1/p2
- * set to the image center can produce reasonable enough results so that bundle
+ * might not be the case, but even a good guess of the focal length and px/py
+ * set to the image center can produce reasonably enough results so that bundle
  * adjustment can recover better parameters.
  */
 struct CameraPose
@@ -75,6 +75,7 @@ struct CameraPose
     math::Vector<double, 3> t;
 
     void fill_p_matrix (math::Matrix<double, 3, 4>* result) const;
+    void set_k_matrix (double flen, double px, double py);
 };
 
 /**
@@ -154,9 +155,10 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
     FundamentalMatrix* result);
 
 /**
- * Computes a transformation T for 2D points P in homogeneous coordinates
+ * Computes a transformation for 2D points in homogeneous coordinates
  * such that the mean of the points is zero and the points fit in the unit
  * square. (The thrid coordinate will still be 1 after normalization.)
+ * Optimized version where number of points must be known at compile time.
  */
 template <typename T, int DIM>
 void

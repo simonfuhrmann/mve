@@ -29,8 +29,29 @@ class PoseRansac
 public:
     struct Options
     {
+        Options (void);
+
+        /**
+         * The number of RANSAC iterations. Defaults to 100.
+         * TODO: Document reasonable default values and RANSAC theory.
+         */
         int max_iterations;
+
+        /**
+         * Threshold used to determine inliers. Defaults to 0.001.
+         * This threshold depends on whether the input points are normalized.
+         * In the normalized case, this threshold is relative to the image
+         * dimension, e.g. 1e-3. In the un-normalized case, this threshold
+         * is in pixels, e.g. 2.0.
+         */
         double threshold;
+
+        /**
+         * Whether the input points are already normalized. Defaults to true.
+         * If this is set to false, in every RANSAC iteration the coordinates
+         * of the randomly selected matches will be normalized for 8-point.
+         */
+        bool already_normalized;
     };
 
     struct Result
