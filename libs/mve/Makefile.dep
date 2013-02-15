@@ -48,10 +48,6 @@ sift.o: sift.cc ../util/timer.h ../util/defines.h ../math/matrix.h \
   ../math/matrixtools.h imagefile.h defines.h image.h ../util/refptr.h \
   ../util/atomic.h imagebase.h ../util/string.h imagetools.h \
   ../util/exception.h ../math/accum.h camera.h sift.h
-surf.o: surf.cc image.h ../util/refptr.h ../util/defines.h \
-  ../util/atomic.h ../math/algo.h ../math/defines.h defines.h \
-  imagebase.h ../util/string.h imagetools.h ../util/exception.h \
-  ../math/accum.h camera.h imagefile.h surf.h
 trianglemesh.o: trianglemesh.cc ../math/defines.h trianglemesh.h \
   ../math/vector.h ../math/algo.h ../util/refptr.h ../util/defines.h \
   ../util/atomic.h defines.h
