@@ -24,9 +24,6 @@ meshtools.o: meshtools.cc ../util/exception.h ../util/defines.h \
   offfile.h defines.h trianglemesh.h ../util/refptr.h ../util/atomic.h \
   plyfile.h image.h imagebase.h camera.h view.h pbrtfile.h vertexinfo.h \
   meshtools.h ../math/matrix.h
-msvfile.o: msvfile.cc ../util/exception.h ../util/defines.h image.h \
-  ../util/refptr.h ../util/atomic.h ../math/algo.h ../math/defines.h \
-  defines.h imagebase.h ../util/string.h msvfile.h
 offfile.o: offfile.cc ../math/vector.h ../math/defines.h ../math/algo.h \
   ../util/exception.h ../util/defines.h offfile.h defines.h \
   trianglemesh.h ../util/refptr.h ../util/atomic.h

@@ -8,6 +8,7 @@
 #include <cstdlib>
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -20,7 +21,6 @@
 #include "util/fs.h"
 #include "util/tokenizer.h"
 #include "mve/bundlefile.h"
-#include "mve/msvfile.h"
 #include "mve/view.h"
 #include "mve/image.h"
 #include "mve/imagetools.h"
