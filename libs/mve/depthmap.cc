@@ -196,8 +196,7 @@ pixel_footprint (std::size_t x, std::size_t y, float depth,
 {
     math::Vec3f v = invproj * math::Vec3f
         ((float)x + 0.5f, (float)y + 0.5f, 1.0f);
-    float fp = invproj[0] * depth / v.norm();
-    return -fp;
+    return invproj[0] * depth / v.norm();
 }
 
 /* ---------------------------------------------------------------- */
@@ -436,7 +435,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
 
     /* Triangulate depth map. */
     math::Matrix3f invproj;
-    cam.fill_inverse_projection(*invproj, dm->width(), dm->height());
+    cam.fill_inverse_calibration(*invproj, dm->width(), dm->height());
     mve::TriangleMesh::Ptr mesh;
     mesh = mve::geom::depthmap_triangulate(dm, ci, invproj, dd_factor);
 

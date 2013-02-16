@@ -359,29 +359,28 @@ ViewInspect::set_embedding (std::string const& name)
             break;
 
         case mve::IMAGE_TYPE_FLOAT:
+        {
+            mve::FloatImage::Ptr fimg(img);
             /* Set minimum and maximum value. */
+            float min_value = std::numeric_limits<float>::max();
+            float max_value = -std::numeric_limits<float>::max();
+            for (int i = 0; i < fimg->get_value_amount(); ++i)
             {
-                mve::FloatImage::Ptr fimg(img);
-
-                float min_value = std::numeric_limits<float>::max();
-                float max_value = -std::numeric_limits<float>::max();
-                for (std::size_t i = 0; i < fimg->get_value_amount(); ++i)
-                {
-                    float value = fimg->at(i);
-                    min_value = std::min(min_value, value);
-                    max_value = std::max(max_value, value);
-                }
-
-                this->tfunc->set_minmax_range(min_value, max_value);
-                this->tfunc->set_clamp_range(min_value, max_value);
-                this->tfunc->set_color_assignment(fimg->channels());
-                this->tfunc->show_minmax_sliders(true);
-                this->func = this->tfunc->get_function();
-
-                this->inspector->set_transfer_function(this->func);
-                this->display_image(fimg);
-                break;
+                float value = fimg->at(i);
+                min_value = std::min(min_value, value);
+                max_value = std::max(max_value, value);
             }
+
+            this->tfunc->set_minmax_range(min_value, max_value);
+            this->tfunc->set_clamp_range(min_value, max_value);
+            this->tfunc->set_color_assignment(fimg->channels());
+            this->tfunc->show_minmax_sliders(true);
+            this->func = this->tfunc->get_function();
+
+            this->inspector->set_transfer_function(this->func);
+            this->display_image(fimg);
+            break;
+        }
 
         default:
             QMessageBox::warning(this, tr("Image Viewer"),

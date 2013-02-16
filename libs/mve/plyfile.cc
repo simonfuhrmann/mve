@@ -838,7 +838,7 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     int w = depth_map->width();
     int h = depth_map->height();
     math::Matrix3f invproj;
-    camera.fill_inverse_projection(*invproj, w, h);
+    camera.fill_inverse_calibration(*invproj, w, h);
 
     if (confidence_map.get() && (confidence_map->height() != h
         || confidence_map->width() != w))

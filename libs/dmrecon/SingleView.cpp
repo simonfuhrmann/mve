@@ -34,8 +34,8 @@ SingleView::SingleView(mve::View::Ptr _view)
     this->height = proxy->height;
 
     // compute projection matrix
-    cam.fill_projection(*this->proj, width, height);
-    cam.fill_inverse_projection(*this->invproj, width, height);
+    cam.fill_calibration(*this->proj, width, height);
+    cam.fill_inverse_calibration(*this->invproj, width, height);
 }
 
 void
@@ -84,9 +84,9 @@ SingleView::createImagePyramid()
         curr_width = img->width();
         curr_height = img->height();
         math::Matrix3f mat;
-        cam.fill_projection(*mat, curr_width, curr_height);
+        cam.fill_calibration(*mat, curr_width, curr_height);
         this->projs.push_back(mat);
-        cam.fill_inverse_projection(*mat, curr_width, curr_height);
+        cam.fill_inverse_calibration(*mat, curr_width, curr_height);
         this->invprojs.push_back(mat);
     }
 }
@@ -120,9 +120,9 @@ SingleView::prepareRecon(float scale)
 
     // compute projection matrix
     mve::CameraInfo cam(this->view->get_camera());
-    cam.fill_projection(*this->proj_scaled, this->scaled_width,
+    cam.fill_calibration(*this->proj_scaled, this->scaled_width,
         this->scaled_height);
-    cam.fill_inverse_projection(*this->invproj_scaled, this->scaled_width,
+    cam.fill_inverse_calibration(*this->invproj_scaled, this->scaled_width,
         this->scaled_height);
 
     // create images for reconstruction
@@ -205,7 +205,7 @@ SingleView::pointInFrustum(math::Vec3f const & wp)
 {
     math::Vec3f cp(this->worldToCam.mult(wp,1.f));
     // check whether point lies in front of camera
-    if (cp[2] > 0.f)
+    if (cp[2] <= 0.f)
         return false;
     math::Vec3f sp(this->proj * cp);
     float x = sp[0] / sp[2] - 0.5f;

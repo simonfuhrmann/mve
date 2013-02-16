@@ -21,7 +21,7 @@ libutil: ${OBJECTS}
 test: ${OBJECTS} FORCE
 	${CXX} ${TESTSRC} -o ${TESTBIN} ${OBJECTS} ${EXT_INCL} ${EXT_LIBS}
 
-gtest: ${GTEST_OBJS}
+gtest: ${GTEST_OBJS} ${OBJECTS}
 	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
 
 _gtest_%.o: _gtest_%.cc

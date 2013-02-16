@@ -154,8 +154,7 @@ ImageOperationsWidget::exec_bilateral (void)
 
     mve::CameraInfo const& cam = view->get_camera();
     math::Matrix3f invproj;
-    cam.fill_inverse_projection(*invproj, img->width(), img->height());
-
+    cam.fill_inverse_calibration(*invproj, img->width(), img->height());
     mve::FloatImage::Ptr ret = mve::image::depthmap_bilateral_filter
         (img, invproj, gc_sigma, pc_factor);
 

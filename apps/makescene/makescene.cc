@@ -147,27 +147,6 @@ read_photosynther_log (std::string const& filename,
 
     in.close();
     return;
-
-#if 0
-
-    std::string line;
-    for (int i = 0; i < 8; ++i)
-        std::getline(in, line);
-
-    while (!in.eof())
-    {
-        std::getline(in, line);
-        if (line.substr(0, 7) == "Synth 0")
-            break;
-        util::string::chop(line);
-        std::size_t pos = line.find_last_of('\\');
-        if (pos != std::string::npos)
-            line = line.substr(pos + 1);
-        files.push_back(line);
-    }
-
-    in.close();
-#endif
 }
 
 void
@@ -398,13 +377,7 @@ import_bundle (AppSettings const& conf)
         /* Convert from Photosynther camera conventions. */
         if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER)
         {
-            for (int j = 0; j < 3; ++j)
-            {
-                cam.rot[j + 0] = -cam.rot[j + 0];
-                cam.rot[j + 6] = -cam.rot[j + 6];
-            }
-            cam.trans[0] = -cam.trans[0];
-            cam.trans[2] = -cam.trans[2];
+            /* Nothing to do here. */
         }
 
         /* Fix issues with Noah Bundler camera specification. */
@@ -423,9 +396,9 @@ import_bundle (AppSettings const& conf)
             }
 
             /* Convert from Noah Bundler camera conventions. */
-            std::for_each(cam.rot, cam.rot + 6,
+            std::for_each(cam.rot + 3, cam.rot + 9,
                 math::algo::foreach_negate_value<float>);
-            std::for_each(cam.trans, cam.trans + 2,
+            std::for_each(cam.trans + 1, cam.trans + 3,
                 math::algo::foreach_negate_value<float>);
 
             /* Check determinant of rotation matrix. */

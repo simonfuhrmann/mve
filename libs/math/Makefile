@@ -22,7 +22,7 @@ libmath: ${OBJECTS}
 test: libmath FORCE
 	${CXX} -o ${TEST_BIN} ${TEST_SRC} ${OBJECTS} ${EXT_INCL} ${EXT_LIBS} ${CXXFLAGS}
 
-gtest: ${GTEST_OBJS}
+gtest: ${GTEST_OBJS} ${OBJECTS}
 	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
 
 _gtest_%.o: _gtest_%.cc
