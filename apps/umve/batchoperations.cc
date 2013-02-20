@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iostream>
 
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "mve/plyfile.h"
 
 #include "guihelpers.h"

@@ -1,10 +1,10 @@
 #include <cassert>
 
+#include "util/filesystem.h"
 #include "mve/imagefile.h"
 #include "mve/imagetools.h"
 #include "mve/plyfile.h"
 #include "mve/view.h"
-#include "util/fs.h"
 #include "defines.h"
 #include "SingleView.h"
 

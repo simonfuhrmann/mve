@@ -3,7 +3,7 @@
 
 #include <QApplication>
 
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/arguments.h"
 
 #include "mainwindow.h"

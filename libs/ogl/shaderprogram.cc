@@ -7,7 +7,7 @@
 #include <cerrno>
 
 #include "util/exception.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 
 #include "shaderprogram.h"
 

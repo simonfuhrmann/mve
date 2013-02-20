@@ -1,7 +1,7 @@
 #include <iostream>
 #include <limits>
 
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/timer.h"
 #include "util/frametimer.h"
 #include "ogl/opengl.h"

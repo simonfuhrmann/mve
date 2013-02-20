@@ -11,7 +11,7 @@
 #include "mve/image.h"
 #include "mve/imagetools.h"
 #include "Settings.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/string.h"
 
 MVS_NAMESPACE_BEGIN

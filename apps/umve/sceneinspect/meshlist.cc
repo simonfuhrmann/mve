@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/string.h"
 #include "mve/trianglemesh.h"
 #include "mve/meshtools.h"

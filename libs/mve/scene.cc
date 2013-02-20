@@ -4,7 +4,7 @@
 #include "util/exception.h"
 #include "util/inifile.h"
 #include "util/timer.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 
 #include "scene.h"
 

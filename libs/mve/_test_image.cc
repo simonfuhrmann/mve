@@ -2,22 +2,21 @@
 #include <iostream>
 #include <fstream>
 
+#include "util/timer.h"
+#include "util/system.h"
+#include "util/filesystem.h"
+#include "math/vector.h"
 #include "image.h"
 #include "imagetools.h"
 #include "imagefile.h"
 #include "imageexif.h"
-#include "surf.h"
-#include "util/timer.h"
-#include "util/system.h"
-#include "util/fs.h"
-#include "math/vector.h"
 
 int
 main (int argc, char** argv)
 {
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
-#if 1
+#if 0
     // Reader and writer for PFM.
     mve::FloatImage::Ptr img = mve::FloatImage::create(100, 100, 3);
     for (int i = 0; i < 100 * 100 * 3; ++i)
@@ -107,14 +106,6 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-    /* SURF test. */
-    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/testimage.png");
-    mve::Surf surf;
-    surf.set_image(img);
-    surf.process();
-#endif
-
-#if 0
     /* Test load 16 bit PNG. */
     mve::ByteImage::Ptr img;
     try
@@ -145,67 +136,6 @@ main (int argc, char** argv)
     std::cout << "Saving image..." << std::endl;
     mve::image::save_file(img, "/tmp/out-box2.png");
 
-#endif
-
-#if 0
-    // Reveal steganography image
-    // download http://en.wikipedia.org/wiki/File:StenographyOriginal.png
-    mve::ByteImage::Ptr img(mve::image::load_file("/tmp/StenographyOriginal.png"));
-    for (std::size_t i = 0; i < img->get_value_amount(); ++i)
-    {
-        uint8_t& val = img->at(i);
-        val = val << 6;
-    }
-    mve::image::save_file(img, "/tmp/out.png");
-#endif
-
-
-#if 0
-    /* Test operation invariance against rotation. */
-    mve::ByteImage::Ptr bimg(mve::image::load_file("/tmp/diaz.png"));
-    mve::FloatImage::Ptr fimg(mve::image::byte_to_float_image(bimg));
-
-    mve::FloatImage::Ptr orig(fimg->duplicate());
-    mve::FloatImage::Ptr img(fimg->duplicate());
-    img = mve::image::rotate<float>(img, mve::image::ROTATE_CCW);
-    //img = mve::image::rescale_half_size<float>(img);
-    //fimg = mve::image::rescale_half_size<float>(fimg);
-    //img = mve::image::rescale_half_size_gaussian<float>(img);
-    //fimg = mve::image::rescale_half_size_gaussian<float>(fimg);
-    fimg = mve::image::blur_gaussian<float>(fimg, 50.0f);
-    fimg = mve::image::subtract<float>(fimg, orig);
-    orig = mve::image::rotate<float>(orig, mve::image::ROTATE_CCW);
-    img = mve::image::blur_gaussian<float>(img, 50.0f);
-    img = mve::image::subtract<float>(img, orig);
-    //fimg = mve::image::rescale_double_size<float>(fimg);
-    //img = mve::image::rescale_double_size<float>(img);
-    img = mve::image::rotate<float>(img, mve::image::ROTATE_CW);
-
-    /* Dump images. */
-    mve::image::save_file(mve::image::float_to_byte_image(fimg,-0.1,0.1), "/tmp/invariance-original.png");
-    mve::image::save_file(mve::image::float_to_byte_image(img,-0.1,0.1), "/tmp/invariance-rotated.png");
-
-    // Difference
-    std::size_t count = 0;
-    float largest = 0.0f;
-    float average = 0.0f;
-    for (std::size_t i = 0; i < img->get_value_amount(); ++i)
-    {
-        float v1 = img->at(i);
-        float v2 = fimg->at(i);
-        if (v1 != v2)
-        {
-            float diff = (v1 - v2);
-            if (std::abs(diff) > largest)
-                largest = std::abs(diff);
-            average += std::abs(diff);
-            count += 1;
-        }
-    }
-
-    std::cout << count << " of " << img->get_value_amount()
-        <<  " values differ, max error: " << largest
-        << ", average: " << (average / (float)count) << std::endl;
 #endif
 
 #if 0
@@ -252,15 +182,6 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-    mve::ByteImage::Ptr img(mve::image::load_file
-        ("../../data/testimages/diaz_color.png"));
-    mve::FloatImage::Ptr fimg = mve::image::byte_to_float_image(img);
-    mve::image::save_file(fimg, "/tmp/test.pfm");
-    mve::image::save_file(img, "/tmp/test.png");
-    return 0;
-#endif
-
-#if 0
     /* Test swapping of images. */
     mve::ByteImage::Ptr img(mve::image::load_file
         ("../../data/testimages/diaz_color.png"));
@@ -282,32 +203,6 @@ main (int argc, char** argv)
     //img = mve::image::integral_image<uint8_t,uint8_t>(img);
     img = mve::image::float_to_byte_image(fimg, 0, 255);
     mve::image::save_file(img, "/tmp/integral.png");
-#endif
-
-#if 0
-    /* Test scale space axioms. */
-    mve::ByteImage::Ptr img(mve::image::load_file
-        ("../../data/testimages/diaz_color.png"));
-
-    mve::ByteImage::Ptr i1 = mve::image::blur_gaussian<uint8_t>(img, 2.0f);
-    mve::ByteImage::Ptr i2 = mve::image::blur_gaussian<uint8_t>(i1, 2.0f);
-
-    mve::image::save_file(i2, "/tmp/_inc2.png");
-
-    i1 = mve::image::blur_gaussian<uint8_t>(img, 2.82f);
-    mve::image::save_file(i1, "/tmp/_full2.png");
-    return 1;
-
-    mve::ByteImage::Ptr out = img->duplicate();
-    mve::image::rescale_gaussian<uint8_t>(img, out, 2.0f);
-    mve::ByteImage::Ptr out2 = out->duplicate();
-    mve::image::rescale_gaussian<uint8_t>(out, out2, 2.0f);
-    mve::image::save_file(out2, "/tmp/_rescale_inc.png");
-
-    mve::image::rescale_gaussian<uint8_t>(img, out, 4.0f);
-    mve::image::save_file(out, "/tmp/_rescale_full.png");
-
-
 #endif
 
 #if 0

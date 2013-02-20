@@ -2,7 +2,7 @@
 #include <cstdlib>
 
 #include "util/exception.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "mve/plyfile.h"
 
 #include "guihelpers.h"

@@ -5,7 +5,7 @@
 
 #include "util/tokenizer.h"
 #include "util/exception.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/string.h"
 
 #include "image.h"

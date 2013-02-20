@@ -9,7 +9,7 @@
 #endif
 
 #include "util/tokenizer.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "mve/scene.h"
 #include "mve/imagefile.h"
 #include "mve/imagetools.h"

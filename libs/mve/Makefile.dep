@@ -37,8 +37,8 @@ plyfile.o: plyfile.cc ../util/exception.h ../util/defines.h \
   ../util/string.h trianglemesh.h plyfile.h view.h
 scene.o: scene.cc ../util/exception.h ../util/defines.h ../util/inifile.h \
   ../util/string.h ../util/refptr.h ../util/atomic.h ../util/timer.h \
-  ../util/fs.h scene.h defines.h view.h camera.h imagebase.h image.h \
-  ../math/algo.h ../math/defines.h bundlefile.h trianglemesh.h \
+  ../util/filesystem.h scene.h defines.h view.h camera.h imagebase.h \
+  image.h ../math/algo.h ../math/defines.h bundlefile.h trianglemesh.h \
   ../math/vector.h
 seamcarving.o: seamcarving.cc ../math/algo.h ../math/defines.h \
   seamcarving.h defines.h image.h ../util/refptr.h ../util/defines.h \
@@ -55,7 +55,7 @@ vertexinfo.o: vertexinfo.cc vertexinfo.h ../util/refptr.h \
   ../util/defines.h ../util/atomic.h defines.h trianglemesh.h \
   ../math/vector.h ../math/defines.h ../math/algo.h
 view.o: view.cc ../util/tokenizer.h ../util/defines.h ../util/exception.h \
-  ../util/fs.h ../util/string.h image.h ../util/refptr.h \
+  ../util/filesystem.h ../util/string.h image.h ../util/refptr.h \
   ../util/atomic.h ../math/algo.h ../math/defines.h defines.h \
   imagebase.h view.h camera.h
 volume.o: volume.cc ../math/vector.h ../math/defines.h ../math/algo.h \

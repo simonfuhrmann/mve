@@ -18,7 +18,7 @@
 #include "math/algo.h"
 #include "util/arguments.h"
 #include "util/string.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/tokenizer.h"
 #include "mve/bundlefile.h"
 #include "mve/view.h"

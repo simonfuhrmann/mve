@@ -16,7 +16,7 @@ rendertools.o: rendertools.cc ../mve/trianglemesh.h ../math/vector.h \
   shaderprogram.h ../math/matrix.h vertexarray.h vertexbuffer.h \
   rendertools.h
 shaderprogram.o: shaderprogram.cc ../util/exception.h ../util/defines.h \
-  ../util/fs.h shaderprogram.h ../util/refptr.h ../util/atomic.h \
+  ../util/filesystem.h shaderprogram.h ../util/refptr.h ../util/atomic.h \
   ../math/vector.h ../math/defines.h ../math/algo.h ../math/matrix.h \
   defines.h opengl.h
 texture.o: texture.cc texture.h ../util/refptr.h ../util/defines.h \

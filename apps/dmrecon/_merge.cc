@@ -11,7 +11,7 @@
 #include "mve/scene.h"
 #include "mve/trianglemesh.h"
 #include "mve/bilateral.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 
 int
 main (int argc, char** argv)
