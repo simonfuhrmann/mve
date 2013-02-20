@@ -49,15 +49,9 @@
 
 SFM_NAMESPACE_BEGIN
 
-typedef math::Matrix<double, 3, 8> Eight2DPoints;
-typedef math::Matrix<double, 3, 7> Seven2DPoints;
-typedef math::Matrix<double, 3, 5> Five2DPoints;
-typedef math::Matrix<double, 3, 3> FundamentalMatrix;
-typedef math::Matrix<double, 3, 3> EssentialMatrix;
-
 /**
  * The camera pose is P = K [R | t].
- * K is the calibration matrix, R a rotation matrix and T a translation.
+ * K is the calibration matrix, R a rotation matrix and t a translation.
  *
  *       | f  0  px |    The calibration matrix contains the focal length f,
  *   K = | 0  f  py |    and the principal point px and py.
@@ -79,13 +73,45 @@ struct CameraPose
 };
 
 /**
+ * Two image coordinates which correspond to each other in terms of observing
+ * the same point in the scene.
+ */
+struct Correspondence
+{
+    double p1[2];
+    double p2[2];
+};
+
+typedef std::vector<Correspondence> Correspondences;
+typedef math::Matrix<double, 3, 8> Eight2DPoints;
+typedef math::Matrix<double, 3, 7> Seven2DPoints;
+typedef math::Matrix<double, 3, 5> Five2DPoints;
+typedef math::Matrix<double, 3, 3> FundamentalMatrix;
+typedef math::Matrix<double, 3, 3> EssentialMatrix;
+
+/**
+ * Algorithm to compute the fundamental or essential matrix from image
+ * correspondences. This algorithm computes the least squares solution for
+ * the fundamental matrix from at least 8 correspondences. The solution is
+ * sensitive to outliers.
+ *
+ * This does not normalize the image coordinates for stability or enforces
+ * constraints on the resulting matrix.
+ */
+bool
+pose_least_squares (Correspondences const& points, FundamentalMatrix* result);
+
+/**
  * Algorithm to compute the fundamental or essential matrix from 8 image
  * correspondences. It closely follows [Sect. 11.2, Hartley, Zisserman, 2004].
  * In case of "normalized image coordinates" (i.e. x* = K^-1 x), this code
  * computes the essential matrix.
  *
- * This does not normalize the points, the image coordinates or enforces
+ * This does not normalize the image coordinates for stability or enforces
  * constraints on the resulting matrix.
+ *
+ * Note: For eight points this code computes the same result as the least
+ * squares version but with fixed matrix sizes for compile time optimizations.
  */
 bool
 pose_8_point (Eight2DPoints const& points_view_1,
@@ -155,6 +181,16 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
     FundamentalMatrix* result);
 
 /**
+ * Computes two transformations for the 2D points specified in the
+ * correspondences such that the mean of the points is zero and the points
+ * fit in the unit square.
+ */
+void
+pose_find_normalization (Correspondences const& correspondences,
+    math::Matrix<double, 3, 3>* transform1,
+    math::Matrix<double, 3, 3>* transform2);
+
+/**
  * Computes a transformation for 2D points in homogeneous coordinates
  * such that the mean of the points is zero and the points fit in the unit
  * square. (The thrid coordinate will still be 1 after normalization.)
@@ -172,7 +208,6 @@ void
 pose_find_normalization(math::Matrix<T, 3, DIM> const& points,
     math::Matrix<T, 3, 3>* transformation)
 {
-    transformation->fill(T(0));
     math::Vector<T, 3> mean(T(0));
     math::Vector<T, 3> aabb_min(std::numeric_limits<T>::max());
     math::Vector<T, 3> aabb_max(-std::numeric_limits<T>::max());

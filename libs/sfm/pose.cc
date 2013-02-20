@@ -57,6 +57,41 @@ CameraPose::set_k_matrix (double flen, double px, double py)
 }
 
 bool
+pose_least_squares (Correspondences const& points, FundamentalMatrix* result)
+{
+    if (points.size() < 8)
+        throw std::invalid_argument("At least 8 points required");
+
+    /*
+     * Create Nx9 matrix A. Each correspondence creates on row in A.
+     */
+    std::vector<double> A(points.size() * 9);
+    for (std::size_t i = 0; i < points.size(); ++i)
+    {
+        Correspondence const& p = points[i];
+        A[i * 9 + 0] = p.p2[0] * p.p1[0];
+        A[i * 9 + 1] = p.p2[0] * p.p1[1];
+        A[i * 9 + 2] = p.p2[0] * 1.0;
+        A[i * 9 + 3] = p.p2[1] * p.p1[0];
+        A[i * 9 + 4] = p.p2[1] * p.p1[1];
+        A[i * 9 + 5] = p.p2[1] * 1.0;
+        A[i * 9 + 6] = 1.0     * p.p1[0];
+        A[i * 9 + 7] = 1.0     * p.p1[1];
+        A[i * 9 + 8] = 1.0     * 1.0;
+    }
+
+    /*
+     * Compute fundamental matrix using SVD.
+     */
+    std::vector<double> V(9 * 9);
+    math::matrix_svd<double>(&A[0], points.size(), 9, NULL, NULL, &V[0]);
+    for (int i = 0; i < 9; ++i)
+        (*result)[i] = V[i * 9 + 8];
+
+    return true;
+}
+
+bool
 pose_8_point (Eight2DPoints const& points_view_1,
     Eight2DPoints const& points_view_2,
     FundamentalMatrix* result)
@@ -123,7 +158,9 @@ enforce_essential_constraints (EssentialMatrix* matrix)
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd(*matrix, &U, &S, &V);
     double avg = (S(0, 0) + S(0, 1)) / 2.0;
-    S(0, 0) = avg;  S(1, 1) = avg;  S(2, 2) = 0.0;
+    S(0, 0) = avg;
+    S(1, 1) = avg;
+    S(2, 2) = 0.0;
     *matrix = U * S * V.transposed();
 }
 
@@ -202,6 +239,47 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
     matrix_pseudo_inverse(P1, &P1inv);
 
     *result = ex * P2 * P1inv;
+}
+
+void
+pose_find_normalization (Correspondences const& correspondences,
+    math::Matrix<double, 3, 3>* transform1,
+    math::Matrix<double, 3, 3>* transform2)
+{
+    math::Vector<double, 2> t1_mean(0.0);
+    math::Vector<double, 2> t1_aabb_min(std::numeric_limits<double>::max());
+    math::Vector<double, 2> t1_aabb_max(-std::numeric_limits<double>::max());
+    math::Vector<double, 2> t2_mean(0.0);
+    math::Vector<double, 2> t2_aabb_min(std::numeric_limits<double>::max());
+    math::Vector<double, 2> t2_aabb_max(-std::numeric_limits<double>::max());
+
+    for (std::size_t i = 0; i < correspondences.size(); ++i)
+    {
+        Correspondence const& p = correspondences[i];
+        for (int j = 0; j < 2; ++j)
+        {
+            t1_mean[j] += p.p1[j];
+            t1_aabb_min[j] = std::min(t1_aabb_min[j], p.p1[j]);
+            t1_aabb_max[j] = std::max(t1_aabb_max[j], p.p1[j]);
+            t2_mean[j] += p.p2[j];
+            t2_aabb_min[j] = std::min(t2_aabb_min[j], p.p2[j]);
+            t2_aabb_max[j] = std::max(t2_aabb_max[j], p.p2[j]);
+        }
+    }
+
+    t1_mean /= static_cast<double>(correspondences.size());
+    double t1_norm = (t1_aabb_max - t1_aabb_min).maximum();
+    math::Matrix<double, 3, 3>& t1 = *transform1;
+    t1[0] = 1.0 / t1_norm; t1[1] = 0.0;           t1[2] = -t1_mean[0] / t1_norm;
+    t1[3] = 0.0;           t1[4] = 1.0 / t1_norm; t1[5] = -t1_mean[1] / t1_norm;
+    t1[6] = 0.0;           t1[7] = 0.0;           t1[8] = 1.0;
+
+    t2_mean /= static_cast<double>(correspondences.size());
+    double t2_norm = (t2_aabb_max - t2_aabb_min).maximum();
+    math::Matrix<double, 3, 3>& t2 = *transform2;
+    t2[0] = 1.0 / t2_norm; t2[1] = 0.0;           t2[2] = -t2_mean[0] / t2_norm;
+    t2[3] = 0.0;           t2[4] = 1.0 / t2_norm; t2[5] = -t2_mean[1] / t2_norm;
+    t2[6] = 0.0;           t2[7] = 0.0;           t2[8] = 1.0;
 }
 
 SFM_NAMESPACE_END

@@ -47,11 +47,46 @@ TEST(PoseTest, PointNormalization2)
     EXPECT_NEAR(trans[8], 1.0, 1e-6);
 }
 
+TEST(PoseTest, CorrespondencesNormalization)
+{
+    sfm::Correspondences c(3);
+    c[0].p1[0] = 1.0; c[0].p1[1] = 1.0;
+    c[1].p1[0] = 3.0; c[1].p1[1] = -2.0;
+    c[2].p1[0] = 2.0; c[2].p1[1] = 4.0;
+
+    c[0].p2[0] = 1.0; c[0].p2[1] = -1.0;
+    c[1].p2[0] = 3.0; c[1].p2[1] = -2.0;
+    c[2].p2[0] = -2.0; c[2].p2[1] = -4.0;
+
+    math::Matrix<double, 3, 3> transform1, transform2;
+    sfm::pose_find_normalization(c, &transform1, &transform2);
+
+    EXPECT_NEAR(transform1[0], 1.0 / 6.0, 1e-10);
+    EXPECT_NEAR(transform1[1], 0.0, 1e-10);
+    EXPECT_NEAR(transform1[2], -2.0 / 6.0, 1e-10);
+    EXPECT_NEAR(transform1[3], 0.0, 1e-10);
+    EXPECT_NEAR(transform1[4], 1.0 / 6.0, 1e-10);
+    EXPECT_NEAR(transform1[5], -1.0 / 6.0, 1e-10);
+    EXPECT_NEAR(transform1[6], 0.0, 1e-10);
+    EXPECT_NEAR(transform1[7], 0.0, 1e-10);
+    EXPECT_NEAR(transform1[8], 1.0, 1e-10);
+
+    EXPECT_NEAR(transform2[0], 1.0 / 5.0, 1e-10);
+    EXPECT_NEAR(transform2[1], 0.0, 1e-10);
+    EXPECT_NEAR(transform2[2], -2.0/3.0 / 5.0, 1e-10);
+    EXPECT_NEAR(transform2[3], 0.0, 1e-10);
+    EXPECT_NEAR(transform2[4], 1.0 / 5.0, 1e-10);
+    EXPECT_NEAR(transform2[5], 7.0/3.0 / 5.0, 1e-10);
+    EXPECT_NEAR(transform2[6], 0.0, 1e-10);
+    EXPECT_NEAR(transform2[7], 0.0, 1e-10);
+    EXPECT_NEAR(transform2[8], 1.0, 1e-10);
+}
+
 namespace {
 
     void
     fill_golden_correspondences(sfm::Eight2DPoints& p1,
-        sfm::Eight2DPoints& p2)
+        sfm::Eight2DPoints& p2, sfm::FundamentalMatrix& F)
     {
         p1(0, 0) = 45;  p1(1, 0) = 210; p1(2, 0) = 1;
         p1(0, 1) = 253; p1(1, 1) = 211; p1(2, 1) = 1;
@@ -70,14 +105,21 @@ namespace {
         p2(0, 5) = 56;  p2(1, 5) = 88;  p2(2, 5) = 1;
         p2(0, 6) = 114; p2(1, 6) = 69;  p2(2, 6) = 1;
         p2(0, 7) = 87;  p2(1, 7) = 86;  p2(2, 7) = 1;
+
+        F(0,0) = 0.000000014805557;  F(0,1) = 0.000002197550186;  F(0,2) = 0.001632934316777;
+        F(1,0) = -0.000002283909471; F(1,1) = -0.000001354336179; F(1,2) = 0.008734421917905;
+        F(2,0) = -0.001472308151103; F(2,1) = -0.008375559378962; F(2,2) = -0.160734037191207;
+
     }
 
 }  // namespace
 
 TEST(PoseTest, Test8Point)
 {
+    /* Obtain golden correspondences and correct solution from Matlab. */
     sfm::Eight2DPoints p1, p2;
-    fill_golden_correspondences(p1, p2);
+    sfm::FundamentalMatrix F2;
+    fill_golden_correspondences(p1, p2, F2);
 
     /* The normalized 8-point algorithm (Hartley, Zisserman, 11.2):
      * - Point set normalization (scaling, offset)
@@ -95,20 +137,45 @@ TEST(PoseTest, Test8Point)
     sfm::enforce_fundamental_constraints(&F);
     F = T2.transposed() * F * T1;
 
-    /* Correct solution (computed with Matlab). */
+    // Force Fundamental matrices to the same scale.
+    F /= F(2,2);
+    F2 /= F2(2,2);
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR((F[i] - F2[i]) / (F[i] + F2[i]), 0.0, 0.05);
+}
+
+TEST(PoseTest, TestLeastSquaresPose)
+{
+    /* Obtain golden correspondences and correct solution from Matlab. */
+    sfm::Eight2DPoints p1, p2;
     sfm::FundamentalMatrix F2;
-    F2(0,0) = 0.000000014805557;  F2(0,1) = 0.000002197550186;  F2(0,2) = 0.001632934316777;
-    F2(1,0) = -0.000002283909471; F2(1,1) = -0.000001354336179; F2(1,2) = 0.008734421917905;
-    F2(2,0) = -0.001472308151103; F2(2,1) = -0.008375559378962; F2(2,2) = -0.160734037191207;
+    fill_golden_correspondences(p1, p2, F2);
+
+    math::Matrix<double, 3, 3> T1, T2;
+    sfm::pose_find_normalization(p1, &T1);
+    sfm::pose_find_normalization(p2, &T2);
+    p1 = T1 * p1;
+    p2 = T2 * p2;
+
+    sfm::Correspondences points(8);
+    for (int i = 0; i < 8; ++i)
+    {
+        points[i].p1[0] = p1(0, i);
+        points[i].p1[1] = p1(1, i);
+        points[i].p2[0] = p2(0, i);
+        points[i].p2[1] = p2(1, i);
+    }
+
+    sfm::FundamentalMatrix F(0.0);
+    sfm::pose_least_squares(points, &F);
+    sfm::enforce_fundamental_constraints(&F);
+    F = T2.transposed() * F * T1;
 
     // Force Fundamental matrices to the same scale.
     F /= F(2,2);
     F2 /= F2(2,2);
-
-    //std::cout << "Fundamental:" << std::endl << F << std::endl;
-    //std::cout << "Fundamental 2: " << std::endl << F2 << std::endl;
     for (int i = 0; i < 9; ++i)
-        EXPECT_NEAR((F[i] - F2[i]) / (F[i] + F2[i]), 0.0, 0.05);
+        EXPECT_NEAR((F[i] - F2[i]) / (F[i] + F2[i]), 0.0, 0.1);
 }
 
 namespace {
