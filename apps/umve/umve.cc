@@ -93,7 +93,7 @@ main (int argc, char** argv)
     }
 
     if (!sth_opened && !conf.no_open)
-        win.raise_open_dialog();
+        win.raise_open_scene_dialog();
 
     return app.exec();
 }

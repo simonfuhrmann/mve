@@ -52,6 +52,7 @@ MainWindow::MainWindow (void)
     this->addDockWidget(Qt::LeftDockWidgetArea, this->dock_scene);
     this->addDockWidget(Qt::LeftDockWidgetArea, this->dock_jobs);
     //this->addDockWidget(Qt::BottomDockWidgetArea, this->dock_log);
+    this->enable_scene_actions(false);
     this->resize(1024, 768);
 
     /* Start update timer and init. */
@@ -63,7 +64,7 @@ MainWindow::MainWindow (void)
     this->connect(this->update_timer, SIGNAL(timeout()),
         this, SLOT(on_update_memory()));
 
-    // Trick to get job queue dock widget smaller
+    /* Trick to get job queue dock widget smaller. */
     this->jobqueue->setMaximumHeight(100); // Dock widget trick
     this->show();
     this->jobqueue->setMaximumHeight(QWIDGETSIZE_MAX); // Dock widget trick
@@ -86,6 +87,7 @@ MainWindow::load_scene (std::string const& path)
     }
 
     SceneManager::get().select_scene(scene);
+    this->enable_scene_actions(true);
 }
 
 /* ---------------------------------------------------------------- */
@@ -112,8 +114,8 @@ MainWindow::load_file (const std::string& filename)
     catch (std::exception& e)
     {
         QMessageBox::information(this, tr("Error loading file"),
-            tr("File could not be loaded.\n"
-            "File name: %1\nError: %2").arg(QString(filename.c_str()), e.what()));
+            tr("File name: %1\nError: %2")
+            .arg(QString(filename.c_str()), e.what()));
         return;
     }
 }
@@ -131,11 +133,16 @@ MainWindow::open_scene_inspect (void)
 void
 MainWindow::create_actions (void)
 {
+    this->action_new_scene = new QAction(QIcon(":/images/icon_new_dir.svg"),
+        tr("&New scene..."), this);
+    this->connect(this->action_new_scene, SIGNAL(triggered()),
+        this, SLOT(on_new_scene()));
+
     this->action_open_scene = new QAction(QIcon(":/images/icon_open_file.svg"),
         tr("&Open scene..."), this);
     //this->action_open_scene->setShortcut(tr("Ctrl+O"));
     this->connect(this->action_open_scene, SIGNAL(triggered()),
-        this, SLOT(raise_open_dialog()));
+        this, SLOT(raise_open_scene_dialog()));
 
     this->action_reload_scene = new QAction(QIcon(":/images/icon_revert.svg"),
         tr("&Reload scene"), this);
@@ -197,6 +204,7 @@ void
 MainWindow::create_menus (void)
 {
     this->menu_file = new QMenu(tr("&File"), this);
+    this->menu_file->addAction(this->action_new_scene);
     this->menu_file->addAction(this->action_open_scene);
     this->menu_file->addAction(this->action_reload_scene);
     this->menu_file->addAction(this->action_save_scene);
@@ -226,16 +234,12 @@ MainWindow::create_menus (void)
 /* ---------------------------------------------------------------- */
 
 void
-MainWindow::raise_open_dialog (void)
+MainWindow::raise_open_scene_dialog (void)
 {
     QString dirname = QFileDialog::getExistingDirectory(this,
         tr("Open scene"), QDir::currentPath());
     if (dirname.isEmpty())
         return;
-
-    //QMessageBox::information(this, tr("Image Viewer"),
-    //    tr("Directory has been selected: %1").arg(dirname));
-
     if (!this->perform_close_scene())
         return;
 
@@ -281,12 +285,58 @@ MainWindow::perform_close_scene (void)
     SceneManager::get().reset_image();
     SceneManager::get().reset_view();
     SceneManager::get().reset_scene();
-    //this->scene.reset();
-    //this->scene_overview->reset();
-    //this->tab_viewinspect->reset();
     this->tab_sceneinspect->reset();
+    this->enable_scene_actions(false);
 
     return true;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::enable_scene_actions (bool value)
+{
+    this->action_reload_scene->setEnabled(value);
+    this->action_save_scene->setEnabled(value);
+    this->action_close_scene->setEnabled(value);
+    this->action_recon_export->setEnabled(value);
+    this->action_batch_delete->setEnabled(value);
+    this->action_cache_cleanup->setEnabled(value);
+    this->action_refresh_scene->setEnabled(value);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::on_new_scene (void)
+{
+    if (!this->perform_close_scene())
+        return;
+
+    QString dirname = QFileDialog::getExistingDirectory(this,
+        "Select scene directory", QDir::currentPath());
+    if (dirname.isEmpty())
+        return;
+
+    std::string scene_path = dirname.toStdString();
+    std::string views_path = scene_path + "/views";
+    if (util::fs::dir_exists(views_path.c_str())
+        || util::fs::file_exists(views_path.c_str()))
+    {
+        QMessageBox::information(this, "Error creating scene",
+            "Another <i>views/</i> directory or file already exists!");
+        return;
+    }
+    if (!util::fs::mkdir(views_path.c_str()))
+    {
+        QMessageBox::information(this, "Error creating scene",
+            "The <i>views/</i> directory could not be created!");
+        return;
+    }
+
+    this->load_scene(scene_path);
+    QMessageBox::information(this, "Scene created!",
+        "The scene has been created! Now import some images...");
 }
 
 /* ---------------------------------------------------------------- */
@@ -349,7 +399,6 @@ MainWindow::on_close_scene (void)
 void
 MainWindow::on_refresh_scene (void)
 {
-    //this->scene_overview->set_scene(this->scene);
     SceneManager::get().refresh_scene();
 }
 

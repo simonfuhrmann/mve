@@ -30,6 +30,7 @@ private:
     ViewInspect* tab_viewinspect;
     SceneInspect* tab_sceneinspect;
 
+    QAction* action_new_scene;
     QAction* action_open_scene;
     QAction* action_reload_scene;
     QAction* action_save_scene;
@@ -48,10 +49,11 @@ private:
 private:
     void create_actions (void);
     void create_menus (void);
-
     bool perform_close_scene (void);
+    void enable_scene_actions (bool value);
 
 private slots:
+    void on_new_scene (void);
     void on_reload_scene (void);
     void on_save_scene (void);
     void on_close_scene (void);
@@ -66,7 +68,7 @@ private slots:
     void closeEvent (QCloseEvent* event);
 
 public slots:
-    void raise_open_dialog (void);
+    void raise_open_scene_dialog (void);
 
 public:
     MainWindow (void);

@@ -12,6 +12,7 @@ SceneOverview::SceneOverview (QWidget* parent)
     this->viewlist = new QListWidget();
     this->filter = new QLineEdit();
     this->filter->setToolTip(tr("Enter embedding filter"));
+    this->viewlist->setEnabled(false);
 
     QPushButton* clear_filter = new QPushButton();
     clear_filter->setIcon(QIcon(":/images/icon_clean.svg"));
@@ -39,25 +40,36 @@ SceneOverview::SceneOverview (QWidget* parent)
         this, SLOT(on_filter_changed()));
     this->connect(clear_filter, SIGNAL(clicked()),
         this, SLOT(on_clear_filter()));
-
     this->connect(&SceneManager::get(), SIGNAL(scene_selected(mve::Scene::Ptr)),
         this, SLOT(on_scene_changed(mve::Scene::Ptr)));
-
-    //this->resize(175, 0);
 }
 
 /* ---------------------------------------------------------------- */
-
 void
 SceneOverview::on_scene_changed (mve::Scene::Ptr scene)
 {
     this->viewlist->clear();
+    this->viewlist->setEnabled(false);
 
     if (!scene.get())
         return;
 
     std::string filter_str = this->filter->text().toStdString();
     mve::Scene::ViewList& sl(scene->get_views());
+
+    /* If the scene has not views, indicate this with a label. */
+    if (sl.empty())
+    {
+        QListWidgetItem* item = new QListWidgetItem("Scene has no views!");
+        item->setData(Qt::UserRole, -1);
+        this->viewlist->addItem(item);
+    }
+    else
+    {
+        this->viewlist->setEnabled(true);
+    }
+
+    /* Add all views to the list widget. */
     for (std::size_t i = 0; i < sl.size(); ++i)
     {
         mve::View::Ptr view(sl[i]);
@@ -78,8 +90,6 @@ SceneOverview::on_scene_changed (mve::Scene::Ptr scene)
         if (matches)
             this->add_view_to_layout(i, view);
     }
-
-    //this->setMinimumWidth(this->scroll_widget->size().width() + 15);
 }
 
 /* ---------------------------------------------------------------- */
@@ -147,37 +157,6 @@ void
 SceneOverview::on_filter_changed (void)
 {
     this->on_scene_changed(SceneManager::get().get_scene());
-    //this->set_scene(this->scene);
-#if 0
-    if (!this->scene.get())
-        return;
-
-    this->viewlist->clear();
-
-    std::string filter_str = this->filter->text().toStdString();
-    mve::Scene::ViewList& sl(this->scene->get_views());
-    for (std::size_t i = 0; i < sl.size(); ++i)
-    {
-        /* Check if view is valid. */
-        mve::View::Ptr view(sl[i]);
-        if (!view.get())
-            continue;
-
-        /* Add view if at least one embedding matches filter. */
-        bool matches = filter_str.empty();
-        mve::View::Proxies const& embeddings(view->get_proxies());
-        for (std::size_t j = 0; !matches && j < embeddings.size(); ++j)
-        {
-            std::string const& ename = embeddings[j].get_name();
-            if (ename.find(filter_str) != std::string::npos)
-                matches = true;
-        }
-
-        /* Add view if one embeddings matches. */
-        if (matches)
-            this->add_view_to_layout(i, view);
-    }
-#endif
 }
 
 /* ---------------------------------------------------------------- */
