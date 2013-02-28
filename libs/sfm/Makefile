@@ -7,7 +7,7 @@ LIBRARY := libsfm.a
 EXT_INCL := -I..
 EXT_LIBS := -L. -L../mve -L../util -lmve -lutil -lpng -ljpeg -ltiff
 
-TESTSRC := _test_matching.cc
+TESTSRC := _test_pose.cc
 TESTBIN := test
 
 GTEST_SRCS := _gtest_matrixsvd.cc _gtest_matrixpinv.cc _gtest_pose.cc # $(wildcard _gtest_*.cc)

@@ -73,6 +73,12 @@ match_features (MatchingOptions const& options,
 void
 remove_inconsistent_matches (MatchingResult* matches);
 
+/**
+ * Function that counts the number of valid matches.
+ */
+int
+count_consistent_matches (MatchingResult const& matches);
+
 /* ---------------------------------------------------------------- */
 
 inline
@@ -130,6 +136,17 @@ match_features (MatchingOptions const& options,
         set_2, set_2_size, &matches->matches_1_2);
     oneway_match(options, set_2, set_2_size,
         set_1, set_1_size, &matches->matches_2_1);
+}
+
+inline int
+count_consistent_matches (MatchingResult const& matches)
+{
+    int counter = 0;
+    for (int i = 0; i < static_cast<int>(matches.matches_1_2.size()); ++i)
+        if (matches.matches_1_2[i] != -1
+            && matches.matches_2_1[matches.matches_1_2[i]] == i)
+            counter++;
+    return counter;
 }
 
 SFM_NAMESPACE_END

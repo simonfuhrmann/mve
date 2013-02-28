@@ -10,6 +10,7 @@
 #define SFM_POSE_RANSAC_HEADER
 
 #include "defines.h"
+#include "correspondence.h"
 #include "pose.h"
 
 SFM_NAMESPACE_BEGIN
@@ -60,23 +61,17 @@ public:
         std::vector<int> inliers;
     };
 
-    struct Match
-    {
-        double p1[2];
-        double p2[2];
-    };
-
 public:
     PoseRansac (Options const& options);
-    void estimate (std::vector<Match> const& matches, Result* result);
+    void estimate (Correspondences const& matches, Result* result);
 
 private:
-    void estimate_8_point (std::vector<Match> const& matches,
+    void estimate_8_point (Correspondences const& matches,
         FundamentalMatrix* fundamental);
-    void find_inliers (std::vector<Match> const& matches,
+    void find_inliers (Correspondences const& matches,
         FundamentalMatrix const& fundamental, std::vector<int>* result);
     double sampson_distance (FundamentalMatrix const& fundamental,
-        Match const& match);
+        Correspondence const& match);
 private:
     Options opts;
 };

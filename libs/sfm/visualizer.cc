@@ -160,7 +160,7 @@ Visualizer::draw_keypoints(mve::ByteImage::ConstPtr image,
 mve::ByteImage::Ptr
 Visualizer::draw_matches (mve::ByteImage::ConstPtr image1,
     mve::ByteImage::ConstPtr image2,
-    std::vector<Visualizer::Match> const& matches)
+    Correspondences const& matches)
 {
     if (image1->channels() != 3 || image2->channels() != 3)
         throw std::invalid_argument("Only 3-channel images allowed");

@@ -11,6 +11,7 @@
 #include "matching.h"
 #include "pose.h"
 #include "poseransac.h"
+#include "visualizer.h"
 
 int
 main (int argc, char** argv)
@@ -39,6 +40,7 @@ main (int argc, char** argv)
     sfm::Sift::Descriptors descr1;
     {
         sfm::Sift sift;
+        sift.set_min_max_octave(0, 4);
         sift.set_image(image1);
         sift.process();
         descr1 = sift.get_descriptors();
@@ -47,6 +49,7 @@ main (int argc, char** argv)
     sfm::Sift::Descriptors descr2;
     {
         sfm::Sift sift;
+        sift.set_min_max_octave(0, 4);
         sift.set_image(image2);
         sift.process();
         descr2 = sift.get_descriptors();
@@ -55,6 +58,7 @@ main (int argc, char** argv)
     /* Feature matching. */
     sfm::MatchingResult matching;
     {
+        int const DIM = 128;
         /* Convert the descriptors to aligned float arrays. */
         util::AlignedMemory<float, 16> matchset_1(DIM * descr1.size());
         float* out_ptr1 = matchset_1.begin();
@@ -76,14 +80,19 @@ main (int argc, char** argv)
         sfm::match_features(matchopts, matchset_1.begin(), descr1.size(),
             matchset_2.begin(), descr2.size(), &matching);
         sfm::remove_inconsistent_matches(&matching);
-        std::cout << "Two-view matching took " << timer.get_elapsed() << "ms." << std::endl;
+        std::cout << "Two-view matching took " << timer.get_elapsed() << "ms, "
+            << sfm::count_consistent_matches(matching) << " matches."
+            << std::endl;
     }
 
     /* Convert matches to RANSAC data structure. */
-    std::vector<sfm::PoseRansac::Match> matches;
+    sfm::Correspondences matches;
     for (std::size_t i = 0; i < matching.matches_1_2.size(); ++i)
     {
-        sfm::PoseRansac::Match match;
+        if (matching.matches_1_2[i] < 0)
+            continue;
+
+        sfm::Correspondence match;
         match.p1[0] = descr1[i].x;
         match.p1[1] = descr1[i].y;
         match.p2[0] = descr2[matching.matches_1_2[i]].x;
@@ -91,28 +100,70 @@ main (int argc, char** argv)
         matches.push_back(match);
     }
 
+    {
+        mve::ByteImage::Ptr image, tmp_img1 = image1, tmp_img2 = image2;
+        if (image1->channels() == 1)
+            tmp_img1 = mve::image::expand_grayscale<unsigned char>(image1);
+        if (image2->channels() == 1)
+            tmp_img2 = mve::image::expand_grayscale<unsigned char>(image2);
+        image = sfm::Visualizer::draw_matches(tmp_img1, tmp_img2, matches);
+        mve::image::save_file(image, "/tmp/matches-initial.png");
+    }
+
     /* Pose RANSAC. */
     sfm::PoseRansac::Result ransac_result;
     {
         sfm::PoseRansac::Options ransac_options;
-        ransac_options.max_iterations = 100;
+        ransac_options.max_iterations = 1000;
         ransac_options.threshold = 2.0;
         ransac_options.already_normalized = false;
         sfm::PoseRansac ransac(ransac_options);
 
         util::WallTimer timer;
         ransac.estimate(matches, &ransac_result);
-        std::cout << "RANSAC took " << timer.get_elapsed() << "ms." << std::endl;
+        std::cout << "RANSAC took " << timer.get_elapsed() << "ms, "
+            << ransac_result.inliers.size() << " inliers." << std::endl;
     }
 
-    // TODO: Recompute F with inliers
-    //   - normalization of the inliers is required.
-    //   - SUB-TODO: implement normalization from matches.
+    /* Create new set of matches from inliners. */
+    {
+        sfm::Correspondences tmp_matches(ransac_result.inliers.size());
+        for (std::size_t i = 0; i < ransac_result.inliers.size(); ++i)
+            tmp_matches[i] = matches[ransac_result.inliers[i]];
+        std::swap(matches, tmp_matches);
+    }
+
+    {
+        mve::ByteImage::Ptr image, tmp_img1 = image1, tmp_img2 = image2;
+        if (image1->channels() == 1)
+            tmp_img1 = mve::image::expand_grayscale<unsigned char>(image1);
+        if (image2->channels() == 1)
+            tmp_img2 = mve::image::expand_grayscale<unsigned char>(image2);
+        image = sfm::Visualizer::draw_matches(tmp_img1, tmp_img2, matches);
+        mve::image::save_file(image, "/tmp/matches-ransac.png");
+    }
+
+    /* Find normalization for inliers and re-compute fundamental. */
+    sfm::FundamentalMatrix F;
+    {
+        math::Matrix3d T1, T2;
+        sfm::pose_find_normalization(matches, &T1, &T2);
+        sfm::pose_least_squares(matches, &F);
+        sfm::enforce_fundamental_constraints(&F);
+    }
 
     /* Compute pose from fundamental matrix. */
     sfm::CameraPose pose1, pose2;
     {
-        // TODO: Fill K-matrices.
+        // Set K-matrices.
+        int const width1 = image1->width();
+        int const height1 = image1->height();
+        int const width2 = image2->width();
+        int const height2 = image2->height();
+        double flen1 = 31.0 / 35.0 * static_cast<double>(std::max(width1, height1));
+        double flen2 = 31.0 / 35.0 * static_cast<double>(std::max(width2, height2));
+        pose1.set_k_matrix(flen1, width1 / 2.0, height1 / 2.0);
+        pose1.set_k_matrix(flen2, width2 / 2.0, height2 / 2.0);
         // Compute essential from fundamental.
         sfm::EssentialMatrix E = pose2.K.transposed() * F * pose1.K;
         // Compute pose from essential.

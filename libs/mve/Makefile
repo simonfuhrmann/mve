@@ -7,7 +7,7 @@ LIBRARY := libmve.a
 EXT_INCL := -I..
 EXT_LIBS := -L. -L../util -lmve -lutil -lpng -ljpeg -ltiff
 
-TEST_SRC := _test.cc
+TEST_SRC := _test_nms.cc
 TEST_BIN := _test
 
 GTEST_SRCS := $(wildcard _gtest_*.cc)

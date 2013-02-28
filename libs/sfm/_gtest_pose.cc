@@ -314,7 +314,7 @@ TEST(PoseRansacTest, TestRansac1)
     //points3d.push_back(math::Vec3d( 0.15,  0.12, 1.12));
 
     // Re-project in images using ground truth pose.
-    std::vector<sfm::PoseRansac::Match> matches;
+    sfm::Correspondences matches;
     for (int i = 0; i < points3d.size(); ++i)
     {
         math::Vec3d p1 = pose1.K * (pose1.R * points3d[i] + pose1.t);
@@ -322,7 +322,7 @@ TEST(PoseRansacTest, TestRansac1)
         p1 /= p1[2];
         p2 /= p2[2];
 
-        sfm::PoseRansac::Match match;
+        sfm::Correspondence match;
         match.p1[0] = p1[0] / p1[2];
         match.p1[1] = p1[1] / p1[2];
         match.p2[0] = p2[0] / p2[2];

@@ -46,6 +46,7 @@
 #include "math/matrix.h"
 
 #include "defines.h"
+#include "correspondence.h"
 
 SFM_NAMESPACE_BEGIN
 
@@ -72,17 +73,7 @@ struct CameraPose
     void set_k_matrix (double flen, double px, double py);
 };
 
-/**
- * Two image coordinates which correspond to each other in terms of observing
- * the same point in the scene.
- */
-struct Correspondence
-{
-    double p1[2];
-    double p2[2];
-};
 
-typedef std::vector<Correspondence> Correspondences;
 typedef math::Matrix<double, 3, 8> Eight2DPoints;
 typedef math::Matrix<double, 3, 7> Seven2DPoints;
 typedef math::Matrix<double, 3, 5> Five2DPoints;

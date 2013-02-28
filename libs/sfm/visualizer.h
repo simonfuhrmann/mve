@@ -7,6 +7,7 @@
 #include "mve/image.h"
 
 #include "defines.h"
+#include "correspondence.h"
 
 SFM_NAMESPACE_BEGIN
 
@@ -29,12 +30,6 @@ public:
         SMALL_DOT_STATIC
     };
 
-    struct Match
-    {
-        float p1[2];
-        float p2[2];
-    };
-
 public:
     /**
      * Draws a single feature on the image.
@@ -52,7 +47,7 @@ public:
      * Places images next to each other and draws a list of matches.
      */
     static mve::ByteImage::Ptr draw_matches (mve::ByteImage::ConstPtr image1,
-        mve::ByteImage::ConstPtr image2, std::vector<Match> const& matches);
+        mve::ByteImage::ConstPtr image2, Correspondences const& matches);
 };
 
 SFM_NAMESPACE_END

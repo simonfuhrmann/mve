@@ -22,7 +22,7 @@ PoseRansac::PoseRansac (Options const& options)
 }
 
 void
-PoseRansac::estimate (std::vector<Match> const& matches, Result* result)
+PoseRansac::estimate (Correspondences const& matches, Result* result)
 {
     std::vector<int> inliers;
     inliers.reserve(matches.size());
@@ -35,6 +35,10 @@ PoseRansac::estimate (std::vector<Match> const& matches, Result* result)
         /* Find matches supporting the fundamental matrix. */
         find_inliers(matches, fundamental, &inliers);
 
+        if (inliers.size() > result->inliers.size())
+            std::cout << "RANASC iteration " << iteration
+                << ", inliers: " << inliers.size() << std::endl;
+
         /* Check if current selection is best so far. */
         if (inliers.size() > result->inliers.size())
         {
@@ -45,7 +49,7 @@ PoseRansac::estimate (std::vector<Match> const& matches, Result* result)
 }
 
 void
-PoseRansac::estimate_8_point (std::vector<Match> const& matches,
+PoseRansac::estimate_8_point (Correspondences const& matches,
     FundamentalMatrix* fundamental)
 {
     if (matches.size() < 8)
@@ -59,18 +63,21 @@ PoseRansac::estimate_8_point (std::vector<Match> const& matches,
     while (result.size() < 8)
         result.insert(std::rand() % matches.size());
 
+#if 0
     {
         std::set<int>::const_iterator iter = result.begin();
         std::cout << "Drawn IDs: " << *(iter++) << " " << *(iter++) << " "
             << *(iter++) << " " << *(iter++) << " " << *(iter++) << " "
-            << *(iter++) << " " << *(iter++) << " " << *(iter++) << std::endl;
+            << *(iter++) << " " << *(iter++) << " " << *(iter++)
+            << " "; //std::endl;
     }
+#endif
 
     math::Matrix<double, 3, 8> pset1, pset2;
     std::set<int>::const_iterator iter = result.begin();
     for (int i = 0; i < 8; ++i, ++iter)
     {
-        Match const& match = matches[*iter];
+        Correspondence const& match = matches[*iter];
         pset1(0, i) = match.p1[0];
         pset1(1, i) = match.p1[1];
         pset1(2, i) = 1.0;
@@ -99,7 +106,7 @@ PoseRansac::estimate_8_point (std::vector<Match> const& matches,
 }
 
 void
-PoseRansac::find_inliers (std::vector<Match> const& matches,
+PoseRansac::find_inliers (Correspondences const& matches,
     FundamentalMatrix const& fundamental, std::vector<int>* result)
 {
     result->resize(0);
@@ -114,7 +121,8 @@ PoseRansac::find_inliers (std::vector<Match> const& matches,
 }
 
 double
-PoseRansac::sampson_distance (FundamentalMatrix const& F, Match const& m)
+PoseRansac::sampson_distance (FundamentalMatrix const& F,
+    Correspondence const& m)
 {
     /*
      * Computes the Sampson distance SD for a given match and fundamental
