@@ -26,6 +26,8 @@ PoseRansac::estimate (Correspondences const& matches, Result* result)
 {
     std::vector<int> inliers;
     inliers.reserve(matches.size());
+    std::cout << "RANSAC: Running for " << this->opts.max_iterations
+        << " iterations..." << std::endl;
     for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
     {
         /* Randomly select points and estimate fundamental matrix. */
@@ -36,8 +38,8 @@ PoseRansac::estimate (Correspondences const& matches, Result* result)
         find_inliers(matches, fundamental, &inliers);
 
         if (inliers.size() > result->inliers.size())
-            std::cout << "RANASC iteration " << iteration
-                << ", inliers: " << inliers.size() << std::endl;
+            std::cout << "RANASC: Iteration " << iteration
+                << ", inliers " << inliers.size() << std::endl;
 
         /* Check if current selection is best so far. */
         if (inliers.size() > result->inliers.size())

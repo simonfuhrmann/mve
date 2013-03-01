@@ -96,9 +96,10 @@ oneway_match (MatchingOptions const& options,
     T const* set_2, std::size_t set_2_size,
     std::vector<int>* result)
 {
-    float const square_threshold = options.lowe_ratio_threshold
+    float const square_lowe_threshold = options.lowe_ratio_threshold
         * options.lowe_ratio_threshold;
-
+    float const square_dist_threshold = options.distance_threshold
+        * options.distance_threshold;
     NearestNeighbor<T> nn;
     nn.set_elements(set_2, set_2_size);
     nn.set_element_dimensions(options.descriptor_length);
@@ -108,11 +109,11 @@ oneway_match (MatchingOptions const& options,
     {
         typename NearestNeighbor<T>::Result nn_result;
         nn.find(query_pointer, &nn_result);
-        if (nn_result.dist_1st_best > options.distance_threshold)
+        if (nn_result.dist_1st_best > square_dist_threshold)
             continue;
         if (static_cast<float>(nn_result.dist_1st_best)
             / static_cast<float>(nn_result.dist_2nd_best)
-            > square_threshold)
+            > square_lowe_threshold)
             continue;
         result->at(i) = nn_result.index_1st_best;
     }

@@ -1,13 +1,13 @@
-#include <iostream> // RM
+#include <iostream>
 
-#include "util/timer.h" // RM
+#include "util/timer.h"
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "math/matrixtools.h"
 #include "mve/image.h"
 #include "mve/imagetools.h"
 #include "mve/imagedrawing.h"
-#include "mve/imagefile.h" // TMP
+//#include "mve/imagefile.h" // TMP
 
 #include "defines.h"
 #include "surf.h"
@@ -35,58 +35,40 @@ Surf::process (void)
     this->descriptors.clear();
     this->octaves.clear();
 
-    util::WallTimer timer;
+    util::WallTimer timer, total_timer;
 
     /* Compute Hessian response maps and find SS maxima (SURF 3.3). */
+    std::cout << "SURF: Creating 4 octaves (0 to 4)..." << std::endl;
     timer.reset();
     this->create_octaves();
-    std::cout << "Creating octaves took "
-        << timer.get_elapsed() << " ms." << std::endl;
+    //std::cout << "SURF: Creating octaves took "
+    //    << timer.get_elapsed() << " ms." << std::endl;
 
     /* Detect local extrema in the SS of Hessian response maps. */
+    //std::cout << "SURF: Detecting local extrema..." << std::endl;
     timer.reset();
     this->extrema_detection();
-    std::cout << "Extrema detection took "
-        << timer.get_elapsed() << " ms." << std::endl;
-
-#if 0
-    {
-        std::cout << "Keypoints: " << this->keypoints.size() << ", per octave:";
-        std::vector<int> keypoints_per_octave(this->octaves.size(), 0);
-        for (std::size_t i = 0; i < this->keypoints.size(); ++i)
-            keypoints_per_octave[this->keypoints[i].octave] += 1;
-        for (std::size_t i = 0; i < this->octaves.size(); ++i)
-            std::cout << " " << i << ":" << keypoints_per_octave[i];
-         std::cout << std::endl;
-    }
-#endif
+    //std::cout << "SURF: Extrema detection took "
+    //    << timer.get_elapsed() << " ms." << std::endl;
 
     /* Sub-pixel keypoint localization and filtering of weak keypoints. */
+    //std::cout << "SURF: Localizing and filtering keypoints..." << std::endl;
     timer.reset();
     this->keypoint_localization_and_filtering();
-    std::cout << "Localization and filtering took "
-        << timer.get_elapsed() << " ms." << std::endl;
     this->octaves.clear();
-
-#if 0
-    {
-        std::cout << "Keypoints: " << this->keypoints.size() << ", per octave:";
-        std::vector<int> keypoints_per_octave(this->octaves.size(), 0);
-        for (std::size_t i = 0; i < this->keypoints.size(); ++i)
-            keypoints_per_octave[this->keypoints[i].octave] += 1;
-        for (std::size_t i = 0; i < this->octaves.size(); ++i)
-            std::cout << " " << i << ":" << keypoints_per_octave[i];
-         std::cout << std::endl;
-    }
-#endif
+    //std::cout << "SURF: Localization and filtering took "
+    //    << timer.get_elapsed() << " ms." << std::endl;
 
     /* Compute the SURF descriptor for the keypoint location. */
+    std::cout << "SURF: Generating keypoint descriptors..." << std::endl;
     timer.reset();
     this->descriptor_assignment();
-    std::cout << "Descriptor assignment took "
-        << timer.get_elapsed() << " ms. " << std::endl;
-    std::cout << "Computed " << this->descriptors.size()
-        << " descriptors." << std::endl;
+    //std::cout << "SURF: Generated " << this->descriptors.size()
+    //    << " descriptors, took " << timer.get_elapsed() << "ms." << std::endl;
+
+    std::cout << "SURF: Generated " << this->descriptors.size()
+        << " descriptors from " << this->keypoints.size() << " keypoints,"
+        << " took " << total_timer.get_elapsed() << "ms." << std::endl;
 
     /* Cleanup. */
     this->sat.reset();
@@ -186,16 +168,6 @@ Surf::create_response_map (int o, int k)
             /* The laplacian can be computed as dxx_t + dyy_t. */
             // float laplacian = dxx_t + dyy_t;
         }
-
-#if 0
-    std::cout << "Saving response map " << o << "." << k << std::endl;
-    float vmin, vmax;
-    mve::image::find_min_max_value<float>(img, &vmin, &vmax);
-    mve::ByteImage::Ptr outimg = mve::image::float_to_byte_image(img, vmin, vmax);
-    std::stringstream ss;
-    ss << "/tmp/response-" << o << "-" << k << ".png";
-    mve::image::save_file(outimg, ss.str());
-#endif
 
     this->octaves[o].imgs[k] = img;
 }
@@ -448,7 +420,9 @@ Surf::keypoint_localization (Keypoint* kp)
     if (kp->x < 0.0f || kp->x + 1.0f > this->sat->width()
         || kp->y < 0.0f || kp->y + 1.0f > this->sat->height())
     {
-        //std::cout << "Rejection keypoint: OOB " << kp->x << " " << kp->y  << " / " << vec_x[0] << " " << vec_x[1] << std::endl;
+        //std::cout << "SURF: Rejection keypoint: OOB "
+        //    << kp->x << " " << kp->y  << " / " << vec_x[0] << " "
+        //    << vec_x[1] << std::endl;
         return false;
     }
 

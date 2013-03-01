@@ -36,11 +36,12 @@ main (int argc, char** argv)
         return 1;
     }
 
+#if 1
     /* Feature detection. */
     sfm::Sift::Descriptors descr1;
     {
         sfm::Sift sift;
-        sift.set_min_max_octave(0, 4);
+        sift.set_min_max_octave(-1, 4);
         sift.set_image(image1);
         sift.process();
         descr1 = sift.get_descriptors();
@@ -49,11 +50,18 @@ main (int argc, char** argv)
     sfm::Sift::Descriptors descr2;
     {
         sfm::Sift sift;
-        sift.set_min_max_octave(0, 4);
+        sift.set_min_max_octave(-1, 4);
         sift.set_image(image2);
         sift.process();
         descr2 = sift.get_descriptors();
     }
+#else
+    sfm::Sift::Descriptors descr1;
+    sfm::Sift::load_lowe_descriptors("/Users/sfuhrmann/Downloads/fountain10.descr", &descr1);
+    sfm::Sift::Descriptors descr2;
+    sfm::Sift::load_lowe_descriptors("/Users/sfuhrmann/Downloads/fountain20.descr", &descr2);
+    std::cout << "Loaded " << descr1.size() << " and " << descr2.size() << " descriptors." << std::endl;
+#endif
 
     /* Feature matching. */
     sfm::MatchingResult matching;
@@ -73,8 +81,8 @@ main (int argc, char** argv)
         /* Perform matching. */
         sfm::MatchingOptions matchopts;
         matchopts.descriptor_length = DIM;
-        matchopts.lowe_ratio_threshold = 0.9f;
-        matchopts.distance_threshold = std::numeric_limits<float>::max();
+        matchopts.lowe_ratio_threshold = 0.80f;
+        matchopts.distance_threshold = 0.7f;
 
         util::WallTimer timer;
         sfm::match_features(matchopts, matchset_1.begin(), descr1.size(),
@@ -141,6 +149,20 @@ main (int argc, char** argv)
             tmp_img2 = mve::image::expand_grayscale<unsigned char>(image2);
         image = sfm::Visualizer::draw_matches(tmp_img1, tmp_img2, matches);
         mve::image::save_file(image, "/tmp/matches-ransac.png");
+    }
+
+    {
+        std::cout << "Two-View matching statistics: " << std::endl;
+        int const num_matches = sfm::count_consistent_matches(matching);
+        int const num_inliers = ransac_result.inliers.size();
+        int const num_descriptors = std::min(descr1.size(), descr2.size());
+        float matching_ratio = (float)num_matches / (float)num_descriptors;
+        float inlier_ratio = (float)num_inliers / (float)num_matches;
+        std::cout << "  " << descr1.size() << " and " << descr2.size()
+            << " descriptors" << std::endl;
+        std::cout << "  " << num_matches << " matches (ratio "
+            << matching_ratio << "), " <<  num_inliers << " inliers (ratio "
+            << inlier_ratio << ")" << std::endl;
     }
 
     /* Find normalization for inliers and re-compute fundamental. */

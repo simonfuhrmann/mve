@@ -9,12 +9,8 @@
  *   Abosulte coordinates are obtained by (TODO why? explain):
  *   (x + 0.5, y + 0.5) * 2^octave - (0.5, 0.5).
  *
- *
  * TODO:
- * - Refactor Keypoint to only have floating point coordinate
- * - Refactor Descriptor to use std::vector
- * - Refactor Descriptor to use coordinates, no KP copy
- * - Move keypoint scale to descriptor
+ * - Move all options to an Options struct
  * - Save memory by finding a more efficent code path to create octaves
  */
 #ifndef SFM_SIFT_HEADER
@@ -47,7 +43,6 @@ class Sift
 public:
     /**
      * Representation of a SIFT keypoint.
-     *
      * The keypoint locations are relative to the resampled size in
      * the image pyramid. To get the size relative to the input image,
      * each of (ix,iy,x,y) need to be multiplied with 2^o, where o
@@ -108,7 +103,7 @@ public:
 
     /**
      * Sets contrast threshold, i.e. thresholds the absolute DoG value
-     * at the accurately detected keypoint. Defaults to 0.02 / samples.
+     * at the interpolated keypoint location. Defaults to 0.02 / samples.
      */
     void set_contrast_threshold (float thres);
 
@@ -133,6 +128,13 @@ public:
 
     /** Returns the list of descriptors. */
     Descriptors const& get_descriptors (void) const;
+
+    /**
+     * Helper function that creates SIFT descriptors from David Lowe's
+     * SIFT descriptor files.
+     */
+    static void load_lowe_descriptors (std::string const& filename,
+        Descriptors* result);
 
 protected:
     /**

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <cstring>
-#include <cerrno>
+#include <stdexcept>
 
 #include "util/timer.h"
 #include "math/matrix.h"
@@ -16,48 +15,38 @@ SFM_NAMESPACE_BEGIN
 void
 Sift::process (void)
 {
+    util::ClockTimer timer, total_timer;
+
     /*
      * Creates the scale space representation of the image by
      * sampling the scale space and computing the DoG images.
      * See Section 3, 3.2 and 3.3 in SIFT article.
      */
-    std::cout << "Creating " << (this->max_octave - this->min_octave)
+    std::cout << "SIFT: Creating " << (this->max_octave - this->min_octave)
         << " octaves (" << this->min_octave << " to " << this->max_octave
         << ")..." << std::endl;
-    util::ClockTimer timer;
     this->create_octaves();
-    std::cout << "Creating octaves took " << timer.get_elapsed() << std::endl;
+    //std::cout << "Creating octaves took " << timer.get_elapsed()
+    //    << "ms." << std::endl;
 
     /*
      * Detects local extrema in the DoG function as described in Section 3.1.
      */
-    std::cout << "Detecting local extrema..." << std::endl;
+    //std::cout << "SIFT: Detecting local extrema..." << std::endl;
     timer.reset();
     this->extrema_detection();
-    std::cout << "Detected " << this->keypoints.size() << " keypoints, took "
-        << timer.get_elapsed() << std::endl;
+    //std::cout << "SIFT: Detected " << this->keypoints.size()
+    //    << " keypoints, took " << timer.get_elapsed() << "ms." << std::endl;
 
-#if 1
     /*
      * Accurate keypoint localization and filtering.
      * According to Section 4 in SIFT article.
      */
-    std::cout << "Localizing and filtering keypoints..." << std::endl;
+    //std::cout << "SIFT: Localizing and filtering keypoints..." << std::endl;
     timer.reset();
     this->keypoint_localization();
-    std::cout << "Retained " << this->keypoints.size() << " stable "
-        << "keypoints, took " << timer.get_elapsed() << "ms." << std::endl;
-#endif
-
-#if 0
-    /*
-     * Dump debug images to disc.
-     */
-    std::cout << "Dumping debug images to disc..." << std::endl;
-    timer.reset();
-    this->dump_octaves();
-    std::cout << "Dumping images took " << timer.get_elapsed() << std::endl;
-#endif
+    //std::cout << "SIFT: Retained " << this->keypoints.size() << " stable "
+    //    << "keypoints, took " << timer.get_elapsed() << "ms." << std::endl;
 
     /*
      * Difference of Gaussian images are not needed anymore.
@@ -71,12 +60,15 @@ Sift::process (void)
      * This list can in general be larger than the amount of keypoints,
      * since for each keypoint several descriptors may be created.
      */
-    std::cout << "Generating keypoint descriptors..." << std::endl;
+    std::cout << "SIFT: Generating keypoint descriptors..." << std::endl;
     timer.reset();
     this->descriptor_generation();
-    std::cout << "Generated " << this->descriptors.size() << " descriptors "
-        << "from " << this->keypoints.size() << " keypoints, took "
-        << timer.get_elapsed() << "ms." << std::endl;
+    //std::cout << "SIFT: Generated " << this->descriptors.size()
+    //    << " descriptors, took " << timer.get_elapsed() << "ms." << std::endl;
+
+    std::cout << "SIFT: Generated " << this->descriptors.size()
+        << " descriptors from " << this->keypoints.size() << " keypoints,"
+        << " took " << total_timer.get_elapsed() << "ms." << std::endl;
 
     /* Free memory. */
     this->octaves.clear();
@@ -142,11 +134,7 @@ Sift::create_octaves (void)
      */
     mve::FloatImage::ConstPtr img = this->orig;
     for (int i = 0; i < this->min_octave; ++i)
-    {
-        std::cout << "Downsampling image for octave "
-            << (i + 1) << "..." << std::endl;
         img = mve::image::rescale_half_size_gaussian<float>(img);
-    }
 
     /*
      * Create new octave from 'img', then subsample octave image where
@@ -230,10 +218,7 @@ Sift::extrema_detection (void)
         {
             mve::FloatImage::ConstPtr samples[3] =
             { oct.dog[s + 0], oct.dog[s + 1], oct.dog[s + 2] };
-            //std::size_t num =
             this->extrema_detection(samples, (int)i + this->min_octave, s);
-            //std::cout << "Detected " << num << " extrema in octave "
-            //    << i << ", sample " << s << "..." << std::endl;
         }
     }
 }
@@ -425,10 +410,6 @@ Sift::keypoint_localization (void)
             //std::cout << " REJECTED!" << std::endl;
             continue;
         }
-        else
-        {
-            //std::cout << std::endl;
-        }
 
         /* Keypoint is accepted, copy to write iter and advance. */
         this->keypoints[witer] = kp;
@@ -438,11 +419,11 @@ Sift::keypoint_localization (void)
     /* Limit vector size to accepted keypoints. */
     this->keypoints.resize(witer);
 
-    if (num_singular)
-    {
-        std::cout << "Warning: " << num_singular
-            << " singular matrices detected!" << std::endl;
-    }
+    //if (num_singular)
+    //{
+    //    std::cout << "Warning: " << num_singular
+    //        << " singular matrices detected!" << std::endl;
+    //}
 }
 
 /* ---------------------------------------------------------------- */
@@ -542,21 +523,6 @@ Sift::generate_grad_ori_images (Octave* octave)
             }
         octave->grad.push_back(grad);
         octave->ori.push_back(ori);
-
-#if 0
-        static int num = -1;
-        num++;
-        {
-            std::stringstream ss;
-            ss << "/tmp/grad-num-" << num << ".png";
-            mve::image::save_file(mve::image::float_to_byte_image(grad, 0.0f, 0.3f), ss.str());
-        }
-        {
-            std::stringstream ss;
-            ss << "/tmp/ori-num" << num << ".png";
-            mve::image::save_file(mve::image::float_to_byte_image(ori, 0, 2.0f * MATH_PI), ss.str());
-        }
-#endif
     }
 }
 
@@ -835,8 +801,7 @@ Sift::keypoint_absolute_scale (Keypoint const& kp)
 void
 Sift::dump_octaves (void)
 {
-    std::cout << "Dumping images to /tmp ..." << std::endl;
-
+    std::cout << "SIFT: Dumping images to /tmp ..." << std::endl;
     /* Dumps all octaves to disc, for debugging purposes. */
     for (std::size_t i = 0; i < this->octaves.size(); ++i)
     {
@@ -857,6 +822,46 @@ Sift::dump_octaves (void)
             mve::image::save_file(img, ss.str());
         }
     }
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Sift::load_lowe_descriptors (std::string const& filename, Descriptors* result)
+{
+    std::ifstream in(filename.c_str());
+    if (!in.good())
+        throw std::runtime_error("Cannot open descriptor file");
+
+    int num_descriptors;
+    int num_dimensions;
+    in >> num_descriptors >> num_dimensions;
+    if (num_descriptors > 100000 || num_dimensions != 128)
+    {
+        in.close();
+        throw std::runtime_error("Invalid number of descriptors/dimensions");
+    }
+    result->clear();
+    result->reserve(num_descriptors);
+    for (int i = 0; i < num_descriptors; ++i)
+    {
+        Sift::Descriptor descriptor;
+        in >> descriptor.y >> descriptor.x
+            >> descriptor.scale >> descriptor.orientation;
+        for (int j = 0; j < 128; ++j)
+            in >> descriptor.data[j];
+        descriptor.data.normalize();
+        result->push_back(descriptor);
+    }
+
+    if (!in.good())
+    {
+        result->clear();
+        in.close();
+        throw std::runtime_error("Error while reading descriptors");
+    }
+
+    in.close();
 }
 
 SFM_NAMESPACE_END
