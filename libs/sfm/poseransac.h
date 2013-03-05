@@ -11,7 +11,7 @@
 
 #include "defines.h"
 #include "correspondence.h"
-#include "pose.h"
+#include "fundamental.h"
 
 SFM_NAMESPACE_BEGIN
 

@@ -5,11 +5,14 @@
 #include "mve/image.h"
 #include "mve/imagetools.h"
 #include "mve/imagefile.h"
+#include "mve/trianglemesh.h"
 
 #include "surf.h"
 #include "sift.h"
 #include "matching.h"
 #include "pose.h"
+#include "correspondence.h"
+#include "triangulate.h"
 #include "poseransac.h"
 #include "visualizer.h"
 
@@ -168,9 +171,11 @@ main (int argc, char** argv)
     /* Find normalization for inliers and re-compute fundamental. */
     sfm::FundamentalMatrix F;
     {
+        sfm::Correspondences tmp_matches = matches;
         math::Matrix3d T1, T2;
-        sfm::pose_find_normalization(matches, &T1, &T2);
-        sfm::pose_least_squares(matches, &F);
+        sfm::compute_normalization(tmp_matches, &T1, &T2);
+        sfm::apply_normalization(T1, T2, &tmp_matches);
+        sfm::fundamental_least_squares(tmp_matches, &F);
         sfm::enforce_fundamental_constraints(&F);
     }
 
@@ -185,13 +190,23 @@ main (int argc, char** argv)
         double flen1 = 31.0 / 35.0 * static_cast<double>(std::max(width1, height1));
         double flen2 = 31.0 / 35.0 * static_cast<double>(std::max(width2, height2));
         pose1.set_k_matrix(flen1, width1 / 2.0, height1 / 2.0);
-        pose1.set_k_matrix(flen2, width2 / 2.0, height2 / 2.0);
+        pose1.init_canonical_form();
+        pose2.set_k_matrix(flen2, width2 / 2.0, height2 / 2.0);
         // Compute essential from fundamental.
         sfm::EssentialMatrix E = pose2.K.transposed() * F * pose1.K;
         // Compute pose from essential.
         std::vector<sfm::CameraPose> poses;
         pose_from_essential(E, &poses);
         // TODO: Find the correct pose using point test.
+        int id = sfm::select_consistent_pose(poses, matches[0]);
+        if (id < 0)
+            throw std::runtime_error("No valid pose found!");
+        pose2 = poses[id];
+    }
+
+    /* Triangulate all correspondences. */
+    mve::TriangleMesh::Ptr mesh;
+    {
     }
 
     return 0;

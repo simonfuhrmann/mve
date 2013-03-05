@@ -6,7 +6,9 @@
 #include "math/matrixtools.h"
 #include "sfm/matrixsvd.h"
 #include "sfm/pose.h"
+#include "sfm/fundamental.h"
 #include "sfm/poseransac.h"
+#include "sfm/triangulate.h"
 
 TEST(PoseTest, PointNormalization1)
 {
@@ -16,7 +18,7 @@ TEST(PoseTest, PointNormalization1)
     set(0,1) = -5.0f; set(1,1) = -1.0f; set(2,1) = 1.0f;
     set(0,2) = 0.0f; set(1,2) = 0.0f; set(2,2) = 1.0f;
     math::Matrix<float, 3, 3> trans;
-    sfm::pose_find_normalization(set, &trans);
+    sfm::compute_normalization(set, &trans);
     EXPECT_NEAR(trans[0], 0.1f, 1e-6f);
     EXPECT_NEAR(trans[1], 0.0f, 1e-6f);
     EXPECT_NEAR(trans[2], 0.0f, 1e-6f);
@@ -35,7 +37,7 @@ TEST(PoseTest, PointNormalization2)
     set(0,0) = -4.0; set(1,0) = 8.0; set(2,0) = 1.0f;
     set(0,1) = -5.0; set(1,1) = 10.0f; set(2,1) = 1.0f;
     math::Matrix<double, 3, 3> trans;
-    sfm::pose_find_normalization(set, &trans);
+    sfm::compute_normalization(set, &trans);
     EXPECT_NEAR(trans[0], 0.5, 1e-6);
     EXPECT_NEAR(trans[1], 0.0, 1e-6);
     EXPECT_NEAR(trans[2], 4.5/2.0, 1e-6);
@@ -59,7 +61,7 @@ TEST(PoseTest, CorrespondencesNormalization)
     c[2].p2[0] = -2.0; c[2].p2[1] = -4.0;
 
     math::Matrix<double, 3, 3> transform1, transform2;
-    sfm::pose_find_normalization(c, &transform1, &transform2);
+    sfm::compute_normalization(c, &transform1, &transform2);
 
     EXPECT_NEAR(transform1[0], 1.0 / 6.0, 1e-10);
     EXPECT_NEAR(transform1[1], 0.0, 1e-10);
@@ -128,12 +130,12 @@ TEST(PoseTest, Test8Point)
      * - De-normalization of matrix
      */
     math::Matrix<double, 3, 3> T1, T2;
-    sfm::pose_find_normalization(p1, &T1);
-    sfm::pose_find_normalization(p2, &T2);
+    sfm::compute_normalization(p1, &T1);
+    sfm::compute_normalization(p2, &T2);
     p1 = T1 * p1;
     p2 = T2 * p2;
     sfm::FundamentalMatrix F(0.0);
-    sfm::pose_8_point(p1, p2, &F);
+    sfm::fundamental_8_point(p1, p2, &F);
     sfm::enforce_fundamental_constraints(&F);
     F = T2.transposed() * F * T1;
 
@@ -152,8 +154,8 @@ TEST(PoseTest, TestLeastSquaresPose)
     fill_golden_correspondences(p1, p2, F2);
 
     math::Matrix<double, 3, 3> T1, T2;
-    sfm::pose_find_normalization(p1, &T1);
-    sfm::pose_find_normalization(p2, &T2);
+    sfm::compute_normalization(p1, &T1);
+    sfm::compute_normalization(p2, &T2);
     p1 = T1 * p1;
     p2 = T2 * p2;
 
@@ -167,7 +169,7 @@ TEST(PoseTest, TestLeastSquaresPose)
     }
 
     sfm::FundamentalMatrix F(0.0);
-    sfm::pose_least_squares(points, &F);
+    sfm::fundamental_least_squares(points, &F);
     sfm::enforce_fundamental_constraints(&F);
     F = T2.transposed() * F * T1;
 
@@ -266,12 +268,12 @@ TEST(PoseTest, SyntheticPoseTest2)
 
     // Compute fundamental using normalized 8-point algorithm.
     math::Matrix<double, 3, 3> T1, T2;
-    sfm::pose_find_normalization(points2d_v1, &T1);
-    sfm::pose_find_normalization(points2d_v2, &T2);
+    sfm::compute_normalization(points2d_v1, &T1);
+    sfm::compute_normalization(points2d_v2, &T2);
     points2d_v1 = T1 * points2d_v1;
     points2d_v2 = T2 * points2d_v2;
     sfm::FundamentalMatrix F;
-    sfm::pose_8_point(points2d_v1, points2d_v2, &F);
+    sfm::fundamental_8_point(points2d_v1, points2d_v2, &F);
     sfm::enforce_fundamental_constraints(&F);
     F = T2.transposed() * F * T1;
     // Compute essential from fundamental.
@@ -288,6 +290,29 @@ TEST(PoseTest, SyntheticPoseTest2)
         num_equal_cameras += equal;
     }
     EXPECT_EQ(num_equal_cameras, 1);
+}
+
+TEST(PostTest, TriangulateTest1)
+{
+    // Fill the ground truth pose.
+    sfm::CameraPose pose1, pose2;
+    fill_ground_truth_pose(&pose1, &pose2);
+
+    math::Vec3d x_gt(0.0, 0.0, 1.0);
+    math::Vec3d x1 = pose1.K * (pose1.R * x_gt + pose1.t);
+    math::Vec3d x2 = pose2.K * (pose2.R * x_gt + pose2.t);
+
+    sfm::Correspondence match;
+    match.p1[0] = x1[0] / x1[2];
+    match.p1[1] = x1[1] / x1[2];
+    match.p2[0] = x2[0] / x2[2];
+    match.p2[1] = x2[1] / x2[2];
+
+    math::Vec3d x = sfm::triangulate_match(match, pose1, pose2);
+    EXPECT_NEAR(x[0], x_gt[0], 1e-14);
+    EXPECT_NEAR(x[1], x_gt[1], 1e-14);
+    EXPECT_NEAR(x[2], x_gt[2], 1e-14);
+    EXPECT_TRUE(sfm::is_consistent_pose(match, pose1, pose2));
 }
 
 #if 0  // This test case is not in use because it is not deterministic.

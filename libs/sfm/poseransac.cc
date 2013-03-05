@@ -92,13 +92,13 @@ PoseRansac::estimate_8_point (Correspondences const& matches,
     math::Matrix<double, 3, 3> T1, T2;
     if (!this->opts.already_normalized)
     {
-        sfm::pose_find_normalization(pset1, &T1);
-        sfm::pose_find_normalization(pset2, &T2);
+        sfm::compute_normalization(pset1, &T1);
+        sfm::compute_normalization(pset2, &T2);
         pset1 = T1 * pset1;
         pset2 = T2 * pset2;
     }
 
-    sfm::pose_8_point(pset1, pset2, fundamental);
+    sfm::fundamental_8_point(pset1, pset2, fundamental);
     sfm::enforce_fundamental_constraints(fundamental);
 
     if (!this->opts.already_normalized)
