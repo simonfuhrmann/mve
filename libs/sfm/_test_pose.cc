@@ -6,6 +6,7 @@
 #include "mve/imagetools.h"
 #include "mve/imagefile.h"
 #include "mve/trianglemesh.h"
+#include "mve/meshtools.h"
 
 #include "surf.h"
 #include "sift.h"
@@ -44,7 +45,7 @@ main (int argc, char** argv)
     sfm::Sift::Descriptors descr1;
     {
         sfm::Sift sift;
-        sift.set_min_max_octave(-1, 4);
+        sift.set_min_max_octave(0, 4);
         sift.set_image(image1);
         sift.process();
         descr1 = sift.get_descriptors();
@@ -53,7 +54,7 @@ main (int argc, char** argv)
     sfm::Sift::Descriptors descr2;
     {
         sfm::Sift sift;
-        sift.set_min_max_octave(-1, 4);
+        sift.set_min_max_octave(0, 4);
         sift.set_image(image2);
         sift.process();
         descr2 = sift.get_descriptors();
@@ -169,6 +170,7 @@ main (int argc, char** argv)
     }
 
     /* Find normalization for inliers and re-compute fundamental. */
+    std::cout << "Re-computing fundamental matrix for inliers..." << std::endl;
     sfm::FundamentalMatrix F;
     {
         sfm::Correspondences tmp_matches = matches;
@@ -177,9 +179,11 @@ main (int argc, char** argv)
         sfm::apply_normalization(T1, T2, &tmp_matches);
         sfm::fundamental_least_squares(tmp_matches, &F);
         sfm::enforce_fundamental_constraints(&F);
+        F = T2.transposed() * F * T1;
     }
 
     /* Compute pose from fundamental matrix. */
+    std::cout << "Computing pose..." << std::endl;
     sfm::CameraPose pose1, pose2;
     {
         // Set K-matrices.
@@ -190,6 +194,7 @@ main (int argc, char** argv)
         double flen1 = 31.0 / 35.0 * static_cast<double>(std::max(width1, height1));
         double flen2 = 31.0 / 35.0 * static_cast<double>(std::max(width2, height2));
         pose1.set_k_matrix(flen1, width1 / 2.0, height1 / 2.0);
+
         pose1.init_canonical_form();
         pose2.set_k_matrix(flen2, width2 / 2.0, height2 / 2.0);
         // Compute essential from fundamental.
@@ -197,17 +202,36 @@ main (int argc, char** argv)
         // Compute pose from essential.
         std::vector<sfm::CameraPose> poses;
         pose_from_essential(E, &poses);
-        // TODO: Find the correct pose using point test.
-        int id = sfm::select_consistent_pose(poses, matches[0]);
-        if (id < 0)
-            throw std::runtime_error("No valid pose found!");
-        pose2 = poses[id];
+        // Find the correct pose using point test.
+        bool found_pose = false;
+        for (std::size_t i = 0; i < poses.size(); ++i)
+        {
+            poses[i].K = pose2.K;
+            if (sfm::is_consistent_pose(matches[1], pose1, poses[i]))
+            {
+                pose2 = poses[i];
+                found_pose = true;
+                break;
+            }
+        }
+        if (!found_pose)
+        {
+            std::cout << "Could not find valid pose." << std::endl;
+            return 1;
+        }
     }
 
     /* Triangulate all correspondences. */
-    mve::TriangleMesh::Ptr mesh;
+    std::cout << "Producing point model..." << std::endl;
+    mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
     {
+        for (std::size_t i = 0; i < matches.size(); ++i)
+        {
+            math::Vec3d x = sfm::triangulate_match(matches[i], pose1, pose2);
+            mesh->get_vertices().push_back(x);
+        }
     }
+    mve::geom::save_mesh(mesh, "/tmp/pose.ply");
 
     return 0;
 }

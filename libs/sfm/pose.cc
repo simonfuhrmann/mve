@@ -1,6 +1,15 @@
+#include "math/matrixtools.h"
+
 #include "pose.h"
 
 SFM_NAMESPACE_BEGIN
+
+void
+CameraPose::init_canonical_form (void)
+{
+    math::matrix_set_identity(*this->R, 3);
+    this->t.fill(0.0);
+}
 
 void
 CameraPose::fill_p_matrix (math::Matrix<double, 3, 4>* P) const

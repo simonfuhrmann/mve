@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "matrixsvd.h"
 #include "triangulate.h"
 
