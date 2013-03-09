@@ -81,6 +81,34 @@ public:
 
 /* ---------------------------------------------------------------- */
 
+/*
+ * Implements import of images.
+ */
+class BatchImportImages : public BatchOperations
+{
+    Q_OBJECT
+
+private:
+    QCheckBox create_thumbnails;
+    QCheckBox filenames_become_viewnames;
+    QCheckBox save_exif_info;
+    QCheckBox reuse_view_ids;
+    QLineEdit embedding_name;
+    QLabel selected_files;
+    QStringList file_list;
+
+private:
+    void setup_gui (void);
+
+private slots:
+    void on_import_images (void);
+
+public:
+    BatchImportImages (QWidget* parent = 0);
+};
+
+/* ---------------------------------------------------------------- */
+
 inline void
 BatchOperations::set_scene (mve::Scene::Ptr scene)
 {

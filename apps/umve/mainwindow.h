@@ -35,6 +35,7 @@ private:
     QAction* action_reload_scene;
     QAction* action_save_scene;
     QAction* action_close_scene;
+    QAction* action_import_images;
     QAction* action_recon_export;
     QAction* action_batch_delete;
     QAction* action_cache_cleanup;
@@ -43,7 +44,7 @@ private:
     QAction* action_about;
     QAction* action_about_qt;
 
-    QMenu* menu_file;
+    QMenu* menu_scene;
     QMenu* menu_help;
 
 private:
@@ -60,6 +61,7 @@ private slots:
     void on_refresh_scene (void);
     void on_about (void);
 
+    void on_import_images (void);
     void on_update_memory (void);
     void on_cache_cleanup (void);
     void on_recon_export (void);

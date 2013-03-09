@@ -161,6 +161,11 @@ MainWindow::create_actions (void)
     this->connect(this->action_close_scene, SIGNAL(triggered()),
         this, SLOT(on_close_scene()));
 
+    this->action_import_images = new QAction(
+        QIcon(":/images/icon_new_file.svg"), tr("Import Images..."), this);
+    this->connect(this->action_import_images, SIGNAL(triggered()),
+        this, SLOT(on_import_images()));
+
     this->action_recon_export = new QAction(QIcon(":/images/icon_export.svg"),
         tr("Export reconstruction..."), this);
     this->connect(this->action_recon_export, SIGNAL(triggered()),
@@ -203,24 +208,25 @@ MainWindow::create_actions (void)
 void
 MainWindow::create_menus (void)
 {
-    this->menu_file = new QMenu(tr("&File"), this);
-    this->menu_file->addAction(this->action_new_scene);
-    this->menu_file->addAction(this->action_open_scene);
-    this->menu_file->addAction(this->action_reload_scene);
-    this->menu_file->addAction(this->action_save_scene);
-    this->menu_file->addAction(this->action_close_scene);
-    this->menu_file->addSeparator();
-    this->menu_file->addAction(this->action_recon_export);
-    this->menu_file->addAction(this->action_batch_delete);
-    this->menu_file->addAction(this->action_cache_cleanup);
-    this->menu_file->addSeparator();
-    this->menu_file->addAction(this->action_exit);
+    this->menu_scene = new QMenu(tr("&Scene"), this);
+    this->menu_scene->addAction(this->action_new_scene);
+    this->menu_scene->addAction(this->action_open_scene);
+    this->menu_scene->addAction(this->action_reload_scene);
+    this->menu_scene->addAction(this->action_save_scene);
+    this->menu_scene->addAction(this->action_close_scene);
+    this->menu_scene->addSeparator();
+    this->menu_scene->addAction(this->action_import_images);
+    this->menu_scene->addAction(this->action_recon_export);
+    this->menu_scene->addAction(this->action_batch_delete);
+    this->menu_scene->addAction(this->action_cache_cleanup);
+    this->menu_scene->addSeparator();
+    this->menu_scene->addAction(this->action_exit);
 
     this->menu_help = new QMenu(tr("&Help"), this);
     this->menu_help->addAction(this->action_about);
     this->menu_help->addAction(this->action_about_qt);
 
-    this->menuBar()->addMenu(this->menu_file);
+    this->menuBar()->addMenu(this->menu_scene);
     this->menuBar()->addMenu(this->menu_help);
 
     this->scene_overview->add_toolbar_action(this->action_open_scene);
@@ -423,6 +429,27 @@ MainWindow::on_update_memory (void)
 
     std::string memstr = util::string::get_size_string(mem);
     this->memory_label->setText(tr("Memory: %1").arg(memstr.c_str()));
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::on_import_images (void)
+{
+    mve::Scene::Ptr scene = SceneManager::get().get_scene();
+    if (!scene.get())
+    {
+        QMessageBox::information(this, "Error exporting!",
+            "No scene is loaded, rookie.");
+        return;
+    }
+
+    BatchImportImages dialog(this);
+    dialog.setModal(true);
+    dialog.set_scene(scene);
+    dialog.exec();
+
+    SceneManager::get().refresh_scene();
 }
 
 /* ---------------------------------------------------------------- */

@@ -28,7 +28,6 @@
 #include "mve/imageexif.h" // extract EXIF for JPEG images
 
 #define THUMB_SIZE 50
-#define THUMB_SIZEF 50.0f
 
 #define BUNDLE_PATH "bundle/"
 #define PS_BUNDLE_LOG "coll.log"
@@ -57,37 +56,6 @@ struct AppSettings
     std::string bundle_path;
     std::string views_path;
 };
-
-/* ---------------------------------------------------------------- */
-
-mve::ByteImage::Ptr
-get_thumbnail (mve::ByteImage::ConstPtr image)
-{
-    std::size_t iw = image->width();
-    std::size_t ih = image->height();
-
-    std::size_t dw, dh, dl, dt;
-    if (iw > ih)
-    {
-        dh = THUMB_SIZE;
-        dw = (std::size_t)(THUMB_SIZEF * (float)iw / (float)ih);
-        dl = (dw - THUMB_SIZE) / 2;
-        dt = 0;
-    }
-    else
-    {
-        dw = THUMB_SIZE;
-        dh = (std::size_t)(THUMB_SIZEF * (float)ih / (float)iw);
-        dl = 0;
-        dt = (dh - THUMB_SIZE) / 2;
-    }
-
-    mve::ByteImage::Ptr ret = mve::image::rescale<uint8_t>
-        (image, mve::image::RESCALE_LINEAR, dw, dh);
-    ret = mve::image::crop<uint8_t>(ret, THUMB_SIZE, THUMB_SIZE, dl, dt, 0);
-
-    return ret;
-}
 
 /* ---------------------------------------------------------------- */
 
@@ -428,7 +396,8 @@ import_bundle (AppSettings const& conf)
             /* For Noah datasets, load original image and undistort it. */
             std::string orig_filename = image_path + orig_files[i];
             original = load_original_image(orig_filename, exif);
-            thumb = get_thumbnail(original);
+            thumb = mve::image::create_thumbnail<uint8_t>
+                (original, THUMB_SIZE, THUMB_SIZE);
 
             /* Convert Noah focal length to MVE focal length. */
             cam.flen /= (float)std::max(original->width(), original->height());
@@ -447,7 +416,8 @@ import_bundle (AppSettings const& conf)
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
                 + util::string::get_filled(valid_cnt, 4) + ".jpg";
             undist = mve::image::load_file(undist_filename);
-            thumb = get_thumbnail(undist);
+            thumb = mve::image::create_thumbnail<uint8_t>
+                (undist, THUMB_SIZE, THUMB_SIZE);
 
             if (conf.import_orig)
             {
@@ -555,7 +525,8 @@ import_images (AppSettings const& conf)
         view->set_name(viewname);
 
         /* Add thumbnail and image to view. */
-        mve::ByteImage::Ptr thumb = get_thumbnail(image);
+        mve::ByteImage::Ptr thumb = mve::image::create_thumbnail<uint8_t>
+            (image, THUMB_SIZE, THUMB_SIZE);
         view->add_image("thumbnail", thumb);
         view->add_image("original", image);
 

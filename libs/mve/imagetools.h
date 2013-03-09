@@ -402,6 +402,15 @@ integral_image_area (typename Image<T>::ConstPtr sat,
     int x1, int y1, int x2, int y2, int cc = 0);
 
 /**
+ * Creates a thumbnail of the given size by first rescaling the image
+ * and then cropping to fill the thumbnail.
+ */
+template <typename T>
+typename Image<T>::Ptr
+create_thumbnail (typename Image<T>::ConstPtr image,
+    int thumb_width, int thumb_height);
+
+/**
  * Calculates and returns the dark channel of an RGB(A) image.
  * The dark channel is constructed by iterating over all pixels
  * and selecting is the smallest color component within a kernel
@@ -1565,6 +1574,43 @@ integral_image_area (typename Image<T>::ConstPtr sat,
     if (x1 > 0 && y1 > 0)
         ret += sat->at((y1-1) * wc + (x1-1) * c + cc); // top-left
     return ret;
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+typename Image<T>::Ptr
+create_thumbnail (typename Image<T>::ConstPtr image,
+    int thumb_width, int thumb_height)
+{
+    int width = image->width();
+    int height = image->height();
+    float image_aspect = static_cast<float>(width) / height;
+    float thumb_aspect = static_cast<float>(thumb_width) / thumb_height;
+
+    int rescale_width, rescale_height;
+    int crop_left, crop_top;
+    if (image_aspect > thumb_aspect)
+    {
+        rescale_width = std::ceil(thumb_height * image_aspect);
+        rescale_height = thumb_height;
+        crop_left = (rescale_width - thumb_width) / 2;
+        crop_top = 0;
+    }
+    else
+    {
+        rescale_width = thumb_width;
+        rescale_height = std::ceil(thumb_width / image_aspect);
+        crop_left = 0;
+        crop_top = (rescale_height - thumb_height) / 2;
+    }
+
+    mve::ByteImage::Ptr thumb = mve::image::rescale<uint8_t>(image,
+        mve::image::RESCALE_LINEAR, rescale_width, rescale_height);
+    thumb = mve::image::crop<uint8_t>(thumb, thumb_width, thumb_height,
+        crop_left, crop_top, 0);
+
+    return thumb;
 }
 
 /* ---------------------------------------------------------------- */
