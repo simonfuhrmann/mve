@@ -235,7 +235,7 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma);
 /**
  * Blurs the image using a box filter of integer size 'ks'.
  * The implementaion is separated, and much faster than Gaussian blur,
- * but yields horizontal and vertical artifacts.
+ * but of inferior blur quality (usual box filter artifacts).
  */
 template <typename T>
 typename Image<T>::Ptr
@@ -409,43 +409,6 @@ template <typename T>
 typename Image<T>::Ptr
 create_thumbnail (typename Image<T>::ConstPtr image,
     int thumb_width, int thumb_height);
-
-/**
- * Calculates and returns the dark channel of an RGB(A) image.
- * The dark channel is constructed by iterating over all pixels
- * and selecting is the smallest color component within a kernel
- * of fixed size for that pixel in the output image. Kernel size
- * is given in 'ks' as half size, i.e. full kernel has size 2*ks+1.
- *
- * The dark channel is discussed in a paper called:
- * "Single Image Haze Removal Using Dark Channel Prior"
- * The filter is slow but can be optimized using a technique called:
- * "A fast algorithm for local minimum and maximum filters
- *     on rectangular and octagonal kernels"
- */
-template <typename T>
-typename Image<T>::Ptr
-dark_channel (typename Image<T>::ConstPtr image, int ks);
-
-/**
- * Non-local means (NL-means) denoising operator described in:
- *
- *     A Non-Local Algorithm for Image Denoising
- *     A. Buades, B. Coll, J.-M. Morel
- *     In Proc. CVPR 2005
- *     http://www.ipol.im/pub/algo/bcm_non_local_means_denoising/
- *
- * Parameter 'sigma' acts as degree of filtering. 'cmp_win' is the size
- * of the window from which similarity is computed from. 'search_win'
- * is the size of the search window, which can be set to 0 to search in
- * the whole image.
- */
-template <typename T>
-typename Image<T>::Ptr
-nl_means_filter (typename Image<T>::ConstPtr image,
-    float sigma, int cmp_win = 1, int search_win = 8);
-//nl_means_filter (typename Image<T>::ConstPtr image,
-//    float sigma, int cmp_win = 3, int search_win = 10);
 
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
@@ -1617,140 +1580,9 @@ create_thumbnail (typename Image<T>::ConstPtr image,
 
 template <typename T>
 typename Image<T>::Ptr
-dark_channel (typename Image<T>::ConstPtr image, int ks)
-{
-    if (!image.get())
-        throw std::invalid_argument("NULL image given");
-    if (ks < 0 || ks > 256)
-        throw std::invalid_argument("Invalid kernel size given");
-
-    int w = image->width();
-    int h = image->height();
-
-    typename Image<T>::Ptr ret(Image<T>::create(w, h, 1));
-
-    int idx = 0;
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x, ++idx)
-        {
-            int x1, x2, y1, y2;
-            math::algo::kernel_region(x, y, ks, w, h, x1, x2, y1, y2);
-            T min(std::numeric_limits<T>::max());
-            for (int cy = y1; cy <= y2; ++cy)
-                for (int cx = x1; cx <= x2; ++cx)
-                    for (int c = 0; c < 3; ++c)
-                        min = std::min(min, image->at(cx, cy, c));
-            ret->at(idx) = min;
-        }
-
-    return ret;
-}
-
-/* ---------------------------------------------------------------- */
-
-template <typename T>
-float
-nl_means_intern_distance (Image<T> const& img,
-    int x1, int y1, int x2, int y2, int win)
-{
-    int w = img.width();
-    int c = img.channels();
-    int wc = w * c;
-    int wlen = 2 * win + 1;
-    T const* p1 = img.get_data_pointer() + (y1 - win) * wc + (x1 - win) * c;
-    T const* p2 = img.get_data_pointer() + (y2 - win) * wc + (x2 - win) * c;
-
-    float ret = 0.0f;
-    for (int y = 0; y < wlen; ++y, p1 += wc, p2 += wc)
-        for (int x = 0; x < wlen * c; ++x)
-            ret += math::algo::fastpow((float)*(p1 + x) - (float)*(p2 + x), 2);
-    return ret;
-}
-
-template <typename T>
-typename Image<T>::Ptr
-nl_means_filter (typename Image<T>::ConstPtr image,
-    float sigma, int cmp_win, int search_win)
-{
-    if (!image.get())
-        throw std::invalid_argument("NULL image given");
-    if (cmp_win <= 0 || search_win < 0)
-        throw std::invalid_argument("Invalid window sizes");
-
-    int const w = (int)image->width();
-    int const h = (int)image->height();
-    int const c = (int)image->channels();
-    typename Image<T>::Ptr ret = Image<T>::create(w, h, c);
-
-    int const cws = cmp_win * 2 + 1; // compare window size
-    int const cwl = cws * cws; // length of compare window
-    float const cwlc = (float)(cwl * c); // size of compare window
-
-    float const sigma2 = sigma * sigma;
-    float const filter = 0.55f * sigma;
-    float const filter2 = filter * filter * cwlc;
-
-//#pragma omp parallel for
-    for (int y = 0; y < h; ++y)
-    {
-        int idx = y * w * c;
-        for (int x = 0; x < w; ++x)
-        {
-            /* Reduce size of comparison window near boundary. */
-            int cwin = math::algo::min(cmp_win, x, y);
-            cwin = math::algo::min(cwin, w-1-x, h-1-y);
-
-            /* Define research zone (search window). */
-            int const swx1 = std::max(x - search_win, cwin);
-            int const swx2 = std::min(x + search_win, w-1-cwin);
-            int const swy1 = std::max(y - search_win, cwin);
-            int const swy2 = std::min(y + search_win, h-1-cwin);
-
-            /* Provide accumulators for pixel values at (x,y). */
-            std::vector<math::Accum<T> > avec(c, math::Accum<T>(T(0)));
-
-            /* Walk over search window. */
-            float max_weight = 0.0f;
-            for (int swy = swy1; swy <= swy2; ++swy)
-                for (int swx = swx1; swx <= swx2; ++swx)
-                {
-                    if (swx == x && swy == y)
-                        continue;
-
-                    float dist2 = nl_means_intern_distance
-                        (*image, x, y, swx, swy, cwin);
-                    dist2 = std::max(0.0f, dist2 - 2.0f * cwlc * sigma2);
-                    float weight = std::exp(-dist2 / filter2);
-                    max_weight = std::max(max_weight, weight);
-
-                    /* Index of center pixel. */
-                    T const* tmp_ptr = &image->at(swx, swy, 0);
-                    for (int cc = 0; cc < c; ++cc, ++tmp_ptr)
-                        avec[cc].add(*tmp_ptr, weight);
-                }
-
-            for (int cc = 0; cc < c; ++cc, ++idx)
-            {
-                if (MATH_FLOAT_EQ(max_weight, 0.0f))
-                    avec[cc].add(image->at(idx), 1.0f);
-                else
-                    avec[cc].add(image->at(idx), max_weight);
-                ret->at(idx) = avec[cc].normalized();
-            }
-        }
-    }
-
-    return ret;
-}
-
-/* ---------------------------------------------------------------- */
-
-/* FIXME: Does not support irregular principal point. */
-
-template <typename T>
-typename Image<T>::Ptr
 image_undistort (typename Image<T>::ConstPtr img, CameraInfo const& cam)
 {
+    /* FIXME: Does not support irregular principal point. */
     int w = img->width();
     int h = img->height();
     int c = img->channels();
