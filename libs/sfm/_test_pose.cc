@@ -123,13 +123,13 @@ main (int argc, char** argv)
     }
 
     /* Pose RANSAC. */
-    sfm::PoseRansac::Result ransac_result;
+    sfm::PoseRansac2D2D::Result ransac_result;
     {
-        sfm::PoseRansac::Options ransac_options;
+        sfm::PoseRansac2D2D::Options ransac_options;
         ransac_options.max_iterations = 1000;
         ransac_options.threshold = 2.0;
         ransac_options.already_normalized = false;
-        sfm::PoseRansac ransac(ransac_options);
+        sfm::PoseRansac2D2D ransac(ransac_options);
 
         util::WallTimer timer;
         ransac.estimate(matches, &ransac_result);
@@ -233,6 +233,13 @@ main (int argc, char** argv)
     }
     mve::geom::save_mesh(mesh, "/tmp/pose.ply");
 
+    /*
+     * The strategy to add a third view is the following:
+     * - Matching between the 3rd and the 1st and 2nd view
+     * - Figure out which matches have a corresponding 3D point
+     * - Eliminate spurious tracks
+     * - Create list of 2D-3D correspondences and estimate pose
+     */
     return 0;
 }
 

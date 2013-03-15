@@ -1,13 +1,12 @@
 /*
  * Pose estimation from matches between two views in a RANSAC framework.
  * Written by Simon Fuhrmann.
- *
- * Questions:
- * - What is a good threshold value for the inlier test?
  */
 
 #ifndef SFM_POSE_RANSAC_HEADER
 #define SFM_POSE_RANSAC_HEADER
+
+#include "math/matrix.h"
 
 #include "defines.h"
 #include "correspondence.h"
@@ -16,7 +15,7 @@
 SFM_NAMESPACE_BEGIN
 
 /**
- * RANSAC pose estimation from noisy image correspondences.
+ * RANSAC pose estimation from noisy 2D-2D image correspondences.
  *
  * The fundamental matrix for two views is to be determined from a set
  * of image correspondences contaminated with outliers. The algorithm
@@ -25,7 +24,7 @@ SFM_NAMESPACE_BEGIN
  * iterations, the fundamental matrix supporting the most matches is
  * returned as result.
  */
-class PoseRansac
+class PoseRansac2D2D
 {
 public:
     struct Options
@@ -44,6 +43,7 @@ public:
          * In the normalized case, this threshold is relative to the image
          * dimension, e.g. 1e-3. In the un-normalized case, this threshold
          * is in pixels, e.g. 2.0.
+         * TODO: Test the threshold in the un-normalized case (seems small).
          */
         double threshold;
 
@@ -57,12 +57,16 @@ public:
 
     struct Result
     {
+        /**
+         * The resulting fundamental matrix which led to the inliers.
+         * This is NOT the re-computed matrix from the inliers.
+         */
         FundamentalMatrix fundamental;
         std::vector<int> inliers;
     };
 
 public:
-    PoseRansac (Options const& options);
+    PoseRansac2D2D (Options const& options);
     void estimate (Correspondences const& matches, Result* result);
 
 private:
@@ -72,6 +76,52 @@ private:
         FundamentalMatrix const& fundamental, std::vector<int>* result);
     double sampson_distance (FundamentalMatrix const& fundamental,
         Correspondence const& match);
+private:
+    Options opts;
+};
+
+/* ---------------------------------------------------------------- */
+
+class PoseRansac2D3D
+{
+public:
+    struct Options
+    {
+        Options (void);
+
+        /**
+         * The number of RANSAC iterations. Defaults to 100.
+         * TODO: Document reasonable default values and RANSAC theory.
+         */
+        int max_iterations;
+
+        /**
+         * Threshold used to determine inliers. Defaults to 0.001.
+         */
+        double threshold;
+    };
+
+    struct Result
+    {
+        /**
+         * The resulting P-matrix which led to the inliers.
+         * This is NOT the re-computed matrix from the inliers.
+         */
+        math::Matrix<double, 3, 4> p_matrix;
+        std::vector<int> inliers;
+    };
+
+public:
+    PoseRansac2D3D (Options const& options);
+    void estimate (Correspondences2D3D const& corresp, Result* result);
+
+private:
+    void estimate_6_point (Correspondences2D3D const& corresp,
+        math::Matrix<double, 3, 4>* p_matrix);
+    void find_inliers (Correspondences2D3D const& corresp,
+        math::Matrix<double, 3, 4> const& pose,
+        std::vector<int>* result);
+
 private:
     Options opts;
 };

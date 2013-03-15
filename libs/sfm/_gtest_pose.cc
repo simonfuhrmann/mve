@@ -315,8 +315,8 @@ TEST(PostTest, TriangulateTest1)
     EXPECT_TRUE(sfm::is_consistent_pose(match, pose1, pose2));
 }
 
-#if 0  // This test case is not in use because it is not deterministic.
-TEST(PoseRansacTest, TestRansac1)
+#if 0 // This test case is not in use because it is not deterministic.
+TEST(PoseRansac2D2DTest, TestRansac1)
 {
     // This test computes from a given pose eight corresponding pairs
     // of 2D projections in the images. These correspondences are used
@@ -359,12 +359,12 @@ TEST(PoseRansacTest, TestRansac1)
     //matches[points3d.size()-2].p1[0] += 25.0;
     //matches[points3d.size()-2].p1[1] -= 13.0;
 
-    sfm::PoseRansac::Options opts;
+    sfm::PoseRansac2D2D::Options opts;
     opts.max_iterations = 50;
     opts.threshold = 1.0;
     opts.already_normalized = false;
-    sfm::PoseRansac ransac(opts);
-    sfm::PoseRansac::Result result;
+    sfm::PoseRansac2D2D ransac(opts);
+    sfm::PoseRansac2D2D::Result result;
     std::srand(std::time(0));
     ransac.estimate(matches, &result);
 

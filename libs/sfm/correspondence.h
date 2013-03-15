@@ -12,14 +12,28 @@ SFM_NAMESPACE_BEGIN
 struct Correspondence;
 typedef std::vector<Correspondence> Correspondences;
 
+struct Correspondence2D3D;
+typedef std::vector<Correspondence2D3D> Correspondences2D3D;
+
 /**
  * Two image coordinates which correspond to each other in terms of observing
  * the same point in the scene.
+ * TODO: Rename this to Correspondence2D2D.
  */
 struct Correspondence
 {
     double p1[2];
     double p2[2];
+};
+
+/**
+ * A 3D point and an image coordinate which correspond to each other in terms
+ * of the image observing this 3D point in the scene.
+ */
+struct Correspondence2D3D
+{
+    double p3d[3];
+    double p2d[2];
 };
 
 /**

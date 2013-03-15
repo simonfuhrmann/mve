@@ -1,5 +1,5 @@
 /*
- * Data structure and routines for a camera pose.
+ * Data structure and routines for camera pose.
  * Written by Simon Fuhrmann.
  */
 #ifndef SFM_POSE_HEADER
@@ -8,6 +8,7 @@
 #include "math/matrix.h"
 
 #include "defines.h"
+#include "correspondence.h"
 
 SFM_NAMESPACE_BEGIN
 
@@ -20,9 +21,9 @@ SFM_NAMESPACE_BEGIN
  *       | 0  0   1 |
  *
  * For pose estimation, the calibration matrix is assumed to be known. This
- * might not be the case, but even a good guess of the focal length and px/py
- * set to the image center can produce reasonably enough results so that bundle
- * adjustment can recover better parameters.
+ * might not be the case, but even a good guess of the focal length and the
+ * principal point set to the image center can produce reasonably good
+ * results so that bundle adjustment can recover better parameters.
  */
 struct CameraPose
 {
@@ -34,6 +35,19 @@ struct CameraPose
     void fill_p_matrix (math::Matrix<double, 3, 4>* result) const;
     void set_k_matrix (double flen, double px, double py);
 };
+
+/**
+ * Estimates the camera pose from 2D-3D correspondences, i.e. correspondences
+ * between 3D world coordinates and 2D image coordiantes. At least six such
+ * correspondences are required.
+ *
+ * In order to improve numerical stability of the operation, the input
+ * correspondences, both 2D and 3D points, should be normalized by
+ * removing the mean and scaling to the unit spare/cube.
+ */
+void
+pose_from_2d_3d_correspondences (Correspondences2D3D const& corresp,
+    math::Matrix<double, 3, 4>* p_matrix);
 
 SFM_NAMESPACE_END
 

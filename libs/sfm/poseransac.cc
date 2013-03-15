@@ -6,23 +6,24 @@
 
 #include "math/algo.h"
 #include "poseransac.h"
+#include "pose.h"
 
 SFM_NAMESPACE_BEGIN
 
-PoseRansac::Options::Options (void)
+PoseRansac2D2D::Options::Options (void)
     : max_iterations(100)
     , threshold(1e-3)
     , already_normalized(true)
 {
 }
 
-PoseRansac::PoseRansac (Options const& options)
+PoseRansac2D2D::PoseRansac2D2D (Options const& options)
     : opts(options)
 {
 }
 
 void
-PoseRansac::estimate (Correspondences const& matches, Result* result)
+PoseRansac2D2D::estimate (Correspondences const& matches, Result* result)
 {
     std::vector<int> inliers;
     inliers.reserve(matches.size());
@@ -30,28 +31,25 @@ PoseRansac::estimate (Correspondences const& matches, Result* result)
         << " iterations..." << std::endl;
     for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
     {
-        /* Randomly select points and estimate fundamental matrix. */
         FundamentalMatrix fundamental;
-        estimate_8_point(matches, &fundamental);
-
-        /* Find matches supporting the fundamental matrix. */
-        find_inliers(matches, fundamental, &inliers);
-
-        if (inliers.size() > result->inliers.size())
-            std::cout << "RANASC: Iteration " << iteration
-                << ", inliers " << inliers.size() << std::endl;
-
-        /* Check if current selection is best so far. */
+        this->estimate_8_point(matches, &fundamental);
+        this->find_inliers(matches, fundamental, &inliers);
         if (inliers.size() > result->inliers.size())
         {
+            std::cout << "RANASC: Iteration " << iteration
+                << ", inliers " << inliers.size() << " ("
+                << (100.0 * inliers.size() / matches.size())
+                << "%)" << std::endl;
+
             result->fundamental = fundamental;
             std::swap(result->inliers, inliers);
+            inliers.reserve(matches.size());
         }
     }
 }
 
 void
-PoseRansac::estimate_8_point (Correspondences const& matches,
+PoseRansac2D2D::estimate_8_point (Correspondences const& matches,
     FundamentalMatrix* fundamental)
 {
     if (matches.size() < 8)
@@ -64,16 +62,6 @@ PoseRansac::estimate_8_point (Correspondences const& matches,
     std::set<int> result;
     while (result.size() < 8)
         result.insert(std::rand() % matches.size());
-
-#if 0
-    {
-        std::set<int>::const_iterator iter = result.begin();
-        std::cout << "Drawn IDs: " << *(iter++) << " " << *(iter++) << " "
-            << *(iter++) << " " << *(iter++) << " " << *(iter++) << " "
-            << *(iter++) << " " << *(iter++) << " " << *(iter++)
-            << " "; //std::endl;
-    }
-#endif
 
     math::Matrix<double, 3, 8> pset1, pset2;
     std::set<int>::const_iterator iter = result.begin();
@@ -108,7 +96,7 @@ PoseRansac::estimate_8_point (Correspondences const& matches,
 }
 
 void
-PoseRansac::find_inliers (Correspondences const& matches,
+PoseRansac2D2D::find_inliers (Correspondences const& matches,
     FundamentalMatrix const& fundamental, std::vector<int>* result)
 {
     result->resize(0);
@@ -116,14 +104,13 @@ PoseRansac::find_inliers (Correspondences const& matches,
     for (std::size_t i = 0; i < matches.size(); ++i)
     {
         double error = sampson_distance(fundamental, matches[i]);
-        //std::cout << "Sampson error for match " << i << ": " << error << std::endl;
         if (error < squared_thres)
             result->push_back(i);
     }
 }
 
 double
-PoseRansac::sampson_distance (FundamentalMatrix const& F,
+PoseRansac2D2D::sampson_distance (FundamentalMatrix const& F,
     Correspondence const& m)
 {
     /*
@@ -146,6 +133,83 @@ PoseRansac::sampson_distance (FundamentalMatrix const& F,
     sum += math::algo::fastpow(m.p2[0] * F[1] + m.p2[1] * F[4] + F[7], 2);
 
     return p2_F_p1 / sum;
+}
+
+/* ---------------------------------------------------------------- */
+
+PoseRansac2D3D::PoseRansac2D3D (Options const& options)
+    : opts(options)
+{
+}
+
+void
+PoseRansac2D3D::estimate (Correspondences2D3D const& corresp,
+    Result* result)
+{
+    std::vector<int> inliers;
+    inliers.reserve(corresp.size());
+    std::cout << "RANSAC: Running for " << this->opts.max_iterations
+        << " iterations..." << std::endl;
+    for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
+    {
+        math::Matrix<double, 3, 4> p_matrix;
+        this->estimate_6_point(corresp, &p_matrix);
+        this->find_inliers(corresp, p_matrix, &inliers);
+        if (inliers.size() > result->inliers.size())
+        {
+            std::cout << "RANASC: Iteration " << iteration
+                << ", inliers " << inliers.size() << " ("
+                << (100.0 * inliers.size() / corresp.size())
+                << "%)" << std::endl;
+
+            result->p_matrix = p_matrix;
+            std::swap(result->inliers, inliers);
+            inliers.reserve(corresp.size());
+        }
+    }
+}
+
+void
+PoseRansac2D3D::estimate_6_point (Correspondences2D3D const& corresp,
+    math::Matrix<double, 3, 4>* p_matrix)
+{
+    if (corresp.size() < 6)
+        throw std::invalid_argument("At least 6 correspondences required");
+
+    /* Draw 6 unique random numbers. */
+    std::set<int> result;
+    while (result.size() < 6)
+        result.insert(std::rand() % corresp.size());
+
+    /* Create list of the six selected correspondences. */
+    Correspondences2D3D selection;
+    selection.reserve(6);
+    std::set<int>::const_iterator iter = result.begin();
+    for (int i = 0; i < 6; ++i, ++iter)
+        selection.push_back(corresp[*iter]);
+
+    /* Obtain pose from the selection. */
+    pose_from_2d_3d_correspondences(selection, p_matrix);
+}
+
+void
+PoseRansac2D3D::find_inliers (Correspondences2D3D const& corresp,
+    math::Matrix<double, 3, 4> const& p_matrix,
+    std::vector<int>* result)
+{
+    result->resize(0);
+    double const square_threshold = MATH_POW2(this->opts.threshold);
+    for (std::size_t i = 0; i < corresp.size(); ++i)
+    {
+        Correspondence2D3D const& c = corresp[i];
+        math::Vec4d p3d(c.p3d[0], c.p3d[1], c.p3d[2], 1.0);
+        math::Vec3d p2d = p_matrix * p3d;
+        double const square_distance
+            = MATH_POW2(p2d[0] / p2d[2] - corresp[i].p2d[0])
+            + MATH_POW2(p2d[1] / p2d[2] - corresp[i].p2d[1]);
+        if (square_distance < square_threshold)
+            result->push_back(i);
+    }
 }
 
 SFM_NAMESPACE_END
