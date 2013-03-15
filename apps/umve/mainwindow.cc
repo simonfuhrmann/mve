@@ -305,6 +305,7 @@ MainWindow::enable_scene_actions (bool value)
     this->action_reload_scene->setEnabled(value);
     this->action_save_scene->setEnabled(value);
     this->action_close_scene->setEnabled(value);
+    this->action_import_images->setEnabled(value);
     this->action_recon_export->setEnabled(value);
     this->action_batch_delete->setEnabled(value);
     this->action_cache_cleanup->setEnabled(value);
