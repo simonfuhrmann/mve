@@ -9,6 +9,7 @@
 #include "sfm/fundamental.h"
 #include "sfm/poseransac.h"
 #include "sfm/triangulate.h"
+#include "sfm/correspondence.h"
 
 TEST(PoseTest, PointNormalization1)
 {
@@ -82,6 +83,49 @@ TEST(PoseTest, CorrespondencesNormalization)
     EXPECT_NEAR(transform2[6], 0.0, 1e-10);
     EXPECT_NEAR(transform2[7], 0.0, 1e-10);
     EXPECT_NEAR(transform2[8], 1.0, 1e-10);
+}
+
+TEST(PoseTest, Correspondences2D3DNormalization)
+{
+    sfm::Correspondences2D3D c(2);
+    c[0].p2d[0] = 1.0f; c[0].p2d[1] = 1.0f;
+    c[1].p2d[0] = 3.0f; c[1].p2d[1] = -1.0f;
+
+    c[0].p3d[0] = -5.0; c[0].p3d[1] = -2.0; c[0].p3d[2] = -2.0;
+    c[1].p3d[0] = -1.0; c[1].p3d[1] = 8.0;  c[1].p3d[2] = 1.0;
+
+    math::Matrix<double, 3, 3> T2D;
+    math::Matrix<double, 4, 4> T3D;
+    sfm::compute_normalization(c, &T2D, &T3D);
+
+    double t2d_scale = 0.5;
+    EXPECT_NEAR(T2D[0], t2d_scale, 1e-10);
+    EXPECT_NEAR(T2D[1], 0.0, 1e-10);
+    EXPECT_NEAR(T2D[2], -2.0 * t2d_scale, 1e-10);
+    EXPECT_NEAR(T2D[3], 0.0, 1e-10);
+    EXPECT_NEAR(T2D[4], t2d_scale, 1e-10);
+    EXPECT_NEAR(T2D[5], -0.0 * t2d_scale, 1e-10);
+    EXPECT_NEAR(T2D[6], 0.0, 1e-10);
+    EXPECT_NEAR(T2D[7], 0.0, 1e-10);
+    EXPECT_NEAR(T2D[8], 1.0, 1e-10);
+
+    double t3d_scale = 0.1;
+    EXPECT_NEAR(T3D[0], t3d_scale, 1e-10);
+    EXPECT_NEAR(T3D[1], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[2], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[3], 3.0 * t3d_scale, 1e-10);
+    EXPECT_NEAR(T3D[4], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[5], t3d_scale, 1e-10);
+    EXPECT_NEAR(T3D[6], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[7], -3.0 * t3d_scale, 1e-10);
+    EXPECT_NEAR(T3D[8], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[9], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[10], t3d_scale, 1e-10);
+    EXPECT_NEAR(T3D[11], 0.5 * t3d_scale, 1e-10);
+    EXPECT_NEAR(T3D[12], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[13], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[14], 0.0, 1e-10);
+    EXPECT_NEAR(T3D[15], 1.0, 1e-10);
 }
 
 namespace {
@@ -187,19 +231,38 @@ namespace {
     {
         // Calibration with focal lenght 1 and 800x600 image.
         // The first camera looks straight along the z axis.
-        pose1->set_k_matrix(800, 800 / 2, 600 / 2);
-        math::matrix_set_identity(*pose1->R, 3);
-        pose1->t.fill(0.0);
+        if (pose1 != NULL)
+        {
+            pose1->set_k_matrix(800, 800 / 2, 600 / 2);
+            math::matrix_set_identity(*pose1->R, 3);
+            pose1->t.fill(0.0);
+        }
 
         // The second camera is at (1,0,0) and rotated 45deg to the left.
-        pose2->set_k_matrix(800, 800 / 2, 600 / 2);
-        pose2->R.fill(0.0);
-        double const angle = MATH_PI / 4;
-        pose2->R(0,0) = std::cos(angle); pose2->R(0,2) = std::sin(angle);
-        pose2->R(1,1) = 1.0;
-        pose2->R(2,0) = -std::sin(angle); pose2->R(2,2) = std::cos(angle);
-        pose2->t.fill(0.0); pose2->t[0] = 1.0;
-        pose2->t = pose2->R * -pose2->t;
+        if (pose2 != NULL)
+        {
+            pose2->set_k_matrix(800, 800 / 2, 600 / 2);
+            pose2->R.fill(0.0);
+            double const angle = MATH_PI / 4;
+            pose2->R(0,0) = std::cos(angle); pose2->R(0,2) = std::sin(angle);
+            pose2->R(1,1) = 1.0;
+            pose2->R(2,0) = -std::sin(angle); pose2->R(2,2) = std::cos(angle);
+            pose2->t.fill(0.0); pose2->t[0] = 1.0;
+            pose2->t = pose2->R * -pose2->t;
+        }
+    }
+
+    void
+    fill_eight_random_points (std::vector<math::Vec3d>* points)
+    {
+        points->push_back(math::Vec3d(-0.31, -0.42, 1.41));
+        points->push_back(math::Vec3d( 0.04,  0.01, 0.82));
+        points->push_back(math::Vec3d(-0.25, -0.24, 1.25));
+        points->push_back(math::Vec3d( 0.47,  0.22, 0.66));
+        points->push_back(math::Vec3d( 0.13,  0.03, 0.89));
+        points->push_back(math::Vec3d(-0.13, -0.46, 1.15));
+        points->push_back(math::Vec3d( 0.21, -0.23, 1.33));
+        points->push_back(math::Vec3d(-0.42,  0.38, 0.62));
     }
 
 } // namespace
@@ -223,7 +286,6 @@ TEST(PoseTest, SyntheticPoseTest1)
     int num_equal_cameras = 0;
     for (std::size_t i = 0; i < poses.size(); ++i)
     {
-        //std::cout << "Determinant: " << math::matrix_determinant(poses[i].R) << std::endl;
         bool equal = poses[i].R.is_similar(pose2.R, 1e-14)
             && poses[i].t.is_similar(pose2.t, 1e-14);
         num_equal_cameras += equal;
@@ -242,14 +304,7 @@ TEST(PoseTest, SyntheticPoseTest2)
 
     // Eight "random" 3D points.
     std::vector<math::Vec3d> points3d;
-    points3d.push_back(math::Vec3d(-0.31, -0.42, 1.41));
-    points3d.push_back(math::Vec3d( 0.04,  0.01, 0.82));
-    points3d.push_back(math::Vec3d(-0.25, -0.24, 1.25));
-    points3d.push_back(math::Vec3d( 0.47,  0.22, 0.66));
-    points3d.push_back(math::Vec3d( 0.13,  0.03, 0.89));
-    points3d.push_back(math::Vec3d(-0.13, -0.46, 1.15));
-    points3d.push_back(math::Vec3d( 0.21, -0.23, 1.33));
-    points3d.push_back(math::Vec3d(-0.42,  0.38, 0.62));
+    fill_eight_random_points(&points3d);
 
     // Re-project in images using ground truth pose.
     math::Matrix<double, 3, 8> points2d_v1, points2d_v2;
@@ -315,7 +370,51 @@ TEST(PostTest, TriangulateTest1)
     EXPECT_TRUE(sfm::is_consistent_pose(match, pose1, pose2));
 }
 
-#if 0 // This test case is not in use because it is not deterministic.
+TEST(PoseTest, PoseFrom2D3DCorrespondences)
+{
+    sfm::CameraPose pose;
+    fill_ground_truth_pose(NULL, &pose);
+    math::Matrix<double, 3, 4> groundtruth_p_matrix;
+    pose.fill_p_matrix(&groundtruth_p_matrix);
+
+    // Get "random" points.
+    std::vector<math::Vec3d> points;
+    fill_eight_random_points(&points);
+
+    // Project points to 2d coords and create correspondence.
+    sfm::Correspondences2D3D corresp;
+    for (int i = 0; i < 6; ++i)
+    {
+        math::Vec3f x = pose.K * (pose.R * points[i] + pose.t);
+        x /= x[2];
+        sfm::Correspondence2D3D c;
+        std::copy(*points[i], *points[i] + 3, c.p3d);
+        std::copy(*x, *x + 2, c.p2d);
+        corresp.push_back(c);
+    }
+
+    // Apply normalization to the correspondences.
+    // NOTE: It seems that normalizing the input points does not have a
+    // notable effect on the accuracy of the resulting solution.
+    math::Matrix<double, 3, 3> T2D;
+    math::Matrix<double, 4, 4> T3D;
+    sfm::compute_normalization(corresp, &T2D, &T3D);
+    sfm::apply_normalization(T2D, T3D, &corresp);
+
+    // Compute pose from correspondences.
+    math::Matrix<double, 3, 4> estimated_p_matrix;
+    sfm::pose_from_2d_3d_correspondences(corresp, &estimated_p_matrix);
+
+    // Remove normalization from resulting P-matrix.
+    estimated_p_matrix = math::matrix_inverse(T2D) * estimated_p_matrix * T3D;
+    // The estimated P is only defined up to scale. Re-scale for comparison.
+    estimated_p_matrix *= (groundtruth_p_matrix[0] / estimated_p_matrix[0]);
+
+    for (int i = 0; i < 12; ++i)
+        EXPECT_NEAR(estimated_p_matrix[i], groundtruth_p_matrix[i], 0.01);
+}
+
+#if 0 // This test case is disabled because it is not deterministic.
 TEST(PoseRansac2D2DTest, TestRansac1)
 {
     // This test computes from a given pose eight corresponding pairs

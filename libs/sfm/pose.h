@@ -34,6 +34,7 @@ struct CameraPose
     void init_canonical_form (void);
     void fill_p_matrix (math::Matrix<double, 3, 4>* result) const;
     void set_k_matrix (double flen, double px, double py);
+    void set_from_p_and_known_k (math::Matrix<double, 3, 4> const& p_matrix);
 };
 
 /**

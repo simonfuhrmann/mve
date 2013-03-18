@@ -54,6 +54,23 @@ apply_normalization (math::Matrix<double, 3, 3> const& transform1,
     math::Matrix<double, 3, 3> const& transform2,
     Correspondences* correspondences);
 
+/**
+ * Computes two transformations for the 2D-3D correspondences such that
+ * mean of the points is zero and the points fit in the unit squre/cube.
+ */
+void
+compute_normalization (Correspondences2D3D const& correspondences,
+    math::Matrix<double, 3, 3>* transform_2d,
+    math::Matrix<double, 4, 4>* transform_3d);
+
+/**
+ * Applies the normalization to all correspondences.
+ */
+void
+apply_normalization (math::Matrix<double, 3, 3> const& transform_2d,
+    math::Matrix<double, 4, 4> const& transform_3d,
+    Correspondences2D3D* correspondences);
+
 SFM_NAMESPACE_END
 
 #endif  // SFM_CORRESPONDENCE_HEADER

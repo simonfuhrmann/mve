@@ -36,24 +36,26 @@ pose_from_2d_3d_correspondences (Correspondences2D3D const& corresp,
     std::vector<double> A(corresp.size() * 2 * 12);
     for (std::size_t i = 0; i < corresp.size(); ++i)
     {
+        std::size_t const row_off_1 = (i * 2 + 0) * 12;
+        std::size_t const row_off_2 = (i * 2 + 1) * 12;
         Correspondence2D3D const& c = corresp[i];
-        A[(i * 2 + 0) * 12 +  4] = -c.p3d[0];
-        A[(i * 2 + 0) * 12 +  5] = -c.p3d[1];
-        A[(i * 2 + 0) * 12 +  6] = -c.p3d[2];
-        A[(i * 2 + 0) * 12 +  7] = -1.0;
-        A[(i * 2 + 0) * 12 +  8] = c.p3d[1] * c.p3d[0];
-        A[(i * 2 + 0) * 12 +  9] = c.p3d[1] * c.p3d[1];
-        A[(i * 2 + 0) * 12 + 10] = c.p3d[1] * c.p3d[2];
-        A[(i * 2 + 0) * 12 + 11] = c.p3d[1] * 1.0;
+        A[row_off_1 +  4] = -c.p3d[0];
+        A[row_off_1 +  5] = -c.p3d[1];
+        A[row_off_1 +  6] = -c.p3d[2];
+        A[row_off_1 +  7] = -1.0;
+        A[row_off_1 +  8] = c.p2d[1] * c.p3d[0];
+        A[row_off_1 +  9] = c.p2d[1] * c.p3d[1];
+        A[row_off_1 + 10] = c.p2d[1] * c.p3d[2];
+        A[row_off_1 + 11] = c.p2d[1] * 1.0;
 
-        A[(i * 2 + 1) * 12 +  0] = c.p3d[0];
-        A[(i * 2 + 1) * 12 +  1] = c.p3d[1];
-        A[(i * 2 + 1) * 12 +  2] = c.p3d[2];
-        A[(i * 2 + 1) * 12 +  3] = 1.0;
-        A[(i * 2 + 1) * 12 +  8] = -c.p2d[0] * c.p3d[0];
-        A[(i * 2 + 1) * 12 +  9] = -c.p2d[0] * c.p3d[1];
-        A[(i * 2 + 1) * 12 + 10] = -c.p2d[0] * c.p3d[2];
-        A[(i * 2 + 1) * 12 + 11] = -c.p2d[0] * 1.0;
+        A[row_off_2 +  0] = c.p3d[0];
+        A[row_off_2 +  1] = c.p3d[1];
+        A[row_off_2 +  2] = c.p3d[2];
+        A[row_off_2 +  3] = 1.0;
+        A[row_off_2 +  8] = -c.p2d[0] * c.p3d[0];
+        A[row_off_2 +  9] = -c.p2d[0] * c.p3d[1];
+        A[row_off_2 + 10] = -c.p2d[0] * c.p3d[2];
+        A[row_off_2 + 11] = -c.p2d[0] * 1.0;
     }
 
 
