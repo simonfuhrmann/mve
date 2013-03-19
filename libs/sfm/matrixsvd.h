@@ -9,8 +9,6 @@
 #ifndef MATH_MATRIX_SVD_HEADER
 #define MATH_MATRIX_SVD_HEADER
 
-#include "Eigen/Dense"
-
 #include "math/defines.h"
 #include "math/matrix.h"
 
@@ -41,7 +39,13 @@ void
 matrix_pseudo_inverse (math::Matrix<double, M, N> const& P,
     math::Matrix<double, N, M>* result);
 
+MATH_NAMESPACE_END
+
 /* ------------------------ Implementation ------------------------ */
+
+#include "Eigen/Dense"
+
+MATH_NAMESPACE_BEGIN
 
 template <typename T, int M, int N>
 void
