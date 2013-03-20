@@ -13,6 +13,25 @@ void
 matrix_qr_decomp (Matrix<T, N, N> const& mat_a,
     Matrix<T, N, N>* mat_q, Matrix<T, N, N>* mat_r);
 
+// TODO: Move to math
+template <typename T, int N>
+void
+matrix_rotate_180_inplace (Matrix<T, N, N>* mat_a)
+{
+    for (int i = 0, j = N * N - 1; i < j; ++i, --j)
+        std::swap((*mat_a)[i], (*mat_a)[j]);
+}
+
+// TODO: Move to math
+template <typename T, int N>
+Matrix<T, N, N>
+matrix_rotate_180 (Matrix<T, N, N> const& mat_a)
+{
+    Matrix<T, N, N> ret = mat_a;
+    matrix_rotate_180_inplace(&ret);
+    return  ret;
+}
+
 MATH_NAMESPACE_END
 
 /* ------------------------ Implementation ------------------------ */

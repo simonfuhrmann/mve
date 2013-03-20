@@ -50,6 +50,14 @@ void
 pose_from_2d_3d_correspondences (Correspondences2D3D const& corresp,
     math::Matrix<double, 3, 4>* p_matrix);
 
+/**
+ * Decomposes the P-matrix into intrinsic and extrinsic parameters.
+ * This decomposes P into K [R|t] using QR decomposition.
+ */
+void
+pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
+    CameraPose* pose);
+
 SFM_NAMESPACE_END
 
 #endif /* SFM_POSE_HEADER */

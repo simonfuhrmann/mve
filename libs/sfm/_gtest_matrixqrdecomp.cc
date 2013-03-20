@@ -18,6 +18,7 @@ TEST(MatrixQRDecompTest, BeforeAfter1)
     math::matrix_qr_decomp(A, &Q, &R);
     EXPECT_TRUE(A.is_similar(Q * R, 1e-15));
     EXPECT_EQ(0.0, R(1,0));
+    EXPECT_NEAR(0.0, Q.col(0).dot(Q.col(1)), 1e-15);
 }
 
 TEST(MatrixQRDecompTest, BeforeAfter2)
@@ -33,4 +34,18 @@ TEST(MatrixQRDecompTest, BeforeAfter2)
     EXPECT_EQ(0.0, R(1,0));
     EXPECT_EQ(0.0, R(2,0));
     EXPECT_EQ(0.0, R(2,1));
+    EXPECT_NEAR(0.0, Q.col(0).dot(Q.col(1)), 1e-12);
+    EXPECT_NEAR(0.0, Q.col(1).dot(Q.col(2)), 1e-12);
+    EXPECT_NEAR(0.0, Q.col(0).dot(Q.col(2)), 1e-12);
+}
+
+TEST(MatrixTools, MatrixRotate180)
+{
+    int values[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    int rotated_values[] = { 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+    math::Matrix<int, 3, 3> mat(values);
+    math::Matrix<int, 3, 3> rotated(rotated_values);
+    ASSERT_TRUE(rotated == math::matrix_rotate_180(mat));
+    math::matrix_rotate_180_inplace(&rotated);
+    ASSERT_TRUE(rotated == mat);
 }

@@ -407,6 +407,18 @@ TEST(PoseTest, PoseFrom2D3DCorrespondences)
 
     // Remove normalization from resulting P-matrix.
     estimated_p_matrix = math::matrix_inverse(T2D) * estimated_p_matrix * T3D;
+
+    sfm::CameraPose pose_tmp;
+    sfm::pose_from_p_matrix(estimated_p_matrix, &pose_tmp);
+    std::cout << "K" << std::endl << pose_tmp.K << std::endl;
+    std::cout << "R" << std::endl << pose_tmp.R << std::endl;
+    std::cout << "T" << std::endl << pose_tmp.t << std::endl;
+
+    std::cout << "K" << std::endl << pose.K << std::endl;
+    std::cout << "R" << std::endl << pose.R << std::endl;
+    std::cout << "T" << std::endl << pose.t << std::endl;
+
+
     // The estimated P is only defined up to scale. Re-scale for comparison.
     estimated_p_matrix *= (groundtruth_p_matrix[0] / estimated_p_matrix[0]);
 
