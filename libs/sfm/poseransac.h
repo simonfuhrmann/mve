@@ -66,7 +66,7 @@ public:
     };
 
 public:
-    PoseRansac2D2D (Options const& options);
+    explicit PoseRansac2D2D (Options const& options);
     void estimate (Correspondences const& matches, Result* result);
 
 private:
@@ -112,7 +112,7 @@ public:
     };
 
 public:
-    PoseRansac2D3D (Options const& options);
+    explicit PoseRansac2D3D (Options const& options);
     void estimate (Correspondences2D3D const& corresp, Result* result);
 
 private:

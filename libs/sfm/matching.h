@@ -139,17 +139,6 @@ match_features (MatchingOptions const& options,
         set_1, set_1_size, &matches->matches_2_1);
 }
 
-inline int
-count_consistent_matches (MatchingResult const& matches)
-{
-    int counter = 0;
-    for (int i = 0; i < static_cast<int>(matches.matches_1_2.size()); ++i)
-        if (matches.matches_1_2[i] != -1
-            && matches.matches_2_1[matches.matches_1_2[i]] == i)
-            counter++;
-    return counter;
-}
-
 SFM_NAMESPACE_END
 
 #endif  /* SFM_MATCHING_HEADER */

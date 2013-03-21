@@ -96,26 +96,32 @@ pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
      * are positive. A negative entry is corrected by negating R's column
      * and Q's corresponding row.
      */
-    for (int i = 0; i < 3; ++i)
-        if (R(i, i) < 0.0)
+    for (int i = 0; i < 2; ++i)
+        if (R(i, i) / R[8] < 0.0)
             for (int k = 0; k < 3; ++k)
             {
                 R(k, i) = -R(k, i);
                 Q(i, k) = -Q(i, k);
             }
 
-    /* Q is the rotation R of P = K [R|t]. */
-    pose->R = Q;
-    // TEMP SANITY CHECK
+    /* Rranslation t is K^-1 multiplied with the last column of P. */
+    math::Vector<double, 3> trans = math::matrix_inverse(R) * p_matrix.col(3);
+
+    /* Q of P = RQ is the rotation R of P = K [R|t]. */
     if (math::matrix_determinant(Q) < 0.0)
-        std::cerr << "WARNING: Negative determinant in rotation" << std::endl;
+    {
+        pose->R = -Q;
+        pose->t = -trans;
+    }
+    else
+    {
+        pose->R = Q;
+        pose->t = trans;
+    }
 
     /* The K matrix is rescaled such that the lower right entry becomes 1. */
     for (int i = 0; i < 9; ++i)
         pose->K[i] = R[i] / R[8];
-
-    /* Obtain translation t by multiplying the last column of P with K^-1. */
-    pose->t = math::matrix_inverse(R) * p_matrix.col(3);
 }
 
 SFM_NAMESPACE_END

@@ -408,22 +408,16 @@ TEST(PoseTest, PoseFrom2D3DCorrespondences)
     // Remove normalization from resulting P-matrix.
     estimated_p_matrix = math::matrix_inverse(T2D) * estimated_p_matrix * T3D;
 
-    sfm::CameraPose pose_tmp;
-    sfm::pose_from_p_matrix(estimated_p_matrix, &pose_tmp);
-    std::cout << "K" << std::endl << pose_tmp.K << std::endl;
-    std::cout << "R" << std::endl << pose_tmp.R << std::endl;
-    std::cout << "T" << std::endl << pose_tmp.t << std::endl;
+    // Obtain camera pose decomposition from P-matrix.
+    sfm::CameraPose new_pose;
+    sfm::pose_from_p_matrix(estimated_p_matrix, &new_pose);
 
-    std::cout << "K" << std::endl << pose.K << std::endl;
-    std::cout << "R" << std::endl << pose.R << std::endl;
-    std::cout << "T" << std::endl << pose.t << std::endl;
-
-
-    // The estimated P is only defined up to scale. Re-scale for comparison.
-    estimated_p_matrix *= (groundtruth_p_matrix[0] / estimated_p_matrix[0]);
-
-    for (int i = 0; i < 12; ++i)
-        EXPECT_NEAR(estimated_p_matrix[i], groundtruth_p_matrix[i], 0.01);
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(new_pose.K[i], pose.K[i], 0.015f) << "for i=" << i;
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(new_pose.R[i], pose.R[i], 0.001f) << "for i=" << i;
+    for (int i = 0; i < 3; ++i)
+        EXPECT_NEAR(new_pose.t[i], pose.t[i], 0.001f) << "for i=" << i;
 }
 
 #if 0 // This test case is disabled because it is not deterministic.
