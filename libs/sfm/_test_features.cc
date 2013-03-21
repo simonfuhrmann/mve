@@ -55,7 +55,8 @@ main (int argc, char** argv)
     sfm::Sift::Descriptors sift_descr;
     sfm::Sift::Keypoints sift_keypoints;
     {
-        sfm::Sift sift;
+        sfm::Sift::Options sift_options;
+        sfm::Sift sift(sift_options);
         sift.set_image(image);
 
         util::WallTimer timer;

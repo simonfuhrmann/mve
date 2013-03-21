@@ -105,7 +105,8 @@ sift_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 {
     sfm::Sift::Descriptors descr1;
     {
-        sfm::Sift sift;
+        sfm::Sift::Options sift_options;
+        sfm::Sift sift(sift_options);
         sift.set_image(image1);
         sift.process();
         descr1 = sift.get_descriptors();
@@ -113,7 +114,8 @@ sift_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 
     sfm::Sift::Descriptors descr2;
     {
-        sfm::Sift sift;
+        sfm::Sift::Options sift_options;
+        sfm::Sift sift(sift_options);
         sift.set_image(image2);
         sift.process();
         descr2 = sift.get_descriptors();

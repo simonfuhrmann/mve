@@ -15,6 +15,16 @@ SFM_NAMESPACE_BEGIN
 void
 Sift::process (void)
 {
+    /* Check options. */
+    if (this->options.min_octave < -1
+        || this->options.min_octave > this->options.max_octave)
+        throw std::invalid_argument("Invalid octave range");
+
+    /* Compute some options. */
+    if (this->options.contrast_threshold < 0.0f)
+        this->options.contrast_threshold = 0.02f
+            / (float)this->options.num_samples_per_octave;
+
     util::ClockTimer timer, total_timer;
 
     /*
@@ -22,9 +32,10 @@ Sift::process (void)
      * sampling the scale space and computing the DoG images.
      * See Section 3, 3.2 and 3.3 in SIFT article.
      */
-    std::cout << "SIFT: Creating " << (this->max_octave - this->min_octave)
-        << " octaves (" << this->min_octave << " to " << this->max_octave
-        << ")..." << std::endl;
+    std::cout << "SIFT: Creating "
+        << (this->options.max_octave - this->options.min_octave)
+        << " octaves (" << this->options.min_octave << " to "
+        << this->options.max_octave << ")..." << std::endl;
     this->create_octaves();
     //std::cout << "Creating octaves took " << timer.get_elapsed()
     //    << "ms." << std::endl;
@@ -120,12 +131,13 @@ Sift::create_octaves (void)
      * Create octave -1. The original image is assumed to have blur
      * sigma = 0.5. The double size image therefore has sigma = 1.
      */
-    if (this->min_octave < 0)
+    if (this->options.min_octave < 0)
     {
         //std::cout << "Creating octave -1..." << std::endl;
         mve::FloatImage::Ptr img
             = mve::image::rescale_double_size_supersample<float>(this->orig);
-        this->add_octave(img, this->inherent_blur * 2.0f, this->pre_smoothing);
+        this->add_octave(img, this->options.inherent_blur_sigma * 2.0f,
+            this->options.base_blur_sigma);
     }
 
     /*
@@ -133,20 +145,21 @@ Sift::create_octaves (void)
      * This code is executed only if min_octave > 0.
      */
     mve::FloatImage::ConstPtr img = this->orig;
-    for (int i = 0; i < this->min_octave; ++i)
+    for (int i = 0; i < this->options.min_octave; ++i)
         img = mve::image::rescale_half_size_gaussian<float>(img);
 
     /*
      * Create new octave from 'img', then subsample octave image where
      * sigma is doubled to get a new base image for the next octave.
      */
-    float img_sigma = this->inherent_blur;
-    for (int i = std::max(0, this->min_octave); i <= this->max_octave; ++i)
+    float img_sigma = this->options.inherent_blur_sigma;
+    for (int i = std::max(0, this->options.min_octave);
+        i <= this->options.max_octave; ++i)
     {
         //std::cout << "Creating octave " << i << "..." << std::endl;
-        this->add_octave(img, img_sigma, this->pre_smoothing);
+        this->add_octave(img, img_sigma, this->options.base_blur_sigma);
         img = mve::image::rescale_half_size_gaussian<float>(img);
-        img_sigma = this->pre_smoothing;
+        img_sigma = this->options.base_blur_sigma;
     }
 }
 
@@ -174,11 +187,11 @@ Sift::add_octave (mve::FloatImage::ConstPtr image,
     oct.img.push_back(base);
 
     /* 'k' is the constant factor between the scales in scale space. */
-    float k = std::pow(2.0f, 1.0f / (float)this->octave_samples);
+    float const k = std::pow(2.0f, 1.0f / this->options.num_samples_per_octave);
     sigma = target_sigma;
 
     /* Create other (s+2) samples of the octave to get a total of (s+3). */
-    for (int i = 1; i < this->octave_samples + 3; ++i)
+    for (int i = 1; i < this->options.num_samples_per_octave + 3; ++i)
     {
         /* Calculate the blur sigma the image will get. */
         float sigmak = sigma * k;
@@ -218,7 +231,8 @@ Sift::extrema_detection (void)
         {
             mve::FloatImage::ConstPtr samples[3] =
             { oct.dog[s + 0], oct.dog[s + 1], oct.dog[s + 2] };
-            this->extrema_detection(samples, (int)i + this->min_octave, s);
+            this->extrema_detection(samples, static_cast<int>(i)
+                + this->options.min_octave, s);
         }
     }
 }
@@ -295,7 +309,7 @@ Sift::keypoint_localization (void)
         Keypoint kp(this->keypoints[i]);
 
         /* Get corresponding octave and DoG images. */
-        Octave const& oct(this->octaves[kp.octave - this->min_octave]);
+        Octave const& oct(this->octaves[kp.octave - this->options.min_octave]);
         int sample = static_cast<int>(kp.sample);
         mve::FloatImage::ConstPtr dogs[3] =
         { oct.dog[sample + 0], oct.dog[sample + 1], oct.dog[sample + 2] };
@@ -381,8 +395,8 @@ Sift::keypoint_localization (void)
         float hessian_trace = Dxx + Dyy;
         float hessian_det = Dxx * Dyy - MATH_POW2(Dxy);
         float hessian_score = MATH_POW2(hessian_trace) / hessian_det;
-        float score_thres = MATH_POW2(this->edge_ratio_thres + 1.0f)
-            / this->edge_ratio_thres;
+        float score_thres = MATH_POW2(this->options.edge_ratio_threshold + 1.0f)
+            / this->options.edge_ratio_threshold;
 
         /*
          * Set accurate final keypoint location.
@@ -400,10 +414,11 @@ Sift::keypoint_localization (void)
          * 4. unstable keypoint accurate locations,
          * 5. keypoints beyond the scale space boundary.
          */
-        if (std::abs(val) < this->contrast_thres
+        if (std::abs(val) < this->options.contrast_threshold
             || hessian_score < 0.0f || hessian_score > score_thres
             || std::abs(fx) > 1.5f || std::abs(fy) > 1.5f || std::abs(fs) > 1.0f
-            || kp.sample < -1.0f || kp.sample > (float)this->octave_samples
+            || kp.sample < -1.0f
+            || kp.sample > (float)this->options.num_samples_per_octave
             || kp.x < 0.0f || kp.x > (float)(w - 1)
             || kp.y < 0.0f || kp.y > (float)(h - 1))
         {
@@ -443,7 +458,7 @@ Sift::descriptor_generation (void)
      * To ensure efficiency, the octave index must always increase,
      * never decreased again, which is enforced during the algorithm.
      */
-    int octave_index = this->min_octave - 1;
+    int octave_index = this->options.min_octave - 1;
     Octave* octave = 0;
 
     /* Walk over all keypoints and compute descriptors. */
@@ -462,7 +477,7 @@ Sift::descriptor_generation (void)
                 octave->grad.clear();
                 octave->ori.clear();
             }
-            octave = &this->octaves[octave_index - this->min_octave];
+            octave = &this->octaves[octave_index - this->options.min_octave];
             this->generate_grad_ori_images(octave);
         }
 
@@ -785,15 +800,15 @@ Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
 float
 Sift::keypoint_relative_scale (Keypoint const& kp)
 {
-    return this->pre_smoothing * std::pow(2.0f,
-        (kp.sample + 1.0f) / this->octave_samples);
+    return this->options.base_blur_sigma * std::pow(2.0f,
+        (kp.sample + 1.0f) / this->options.num_samples_per_octave);
 }
 
 float
 Sift::keypoint_absolute_scale (Keypoint const& kp)
 {
-    return this->pre_smoothing * std::pow(2.0f,
-        kp.octave + (kp.sample + 1.0f) / this->octave_samples);
+    return this->options.base_blur_sigma * std::pow(2.0f,
+        kp.octave + (kp.sample + 1.0f) / this->options.num_samples_per_octave);
 }
 
 /* ---------------------------------------------------------------- */

@@ -41,6 +41,59 @@ SFM_NAMESPACE_BEGIN
 class Sift
 {
 public:
+    struct Options
+    {
+        Options (void);
+
+        /**
+         * Sets the amount of samples per octave. This defaults to 3
+         * and results in 6 blurred and 5 DoG images per octave.
+         */
+         int num_samples_per_octave;
+
+        /**
+         * Sets the minimum octave ID. Defaults to 0, which uses the input
+         * image size as base size. Values >0 causes the image to be
+         * down scaled by factors of two. This can be set to -1, which
+         * expands the original image by a factor of two.
+         */
+        int min_octave;
+
+        /**
+         * Sets the maximum octave. This defaults to 4 and corresponds
+         * to the base image half-sized four times.
+         */
+        int max_octave;
+
+        /**
+         * Sets contrast threshold, i.e. thresholds the absolute DoG value
+         * at the interpolated keypoint location. Defaults to 0.02 / samples.
+         * The default is computed if the given threshold value is negative.
+         */
+        float contrast_threshold;
+
+        /**
+         * Sets the edge threshold to eliminate edge responses. The threshold
+         * is the ratio between the principal curvatures (variable "r" in
+         * SIFT), and defaults to 10.
+         */
+        float edge_ratio_threshold;
+
+        /**
+         * Sets the amount of desired base blur before constructing the
+         * octaves. Default sigma is 1.6.
+         * This determines for example how to blur the base image in each
+         * octave before creating more octave samples.
+         */
+        float base_blur_sigma;
+
+        /**
+         * Sets the inherent blur sigma in the input image. Default is 0.5.
+         * This is a technical detail and can mostly be left alone.
+         */
+        float inherent_blur_sigma;
+    };
+
     /**
      * Representation of a SIFT keypoint.
      * The keypoint locations are relative to the resampled size in
@@ -81,44 +134,12 @@ public:
     typedef std::vector<Descriptor> Descriptors;
 
 public:
-    Sift (void);
+    explicit Sift (Options const& options);
 
     /** Sets the input image. */
     void set_image (mve::ByteImage::ConstPtr img);
     /** Sets the input image. */
     void set_float_image (mve::FloatImage::ConstPtr img);
-
-    /**
-     * Sets the amount of samples per octave. This defaults to 3
-     * and results in 6 blurred and 5 DoG images per octave.
-     */
-    void set_samples_per_octave (int samples);
-
-    /**
-     * Sets the amount of octaves by specifying the minimum octave
-     * and the maximum octave. This defaults to 0 and 4.
-     * The minimum allowed octave is -1.
-     */
-    void set_min_max_octave (int min_octave, int max_octave);
-
-    /**
-     * Sets contrast threshold, i.e. thresholds the absolute DoG value
-     * at the interpolated keypoint location. Defaults to 0.02 / samples.
-     */
-    void set_contrast_threshold (float thres);
-
-    /**
-     * Sets the edge threshold to eliminate edge responses. The threshold is
-     * the ratio between the principal curvatures (variable "r" in SIFT),
-     * and defaults to 10.
-     */
-    void set_edge_threshold (float thres);
-
-    /** Sets the inherent blur sigma in the input image. Default is 0.5. */
-    void set_inherent_blur (float sigma);
-
-    /** Sets the amount of pre-smoothing. Default sigma is 1.6. */
-    void set_pre_smoothing (float sigma);
 
     /** Starts the SIFT keypoint detection and descriptor extraction. */
     void process (void);
@@ -174,20 +195,8 @@ protected:
     void dump_octaves (void); // for debugging
 
 private:
+    Options options;
     mve::FloatImage::ConstPtr orig; // Original input image
-
-    /* Octave parameters. */
-    int min_octave; // Minimum octave, defaults to -1.
-    int max_octave; // Maximum octave, defaults to 5.
-    int octave_samples; // Samples in each octave, default = 3
-    float pre_smoothing; // The amount of pre-smoothing, default = 1.6
-    float inherent_blur; // The blur inherent in images, default = 0.5
-
-    /* Keypoint filtering parameters. */
-    float contrast_thres; // Feature contrast threshold
-    float edge_ratio_thres; // Ratio of principal curvatures threshold
-
-    /* Working data. */
     Octaves octaves; // The image pyramid (the octaves)
     Keypoints keypoints; // Detected keypoints
     Descriptors descriptors; // Final SIFT descriptors
@@ -196,52 +205,21 @@ private:
 /* ---------------------------------------------------------------- */
 
 inline
-Sift::Sift (void)
+Sift::Options::Options (void)
 {
+    this->num_samples_per_octave = 3;
     this->min_octave = 0;
     this->max_octave = 4;
-    this->octave_samples = 3;
-    this->contrast_thres = 0.02f / (float)this->octave_samples;
-    this->edge_ratio_thres = 10.0f;
-    this->pre_smoothing = 1.6f;
-    this->inherent_blur = 0.5f;
+    this->contrast_threshold = -1.0f;
+    this->edge_ratio_threshold = 10.0f;
+    this->base_blur_sigma = 1.6f;
+    this->inherent_blur_sigma = 0.5f;
 }
 
-inline void
-Sift::set_samples_per_octave (int samples)
+inline
+Sift::Sift (Options const& options)
+    : options(options)
 {
-    this->octave_samples = samples;
-}
-
-inline void
-Sift::set_min_max_octave (int min_octave, int max_octave)
-{
-    this->min_octave = std::max(-1, min_octave);
-    this->max_octave = max_octave;
-}
-
-inline void
-Sift::set_contrast_threshold (float thres)
-{
-    this->contrast_thres = thres;
-}
-
-inline void
-Sift::set_edge_threshold (float thres)
-{
-    this->edge_ratio_thres = thres;
-}
-
-inline void
-Sift::set_inherent_blur (float sigma)
-{
-    this->inherent_blur = sigma;
-}
-
-inline void
-Sift::set_pre_smoothing (float sigma)
-{
-    this->pre_smoothing = sigma;
 }
 
 inline Sift::Keypoints const&

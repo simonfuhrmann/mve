@@ -52,8 +52,8 @@ void
 SfmImageInfo::compute_descriptors (void)
 {
     /* Compute SIFT features. */
-    sfm::Sift sift;
-    sift.set_min_max_octave(0, 4);
+    sfm::Sift::Options sift_options;
+    sfm::Sift sift(sift_options);
     sift.set_image(this->image);
     sift.process();
     this->assign_descriptors(sift.get_descriptors());
