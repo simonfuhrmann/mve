@@ -6,7 +6,7 @@
 #ifndef SFM_NEARESTNEIGHBOR_HEADER
 #define SFM_NEARESTNEIGHBOR_HEADER
 
-#include "defines.h"
+#include "sfm/defines.h"
 
 /* Whether to use SSE optimizations. */
 #define ENABLE_SSE2 1

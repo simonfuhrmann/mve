@@ -5,9 +5,8 @@
 #include <vector>
 
 #include "mve/image.h"
-
-#include "defines.h"
-#include "correspondence.h"
+#include "sfm/defines.h"
+#include "sfm/correspondence.h"
 
 SFM_NAMESPACE_BEGIN
 

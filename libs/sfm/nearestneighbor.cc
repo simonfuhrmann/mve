@@ -29,7 +29,7 @@
 #include <iostream>
 #include <emmintrin.h>
 
-#include "nearestneighbor.h"
+#include "sfm/nearestneighbor.h"
 
 SFM_NAMESPACE_BEGIN
 

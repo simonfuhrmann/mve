@@ -1,7 +1,5 @@
-#include <iostream>
-
-#include "matrixsvd.h"
-#include "triangulate.h"
+#include "sfm/matrixsvd.h"
+#include "sfm/triangulate.h"
 
 SFM_NAMESPACE_BEGIN
 

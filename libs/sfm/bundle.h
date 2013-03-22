@@ -5,9 +5,10 @@
 #ifndef SFM_BUNDLE_HEADER
 #define SFM_BUNDLE_HEADER
 
-#include "defines.h"
-#include "matching.h"
-#include "poseransac.h"
+#include "sfm/defines.h"
+#include "sfm/matching.h"
+#include "sfm/poseransac.h"
+#include "sfm/sift.h"
 
 SFM_NAMESPACE_BEGIN
 
@@ -17,7 +18,7 @@ class Bundle
 {
     struct Options
     {
-        // SIFT options
+        Sift::Options sift_options;
         MatchingOptions matching_options;
         PoseRansac2D2D::Options ransac2d2d_options;
         PoseRansac2D3D::Options ransac2d3d_options;

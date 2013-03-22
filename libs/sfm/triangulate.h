@@ -4,10 +4,9 @@
 #include <vector>
 
 #include "math/vector.h"
-
-#include "defines.h"
-#include "correspondence.h"
-#include "pose.h"
+#include "sfm/defines.h"
+#include "sfm/correspondence.h"
+#include "sfm/pose.h"
 
 SFM_NAMESPACE_BEGIN
 

@@ -9,8 +9,8 @@
 #include <vector>
 #include <limits>
 
-#include "defines.h"
-#include "nearestneighbor.h"
+#include "sfm/defines.h"
+#include "sfm/nearestneighbor.h"
 
 SFM_NAMESPACE_BEGIN
 

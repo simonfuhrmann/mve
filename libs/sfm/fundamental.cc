@@ -10,9 +10,8 @@
 #include <stdexcept>
 
 #include "math/matrixtools.h"
-
-#include "fundamental.h"
-#include "matrixsvd.h"
+#include "sfm/fundamental.h"
+#include "sfm/matrixsvd.h"
 
 SFM_NAMESPACE_BEGIN
 

@@ -4,8 +4,7 @@
 #include <vector>
 
 #include "math/matrix.h"
-
-#include "defines.h"
+#include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
 

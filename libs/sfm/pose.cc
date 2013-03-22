@@ -1,9 +1,7 @@
-#include <iostream> // TMP
 #include "math/matrixtools.h"
-
-#include "pose.h"
-#include "matrixsvd.h"
-#include "matrixqrdecomp.h"
+#include "sfm/pose.h"
+#include "sfm/matrixsvd.h"
+#include "sfm/matrixqrdecomp.h"
 
 SFM_NAMESPACE_BEGIN
 

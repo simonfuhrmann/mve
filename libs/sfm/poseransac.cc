@@ -5,8 +5,8 @@
 #include <stdexcept>
 
 #include "math/algo.h"
-#include "poseransac.h"
-#include "pose.h"
+#include "sfm/poseransac.h"
+#include "sfm/pose.h"
 
 SFM_NAMESPACE_BEGIN
 

@@ -6,9 +6,8 @@
 #define SFM_POSE_HEADER
 
 #include "math/matrix.h"
-
-#include "defines.h"
-#include "correspondence.h"
+#include "sfm/defines.h"
+#include "sfm/correspondence.h"
 
 SFM_NAMESPACE_BEGIN
 

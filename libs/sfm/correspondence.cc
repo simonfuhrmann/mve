@@ -1,4 +1,4 @@
-#include "correspondence.h"
+#include "sfm/correspondence.h"
 
 SFM_NAMESPACE_BEGIN
 

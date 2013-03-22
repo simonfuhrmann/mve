@@ -7,8 +7,7 @@
 #include "math/matrixtools.h"
 #include "mve/imagefile.h"
 #include "mve/imagetools.h"
-
-#include "sift.h"
+#include "sfm/sift.h"
 
 SFM_NAMESPACE_BEGIN
 

@@ -7,10 +7,9 @@
 #define SFM_POSE_RANSAC_HEADER
 
 #include "math/matrix.h"
-
-#include "defines.h"
-#include "correspondence.h"
-#include "fundamental.h"
+#include "sfm/defines.h"
+#include "sfm/correspondence.h"
+#include "sfm/fundamental.h"
 
 SFM_NAMESPACE_BEGIN
 

@@ -7,10 +7,8 @@
 #include "mve/image.h"
 #include "mve/imagetools.h"
 #include "mve/imagedrawing.h"
-//#include "mve/imagefile.h" // TMP
-
-#include "defines.h"
-#include "surf.h"
+#include "sfm/defines.h"
+#include "sfm/surf.h"
 
 SFM_NAMESPACE_BEGIN
 

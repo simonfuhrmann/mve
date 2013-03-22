@@ -2,8 +2,7 @@
 
 #include "mve/imagetools.h"
 #include "mve/imagedrawing.h"
-
-#include "visualizer.h"
+#include "sfm/visualizer.h"
 
 SFM_NAMESPACE_BEGIN
 

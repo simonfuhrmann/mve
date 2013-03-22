@@ -21,8 +21,7 @@
 
 #include "math/vector.h"
 #include "mve/image.h"
-
-#include "defines.h"
+#include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
 

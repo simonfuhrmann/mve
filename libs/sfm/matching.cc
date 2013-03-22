@@ -1,8 +1,8 @@
 #include <iostream>
 
 #include "math/algo.h"
-#include "nearestneighbor.h"
-#include "matching.h"
+#include "sfm/nearestneighbor.h"
+#include "sfm/matching.h"
 
 SFM_NAMESPACE_BEGIN
 
