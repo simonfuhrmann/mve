@@ -1,12 +1,11 @@
-#include <util/string.h>
-
+#include "util/string.h"
 #include "math/algo.h"
 #include "math/defines.h"
 #include "math/matrix.h"
 #include "math/matrixtools.h"
 #include "math/vector.h"
-#include "PatchOptimization.h"
-#include "Settings.h"
+#include "dmrecon/PatchOptimization.h"
+#include "dmrecon/Settings.h"
 
 MVS_NAMESPACE_BEGIN
 

@@ -5,9 +5,8 @@
 #include "mve/imagetools.h"
 #include "mve/plyfile.h"
 #include "mve/view.h"
-#include "defines.h"
-#include "SingleView.h"
-
+#include "dmrecon/defines.h"
+#include "dmrecon/SingleView.h"
 
 MVS_NAMESPACE_BEGIN
 

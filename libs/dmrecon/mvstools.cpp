@@ -1,10 +1,9 @@
 #include <cassert>
 #include <string>
 
-#include "mvstools.h"
 #include "mve/imagetools.h"
 #include "mve/imagefile.h"
-
+#include "dmrecon/mvstools.h"
 
 MVS_NAMESPACE_BEGIN
 

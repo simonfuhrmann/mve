@@ -5,9 +5,9 @@
 
 #include "math/vector.h"
 #include "util/refptr.h"
-#include "defines.h"
-#include "Settings.h"
-#include "SingleView.h"
+#include "dmrecon/defines.h"
+#include "dmrecon/Settings.h"
+#include "dmrecon/SingleView.h"
 
 MVS_NAMESPACE_BEGIN
 

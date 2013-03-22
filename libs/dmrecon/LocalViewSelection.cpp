@@ -1,10 +1,9 @@
 #include "math/defines.h"
-
 #include "util/refptr.h"
-#include "LocalViewSelection.h"
-#include "mvstools.h"
-#include "PatchSampler.h"
-#include "Settings.h"
+#include "dmrecon/LocalViewSelection.h"
+#include "dmrecon/mvstools.h"
+#include "dmrecon/PatchSampler.h"
+#include "dmrecon/Settings.h"
 
 MVS_NAMESPACE_BEGIN
 

@@ -11,7 +11,7 @@
 #include "mve/view.h"
 #include "mve/bundlefile.h"
 #include "mve/image.h"
-#include "defines.h"
+#include "dmrecon/defines.h"
 
 MVS_NAMESPACE_BEGIN
 

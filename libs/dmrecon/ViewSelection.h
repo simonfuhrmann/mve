@@ -1,10 +1,9 @@
 #ifndef VIEWSELECTION_H
 #define VIEWSELECTION_H
 
-#include "defines.h"
-#include "Settings.h"
 #include "util/refptr.h"
-
+#include "dmrecon/defines.h"
+#include "dmrecon/Settings.h"
 
 MVS_NAMESPACE_BEGIN
 

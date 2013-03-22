@@ -1,9 +1,6 @@
-#include "Settings.h"
-
+#include "dmrecon/Settings.h"
 
 MVS_NAMESPACE_BEGIN
-
-
 
 Settings::Settings()
     : minNCC(0.3f)

@@ -3,10 +3,9 @@
 
 #include <map>
 
-#include "SingleView.h"
-#include "ViewSelection.h"
 #include "mve/bundlefile.h"
-
+#include "dmrecon/SingleView.h"
+#include "dmrecon/ViewSelection.h"
 
 MVS_NAMESPACE_BEGIN
 

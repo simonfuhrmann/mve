@@ -5,10 +5,10 @@
 
 #include "math/vector.h"
 #include "util/refptr.h"
-#include "defines.h"
-#include "PatchSampler.h"
-#include "SingleView.h"
-#include "LocalViewSelection.h"
+#include "dmrecon/defines.h"
+#include "dmrecon/PatchSampler.h"
+#include "dmrecon/SingleView.h"
+#include "dmrecon/LocalViewSelection.h"
 
 MVS_NAMESPACE_BEGIN
 

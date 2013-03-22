@@ -3,13 +3,12 @@
 
 #include <iostream>
 
-#include "defines.h"
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "mve/image.h"
-#include "SingleView.h"
 #include "util/refptr.h"
-
+#include "dmrecon/defines.h"
+#include "dmrecon/SingleView.h"
 
 MVS_NAMESPACE_BEGIN
 

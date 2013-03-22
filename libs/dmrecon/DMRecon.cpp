@@ -5,14 +5,14 @@
 #include <set>
 #include <ctime>
 
-#include "DMRecon.h"
-#include "GlobalViewSelection.h"
 #include "math/vector.h"
 #include "mve/image.h"
 #include "mve/imagetools.h"
-#include "Settings.h"
 #include "util/filesystem.h"
 #include "util/string.h"
+#include "dmrecon/Settings.h"
+#include "dmrecon/DMRecon.h"
+#include "dmrecon/GlobalViewSelection.h"
 
 MVS_NAMESPACE_BEGIN
 
