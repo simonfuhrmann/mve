@@ -7,8 +7,7 @@
 
 #include "math/vector.h"
 #include "util/exception.h"
-
-#include "offfile.h"
+#include "mve/offfile.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

@@ -8,8 +8,8 @@
 
 #include <string>
 
-#include "defines.h"
-#include "image.h"
+#include "mve/defines.h"
+#include "mve/image.h"
 
 #ifdef _WIN32
 #   define MVE_NO_TIFF_SUPPORT

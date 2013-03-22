@@ -5,10 +5,10 @@
 #ifndef MATH_GEOMETRY_HEADER
 #define MATH_GEOMETRY_HEADER
 
-#include "defines.h"
-#include "vector.h"
-#include "matrix.h"
-#include "matrixtools.h"
+#include "math/defines.h"
+#include "math/vector.h"
+#include "math/matrix.h"
+#include "math/matrixtools.h"
 
 MATH_NAMESPACE_BEGIN
 MATH_GEOM_NAMESPACE_BEGIN

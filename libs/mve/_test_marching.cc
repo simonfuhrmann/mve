@@ -5,13 +5,12 @@
 #include "util/timer.h"
 #include "math/vector.h"
 #include "math/matrix.h"
-
-#include "defines.h"
-#include "trianglemesh.h"
-#include "meshtools.h"
-#include "marchingtets.h"
-#include "marchingcubes.h"
-#include "volume.h"
+#include "mve/defines.h"
+#include "mve/trianglemesh.h"
+#include "mve/meshtools.h"
+#include "mve/marchingtets.h"
+#include "mve/marchingcubes.h"
+#include "mve/volume.h"
 
 template <typename T>
 inline T

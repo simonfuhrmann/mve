@@ -7,9 +7,9 @@
 
 #include <ctime>
 
-#include "defines.h"
-#include "timer.h"
-#include "system.h"
+#include "util/defines.h"
+#include "util/timer.h"
+#include "util/system.h"
 
 #define FRAME_TIMER_BUSY_WAITING 0
 

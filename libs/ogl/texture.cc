@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "ogl/texture.h"
 
 OGL_NAMESPACE_BEGIN
 
@@ -36,8 +36,5 @@ Texture::upload (mve::ByteImage::ConstPtr image)
         border, format, type, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 }
-
-/* ---------------------------------------------------------------- */
-
 
 OGL_NAMESPACE_END

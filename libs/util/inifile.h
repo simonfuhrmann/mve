@@ -9,9 +9,9 @@
 #include <string>
 #include <map>
 
-#include "defines.h"
-#include "string.h"
-#include "refptr.h"
+#include "util/defines.h"
+#include "util/string.h"
+#include "util/refptr.h"
 
 UTIL_NAMESPACE_BEGIN
 

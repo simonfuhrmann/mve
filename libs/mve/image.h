@@ -11,9 +11,8 @@
 
 #include "util/refptr.h"
 #include "math/algo.h"
-
-#include "defines.h"
-#include "imagebase.h"
+#include "mve/defines.h"
+#include "mve/imagebase.h"
 
 MVE_NAMESPACE_BEGIN
 

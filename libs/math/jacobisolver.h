@@ -11,9 +11,9 @@
 #include <climits>
 #include <cmath>
 
-#include "defines.h"
-#include "matrix.h"
-#include "vector.h"
+#include "math/defines.h"
+#include "math/matrix.h"
+#include "math/vector.h"
 
 MATH_NAMESPACE_BEGIN
 

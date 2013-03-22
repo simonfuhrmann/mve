@@ -6,10 +6,9 @@
 #include "util/timer.h"
 #include "math/matrix.h"
 #include "math/matrixtools.h"
-
-#include "imagefile.h"
-#include "imagetools.h"
-#include "sift.h"
+#include "mve/imagefile.h"
+#include "mve/imagetools.h"
+#include "mve/sift.h"
 
 MVE_NAMESPACE_BEGIN
 

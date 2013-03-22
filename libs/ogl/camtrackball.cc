@@ -2,9 +2,8 @@
 
 #include "math/matrixtools.h"
 #include "math/quaternion.h"
-
-#include "opengl.h"
-#include "camtrackball.h"
+#include "ogl/opengl.h"
+#include "ogl/camtrackball.h"
 
 OGL_NAMESPACE_BEGIN
 

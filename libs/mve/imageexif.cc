@@ -29,7 +29,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "imageexif.h"
+#include "mve/imageexif.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN

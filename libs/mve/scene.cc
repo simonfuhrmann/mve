@@ -5,8 +5,7 @@
 #include "util/inifile.h"
 #include "util/timer.h"
 #include "util/filesystem.h"
-
-#include "scene.h"
+#include "mve/scene.h"
 
 MVE_NAMESPACE_BEGIN
 

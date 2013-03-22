@@ -10,10 +10,9 @@
 
 #include "math/vector.h"
 #include "math/algo.h"
-
-#include "defines.h"
-#include "trianglemesh.h"
-#include "image.h"
+#include "mve/defines.h"
+#include "mve/trianglemesh.h"
+#include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

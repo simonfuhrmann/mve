@@ -1,8 +1,7 @@
 #include <iostream>
 
 #include "math/defines.h"
-
-#include "trianglemesh.h"
+#include "mve/trianglemesh.h"
 
 /*
  * Whether to use AWPN (angle-weighted pseudo normals)

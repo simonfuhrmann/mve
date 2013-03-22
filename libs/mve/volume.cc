@@ -1,8 +1,7 @@
 #include "math/vector.h"
-
-#include "marchingtets.h"
-#include "marchingcubes.h"
-#include "volume.h"
+#include "mve/marchingtets.h"
+#include "mve/marchingcubes.h"
+#include "mve/volume.h"
 
 MVE_NAMESPACE_BEGIN
 

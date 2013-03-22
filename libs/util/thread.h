@@ -24,7 +24,7 @@
 #   error "No thread abstraction available."
 #endif
 
-#include "defines.h"
+#include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
 

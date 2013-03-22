@@ -9,9 +9,8 @@
 #include <vector>
 
 #include "util/refptr.h"
-
-#include "defines.h"
-#include "trianglemesh.h"
+#include "mve/defines.h"
+#include "mve/trianglemesh.h"
 
 MVE_NAMESPACE_BEGIN
 

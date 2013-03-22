@@ -6,8 +6,8 @@
 #ifndef MATH_VECTOR_HEADER
 #define MATH_VECTOR_HEADER
 
-#include "defines.h"
-#include "algo.h"
+#include "math/defines.h"
+#include "math/algo.h"
 
 MATH_NAMESPACE_BEGIN
 

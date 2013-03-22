@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "math/matrixtools.h"
-#include "camera.h"
+#include "mve/camera.h"
 
 MVE_NAMESPACE_BEGIN
 

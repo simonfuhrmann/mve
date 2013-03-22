@@ -1,9 +1,8 @@
 #include <iostream>
 
 #include "math/matrixtools.h"
-
-#include "opengl.h"
-#include "cam2d.h"
+#include "ogl/opengl.h"
+#include "ogl/cam2d.h"
 
 OGL_NAMESPACE_BEGIN
 

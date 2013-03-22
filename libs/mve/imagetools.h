@@ -6,16 +6,14 @@
 #ifndef MVE_IMAGE_TOOLS_HEADER
 #define MVE_IMAGE_TOOLS_HEADER
 
-#include <iostream> //RM
 #include <limits>
 
 #include "util/exception.h"
 #include "math/accum.h"
 #include "math/algo.h"
-
-#include "defines.h"
-#include "camera.h"
-#include "image.h"
+#include "mve/defines.h"
+#include "mve/camera.h"
+#include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
@@ -477,9 +475,6 @@ rescale (typename Image<T>::ConstPtr img, RescaleInterpolation interp,
             img = rescale_half_size<T>(img);
     }
 
-    //std::cout << "Image mipmap size " << img->width() << "x"
-    //    << img->height() << std::endl;
-
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(width, height, img->channels());
 
@@ -850,15 +845,6 @@ gaussian_kernel (typename Image<T>::ConstPtr img,
     float wy_start = ky_min > 0.0f ? ky_min + 1.0f + ks - y : 1.0f;
     float wy_end = ky_max < (float)h - 1.0f ? ks + y - ky_max : 1.0f;
 
-    /*
-    std::cout << "Gaussian for pixel (" << x << "," << y << "): "
-        << "Min/max: (" << kxi_min << "," << kyi_min
-        << ") / (" << kxi_max << "," << kyi_max << "), weights: "
-        << wx_start << " " << wx_end << " " << wy_start << " " << wy_end
-        << ", kernel " << ks
-        << std::endl;
-    */
-
     /* Apply kernel. */
     math::Accum<T> accum(0);
     for (int yi = kyi_min; yi <= kyi_max; ++yi)
@@ -897,7 +883,6 @@ rescale_gaussian (typename Image<T>::ConstPtr img,
     float scale_x = (float)img->width() / (float)ow;
     float scale_y = (float)img->height() / (float)oh;
     float sigma = sigma_factor * std::max(scale_x, scale_y) / 2.0f;
-    //std::cout << "Effective sigma: " << sigma << std::endl;
 
     /* Iterate pixels of dest image and convolute with gaussians on input. */
     int i = 0;

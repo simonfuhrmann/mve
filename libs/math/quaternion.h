@@ -6,8 +6,8 @@
 #ifndef MATH_QUATERNION_HEADER
 #define MATH_QUATERNION_HEADER
 
-#include "defines.h"
-#include "vector.h"
+#include "math/defines.h"
+#include "math/vector.h"
 
 MATH_NAMESPACE_BEGIN
 

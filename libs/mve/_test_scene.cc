@@ -1,13 +1,13 @@
 #include <iostream>
 
-#include "view.h"
-#include "scene.h"
-#include "trianglemesh.h"
-#include "depthmap.h"
-#include "plyfile.h"
-#include "meshtools.h"
-#include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "mve/view.h"
+#include "mve/scene.h"
+#include "mve/trianglemesh.h"
+#include "mve/depthmap.h"
+#include "mve/plyfile.h"
+#include "mve/meshtools.h"
+#include "mve/math/matrix.h"
+#include "mve/math/matrixtools.h"
 
 int
 main (int argc, char** argv)

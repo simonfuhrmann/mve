@@ -1,7 +1,7 @@
 #ifndef MVE_PBRTFILE_HEADER
 #define MVE_PBRTFILE_HEADER
 
-#include "trianglemesh.h"
+#include "mve/trianglemesh.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

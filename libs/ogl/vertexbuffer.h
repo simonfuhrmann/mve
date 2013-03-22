@@ -7,9 +7,8 @@
 #define OGL_VERTEX_BUFFER_HEADER
 
 #include "util/refptr.h"
-
-#include "defines.h"
-#include "opengl.h"
+#include "ogl/defines.h"
+#include "ogl/opengl.h"
 
 OGL_NAMESPACE_BEGIN
 

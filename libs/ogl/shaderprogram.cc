@@ -8,8 +8,7 @@
 
 #include "util/exception.h"
 #include "util/filesystem.h"
-
-#include "shaderprogram.h"
+#include "ogl/shaderprogram.h"
 
 OGL_NAMESPACE_BEGIN
 

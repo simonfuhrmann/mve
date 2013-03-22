@@ -6,12 +6,6 @@
 #include <cstring>
 #include <cerrno>
 
-#include "util/endian.h"
-#include "util/exception.h"
-#include "util/string.h"
-
-#include "imagefile.h"
-
 #ifndef MVE_NO_PNG_SUPPORT
 #   include <png.h>
 #endif
@@ -24,6 +18,11 @@
 #   include <tiff.h>
 #   include <tiffio.h>
 #endif
+
+#include "util/endian.h"
+#include "util/exception.h"
+#include "util/string.h"
+#include "mve/imagefile.h"
 
 #define PPM_MAX_PIXEL_AMOUNT (16384 * 16384)
 

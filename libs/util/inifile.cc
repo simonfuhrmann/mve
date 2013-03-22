@@ -4,8 +4,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "exception.h"
-#include "inifile.h"
+#include "util/exception.h"
+#include "util/inifile.h"
 
 UTIL_NAMESPACE_BEGIN
 

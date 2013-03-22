@@ -11,9 +11,9 @@
 #include <string>
 #include <stdexcept>
 
-#include "string.h"
-#include "defines.h"
-#include "exception.h"
+#include "util/string.h"
+#include "util/defines.h"
+#include "util/exception.h"
 
 UTIL_NAMESPACE_BEGIN
 

@@ -5,8 +5,7 @@
 #include <cstring>
 
 #include "util/exception.h"
-
-#include "pbrtfile.h"
+#include "mve/pbrtfile.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

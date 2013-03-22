@@ -16,7 +16,7 @@
  *   function is zero, and it takes negative values outside of S."
  */
 
-#include "defines.h"
+#include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

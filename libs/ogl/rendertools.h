@@ -6,8 +6,9 @@
 #ifndef OGL_RENDERTOOLS_HEADER
 #define OGL_RENDERTOOLS_HEADER
 
-#include "defines.h"
-#include "vertexarray.h"
+#include "ogl/defines.h"
+#include "ogl/vertexarray.h"
+#include "ogl/shaderprogram.h"
 
 OGL_NAMESPACE_BEGIN
 

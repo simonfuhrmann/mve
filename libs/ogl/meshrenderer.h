@@ -7,14 +7,12 @@
 #define OGL_MESH_RENDERER_HEADER
 
 #include "util/refptr.h"
-
 #include "mve/trianglemesh.h"
-
-#include "defines.h"
-#include "opengl.h"
-#include "shaderprogram.h"
-#include "vertexarray.h"
-#include "vertexbuffer.h"
+#include "ogl/defines.h"
+#include "ogl/opengl.h"
+#include "ogl/shaderprogram.h"
+#include "ogl/vertexarray.h"
+#include "ogl/vertexbuffer.h"
 
 OGL_NAMESPACE_BEGIN
 

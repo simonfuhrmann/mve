@@ -5,11 +5,10 @@
 
 #include "math/defines.h"
 #include "math/matrix.h"
-
-#include "vertexinfo.h"
-#include "depthmap.h"
-#include "meshtools.h"
-#include "bilateral.h"
+#include "mve/vertexinfo.h"
+#include "mve/depthmap.h"
+#include "mve/meshtools.h"
+#include "mve/bilateral.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN

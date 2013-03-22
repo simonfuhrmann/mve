@@ -5,7 +5,6 @@
 
 #include "mve/image.h"
 #include "mve/imagedrawing.h"
-#include "mve/imagefile.h" // TMP
 
 unsigned char color_g_white[1] = { 255 };
 unsigned char color_twochans[2] = { 64, 96 };

@@ -10,8 +10,7 @@
 
 #include "math/vector.h"
 #include "util/refptr.h"
-
-#include "defines.h"
+#include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
 

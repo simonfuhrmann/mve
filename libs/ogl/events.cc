@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "defines.h"
-#include "events.h"
+#include "ogl/defines.h"
+#include "ogl/events.h"
 
 OGL_NAMESPACE_BEGIN
 

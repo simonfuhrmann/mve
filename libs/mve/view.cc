@@ -7,9 +7,8 @@
 #include "util/exception.h"
 #include "util/filesystem.h"
 #include "util/string.h"
-
-#include "image.h"
-#include "view.h"
+#include "mve/image.h"
+#include "mve/view.h"
 
 /* The signature to identify MVE files. */
 #define MVE_FILE_SIGNATURE "\211MVE\n"

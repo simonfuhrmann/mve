@@ -1,8 +1,8 @@
 #ifndef MATH_PLANE_HEADER
 #define MATH_PLANE_HEADER
 
-#include "defines.h"
-#include "vector.h"
+#include "math/defines.h"
+#include "math/vector.h"
 
 MATH_NAMESPACE_BEGIN
 

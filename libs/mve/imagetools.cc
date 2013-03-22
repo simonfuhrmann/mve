@@ -1,7 +1,7 @@
 #include <algorithm>
 
-#include "camera.h"
-#include "imagetools.h"
+#include "mve/camera.h"
+#include "mve/imagetools.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN

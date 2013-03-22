@@ -4,9 +4,9 @@
 #include <iomanip>
 #include <limits>
 
-#include "string.h"
-#include "tokenizer.h"
-#include "arguments.h"
+#include "util/string.h"
+#include "util/tokenizer.h"
+#include "util/arguments.h"
 
 UTIL_NAMESPACE_BEGIN
 

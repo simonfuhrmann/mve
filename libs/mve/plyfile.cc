@@ -9,9 +9,8 @@
 #include "util/endian.h"
 #include "math/vector.h"
 #include "math/matrix.h"
-
-#include "depthmap.h"
-#include "plyfile.h"
+#include "mve/depthmap.h"
+#include "mve/plyfile.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

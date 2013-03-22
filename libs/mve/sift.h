@@ -14,9 +14,8 @@
 #include <vector>
 
 #include "math/vector.h"
-
-#include "defines.h"
-#include "image.h"
+#include "mve/defines.h"
+#include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
 

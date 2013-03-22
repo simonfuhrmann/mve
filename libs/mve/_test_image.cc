@@ -6,10 +6,10 @@
 #include "util/system.h"
 #include "util/filesystem.h"
 #include "math/vector.h"
-#include "image.h"
-#include "imagetools.h"
-#include "imagefile.h"
-#include "imageexif.h"
+#include "mve/image.h"
+#include "mve/imagetools.h"
+#include "mve/imagefile.h"
+#include "mve/imageexif.h"
 
 int
 main (int argc, char** argv)

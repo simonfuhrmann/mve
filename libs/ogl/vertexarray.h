@@ -13,11 +13,10 @@
 #include <string>
 
 #include "util/refptr.h"
-
-#include "defines.h"
-#include "opengl.h"
-#include "shaderprogram.h"
-#include "vertexbuffer.h"
+#include "ogl/defines.h"
+#include "ogl/opengl.h"
+#include "ogl/shaderprogram.h"
+#include "ogl/vertexbuffer.h"
 
 OGL_NAMESPACE_BEGIN
 

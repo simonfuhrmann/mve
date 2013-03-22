@@ -8,9 +8,8 @@
 
 #include "util/refptr.h"
 #include "mve/image.h"
-
-#include "defines.h"
-#include "opengl.h"
+#include "ogl/defines.h"
+#include "ogl/opengl.h"
 
 OGL_NAMESPACE_BEGIN
 

@@ -2,10 +2,9 @@
 #define CAM2D_H
 
 #include "math/vector.h"
-
-#include "defines.h"
-#include "events.h"
-#include "camera.h"
+#include "ogl/defines.h"
+#include "ogl/events.h"
+#include "ogl/camera.h"
 
 OGL_NAMESPACE_BEGIN
 

@@ -6,7 +6,7 @@
 #ifndef OGL_EVENTS_HEADER
 #define OGL_EVENTS_HEADER
 
-#include "defines.h"
+#include "ogl/defines.h"
 
 OGL_NAMESPACE_BEGIN
 

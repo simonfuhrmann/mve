@@ -7,11 +7,10 @@
 
 #include "math/vector.h"
 #include "math/matrix.h"
-
-#include "defines.h"
-#include "camera.h"
-#include "image.h"
-#include "trianglemesh.h"
+#include "mve/defines.h"
+#include "mve/camera.h"
+#include "mve/image.h"
+#include "mve/trianglemesh.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
