@@ -402,7 +402,7 @@ Surf::keypoint_localization (Keypoint* kp)
 
     /* Compute actual DoG value at accurate keypoint x. */
     float dog_value = N9[1][4] - 0.5 * vec_b.dot(vec_x);
-    if (dog_value < this->contrast_thres)
+    if (dog_value < this->options.contrast_threshold)
     {
         //std::cout << "Rejection keypoint: Contrast Thres" << std::endl;
         return false;
@@ -456,7 +456,8 @@ Surf::descriptor_assignment (void)
             continue;
 
         /* Compute descriptor relative to orientation. */
-        if (!this->descriptor_computation(&descr, this->upright_descriptor))
+        if (!this->descriptor_computation(&descr,
+            this->options.use_upright_descriptor))
             continue;
 
         this->descriptors.push_back(descr);

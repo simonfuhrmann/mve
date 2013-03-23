@@ -40,6 +40,9 @@ SFM_NAMESPACE_BEGIN
 class Sift
 {
 public:
+    /**
+     * SIFT options.
+     */
     struct Options
     {
         Options (void);

@@ -37,6 +37,20 @@ class Surf
 {
 public:
     /**
+     * SURF options.
+     */
+    struct Options
+    {
+        Options (void);
+
+        /** Sets the hessian threshold, defaults to 500.0. */
+        float contrast_threshold;
+
+        /** Trade rotation invariance for speed. Defaults to false. */
+        bool use_upright_descriptor;
+    };
+
+    /**
      * Representation of a SURF keypoint.
      */
     struct Keypoint
@@ -66,7 +80,7 @@ public:
     typedef std::vector<Descriptor> Descriptors;
 
 public:
-    Surf (void);
+    Surf (Options const& options);
 
     /** Sets the input image. */
     void set_image (mve::ByteImage::ConstPtr image);
@@ -120,9 +134,7 @@ protected:
     void filter_dx_dy(int x, int y, int fs, float* dx, float* dy);
 
 private:
-    float contrast_thres;
-    bool upright_descriptor;
-
+    Options options;
     SatImage::Ptr sat;
     Octaves octaves;
     Keypoints keypoints;
@@ -132,22 +144,16 @@ private:
 /* ---------------------------------------------------------------- */
 
 inline
-Surf::Surf (void)
-    : contrast_thres(500.0f)
-    , upright_descriptor(false)
+Surf::Options::Options (void)
+    : contrast_threshold(500.0f)
+    , use_upright_descriptor(false)
 {
 }
 
-inline void
-Surf::set_contrast_threshold (float thres)
+inline
+Surf::Surf (Options const& options)
+    : options(options)
 {
-    this->contrast_thres = thres;
-}
-
-inline void
-Surf::set_upright_descriptor (bool upright)
-{
-    this->upright_descriptor = upright;
 }
 
 inline Surf::Keypoints const&

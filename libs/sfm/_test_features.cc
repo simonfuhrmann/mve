@@ -37,10 +37,9 @@ main (int argc, char** argv)
     sfm::Surf::Descriptors surf_descr;
     sfm::Surf::Keypoints surf_keypoints;
     {
-        sfm::Surf surf;
+        sfm::Surf::Options surf_options;
+        sfm::Surf surf(surf_options);
         surf.set_image(image);
-        surf.set_contrast_threshold(500);
-        surf.set_upright_descriptor(false);
 
         util::WallTimer timer;
         surf.process();
