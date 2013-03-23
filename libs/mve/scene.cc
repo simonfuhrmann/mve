@@ -2,7 +2,6 @@
 #include <algorithm>
 
 #include "util/exception.h"
-#include "util/inifile.h"
 #include "util/timer.h"
 #include "util/filesystem.h"
 #include "mve/scene.h"
