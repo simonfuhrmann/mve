@@ -11,6 +11,7 @@ TEST(FileSystemTest, GetFileComponentTest)
     EXPECT_EQ("file", util::fs::get_file_component("/tmp/file"));
     EXPECT_EQ("", util::fs::get_file_component("/tmp/file/"));
     EXPECT_EQ("file.txt", util::fs::get_file_component("test/file.txt"));
+    EXPECT_EQ("", util::fs::get_file_component(""));
 }
 
 TEST(FileSystemTest, GetPathComponentTest)
@@ -21,6 +22,7 @@ TEST(FileSystemTest, GetPathComponentTest)
     // The following tests don't work on OSX and Windows.
     //util::fs::set_cwd("/tmp");
     //EXPECT_EQ("/tmp", util::fs::get_path_component("test.txt"));
+    //EXPECT_EQ("/tmp", util::fs::get_path_component(""));
     //EXPECT_EQ("/tmp/blah", util::fs::get_path_component("blah/test.txt"));
 }
 
