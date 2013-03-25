@@ -310,7 +310,7 @@ get_path_component (std::string const& path)
     std::size_t pos1 = path.find_first_of('/');
     std::size_t pos2 = path.find_last_of('/');
 
-    if (pos1 == std::string::npos && pos2 == std::string::npos)
+    if (pos1 == std::string::npos)
         return get_cwd_string();
     else if (pos1 == pos2 && pos1 == 0)
         return std::string("/");
@@ -346,15 +346,12 @@ replace_extension (std::string const& fn, std::string const& ext)
     std::size_t slashpos = fn.find_last_of('/');
     if (slashpos == std::string::npos)
         slashpos = 0;
+
     std::size_t dotpos = fn.find_last_of('.');
     if (dotpos == std::string::npos || dotpos < slashpos)
         return fn + "." + ext;
 
-    std::string ret;
-    ret.insert(ret.end(), fn.begin(), fn.begin() + dotpos);
-    ret.push_back('.');
-    ret.insert(ret.end(), ext.begin(), ext.end());
-    return ret;
+    return fn.substr(0, dotpos) + "." + ext;
 }
 
 UTIL_FS_NAMESPACE_END

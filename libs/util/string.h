@@ -35,17 +35,24 @@ T convert (std::string const& str);
 template <typename T>
 char const* for_type (void);
 
-/** Returns the byte size of given type string (e.g. "uint8"). */
+/** Returns the byte size of given type string (e.g. 1 for "uint8"). */
 int size_for_type_string (std::string const& typestring);
 
 /** Inserts 'delim' every 'spacing' characters from the right. */
+// TODO WARNING REFACTOR!
 void punctate (std::string& input, char delim = ',', std::size_t spacing = 3);
 
 /** Clips whitespaces from the front and end of the string. */
+// TODO WARNING REFACTOR!
 void clip (std::string& str);
 
 /** Chops string by removing newline characters from the end of the string. */
+// TODO WARNING REFACTOR!
 void chop (std::string& str);
+
+/** Inserts 'delim' every 'spacing' characters from the right. */
+std::string punctated (std::string const& input,
+    char delim = ',', std::size_t spacing = 3);
 
 /** Returns a new string with clipped whitespaces from front and end. */
 std::string clipped (std::string const& str);
@@ -63,7 +70,10 @@ std::string wordwrap (char const* str, int width);
 std::string ellipsize (std::string const& in, std::size_t chars, int type = 0);
 
 /** Replaces several whitespaces with a single blank. */
+// TODO WARNING REFACTOR!
 void normalize (std::string& str);
+
+std::string normalized (std::string const& str);
 
 /** Returns the leftmost 'chars' characters of 'str'. */
 std::string left (std::string const& str, std::size_t chars);
@@ -236,7 +246,7 @@ size_for_type_string (std::string const& typestring)
 inline void
 punctate (std::string& str, char delim, std::size_t spacing)
 {
-    if (str.size() <= spacing)
+    if (str.size() <= spacing || spacing == 0)
         return;
 
     std::size_t pos = str.size() - 1;
@@ -272,6 +282,14 @@ chop (std::string& str)
     {
         str.resize(str.size() - 1);
     }
+}
+
+inline std::string
+punctated (std::string const& input, char delim, std::size_t spacing)
+{
+    std::string ret(input);
+    punctate(ret, delim, spacing);
+    return ret;
 }
 
 inline std::string
@@ -393,6 +411,14 @@ normalize (std::string& str)
 
     iter += 1;
   }
+}
+
+inline std::string
+normalized (std::string const& str)
+{
+    std::string ret(str);
+    normalize(ret);
+    return ret;
 }
 
 inline std::string

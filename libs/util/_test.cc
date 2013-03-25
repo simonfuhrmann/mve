@@ -7,10 +7,9 @@
 #include "thread.h"
 #include "threadlocks.h"
 #include "endian.h"
-#include "fs.h"
+#include "filesystem.h"
 #include "string.h"
 #include "tokenizer.h"
-#include "inifile.h"
 #include "timer.h"
 #include "frametimer.h"
 #include "arguments.h"
@@ -30,44 +29,11 @@ int main (void)
 #endif
 
 #if 0
-    /* Test endian byte swapping. */
-    short x(32770);
-
-std::cout << x << std::endl;
-
-    x = util::system::betoh(x);
-    std::cout << x << std::endl;
-    x = util::system::betoh(x);
-
-    std::cout << x << std::endl;
-
-#endif
-
-#if 0
-    /* Test to lowerstring and to upper string. */
-    std::string x = "Test 1234 STRING killer cl!";
-    std::cout << x << std::endl;
-    std::cout << util::string::lowercase(x) << std::endl;
-    std::cout << util::string::uppercase(x) << std::endl;
-#endif
-
-
-#if 0
     /* Backtrace. */
     signal(SIGSEGV, util::system::signal_segfault_handler);
     int* x = 0;
     *x = 10;
 #endif
-
-
-#if 0
-
-    /* Newline tests. */
-    std::string test = "aaa bb  cc ddddd";
-    std::cout << util::string::wordwrap(test.c_str(), 10) << std::endl;
-
-#endif
-
 
 #if 0
     /* File locking test. */
@@ -147,27 +113,6 @@ std::cout << x << std::endl;
 #endif
 
 #if 0
-    /* Test INI reader system. */
-
-    util::INIFile ini;
-    ini.add_from_file("/tmp/testini.ini");
-
-    std::cout << **ini.get_value("ts.test1") << std::endl;
-    std::cout << **ini.get_value("ts.test2") << std::endl;
-
-    std::cout << std::endl;
-    std::cout << ini.get_value("ts.test3")->get<float>() << std::endl;
-    ini.get_value("ts.test3")->set(123.34f);
-    std::cout << ini.get_value("ts.test3")->get<float>() << std::endl;
-
-    std::cout << std::endl;
-    std::cout << **ini.get_value("ts.xx.test1") << std::endl;
-    std::cout << **ini.get_value("ts.xx.test2") << std::endl;
-
-    ini.to_stream(std::cout);
-#endif
-
-#if 0
     /* Test string type representations. */
     std::cout << util::string::for_type<char>() << std::endl;
     std::cout << util::string::for_type<unsigned char>() << std::endl;
@@ -205,99 +150,6 @@ std::cout << x << std::endl;
 
     t.parse_cmd("/usr/bin/funnyapp -m123 -x 123 -s\"test string\"");
     //print_stringvector(t);
-
-#endif
-
-#if 0
-    /* String get_filled() */
-    std::cout << util::string::get_filled(0.101, 7, '.') << std::endl;
-
-#endif
-
-#if 0
-
-    /* String tests: Punctate. */
-    std::string test = "123456789";
-    util::string::punctate(test, '.', 2);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "12345678";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "1234567";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "123456";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "12345";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "1234";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "123";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "12";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "1";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    test = "";
-    util::string::punctate(test);
-    std::cout << "Test is now: " << test << std::endl;
-
-    /* String tests: Conversion. */
-    test = util::string::get(1234);
-    std::cout << "Test is: " << test << std::endl;
-
-    test = util::string::get(1234.01f);
-    std::cout << "Test is: " << test << std::endl;
-
-    test = util::string::get(1234.0001f);
-    std::cout << "Test is: " << test << std::endl;
-
-    test = util::string::get_fixed(1000.0001f, 10);
-    std::cout << "Test is: " << test << std::endl;
-
-    test = "123.1234";
-    float x = util::string::convert<float>(test);
-    std::cout << "Float is " << x << std::endl;
-
-    /* String tests: Clipping. */
-    test = " \t test \t    ";
-    util::string::clip(test);
-    std::cout << "test is " << test << std::endl;
-
-    /* String tests: Choping. */
-    test = "test\n\r\n\n";
-    util::string::chop(test);
-    std::cout << "test is " << test << std::endl;
-
-    /* String tests: Normalizing. */
-    test = "  string \t that\tis  pretty messy  ";
-    util::string::normalize(test);
-    std::cout << "test is " << test << std::endl;
-
-#endif
-
-#if 0
-
-    std::string teststr = "1234567890";
-    std::string left = util::string::left(teststr, 9);
-    std::string right = util::string::right(teststr, 9);
-
-    std::cout << "Left: \"" << left << "\", Right: \"" << right << "\"" << std::endl;
 
 #endif
 

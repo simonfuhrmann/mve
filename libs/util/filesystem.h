@@ -20,12 +20,16 @@ UTIL_FS_NAMESPACE_BEGIN
 
 /** Determines if the given path is a directory. */
 bool dir_exists (char const* pathname);
+
 /** Determines if the given path is a file. */
 bool file_exists (char const* pathname);
+
 /** Determines the home path for the current user. */
 char* get_default_home_path (void);
+
 /** Determines the current working directory of the process. */
 char* get_cwd (char* buf, std::size_t size);
+
 /** Changes working directory to 'pathname', returns true on success. */
 bool set_cwd (char const* pathname);
 
@@ -36,10 +40,13 @@ bool set_cwd (char const* pathname);
 // TODO: define modes for mkdir() for all platforms?
 /** Creates a new directory. */
 bool mkdir (char const* pathname/*, mode_t mode*/);
+
 /** Unlinks (deletes) the given file. */
 bool unlink (char const* pathname);
+
 /** Renames the given file 'from' to new name 'to'. */
 bool rename (char const* from, char const* to);
+
 ///** Creates an empty file. */
 //http://www.koders.com/c/fid96336B4591FD0C5D2C4DADA2D264D3A04F21A934.aspx
 //bool touch (char const* pathname);
@@ -50,13 +57,24 @@ bool rename (char const* from, char const* to);
 
 /** Determines the CWD and returns a convenient string. */
 std::string get_cwd_string (void);
+
 /** Returns the path of the binary currently executing. */
 std::string get_binary_path (void);
-/** Returns the absolute base path component of 'path'. */
+
+/**
+ * Returns the absolute base path component of 'path'.
+ * If the given path is not absolute, it is assumed to be relative to the
+ * current working directory.
+ */
 std::string get_path_component (std::string const& path);
+
 /** Returns the local file component if the given 'path'. */
 std::string get_file_component (std::string const& path);
-/** Replaces extension of the given file with 'ext'. */
+
+/**
+ * Replaces extension of the given file with 'ext'. If the file name
+ * does not have an extension, the given extension is appended.
+ */
 std::string replace_extension (std::string const& fn, std::string const& ext);
 
 /*
