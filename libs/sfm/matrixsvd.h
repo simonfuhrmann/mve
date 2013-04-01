@@ -82,7 +82,7 @@ matrix_svd (T const* mat_a, int rows, int cols, T* mat_u, T* vec_s, T* mat_v)
         Eigen::RowMajor> RowMatrixXd;
     typedef Eigen::JacobiSVD<RowMatrixXd> EigenSVD;
 
-    Eigen::Map<RowMatrixXd> eigen_a(const_cast<T*>(mat_a), rows, cols);
+    Eigen::Map<RowMatrixXd const> eigen_a(mat_a, rows, cols);
     unsigned int svd_options = 0;
     svd_options |= mat_u ? Eigen::ComputeFullU : 0;
     svd_options |= mat_v ? Eigen::ComputeFullV : 0;

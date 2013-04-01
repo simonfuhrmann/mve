@@ -48,7 +48,7 @@ matrix_qr_decomp (Matrix<T, N, N> const& mat_a,
     typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic,
         Eigen::RowMajor> RowMatrixXd;
 
-    Eigen::Map<RowMatrixXd> A(const_cast<T*>(*mat_a), N, N);
+    Eigen::Map<RowMatrixXd const> A(*mat_a, N, N);
     Eigen::HouseholderQR<RowMatrixXd> qr(A);
     RowMatrixXd Q = qr.householderQ();
     RowMatrixXd R = qr.matrixQR();

@@ -137,6 +137,12 @@ PoseRansac2D2D::sampson_distance (FundamentalMatrix const& F,
 
 /* ---------------------------------------------------------------- */
 
+PoseRansac2D3D::Options::Options (void)
+    : max_iterations(100)
+    , threshold(1e-3)
+{
+}
+
 PoseRansac2D3D::PoseRansac2D3D (Options const& options)
     : opts(options)
 {
