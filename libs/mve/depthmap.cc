@@ -453,27 +453,16 @@ bool
 dm_is_depth_disc (math::Vec3f const& v1,
     math::Vec3f const& v2, math::Vec3f const& v3)
 {
-#if 0
-    /* Depth discontinuity detection based on edge length ratio. */
-    float len[3] = { (v2 - v1).square_norm(),
-        (v3 - v2).square_norm(), (v1 - v3).square_norm() };
-    float min = math::algo::min(len[0], len[1], len[2]);
-    float max = math::algo::max(len[0], len[1], len[2]);
-    return (std::sqrt(min) / std::sqrt(max)) < 0.2f;
-#endif
-
-#if 1
-#   define ANGLE_THRES ((float)MATH_DEG2RAD(15.0f))
+    float const angle_threshold = MATH_DEG2RAD(15.0f);
     /* Depth discontinuity detection based on minimal angle in triangle. */
     math::Vec3f e[3] = { (v2 - v1).normalized(),
         (v3 - v2).normalized(), (v1 - v3).normalized() };
-    float min_angle = ANGLE_THRES;
+    float min_angle = angle_threshold;
     for (int i = 0; i < 3; ++i)
         min_angle = std::min(min_angle, std::acos(e[i].dot(-e[(i + 1) % 3])));
     //std::cout << "Min angle is " << MATH_RAD2DEG(min_angle) << ", "
     //    << (min_angle < ANGLE_THRES) << std::endl;
-    return min_angle < ANGLE_THRES;
-#endif
+    return min_angle < angle_threshold;
 }
 
 void

@@ -145,9 +145,12 @@ load_png_file (std::string const& filename)
 
     /* Identify the PNG signature. */
     png_byte signature[8];
-    std::fread(signature, 1, 8, fp);
-    bool is_png = !png_sig_cmp(signature, 0, 8);
-    if (!is_png)
+    if (std::fread(signature, 1, 8, fp) != 8)
+    {
+        std::fclose(fp);
+        throw util::Exception("PNG signature could not be read");
+    }
+    if (png_sig_cmp(signature, 0, 8) != 0)
     {
         std::fclose(fp);
         throw util::Exception("PNG signature did not match");

@@ -348,20 +348,20 @@ Image<T>::linear_at (float x, float y, int channel) const
     x = std::max(0.0f, std::min(static_cast<float>(this->w - 1), x));
     y = std::max(0.0f, std::min(static_cast<float>(this->h - 1), y));
 
-    const int floor_x = static_cast<int>(x);
-    const int floor_y = static_cast<int>(y);
-    const int floor_xp1 = std::min(floor_x + 1, this->w - 1);
-    const int floor_yp1 = std::min(floor_y + 1, this->h - 1);
+    int const floor_x = static_cast<int>(x);
+    int const floor_y = static_cast<int>(y);
+    int const floor_xp1 = std::min(floor_x + 1, this->w - 1);
+    int const floor_yp1 = std::min(floor_y + 1, this->h - 1);
 
-    const float w1 = x - static_cast<float>(floor_x);
-    const float w0 = 1.0f - w1;
-    const float w3 = y - static_cast<float>(floor_y);
-    const float w2 = 1.0f - w3;
+    float const w1 = x - static_cast<float>(floor_x);
+    float const w0 = 1.0f - w1;
+    float const w3 = y - static_cast<float>(floor_y);
+    float const w2 = 1.0f - w3;
 
-    const int rowstride = this->w * this->c;
-    const int row1 = floor_y * rowstride;
-    const int row2 = floor_yp1 * rowstride;
-    const int col1 = floor_x * this->c;
+    int const rowstride = this->w * this->c;
+    int const row1 = floor_y * rowstride;
+    int const row2 = floor_yp1 * rowstride;
+    int const col1 = floor_x * this->c;
     const int col2 = floor_xp1 * this->c;
 
     return math::algo::interpolate<T>
@@ -377,21 +377,21 @@ Image<T>::linear_at (float x, float y, T* px) const
     x = std::max(0.0f, std::min(static_cast<float>(this->w - 1), x));
     y = std::max(0.0f, std::min(static_cast<float>(this->h - 1), y));
 
-    const int floor_x = static_cast<int>(x);
-    const int floor_y = static_cast<int>(y);
-    const int floor_xp1 = std::min(floor_x + 1, this->w - 1);
-    const int floor_yp1 = std::min(floor_y + 1, this->h - 1);
+    int const floor_x = static_cast<int>(x);
+    int const floor_y = static_cast<int>(y);
+    int const floor_xp1 = std::min(floor_x + 1, this->w - 1);
+    int const floor_yp1 = std::min(floor_y + 1, this->h - 1);
 
-    const float w1 = x - static_cast<float>(floor_x);
-    const float w0 = 1.0f - w1;
-    const float w3 = y - static_cast<float>(floor_y);
-    const float w2 = 1.0f - w3;
+    float const w1 = x - static_cast<float>(floor_x);
+    float const w0 = 1.0f - w1;
+    float const w3 = y - static_cast<float>(floor_y);
+    float const w2 = 1.0f - w3;
 
-    const int rowstride = this->w * this->c;
-    const int row1 = floor_y * rowstride;
-    const int row2 = floor_yp1 * rowstride;
-    const int col1 = floor_x * this->c;
-    const int col2 = floor_xp1 * this->c;
+    int const rowstride = this->w * this->c;
+    int const row1 = floor_y * rowstride;
+    int const row2 = floor_yp1 * rowstride;
+    int const col1 = floor_x * this->c;
+    int const col2 = floor_xp1 * this->c;
 
     /* Copy interpolated channel values to output buffer. */
     for (int cc = 0; cc < this->c; ++cc)

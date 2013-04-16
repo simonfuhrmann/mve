@@ -35,8 +35,6 @@ VolumeMTAccessor::next (void)
         this->pos[i] = this->cube_pos[vertexid];
     }
 
-    //if (!(iter % 100000))
-    //    std::cout << "Iterator: " << iter << std::endl;
     return true;
 }
 
@@ -77,8 +75,6 @@ VolumeMTAccessor::load_new_cube (void)
 }
 
 /* ---------------------------------------------------------------- */
-/* ---------------------------------------------------------------- */
-
 
 VolumeMCAccessor::VolumeMCAccessor (void)
     : iter(-1)

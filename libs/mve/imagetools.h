@@ -59,6 +59,21 @@ ByteImage::Ptr
 int_to_byte_image (IntImage::ConstPtr image);
 
 /**
+ * Converts a given raw image to a byte image.
+ * This is done by clamping values to [vmin, vmax] and scaling to [0, 255].
+ */
+ByteImage::Ptr
+raw_to_byte_image (RawImage::ConstPtr image,
+    uint16_t vmin = 0, uint16_t vmax = 65535);
+
+/**
+ * Converts a given raw image to a float image.
+ * This is done by scaling from [0, 65535] to [0, 1].
+ */
+FloatImage::Ptr
+raw_to_float_image(RawImage::ConstPtr image);
+
+/**
  * Generic conversion between image types without scaling or clamping.
  * This is useful to convert between float and double.
  */
