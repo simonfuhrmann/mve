@@ -1,5 +1,5 @@
-#include "opengl.h"
-#include "meshrenderer.h"
+#include "ogl/opengl.h"
+#include "ogl/meshrenderer.h"
 
 OGL_NAMESPACE_BEGIN
 
