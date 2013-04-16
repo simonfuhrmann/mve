@@ -1,6 +1,6 @@
 /*
  * Atomic operations abstraction.
- * Written by Simon Fuhrmann
+ * Written by Simon Fuhrmann.
  *
  * Note: Windows implementatoin only supports 32bit int types.
  */

@@ -3,8 +3,6 @@ include ../../Makefile.inc
 SOURCES := $(wildcard [^_]*.cc)
 OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 LIBRARY := libutil.a
-TESTBIN := test
-TESTSRC := _test.cc
 
 EXT_INCL := -I..
 EXT_LIBS := -lpthread
@@ -17,9 +15,6 @@ GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main
 libutil: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}
 	chmod a+x ${LIBRARY}
-
-test: ${OBJECTS} FORCE
-	${CXX} ${TESTSRC} -o ${TESTBIN} ${OBJECTS} ${EXT_INCL} ${EXT_LIBS}
 
 gtest: ${GTEST_OBJS} ${OBJECTS}
 	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}

@@ -1,7 +1,7 @@
 #include <iostream> // cout
 #include <cstdlib> // ::exit
 #include <csignal>
-#include <execinfo.h> // ::backtrace*
+#include <execinfo.h> // ::backtrace
 
 #include "util/system.h"
 

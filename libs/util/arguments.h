@@ -1,6 +1,6 @@
 /*
  * Command line argument parser.
- * Written by Simon Fuhrmann
+ * Written by Simon Fuhrmann.
  */
 
 #ifndef MVE_ARGUMENTS_HEADER

@@ -1,5 +1,5 @@
 arguments.o: arguments.cc ../util/string.h ../util/defines.h \
-  ../util/tokenizer.h ../util/arguments.h ../util/exception.h
+ ../util/tokenizer.h ../util/arguments.h ../util/exception.h
 filesystem.o: filesystem.cc ../util/exception.h ../util/defines.h \
-  ../util/system.h ../util/filesystem.h
+ ../util/system.h ../util/filesystem.h
 system.o: system.cc ../util/system.h ../util/defines.h

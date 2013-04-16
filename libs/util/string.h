@@ -35,7 +35,10 @@ T convert (std::string const& str);
 template <typename T>
 char const* for_type (void);
 
-/** Returns the byte size of given type string (e.g. 1 for "uint8"). */
+/**
+ * Returns the byte size of given type string (e.g. 1 for "uint8").
+ * If the type is unknown, the function returns 0.
+ */
 int size_for_type_string (std::string const& typestring);
 
 /** Inserts 'delim' every 'spacing' characters from the right. */
