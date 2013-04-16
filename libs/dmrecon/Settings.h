@@ -1,5 +1,5 @@
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef DMRECON_SETTINGS_H
+#define DMRECON_SETTINGS_H
 
 #include <stdexcept>
 #include <string>

@@ -1,5 +1,5 @@
-#ifndef MVS_PROGRESS_H
-#define MVS_PROGRESS_H
+#ifndef DMRECON_PROGRESS_H
+#define DMRECON_PROGRESS_H
 
 #include "dmrecon/defines.h"
 

@@ -1,5 +1,5 @@
-#ifndef MVSTOOLS_H
-#define MVSTOOLS_H
+#ifndef DMRECON_MVSTOOLS_H
+#define DMRECON_MVSTOOLS_H
 
 #include <iostream>
 
@@ -11,7 +11,6 @@
 #include "dmrecon/SingleView.h"
 
 MVS_NAMESPACE_BEGIN
-
 
 /** initialize mapping from SRGB to linear color space */
 void initSRGB2linear();
@@ -64,7 +63,6 @@ parallaxToWeight(float p)
     float mean = 20.f;
     return exp(- sqr(p - mean) / (2 * sigma * sigma));
 }
-
 
 MVS_NAMESPACE_END
 

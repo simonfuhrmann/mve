@@ -1,5 +1,5 @@
-#ifndef PATCHSAMPLER_H
-#define PATCHSAMPLER_H
+#ifndef DMRECON_PATCHSAMPLER_H
+#define DMRECON_PATCHSAMPLER_H
 
 #include <map>
 
@@ -68,20 +68,20 @@ public:
 
     /**  */
     Samples const& getNeighColorSamples(std::size_t v);
-    
-    /**  */    
+
+    /**  */
     std::size_t getNrSamples() const;
 
-    /**  */    
+    /**  */
     math::Vec3f getPatchNormal() const;
 
-    /**  */    
+    /**  */
     bool succeeded(std::size_t v) const;
 
-    /**  */    
+    /**  */
     void update(float newDepth, float newDzI, float newDzJ);
 
-    /**  */    
+    /**  */
     float varInMasterPatch();
 
 
@@ -112,7 +112,7 @@ private:
 
     /** viewing rays according to patch in master view */
     std::vector<math::Vec3f> masterViewDirs;
-    
+
     /** 3d position of patch points */
     Samples patchPoints;
 
@@ -179,7 +179,6 @@ PatchSampler::varInMasterPatch()
 {
     return sqrDevX / (3.f * (float) nrSamples);
 }
-
 
 MVS_NAMESPACE_END
 

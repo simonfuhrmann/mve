@@ -1,5 +1,5 @@
-#ifndef VIEWSELECTION_H
-#define VIEWSELECTION_H
+#ifndef DMRECON_VIEWSELECTION_H
+#define DMRECON_VIEWSELECTION_H
 
 #include "util/refptr.h"
 #include "dmrecon/defines.h"
@@ -38,7 +38,6 @@ ViewSelection::getSelectedIDs() const
 {
     return selected;
 }
-
 
 MVS_NAMESPACE_END
 

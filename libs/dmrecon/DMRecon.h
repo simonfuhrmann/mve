@@ -1,5 +1,5 @@
-#ifndef DMRECON_H
-#define DMRECON_H
+#ifndef DMRECON_DMRECON_H
+#define DMRECON_DMRECON_H
 
 #include <fstream>
 #include <string>
@@ -13,7 +13,6 @@
 #include "dmrecon/PatchOptimization.h"
 #include "dmrecon/SingleView.h"
 #include "dmrecon/Progress.h"
-
 
 MVS_NAMESPACE_BEGIN
 

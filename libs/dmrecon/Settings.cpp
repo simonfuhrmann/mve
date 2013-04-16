@@ -19,5 +19,4 @@ Settings::Settings()
 {
 }
 
-
 MVS_NAMESPACE_END

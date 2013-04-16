@@ -1,5 +1,5 @@
-#ifndef GLOBALVIEWSELECTION_H
-#define GLOBALVIEWSELECTION_H
+#ifndef DMRECON_GLOBALVIEWSELECTION_H
+#define DMRECON_GLOBALVIEWSELECTION_H
 
 #include <map>
 
@@ -8,7 +8,6 @@
 #include "dmrecon/ViewSelection.h"
 
 MVS_NAMESPACE_BEGIN
-
 
 class GlobalViewSelection : public ViewSelection
 {
@@ -24,8 +23,6 @@ private:
     SingleViewPtrList const& views;
     mve::BundleFile::FeaturePoints const& features;
 };
-
-
 
 MVS_NAMESPACE_END
 
