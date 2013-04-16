@@ -20,14 +20,9 @@ TEST(MatrixTest, RowMajor)
     EXPECT_EQ(mat[3], 4.0f);
 }
 
-TEST(MatrixTest, MiscOperations)
+TEST(MatrixTest, MatrixMultiplication)
 {
     using namespace math;
-    Matrix3f test(999.0f);
-    test(0,0) = 1.0f; test(0,1) = 2.0f; test(0,2) = 3.0f;
-    test(1,0) = 4.0f; test(1,1) = 5.0f; test(1,2) = 6.0f;
-    test(2,0) = 7.0f; test(2,1) = 8.0f; test(2,2) = 9.0f;
-
     Matrix<float,3,2> M1;
     M1(0,0) = 1.0f; M1(0,1) = 2.0f;
     M1(1,0) = 3.0f; M1(1,1) = 4.0f;
@@ -51,32 +46,54 @@ TEST(MatrixTest, MiscOperations)
 
     /* Matrix matrix multiplication. */
     Matrix2f R2 = M2.mult(M1);
-    EXPECT_EQ(R2(0,0), 28.0f); EXPECT_EQ(R2(0,1), 40.0f);
-    EXPECT_EQ(R2(1,0), 22.0f); EXPECT_EQ(R2(1,1), 28.0f);
+    EXPECT_EQ(R2(0,0), 28.0f);
+    EXPECT_EQ(R2(0,1), 40.0f);
+    EXPECT_EQ(R2(1,0), 22.0f);
+    EXPECT_EQ(R2(1,1), 28.0f);
 
-    /* Matrix matrix substraction. */
+    /* Matrix vector multiplication. */
+    EXPECT_EQ(M1.mult(Vec2f(1.0f, 2.0f)), Vec3f(5.0f, 11.0f, 17.0f));
+}
+
+TEST(MatrixTest, MatrixSubtraction)
+{
+    using namespace math;
+    Matrix3f test(999.0f);
+    test(0,0) = 1.0f; test(0,1) = 2.0f; test(0,2) = 3.0f;
+    test(1,0) = 4.0f; test(1,1) = 5.0f; test(1,2) = 6.0f;
+    test(2,0) = 7.0f; test(2,1) = 8.0f; test(2,2) = 9.0f;
+
+    /* Matrix matrix subtraction. */
     Matrix3f ones(1.0f);
     EXPECT_EQ((test - ones)(0,0), 0.0f);
     EXPECT_EQ((test - ones)(0,1), 1.0f);
     EXPECT_EQ((test - ones)(0,2), 2.0f);
+}
+
+TEST(MatrixTest, MatrixOperations)
+{
+    using namespace math;
+    Matrix3f ones(1.0f);
+    Matrix3f test(999.0f);
+    test(0,0) = 1.0f; test(0,1) = 2.0f; test(0,2) = -3.0f;
+    test(1,0) = 4.0f; test(1,1) = 5.0f; test(1,2) = 6.0f;
+    test(2,0) = 7.0f; test(2,1) = 8.0f; test(2,2) = 9.0f;
 
     /* Matrix access, min, max, square check, . */
     EXPECT_EQ(test.col(1), Vec3f(2.0f, 5.0f, 8.0f));
     EXPECT_EQ(test.row(1), Vec3f(4.0f, 5.0f, 6.0f));
     EXPECT_EQ(Matrix3f(1.0f).minimum(), 1.0f);
     EXPECT_EQ(Matrix3f(1.0f).maximum(), 1.0f);
-    //EXPECT_EQ(Matrix3f(1.0f, 2.0f, 3.0f).maximum(), 3.0f);
-    //EXPECT_EQ(Matrix3f(1.0f, 2.0f, 3.0f).minimum(), 1.0f);
+    EXPECT_EQ(test.maximum(), 9.0f);
+    EXPECT_EQ(test.minimum(), -3.0f);
     EXPECT_TRUE((Matrix<float,3,3>()).is_square());
     EXPECT_FALSE((Matrix<float,3,4>()).is_square());
     EXPECT_EQ(test(1,2), 6.0f);
     EXPECT_EQ(test.transposed()(1,2), 8.0f);
 
-    EXPECT_TRUE(!test.is_similar(ones, 0.0f));
-    EXPECT_TRUE(!test.is_similar(ones, 5.0f));
+    EXPECT_FALSE(test.is_similar(ones, 0.0f));
+    EXPECT_FALSE(test.is_similar(ones, 5.0f));
     EXPECT_TRUE(test.is_similar(ones, 8.0f));
-
-    EXPECT_EQ(test.mult(Vec3f(1.0f, 2.0f, 3.0f)), Vec3f(14.0f, 32.0f, 50.0f));
 }
 
 TEST(MatrixTest, MatrixNegate)
