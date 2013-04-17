@@ -7,6 +7,7 @@
 #define UTIL_ALIGNED_MEMORY_HEADER
 
 #include <cstddef>
+#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 
 #include "util/defines.h"
 

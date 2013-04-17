@@ -107,7 +107,7 @@ read_photosynther_log (std::string const& filename,
     for (std::size_t i = 0; i < num && !in.eof(); ++i)
     {
         std::getline(in, line);
-        util::string::chop(line);
+        util::string::clip_newlines(&line);
         std::size_t pos = line.find_last_of('\\');
         std::string fname = line.substr(pos + 1, line.size() - pos - 2);
         files.push_back(fname);

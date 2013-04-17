@@ -177,8 +177,8 @@ load_ply_mesh (std::string const& filename)
     while (input.good())
     {
         std::getline(input, buffer);
-        util::string::chop(buffer);
-        util::string::clip(buffer);
+        util::string::clip_newlines(&buffer);
+        util::string::clip_whitespaces(&buffer);
 
         //std::cout << "Buffer: " << buffer << std::endl;
 
@@ -1066,8 +1066,8 @@ load_ply_depthmap (std::string const& filename)
     while (input.good())
     {
         std::getline(input, buffer);
-        util::string::chop(buffer);
-        util::string::clip(buffer);
+        util::string::clip_newlines(&buffer);
+        util::string::clip_whitespaces(&buffer);
 
         util::Tokenizer t;
         t.split(buffer);
@@ -1113,8 +1113,8 @@ load_ply_depthmap (std::string const& filename)
         std::size_t idx = (height - (i / width) - 1) * width + (i % width);
 
         std::getline(input, buffer);
-        util::string::chop(buffer);
-        util::string::clip(buffer);
+        util::string::clip_newlines(&buffer);
+        util::string::clip_whitespaces(&buffer);
         util::Tokenizer t;
         t.split(buffer);
 

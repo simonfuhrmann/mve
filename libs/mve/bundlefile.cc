@@ -19,8 +19,8 @@ BundleFile::read_bundle (std::string const& filename)
     std::getline(in, first_line);
     in.close();
 
-    util::string::chop(first_line);
-    util::string::clip(first_line);
+    util::string::clip_newlines(&first_line);
+    util::string::clip_whitespaces(&first_line);
 
     if (first_line == "drews 1.0")
         this->format = BUNDLER_PHOTOSYNTHER;
@@ -88,8 +88,8 @@ BundleFile::read_bundle_intern (std::string const& filename)
 
     /* Read version information in the first line. */
     std::getline(in, this->version);
-    util::string::chop(this->version);
-    util::string::clip(this->version);
+    util::string::clip_newlines(&this->version);
+    util::string::clip_whitespaces(&this->version);
 
     /* Read number of cameras and number of points. */
     this->num_valid_cams = 0;

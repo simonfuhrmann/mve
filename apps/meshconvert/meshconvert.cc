@@ -1,9 +1,10 @@
 #include <iostream>
 #include <string>
-#include <cstdlib>
 
 #include "util/arguments.h"
+#include "util/string.h"
 #include "mve/meshtools.h"
+#include "mve/plyfile.h"
 
 struct AppSettings
 {
@@ -57,7 +58,7 @@ main (int argc, char** argv)
     catch (std::exception& e)
     {
         std::cerr << "Error loading mesh: " << e.what() << std::endl;
-        std::exit(1);
+        return 1;
     }
 
     if (conf.compute_normals)
@@ -65,12 +66,16 @@ main (int argc, char** argv)
 
     try
     {
-        mve::geom::save_mesh(mesh, conf.outfile);
+        using util::string::right;
+        if (conf.compute_normals && right(conf.outfile, 4) == ".ply")
+            mve::geom::save_ply_mesh(mesh, conf.outfile, true, true, true);
+        else
+            mve::geom::save_mesh(mesh, conf.outfile);
     }
     catch (std::exception& e)
     {
         std::cerr << "Error saving mesh: " << e.what() << std::endl;
-        std::exit(1);
+        return 1;
     }
 
     return 0;

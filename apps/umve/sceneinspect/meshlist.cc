@@ -42,8 +42,8 @@ QMeshContextMenu::build (void)
 
     std::string num_verts(util::string::get(rep->mesh->get_vertices().size()));
     std::string num_faces(util::string::get(rep->mesh->get_faces().size() / 3));
-    util::string::punctate(num_verts, '\'');
-    util::string::punctate(num_faces, '\'');
+    util::string::punctate(&num_verts, '\'');
+    util::string::punctate(&num_faces, '\'');
 
     this->addAction(tr("Vertices: %1").arg(num_verts.c_str()))->setEnabled(false);
     this->addAction(tr("Faces: %1").arg(num_faces.c_str()))->setEnabled(false);

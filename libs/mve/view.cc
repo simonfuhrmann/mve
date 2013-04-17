@@ -250,9 +250,9 @@ View::parse_header_line (std::string const& header_line)
 {
     /* Clean header line. */
     std::string str(header_line);
-    util::string::chop(str);
-    util::string::clip(str);
-    util::string::normalize(str);
+    util::string::clip_newlines(&str);
+    util::string::clip_whitespaces(&str);
+    util::string::normalize(&str);
 
     /* Tokenize header. */
     util::Tokenizer tokens;

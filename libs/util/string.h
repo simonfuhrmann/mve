@@ -41,27 +41,24 @@ char const* for_type (void);
  */
 int size_for_type_string (std::string const& typestring);
 
-/** Inserts 'delim' every 'spacing' characters from the right. */
-// TODO WARNING REFACTOR!
-void punctate (std::string& input, char delim = ',', std::size_t spacing = 3);
-
-/** Clips whitespaces from the front and end of the string. */
-// TODO WARNING REFACTOR!
-void clip (std::string& str);
-
-/** Chops string by removing newline characters from the end of the string. */
-// TODO WARNING REFACTOR!
-void chop (std::string& str);
+/** Inserts 'delim' every 'spacing' characters from the right, in-place. */
+void punctate (std::string* input, char delim = ',', std::size_t spacing = 3);
 
 /** Inserts 'delim' every 'spacing' characters from the right. */
 std::string punctated (std::string const& input,
     char delim = ',', std::size_t spacing = 3);
 
-/** Returns a new string with clipped whitespaces from front and end. */
-std::string clipped (std::string const& str);
+/** Clips whitespaces from the front and end of the string, in-place. */
+void clip_whitespaces (std::string* str);
 
-/** Returns a new string with removed newline characters from the end. */
-std::string chopped (std::string const& str);
+/** Clips whitespaces from the front and end of the string. */
+std::string clipped_whitespaces (std::string const& str);
+
+/** Clips newlines from the end of the string, in-place. */
+void clip_newlines (std::string& str);
+
+/** Clips newlines from the end of the string. */
+std::string clipped_newlines (std::string const& str);
 
 /** Inserts line breaks on word boundaries to limit lines to 'width' chars. */
 std::string wordwrap (char const* str, int width);
@@ -72,10 +69,10 @@ std::string wordwrap (char const* str, int width);
  */
 std::string ellipsize (std::string const& in, std::size_t chars, int type = 0);
 
-/** Replaces several whitespaces with a single blank. */
-// TODO WARNING REFACTOR!
-void normalize (std::string& str);
+/** Replaces several whitespaces with a single blank, in-place. */
+void normalize (std::string* str);
 
+/** Replaces several whitespaces with a single blank. */
 std::string normalized (std::string const& str);
 
 /** Returns the leftmost 'chars' characters of 'str'. */
@@ -247,43 +244,22 @@ size_for_type_string (std::string const& typestring)
 }
 
 inline void
-punctate (std::string& str, char delim, std::size_t spacing)
+punctate (std::string* str, char delim, std::size_t spacing)
 {
-    if (str.size() <= spacing || spacing == 0)
+    if (str->size() <= spacing || spacing == 0)
         return;
 
-    std::size_t pos = str.size() - 1;
+    std::size_t pos = str->size() - 1;
     std::size_t cnt = 0;
     while (pos > 0)
     {
         cnt += 1;
         if (cnt == spacing)
         {
-            str.insert(str.begin() + pos, delim);
+            str->insert(str->begin() + pos, delim);
             cnt = 0;
         }
         pos -= 1;
-    }
-}
-
-inline void
-clip (std::string& str)
-{
-  while (!str.empty() && (str[str.size() - 1] == ' '
-      || str[str.size() - 1] == '\t'))
-    str.resize(str.size() - 1);
-
-  while (!str.empty() && (str[0] == ' ' || str[0] == '\t'))
-    str.erase(str.begin());
-}
-
-inline void
-chop (std::string& str)
-{
-    while (!str.empty() && (str[str.size() - 1] == '\r'
-        || str[str.size() - 1] == '\n'))
-    {
-        str.resize(str.size() - 1);
     }
 }
 
@@ -291,23 +267,41 @@ inline std::string
 punctated (std::string const& input, char delim, std::size_t spacing)
 {
     std::string ret(input);
-    punctate(ret, delim, spacing);
+    punctate(&ret, delim, spacing);
     return ret;
 }
 
-inline std::string
-clipped (std::string const& str)
+inline void
+clip_whitespaces (std::string* str)
 {
-    std::string ret(str);
-    clip(ret);
-    return ret;
+    // TODO: Use str->back() and str->front() once C++11 is standard.
+    while (!str->empty() && (*str->rbegin() == ' ' || *str->rbegin() == '\t'))
+        str->resize(str->size() - 1);
+    while (!str->empty() && (*str->begin() == ' ' || *str->begin() == '\t'))
+        str->erase(str->begin());
 }
 
 inline std::string
-chopped (std::string const& str)
+clipped_whitespaces (std::string const& str)
 {
     std::string ret(str);
-    chop(ret);
+    clip_whitespaces(&ret);
+    return ret;
+}
+
+inline void
+clip_newlines (std::string* str)
+{
+    while (!str->empty() && (*str->rbegin() == '\r' || *str->rbegin() == '\n'))
+        str->resize(str->size() - 1);
+}
+
+
+inline std::string
+clipped_newlines (std::string const& str)
+{
+    std::string ret(str);
+    clip_newlines(&ret);
     return ret;
 }
 
@@ -388,20 +382,20 @@ ellipsize (std::string const& str, std::size_t chars, int type)
 }
 
 inline void
-normalize (std::string& str)
+normalize (std::string* str)
 {
   std::size_t iter = 0;
   bool was_whitespace = false;
-  while (iter < str.size())
+  while (iter < str->size())
   {
-    if (str[iter] == '\t')
-      str[iter] = ' ';
+    if (str->at(iter) == '\t')
+      str->at(iter) = ' ';
 
-    if (str[iter] == ' ')
+    if (str->at(iter) == ' ')
     {
       if (was_whitespace)
       {
-        str.erase(str.begin() + iter);
+        str->erase(str->begin() + iter);
         was_whitespace = true;
         continue;
       }
@@ -420,7 +414,7 @@ inline std::string
 normalized (std::string const& str)
 {
     std::string ret(str);
-    normalize(ret);
+    normalize(&ret);
     return ret;
 }
 

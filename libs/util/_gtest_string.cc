@@ -57,19 +57,19 @@ TEST(StringTest, ClipAndChopTest)
 {
     std::string str1 = "\t  \t test\t ";
     std::string str2 = " \t  \t test\t";
-    EXPECT_EQ("test", util::string::clipped(str1));
-    EXPECT_EQ("test", util::string::clipped(str2));
+    EXPECT_EQ("test", util::string::clipped_whitespaces(str1));
+    EXPECT_EQ("test", util::string::clipped_whitespaces(str2));
 
     std::string str3 = "test\n";
     std::string str4 = "test\r\n";
     std::string str5 = "test\n\r";
     std::string str6 = "test\n\t";
     std::string str7 = "test\n\n\n";
-    EXPECT_EQ("test", util::string::chopped(str3));
-    EXPECT_EQ("test", util::string::chopped(str4));
-    EXPECT_EQ("test", util::string::chopped(str5));
-    EXPECT_EQ(str6, util::string::chopped(str6));
-    EXPECT_EQ("test", util::string::chopped(str7));
+    EXPECT_EQ("test", util::string::clipped_newlines(str3));
+    EXPECT_EQ("test", util::string::clipped_newlines(str4));
+    EXPECT_EQ("test", util::string::clipped_newlines(str5));
+    EXPECT_EQ(str6, util::string::clipped_newlines(str6));
+    EXPECT_EQ("test", util::string::clipped_newlines(str7));
 }
 
 TEST(StringTest, PunctateTest)

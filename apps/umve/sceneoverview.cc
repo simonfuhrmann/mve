@@ -45,6 +45,7 @@ SceneOverview::SceneOverview (QWidget* parent)
 }
 
 /* ---------------------------------------------------------------- */
+
 void
 SceneOverview::on_scene_changed (mve::Scene::Ptr scene)
 {
