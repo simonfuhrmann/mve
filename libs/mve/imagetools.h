@@ -1483,16 +1483,16 @@ integral_image (typename Image<IN>::ConstPtr image)
     if (!image.get())
         throw std::invalid_argument("NULL image given");
 
-    int w = image->width();
-    int h = image->height();
-    int c = image->channels();
-    int wc = w * c; // row stride
+    int const width = image->width();
+    int const height = image->height();
+    int const chans = image->channels();
+    int const row_stride = width * chans;
 
     typename Image<OUT>::Ptr ret(Image<OUT>::create());
-    ret->allocate(w, h, c);
+    ret->allocate(width, height, chans);
 
     /* Input image row and destination image rows. */
-    std::vector<OUT> zeros(w * c, OUT(0));
+    std::vector<OUT> zeros(row_stride, OUT(0));
     IN const* inrow = image->get_data_pointer();
     OUT* dest = ret->get_data_pointer();
     OUT* prev = &zeros[0];
@@ -1500,19 +1500,18 @@ integral_image (typename Image<IN>::ConstPtr image)
     /*
      * I(x,y) = i(x,y) + I(x-1,y) + I(x,y-1) - I(x-1,y-1)
      */
-    for (int y = 0; y < h; ++y)
+    for (int y = 0; y < height; ++y)
     {
         /* Calculate first pixel in row. */
-        for (int cc = 0; cc < c; ++cc)
+        for (int cc = 0; cc < chans; ++cc)
             dest[cc] = static_cast<OUT>(inrow[cc]) + prev[cc];
-        //std::transform(prev, prev + c, inrow, dest, std::plus<T>());
         /* Calculate all following pixels in row. */
-        for (int i = c; i < wc; ++i)
-            dest[i] = inrow[i] + prev[i] + dest[i - c] - prev[i - c];
+        for (int i = chans; i < row_stride; ++i)
+            dest[i] = inrow[i] + prev[i] + dest[i - chans] - prev[i - chans];
 
         prev = dest;
-        dest += wc;
-        inrow += wc;
+        dest += row_stride;
+        inrow += row_stride;
     }
 
     return ret;
@@ -1525,17 +1524,15 @@ T
 integral_image_area (typename Image<T>::ConstPtr sat,
     int x1, int y1, int x2, int y2, int cc)
 {
-    int w = sat->width();
-    int c = sat->channels();
-    int wc = w * c; // row stride
-
-    T ret = sat->at(y2 * wc + x2 * c + cc); // bottom-right
+    int const row_stride = sat->width() * sat->channels();
+    int const channels = sat->channels();
+    T ret = sat->at(y2 * row_stride + x2 * channels + cc);
     if (x1 > 0)
-        ret -= sat->at(y2 * wc + (x1-1) * c + cc); // bottom-left
+        ret -= sat->at(y2 * row_stride + (x1-1) * channels + cc);
     if (y1 > 0)
-        ret -= sat->at((y1-1) * wc + x2 * c + cc); // top-right
+        ret -= sat->at((y1-1) * row_stride + x2 * channels + cc);
     if (x1 > 0 && y1 > 0)
-        ret += sat->at((y1-1) * wc + (x1-1) * c + cc); // top-left
+        ret += sat->at((y1-1) * row_stride + (x1-1) * channels + cc);
     return ret;
 }
 

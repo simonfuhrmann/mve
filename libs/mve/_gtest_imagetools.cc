@@ -198,3 +198,45 @@ TEST(ImageToolsTest, CropImageOverlap2)
     EXPECT_EQ(63, img->at(6));
     EXPECT_EQ(127, img->at(7));
 }
+
+TEST(ImageToolsTest, IntegralImage)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
+    for (int i = 0; i < 4 * 4 * 2; ++i)
+        img->at(i) = i;
+
+    mve::IntImage::Ptr sat = mve::image::integral_image<uint8_t, int>(img);
+    EXPECT_EQ(0, sat->at(0, 0, 0));  // channel 0, row 0
+    EXPECT_EQ(2, sat->at(1, 0, 0));
+    EXPECT_EQ(6, sat->at(2, 0, 0));
+    EXPECT_EQ(12, sat->at(3, 0, 0));
+    EXPECT_EQ(8, sat->at(0, 1, 0));  // channel 0, row 1
+    EXPECT_EQ(20, sat->at(1, 1, 0));
+    EXPECT_EQ(36, sat->at(2, 1, 0));
+    EXPECT_EQ(56, sat->at(3, 1, 0));
+    EXPECT_EQ(24, sat->at(0, 2, 0));  // channel 0, row 2
+    EXPECT_EQ(54, sat->at(1, 2, 0));
+    EXPECT_EQ(90, sat->at(2, 2, 0));
+    EXPECT_EQ(132, sat->at(3, 2, 0));
+    EXPECT_EQ(48, sat->at(0, 3, 0));  // channel 0, row 3
+    EXPECT_EQ(104, sat->at(1, 3, 0));
+    EXPECT_EQ(168, sat->at(2, 3, 0));
+    EXPECT_EQ(240, sat->at(3, 3, 0));
+
+    EXPECT_EQ(1, sat->at(0, 0, 1));  // channel 1, row 0
+    EXPECT_EQ(4, sat->at(1, 0, 1));
+    EXPECT_EQ(9, sat->at(2, 0, 1));
+    EXPECT_EQ(16, sat->at(3, 0, 1));
+    EXPECT_EQ(10, sat->at(0, 1, 1));  // channel 1, row 1
+    EXPECT_EQ(24, sat->at(1, 1, 1));
+    EXPECT_EQ(42, sat->at(2, 1, 1));
+    EXPECT_EQ(64, sat->at(3, 1, 1));
+    EXPECT_EQ(27, sat->at(0, 2, 1));  // channel 1, row 2
+    EXPECT_EQ(60, sat->at(1, 2, 1));
+    EXPECT_EQ(99, sat->at(2, 2, 1));
+    EXPECT_EQ(144, sat->at(3, 2, 1));
+    EXPECT_EQ(52, sat->at(0, 3, 1));  // channel 1, row 3
+    EXPECT_EQ(112, sat->at(1, 3, 1));
+    EXPECT_EQ(180, sat->at(2, 3, 1));
+    EXPECT_EQ(256, sat->at(3, 3, 1));
+}
