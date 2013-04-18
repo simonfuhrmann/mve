@@ -206,6 +206,10 @@ TEST(ImageToolsTest, IntegralImage)
         img->at(i) = i;
 
     mve::IntImage::Ptr sat = mve::image::integral_image<uint8_t, int>(img);
+    EXPECT_EQ(sat->width(), img->width());
+    EXPECT_EQ(sat->height(), img->height());
+    EXPECT_EQ(sat->channels(), img->channels());
+
     EXPECT_EQ(0, sat->at(0, 0, 0));  // channel 0, row 0
     EXPECT_EQ(2, sat->at(1, 0, 0));
     EXPECT_EQ(6, sat->at(2, 0, 0));

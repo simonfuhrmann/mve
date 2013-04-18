@@ -1,7 +1,13 @@
 /*
- * Simple app to import calibrated images from the Photosynth bundler,
- * and the MVS reconstruction if available.
+ * App to create MVE scenes from images and bundles.
  * Written by Simon Fuhrmann.
+ *
+ * The app supports:
+ * - Import of calibrated images from Photosynther and Noah bundler
+ * - Import of uncalibrated 8 bit, 16 bit or float images from a directory
+ *   8 bit formats: JPEG, PNG, TIFF, PPM
+ *   16 bit formats: TIFF, PPM
+ *   float formats: PFM
  */
 
 #include <cstring>
@@ -27,7 +33,7 @@
 #include "mve/imagefile.h"
 #include "mve/imageexif.h" // extract EXIF for JPEG images
 
-#define THUMB_SIZE 50
+#define THUMBNAIL_SIZE 50
 
 #define BUNDLE_PATH "bundle/"
 #define PS_BUNDLE_LOG "coll.log"
@@ -147,31 +153,134 @@ read_noah_imagelist (std::string const& filename, StringVector& files)
 /* ---------------------------------------------------------------- */
 
 mve::ByteImage::Ptr
-load_original_image (std::string const& fname, std::string& exif)
+load_8bit_image (std::string const& fname, std::string* exif)
 {
-    mve::ByteImage::Ptr image;
     std::string lcfname(util::string::lowercase(fname));
     std::string ext4 = util::string::right(lcfname, 4);
     std::string ext5 = util::string::right(lcfname, 5);
-    if (ext4 != ".png" && ext4 != ".jpg" && ext5 != ".jpeg"
-        && ext4 != ".tif" && ext5 != ".tiff")
-    {
-        std::cout << "Skipping file " << util::fs::get_file_component(fname)
-            << ", unknown image type." << std::endl;
-        return image;
-    }
-
     try
     {
         if (ext4 == ".jpg" || ext5 == ".jpeg")
-            image = mve::image::load_jpg_file(fname, &exif);
-        else
-            image = mve::image::load_file(fname);
+            return mve::image::load_jpg_file(fname, exif);
+        else if (ext4 == ".png" ||  ext4 == ".ppm"
+            || ext4 == ".tif" || ext5 == ".tiff")
+            return mve::image::load_file(fname);
     }
-    catch (std::exception& e)
+    catch (...)
+    { }
+
+    return mve::ByteImage::Ptr();
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::RawImage::Ptr
+load_16bit_image (std::string const& fname)
+{
+    std::string lcfname(util::string::lowercase(fname));
+    std::string ext4 = util::string::right(lcfname, 4);
+    std::string ext5 = util::string::right(lcfname, 5);
+    try
     {
-        std::cerr << "    " << e.what() << std::endl;
-        return image;
+        if (ext4 == ".tif" || ext5 == ".tiff")
+            return mve::image::load_tiff_16_file(fname);
+        else if (ext4 == ".ppm")
+            return mve::image::load_ppm_16_file(fname);
+    }
+    catch (...)
+    { }
+
+    return mve::RawImage::Ptr();
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::FloatImage::Ptr
+load_float_image (std::string const& fname)
+{
+    std::string lcfname(util::string::lowercase(fname));
+    std::string ext4 = util::string::right(lcfname, 4);
+    try
+    {
+        if (ext4 == ".pfm")
+            return mve::image::load_pfm_file(fname);
+    }
+    catch (...)
+    { }
+
+    return mve::FloatImage::Ptr();
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::ImageBase::Ptr
+load_any_image (std::string const& fname, std::string* exif)
+{
+    mve::ByteImage::Ptr img_8 = load_8bit_image(fname, exif);
+    if (img_8.get())
+        return img_8;
+
+    mve::RawImage::Ptr img_16 = load_16bit_image(fname);
+    if (img_16.get())
+        return img_16;
+
+    mve::FloatImage::Ptr img_float = load_float_image(fname);
+    if (img_float.get())
+        return img_float;
+
+    std::cout << "Skipping file " << util::fs::get_file_component(fname)
+        << ", cannot load image." << std::endl;
+    return mve::ImageBase::Ptr();
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+void
+find_min_max_percentile (typename mve::Image<T>::ConstPtr image,
+    T* vmin, T* vmax)
+{
+    typename mve::Image<T>::Ptr copy = mve::Image<T>::create(*image);
+    std::sort(copy->begin(), copy->end());
+    *vmin = copy->at(copy->get_value_amount() / 10);
+    *vmax = copy->at(9 * copy->get_value_amount() / 10);
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::ByteImage::Ptr
+create_thumbnail (mve::ImageBase::ConstPtr img)
+{
+    mve::ByteImage::Ptr image;
+    switch (img->get_type())
+    {
+        case mve::IMAGE_TYPE_UINT8:
+            image = mve::image::create_thumbnail<uint8_t>
+                (img, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            break;
+
+        case mve::IMAGE_TYPE_UINT16:
+        {
+            mve::RawImage::Ptr temp = mve::image::create_thumbnail<uint16_t>
+                (img, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            uint16_t vmin, vmax;
+            find_min_max_percentile(temp, &vmin, &vmax);
+            image = mve::image::raw_to_byte_image(temp, vmin, vmax);
+            break;
+        }
+
+        case mve::IMAGE_TYPE_FLOAT:
+        {
+            mve::FloatImage::Ptr temp = mve::image::create_thumbnail<float>
+                (img, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            float vmin, vmax;
+            find_min_max_percentile(temp, &vmin, &vmax);
+            image = mve::image::float_to_byte_image(temp, vmin, vmax);
+            break;
+        }
+
+        default:
+            return mve::ByteImage::Ptr();
     }
 
     return image;
@@ -247,7 +356,7 @@ import_bundle (AppSettings const& conf)
     /* Consistency check. */
     if (bf.get_format() != bundler_fmt)
     {
-        std::cerr << "Error: Bundle format and directory layout do not match!"
+        std::cerr << "Error: Bundle format and directory layout don't match!"
             << std::endl;
         std::exit(1);
     }
@@ -395,9 +504,8 @@ import_bundle (AppSettings const& conf)
         {
             /* For Noah datasets, load original image and undistort it. */
             std::string orig_filename = image_path + orig_files[i];
-            original = load_original_image(orig_filename, exif);
-            thumb = mve::image::create_thumbnail<uint8_t>
-                (original, THUMB_SIZE, THUMB_SIZE);
+            original = load_8bit_image(orig_filename, &exif);
+            thumb = create_thumbnail(original);
 
             /* Convert Noah focal length to MVE focal length. */
             cam.flen /= (float)std::max(original->width(), original->height());
@@ -416,13 +524,12 @@ import_bundle (AppSettings const& conf)
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
                 + util::string::get_filled(valid_cnt, 4) + ".jpg";
             undist = mve::image::load_file(undist_filename);
-            thumb = mve::image::create_thumbnail<uint8_t>
-                (undist, THUMB_SIZE, THUMB_SIZE);
+            thumb = create_thumbnail(original);
 
             if (conf.import_orig)
             {
                 std::string orig_filename(image_path + orig_files[valid_cnt]);
-                original = load_original_image(orig_filename, exif);
+                original = load_8bit_image(orig_filename, &exif);
                 /* Overwrite undistorted images with manually undistorted
                  * original images. This reduces JPEG artifacts. */
                 undist = mve::image::image_undistort<uint8_t>(original, cam);
@@ -506,8 +613,8 @@ import_images (AppSettings const& conf)
         std::cout << "Importing image " << fname << "..." << std::endl;
 
         std::string exif;
-        mve::ByteImage::Ptr image = load_original_image
-            (dir[i].get_absolute_name(), exif);
+        mve::ByteImage::Ptr image = load_any_image
+            (dir[i].get_absolute_name(), &exif);
         if (!image.get())
             continue;
 
@@ -519,16 +626,16 @@ import_images (AppSettings const& conf)
                 viewname = fname.substr(0, pos);
         }
 
-        /* Create view and set headers. */
+        /* Create view, set headers, add image. */
         mve::View::Ptr view = mve::View::create();
         view->set_id(id_cnt);
         view->set_name(viewname);
-
-        /* Add thumbnail and image to view. */
-        mve::ByteImage::Ptr thumb = mve::image::create_thumbnail<uint8_t>
-            (image, THUMB_SIZE, THUMB_SIZE);
-        view->add_image("thumbnail", thumb);
         view->add_image("original", image);
+
+        /* Add thumbnail for byte images. */
+        mve::ByteImage::Ptr thumb = create_thumbnail(image);
+        if (thumb.get())
+            view->add_image("thumbnail", thumb);
 
         /* Add EXIF data to view if available. */
         if (!exif.empty())

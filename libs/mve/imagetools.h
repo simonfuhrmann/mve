@@ -86,7 +86,7 @@ type_to_type_image (typename Image<SRC>::ConstPtr image);
  */
 template <typename T>
 void
-find_min_max_value (typename mve::Image<T>::Ptr image, T* vmin, T* vmax);
+find_min_max_value (typename mve::Image<T>::ConstPtr image, T* vmin, T* vmax);
 
 /**
  * Normalizes a float image IN-PLACE such that all values are [0, 1].
@@ -451,7 +451,7 @@ type_to_type_image (typename Image<SRC>::ConstPtr image)
 
 template <typename T>
 void
-find_min_max_value (typename mve::Image<T>::Ptr image, T* vmin, T* vmax)
+find_min_max_value (typename mve::Image<T>::ConstPtr image, T* vmin, T* vmax)
 {
     *vmin = std::numeric_limits<T>::max();
     *vmax = std::numeric_limits<T>::is_signed
@@ -1565,9 +1565,9 @@ create_thumbnail (typename Image<T>::ConstPtr image,
         crop_top = (rescale_height - thumb_height) / 2;
     }
 
-    mve::ByteImage::Ptr thumb = mve::image::rescale<uint8_t>(image,
+    typename mve::Image<T>::Ptr thumb = mve::image::rescale<T>(image,
         mve::image::RESCALE_LINEAR, rescale_width, rescale_height);
-    thumb = mve::image::crop<uint8_t>(thumb, thumb_width, thumb_height,
+    thumb = mve::image::crop<T>(thumb, thumb_width, thumb_height,
         crop_left, crop_top, 0);
 
     return thumb;
