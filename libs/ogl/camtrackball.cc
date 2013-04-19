@@ -122,10 +122,7 @@ CamTrackball::handle_tb_rotation (int x, int y)
 math::Vec3f
 CamTrackball::get_center (int x, int y)
 {
-    /* Read depth value from depth buffer. */
-    // Is this always safe in this context (QT key event, no GL context)?
-
-    /* maximum patchsize should be odd and bigger than one */
+    /* patchsize should be odd and larger than one */
     int const patchsize = 9;
     int const half_patchsize = patchsize / 2;
 
@@ -138,12 +135,14 @@ CamTrackball::get_center (int x, int y)
     if (min_x >= 0 && min_x + patchsize < this->cam->width
         && min_y >= 0 && min_y + patchsize < this->cam->height)
     {
+        /* Read depth value from depth buffer. */
         glReadPixels(min_x, min_y, patchsize, patchsize,
             GL_DEPTH_COMPONENT, GL_FLOAT, &deptharr);
+
         /* searches for valid depth values in spiral beginning at the center */
         int dx = 1;
         int dy = 0;
-        int r = 0;
+        int radius = 0;
         int x = half_patchsize;
         int y = half_patchsize;
         for (int i = 0; i < patchsize * patchsize; i++)
@@ -157,26 +156,26 @@ CamTrackball::get_center (int x, int y)
             x += dx;
             y += dy;
 
-            if (x > half_patchsize + r)
+            if (x > half_patchsize + radius)
             {
-                r++;
+                radius++;
                 dx = 0;
                 dy = -1;
             }
 
-            if (y <= half_patchsize - r)
+            if (y <= half_patchsize - radius)
             {
                 dx = -1;
                 dy = 0;
             }
 
-            if (x <= half_patchsize - r)
+            if (x <= half_patchsize - radius)
             {
                 dx = 0;
                 dy = 1;
             }
 
-            if (y >= half_patchsize + r)
+            if (y >= half_patchsize + radius)
             {
                 dx = 1;
                 dy = 0;
