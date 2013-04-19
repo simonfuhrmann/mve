@@ -122,14 +122,66 @@ CamTrackball::handle_tb_rotation (int x, int y)
 math::Vec3f
 CamTrackball::get_center (int x, int y)
 {
-    /* Read depth value from depth buffer. */
-    // Is this always safe in this context (QT key event, no GL context)?
-    float depth;
-    glReadPixels(x, this->cam->height - y - 1, 1, 1,
-        GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    /* Patchsize should be odd and larger than one. */
+    int const patchsize = 9;
+    int const half_patchsize = patchsize / 2;
 
-    //std::cout << "Depth value at (" << x << "," << y << ")"
-    //    << ": " << depth << std::endl;
+    float depth = 1.0f;
+    float deptharr[patchsize][patchsize];
+
+    int const min_x = x - half_patchsize;
+    int const min_y = this->cam->height - 1 - y - half_patchsize;
+
+    if (min_x >= 0 && min_x + patchsize < this->cam->width
+        && min_y >= 0 && min_y + patchsize < this->cam->height)
+    {
+        /* Read depth value from depth buffer. */
+        glReadPixels(min_x, min_y, patchsize, patchsize,
+            GL_DEPTH_COMPONENT, GL_FLOAT, &deptharr);
+
+        /* searches for valid depth values in spiral beginning at the center */
+        int dx = 1;
+        int dy = 0;
+        int radius = 0;
+        int x = half_patchsize;
+        int y = half_patchsize;
+        for (int i = 0; i < patchsize * patchsize; i++)
+        {
+            if (deptharr[x][y] != 1.0f)
+            {
+                depth = deptharr[x][y];
+                break;
+            }
+
+            x += dx;
+            y += dy;
+
+            if (x > half_patchsize + radius)
+            {
+                radius++;
+                dx = 0;
+                dy = -1;
+            }
+
+            if (y <= half_patchsize - radius)
+            {
+                dx = -1;
+                dy = 0;
+            }
+
+            if (x <= half_patchsize - radius)
+            {
+                dx = 0;
+                dy = 1;
+            }
+
+            if (y >= half_patchsize + radius)
+            {
+                dx = 1;
+                dy = 0;
+            }
+        }
+    }
 
     /* Exit if depth value is not set. */
     if (depth == 1.0f)
