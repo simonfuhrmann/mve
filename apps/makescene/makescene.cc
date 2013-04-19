@@ -57,6 +57,7 @@ struct AppSettings
     bool import_orig;
     bool skip_invalid;
     bool images_only;
+    bool append_images;
 
     /* Computed values. */
     std::string bundle_path;
@@ -132,8 +133,8 @@ read_noah_imagelist (std::string const& filename, StringVector& files)
     std::ifstream in(filename.c_str());
     if (!in.good())
     {
-        std::cout << "Error: Cannot read bundler list file!" << std::endl;
-        std::cout << "File: " << filename << std::endl;
+        std::cerr << "Error: Cannot read bundler list file!" << std::endl;
+        std::cerr << "File: " << filename << std::endl;
         std::exit(1);
     }
 
@@ -228,7 +229,7 @@ load_any_image (std::string const& fname, std::string* exif)
     if (img_float.get())
         return img_float;
 
-    std::cout << "Skipping file " << util::fs::get_file_component(fname)
+    std::cerr << "Skipping file " << util::fs::get_file_component(fname)
         << ", cannot load image." << std::endl;
     return mve::ImageBase::Ptr();
 }
@@ -435,7 +436,7 @@ import_bundle (AppSettings const& conf)
         if (cam.flen == 0.0f && (conf.skip_invalid
             || bundler_fmt == mve::BUNDLER_PHOTOSYNTHER))
         {
-            std::cout << "Skipping view '" << fname
+            std::cerr << "Skipping view '" << fname
                 << "' (invalid camera)" << std::endl;
             continue;
         }
@@ -483,7 +484,7 @@ import_bundle (AppSettings const& conf)
             float rmatdet = math::matrix_determinant(rmat);
             if (rmatdet < 0.0f)
             {
-                std::cout << "Skipping view '" << fname
+                std::cerr << "Skipping view '" << fname
                     << "' (bad rotation matrix)" << std::endl;
                 continue;
             }
@@ -543,12 +544,12 @@ import_bundle (AppSettings const& conf)
         if (undist.get())
             view->add_image("undistorted", undist);
         else if (cam.flen != 0.0f && !undist.get())
-            std::cout << "Warning: Undistorted image missing!" << std::endl;
+            std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
         if (original.get())
             view->add_image("original", original);
         else if (conf.import_orig && undist.get())
-            std::cout << "Warning: Original image missing!" << std::endl;
+            std::cerr << "Warning: Original image missing!" << std::endl;
 
         /* Add EXIF data to view if available. */
         if (!exif.empty())
@@ -579,6 +580,38 @@ import_bundle (AppSettings const& conf)
 
 /* ---------------------------------------------------------------- */
 
+int
+find_max_scene_id (std::string const& view_path)
+{
+    util::fs::Directory dir;
+    try { dir.scan(view_path); }
+    catch (...) { return -1; }
+
+    /* Load all MVE files and remember largest view ID. */
+    std::size_t max_view_id = 0;
+    for (std::size_t i = 0; i < dir.size(); ++i)
+    {
+        std::string ext4 = util::string::right(dir[i].name, 4);
+        if (ext4 != ".mve")
+            continue;
+
+        mve::View::Ptr view;
+        try
+        { view = mve::View::create(dir[i].get_absolute_name()); }
+        catch (...)
+        {
+            std::cerr << "Error reading " << dir[i].name << std::endl;
+            continue;
+        }
+
+        max_view_id = std::max(max_view_id, view->get_id());
+    }
+
+    return static_cast<int>(max_view_id);
+}
+
+/* ---------------------------------------------------------------- */
+
 void
 import_images (AppSettings const& conf)
 {
@@ -594,13 +627,28 @@ import_images (AppSettings const& conf)
     /* ------------------ Start importing images ------------------- */
 
     /* Create destination dir. */
-    std::cout << "Creating output directories..." << std::endl;
-    util::fs::mkdir(conf.output_dir.c_str());
-    util::fs::mkdir(conf.views_path.c_str());
+    if (!conf.append_images)
+    {
+        std::cout << "Creating output directories..." << std::endl;
+        util::fs::mkdir(conf.output_dir.c_str());
+        util::fs::mkdir(conf.views_path.c_str());
+    }
+
+    int max_scene_id = -1;
+    if (conf.append_images)
+    {
+        max_scene_id = find_max_scene_id(conf.views_path);
+        if (max_scene_id < 0)
+        {
+            std::cerr << "Error: Cannot find view ID for appending." << std::endl;
+            std::exit(1);
+        }
+    }
 
     /* Sort file names, iterate over file names. */
     std::sort(dir.begin(), dir.end());
-    std::size_t id_cnt = 0;
+    std::size_t id_cnt = static_cast<std::size_t>(max_scene_id + 1);
+    std::size_t num_imported = 0;
     for (std::size_t i = 0; i < dir.size(); ++i)
     {
         if (dir[i].is_dir)
@@ -651,9 +699,10 @@ import_images (AppSettings const& conf)
 
         /* Advance ID of successfully imported images. */
         id_cnt += 1;
+        num_imported += 1;
     }
 
-    std::cout << "Imported " << id_cnt << " input images." << std::endl;
+    std::cout << "Imported " << num_imported << " input images." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
@@ -667,6 +716,7 @@ main (int argc, char** argv)
     args.add_option('b', "bundle-id", true, "ID of the bundle [0]");
     args.add_option('k', "keep-invalid", false, "Keeps images with invalid cameras");
     args.add_option('i', "images-only", false, "Imports images from INPUT_DIR only");
+    args.add_option('a', "append-images", false, "Appends images to an existing scene");
     args.set_description("This utility creates MVE scenes by importing "
         "from a Photosynther or Noah format bundle directory INPUT_DIR. "
         "Images corresponding to invalid cameras are ignored by default. "
@@ -680,7 +730,8 @@ main (int argc, char** argv)
         "and the bundle file in the \"bundle\" directory. "
 
         "With the \"images-only\" option, all images in INPUT_DIR "
-        "are directly imported without camera information.");
+        "are directly imported without camera information. If "
+        "\"append-images\" is specified, images are added to the scene.");
     args.set_exit_on_error(true);
     args.set_nonopt_maxnum(2);
     args.set_nonopt_minnum(2);
@@ -693,6 +744,7 @@ main (int argc, char** argv)
     conf.import_orig = false;
     conf.skip_invalid = true;
     conf.images_only = false;
+    conf.append_images = false;
     conf.input_dir = args.get_nth_nonopt(0);
     conf.output_dir = args.get_nth_nonopt(1);
     conf.bundle_id = 0;
@@ -707,6 +759,7 @@ main (int argc, char** argv)
             case 'b': conf.bundle_id = i->get_arg<int>(); break;
             case 'k': conf.skip_invalid = false; break;
             case 'i': conf.images_only = true; break;
+            case 'a': conf.append_images = true; break;
             default: throw std::invalid_argument("Unexpected option");
         }
     }
@@ -718,20 +771,34 @@ main (int argc, char** argv)
         return 1;
     }
 
+    if (conf.append_images && !conf.images_only)
+    {
+        std::cerr << "Error: Cannot --append-images without --images-only."
+            << std::endl;
+        return 1;
+    }
+
     /* Build some paths. */
     conf.views_path = conf.output_dir + "/" VIEWS_DIR;
     conf.bundle_path = conf.input_dir + "/" BUNDLE_PATH;
 
     /* Check if output dir exists. */
-    if (util::fs::dir_exists(conf.output_dir.c_str()))
+    bool output_dir_exists = util::fs::dir_exists(conf.output_dir.c_str());
+    if (output_dir_exists && !conf.append_images)
     {
-        std::cout << std::endl;
-        std::cout << "** WARNING: Output dir already exists." << std::endl;
-        std::cout << "** This may leave old views in your scene." << std::endl;
-        std::cout << std::endl;
-        std::cout << "Press ENTER to continue, or CTRL-C to exit." << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "** WARNING: Output dir already exists." << std::endl;
+        std::cerr << "** This may leave old views in your scene." << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "Press ENTER to continue, or CTRL-C to exit." << std::endl;
         std::string line;
         std::getline(std::cin, line);
+    }
+    else if (!output_dir_exists && conf.append_images)
+    {
+        std::cerr << "Error: Output dir does not exist. Cannot append images."
+            << std::endl;
+        return 1;
     }
 
     if (conf.images_only)
