@@ -125,37 +125,59 @@ CamTrackball::get_center (int x, int y)
     /* Read depth value from depth buffer. */
     // Is this always safe in this context (QT key event, no GL context)?
 
-    // maximum patchsize should be odd and bigger than one
-    #define patchsize 9
-    float depth = 1.0f, deptharr[patchsize][patchsize];
+    /* maximum patchsize should be odd and bigger than one */
+    int const max_patchsize = 9;
+    float depth = 1.0f;
+    float deptharr[max_patchsize][max_patchsize];
 
-    int minx = x - patchsize/2;
-    int miny = this->cam->height-1 - y - patchsize/2;
+    int const min_x = x - max_patchsize / 2;
+    int const min_y = this->cam->height - 1 - y - max_patchsize / 2;
 
-    if(minx >= 0 && minx + patchsize < this->cam->width &&
-       miny >= 0 && miny + patchsize < this->cam->height)
+    if (min_x >= 0 && min_x + max_patchsize < this->cam->width
+        && min_y >= 0 && min_y + max_patchsize < this->cam->height)
     {
-        glReadPixels(minx, miny, patchsize, patchsize, GL_DEPTH_COMPONENT, GL_FLOAT, &deptharr);
-        //searches for depth values in a growing region(square), if multiple values
-        //are found the average value will be taken
-        for(int i = 0; i <= patchsize/2; i++)
+        glReadPixels(min_x, min_y, max_patchsize, max_patchsize,
+            GL_DEPTH_COMPONENT, GL_FLOAT, &deptharr);
+        /* searches for valid depth values in spiral beginning at the center */
+        int dx = 1;
+        int dy = 0;
+        int r = 0;
+        int x = max_patchsize / 2;
+        int y = max_patchsize / 2;
+        for (int i = 0; i < std::pow(max_patchsize, 2); i++)
         {
-            int num = 0;
-            float sum = 0;
-            for(int x = patchsize/2 - i; x <= patchsize/2 + i; x++)
-                for(int y = patchsize/2 - i; y <= patchsize/2 + 1; y++)
-                {
-                    if(deptharr[x][y] != 1.0f) //Discard if MaxValue
-                    {
-                        sum += deptharr[x][y];
-                        num++;
-                    }
-                }
-
-            if(num != 0)
+            if (deptharr[x][y] != 1.0f)
             {
-                depth = sum / num;
+                depth = deptharr[x][y];
                 break;
+            }
+
+            x += dx;
+            y += dy;
+
+            if (x > max_patchsize / 2 + r)
+            {
+                r++;
+                dx = 0;
+                dy = -1;
+            }
+
+            if (y <= max_patchsize / 2 - r)
+            {
+                dx = -1;
+                dy = 0;
+            }
+
+            if (x <= max_patchsize / 2 - r)
+            {
+                dx = 0;
+                dy = 1;
+            }
+
+            if (y >= max_patchsize / 2 + r)
+            {
+                dx = 1;
+                dy = 0;
             }
         }
     }
