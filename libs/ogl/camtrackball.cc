@@ -124,12 +124,41 @@ CamTrackball::get_center (int x, int y)
 {
     /* Read depth value from depth buffer. */
     // Is this always safe in this context (QT key event, no GL context)?
-    float depth;
-    glReadPixels(x, this->cam->height - y - 1, 1, 1,
-        GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 
-    //std::cout << "Depth value at (" << x << "," << y << ")"
-    //    << ": " << depth << std::endl;
+    // maximum patchsize should be odd and bigger than one
+    #define patchsize 9
+    float depth = 1.0f, deptharr[patchsize][patchsize];
+
+    int minx = x - patchsize/2;
+    int miny = this->cam->height-1 - y - patchsize/2;
+
+    if(minx >= 0 && minx + patchsize < this->cam->width &&
+       miny >= 0 && miny + patchsize < this->cam->height)
+    {
+        glReadPixels(minx, miny, patchsize, patchsize, GL_DEPTH_COMPONENT, GL_FLOAT, &deptharr);
+        //searches for depth values in a growing region(square), if multiple values
+        //are found the average value will be taken
+        for(int i = 0; i <= patchsize/2; i++)
+        {
+            int num = 0;
+            float sum = 0;
+            for(int x = patchsize/2 - i; x <= patchsize/2 + i; x++)
+                for(int y = patchsize/2 - i; y <= patchsize/2 + 1; y++)
+                {
+                    if(deptharr[x][y] != 1.0f) //Discard if MaxValue
+                    {
+                        sum += deptharr[x][y];
+                        num++;
+                    }
+                }
+
+            if(num != 0)
+            {
+                depth = sum / num;
+                break;
+            }
+        }
+    }
 
     /* Exit if depth value is not set. */
     if (depth == 1.0f)
