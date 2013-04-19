@@ -126,25 +126,27 @@ CamTrackball::get_center (int x, int y)
     // Is this always safe in this context (QT key event, no GL context)?
 
     /* maximum patchsize should be odd and bigger than one */
-    int const max_patchsize = 9;
+    int const patchsize = 9;
+    int const half_patchsize = patchsize / 2;
+
     float depth = 1.0f;
-    float deptharr[max_patchsize][max_patchsize];
+    float deptharr[patchsize][patchsize];
 
-    int const min_x = x - max_patchsize / 2;
-    int const min_y = this->cam->height - 1 - y - max_patchsize / 2;
+    int const min_x = x - half_patchsize;
+    int const min_y = this->cam->height - 1 - y - half_patchsize;
 
-    if (min_x >= 0 && min_x + max_patchsize < this->cam->width
-        && min_y >= 0 && min_y + max_patchsize < this->cam->height)
+    if (min_x >= 0 && min_x + patchsize < this->cam->width
+        && min_y >= 0 && min_y + patchsize < this->cam->height)
     {
-        glReadPixels(min_x, min_y, max_patchsize, max_patchsize,
+        glReadPixels(min_x, min_y, patchsize, patchsize,
             GL_DEPTH_COMPONENT, GL_FLOAT, &deptharr);
         /* searches for valid depth values in spiral beginning at the center */
         int dx = 1;
         int dy = 0;
         int r = 0;
-        int x = max_patchsize / 2;
-        int y = max_patchsize / 2;
-        for (int i = 0; i < std::pow(max_patchsize, 2); i++)
+        int x = half_patchsize;
+        int y = half_patchsize;
+        for (int i = 0; i < patchsize * patchsize; i++)
         {
             if (deptharr[x][y] != 1.0f)
             {
@@ -155,26 +157,26 @@ CamTrackball::get_center (int x, int y)
             x += dx;
             y += dy;
 
-            if (x > max_patchsize / 2 + r)
+            if (x > half_patchsize + r)
             {
                 r++;
                 dx = 0;
                 dy = -1;
             }
 
-            if (y <= max_patchsize / 2 - r)
+            if (y <= half_patchsize - r)
             {
                 dx = -1;
                 dy = 0;
             }
 
-            if (x <= max_patchsize / 2 - r)
+            if (x <= half_patchsize - r)
             {
                 dx = 0;
                 dy = 1;
             }
 
-            if (y >= max_patchsize / 2 + r)
+            if (y >= half_patchsize + r)
             {
                 dx = 1;
                 dy = 0;
