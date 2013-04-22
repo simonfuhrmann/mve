@@ -430,49 +430,64 @@ Directory::scan (std::string const& path)
  * --------------------- File locking mechanism ----------------------
  */
 
-bool
+FileLock::FileLock (std::string const& filename)
+{
+    switch (this->acquire_retry(filename))
+    {
+        case LOCK_CREATED: break;
+        default: throw util::Exception(this->reason);
+    }
+}
+
+FileLock::Status
 FileLock::acquire (std::string const& filename)
 {
     /* Check if lock file exists. */
     this->lockfile = filename + ".lock";
+    this->reason.clear();
     if (fs::file_exists(this->lockfile.c_str()))
     {
-        this->reason = "File is locked";
-        return false;
+        this->reason = "Previous lock existing";
+        return FileLock::LOCK_EXISTS;
     }
 
     /* Finally create the lock file. */
     std::ofstream touch(this->lockfile.c_str());
     if (!touch.good())
     {
-        this->reason = ::strerror(errno);
-        return false;
+        this->reason = "Error locking: ";
+        this->reason += std::strerror(errno);
+        return FileLock::LOCK_CREATE_ERROR;
     }
     touch.close();
 
     /* Return success, lock is created. */
-    return true;
+    return FileLock::LOCK_CREATED;
 }
 
-bool
+FileLock::Status
 FileLock::acquire_retry (std::string const& filename, int retries, int sleep)
 {
     /* Try to acquire file lock for 'retry' times. */
-    while (retries && !this->acquire(filename))
+    while (retries > 0)
     {
+        Status status = this->acquire(filename);
+        if (status != FileLock::LOCK_EXISTS)
+            return status;
+
         system::sleep(sleep);
         retries -= 1;
 
         /* Fail if all retries have been used. */
-        if (!retries)
+        if (retries <= 0)
         {
-            this->reason = "Previous lock persisted";
-            return false;
+            this->reason = "Previous lock persisting";
+            return FileLock::LOCK_PERSISTENT;
         }
     }
 
     /* Return success, lock is created. */
-    return true;
+    return FileLock::LOCK_CREATED;
 }
 
 bool
@@ -485,18 +500,13 @@ FileLock::is_locked (std::string const& filename)
 bool
 FileLock::wait_lock (std::string const& filename, int retries, int sleep)
 {
-    while (retries && this->is_locked(filename))
+    while (retries > 0 && this->is_locked(filename))
     {
         system::sleep(sleep);
         retries -= 1;
-
-        if (!retries)
-        {
-            this->reason = "Lock persisted";
+        if (retries <= 0)
             return false;
-        }
     }
-
     return true;
 }
 

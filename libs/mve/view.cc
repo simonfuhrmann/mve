@@ -357,8 +357,8 @@ View::save_mve_file_as (std::string const& filename)
 
     /* Acquire file lock for the view. */
     util::fs::FileLock lock;
-    bool locked = lock.acquire_retry(filename);
-    if (!locked)
+    util::fs::FileLock::Status lock_status = lock.acquire_retry(filename);
+    if (lock_status != util::fs::FileLock::LOCK_CREATED)
         throw util::Exception("Cannot acquire lock: ", lock.get_reason());
 
     /*
@@ -486,8 +486,8 @@ View::save_mve_file (bool force_rebuild)
 
     /* Acquire file lock for the view. */
     util::fs::FileLock lock;
-    bool locked = lock.acquire_retry(this->filename);
-    if (!locked)
+    util::fs::FileLock::Status lock_status = lock.acquire_retry(this->filename);
+    if (lock_status != util::fs::FileLock::LOCK_CREATED)
         throw util::Exception("Cannot acquire lock: ", lock.get_reason());
 
     /* Write embeddings directly to view file. */
