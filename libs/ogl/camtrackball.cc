@@ -122,7 +122,7 @@ CamTrackball::handle_tb_rotation (int x, int y)
 math::Vec3f
 CamTrackball::get_center (int x, int y)
 {
-    /* patchsize should be odd and larger than one */
+    /* Patchsize should be odd and larger than one. */
     int const patchsize = 9;
     int const half_patchsize = patchsize / 2;
 
