@@ -58,6 +58,9 @@ SceneContext::SceneContext (void)
     this->offscreen_playbut.setMaximumWidth(22);
     this->offscreen_playbut.setToolTip("Play sequence");
     this->offscreen_working = false;
+    this->offscreen_rephoto_source.setText("undistorted");
+    this->offscreen_rephoto_color_dest.setText("rephoto");
+    this->offscreen_rephoto_depth_dest.setText("rephoto-depth");
 
     this->dm_depth_disc.setMinimum(0.0f);
     this->dm_depth_disc.setMaximum(100.0f);
@@ -89,7 +92,7 @@ SceneContext::SceneContext (void)
     mesh_rendering_layout->addWidget(&this->draw_wireframe_cb);
     mesh_rendering_layout->addWidget(&this->draw_meshcolor_cb);
 
-    /* Create offscreen rendering layout. */
+    /* Create offscreen rendering layout -- for VIDEO. */
     QPushButton* offscreen_snapshot_but = new QPushButton
         (QIcon(":/images/icon_screenshot.svg"), "");
     QPushButton* offscreen_renderseq_but = new QPushButton(QIcon(":/images/icon_video.svg"), "");
@@ -120,11 +123,42 @@ SceneContext::SceneContext (void)
     offscreen_rendering_hbox->setSpacing(5);
     offscreen_rendering_hbox->addLayout(offscreen_rendering_layout);
     offscreen_rendering_hbox->addWidget(offscreen_snapshot_but);
-    QVBoxLayout* offscreen_rendering_vbox = new QVBoxLayout();
-    offscreen_rendering_vbox->setSpacing(0);
-    offscreen_rendering_vbox->addLayout(offscreen_rendering_hbox);
-    offscreen_rendering_vbox->addLayout(offscreen_hbox1);
-    offscreen_rendering_vbox->addLayout(offscreen_hbox2);
+    QVBoxLayout* offscreen_video_rendering_vbox = new QVBoxLayout();
+    offscreen_video_rendering_vbox->setSpacing(0);
+    offscreen_video_rendering_vbox->addLayout(offscreen_rendering_hbox);
+    offscreen_video_rendering_vbox->addLayout(offscreen_hbox1);
+    offscreen_video_rendering_vbox->addLayout(offscreen_hbox2);
+    QCollapsible* offscreen_video_header = new QCollapsible
+        ("Video Rendering", get_wrapper(offscreen_video_rendering_vbox));
+
+    /* Create offscreen rendering layout -- for RE-PHOTO. */
+    QPushButton* offscreen_rephoto_but = new QPushButton
+        (QIcon(":/images/icon_screenshot.svg"), "Re-Photo current view");
+    QPushButton* offscreen_rephoto_all_but = new QPushButton
+        (QIcon(":/images/icon_screenshot.svg"), "Re-Photo all views");
+    offscreen_rephoto_but->setIconSize(QSize(18, 18));
+    offscreen_rephoto_all_but->setIconSize(QSize(18, 18));
+
+    QFormLayout* offscreen_rephoto_layout = new QFormLayout();
+    offscreen_rephoto_layout->setHorizontalSpacing(5);
+    offscreen_rephoto_layout->setVerticalSpacing(1);
+    offscreen_rephoto_layout->addRow("Source:",
+        &this->offscreen_rephoto_source);
+    offscreen_rephoto_layout->addRow(offscreen_rephoto_but);
+    offscreen_rephoto_layout->addRow(offscreen_rephoto_all_but);
+    offscreen_rephoto_layout->addRow("Color:",
+        &this->offscreen_rephoto_color_dest);
+    offscreen_rephoto_layout->addRow("Depth:",
+        &this->offscreen_rephoto_depth_dest);
+    QCollapsible* offscreen_rephoto_header = new QCollapsible
+        ("Re-Photo Rendering", get_wrapper(offscreen_rephoto_layout));
+
+    /* Create offscreen rendering layout -- Main Layout. */
+    QVBoxLayout* offscreen_main_vbox = new QVBoxLayout();
+    offscreen_main_vbox->addWidget(offscreen_video_header);
+    offscreen_main_vbox->addWidget(offscreen_rephoto_header);
+    offscreen_video_header->set_collapsed(true);
+    offscreen_rephoto_header->set_collapsed(true);
 
     /* Create DM triangulate layout. */
     QFormLayout* dmtri_form = new QFormLayout();
@@ -141,7 +175,7 @@ SceneContext::SceneContext (void)
     QCollapsible* mesh_rendering_header = new QCollapsible
         ("Mesh Rendering", get_wrapper(mesh_rendering_layout));
     QCollapsible* offscreen_rendering_header = new QCollapsible
-        ("Offscreen Rendering", get_wrapper(offscreen_rendering_vbox));
+        ("Offscreen Rendering", get_wrapper(offscreen_main_vbox));
     QCollapsible* dmtri_header = new QCollapsible
         ("DM Triangulate", get_wrapper(dmtri_form));
     QCollapsible* meshes_header = new QCollapsible
@@ -150,6 +184,7 @@ SceneContext::SceneContext (void)
     mesh_rendering_header->set_collapsed(true);
     frusta_rendering_header->set_collapsed(true);
     offscreen_rendering_header->set_collapsed(true);
+    offscreen_rendering_header->set_content_indent(10);
     meshes_header->set_collapsible(false);
 
     /* Pack everything together. */
@@ -207,6 +242,10 @@ SceneContext::SceneContext (void)
         this, SLOT(on_offscreen_play_sequence()));
     this->connect(offscreen_display_but, SIGNAL(clicked()),
         this, SLOT(on_offscreen_display_sequence()));
+    this->connect(offscreen_rephoto_but, SIGNAL(clicked()),
+        this, SLOT(on_offscreen_rephoto()));
+    this->connect(offscreen_rephoto_all_but, SIGNAL(clicked()),
+        this, SLOT(on_offscreen_rephoto_all()));
     this->connect(&SceneManager::get(), SIGNAL(scene_bundle_changed()),
         this, SLOT(on_recreate_sfm_renderer()));
 }
@@ -879,6 +918,153 @@ SceneContext::on_offscreen_snapshot (void)
     {
         this->print_error("Error saving image", e.what());
     }
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+SceneContext::on_offscreen_rephoto (void)
+{
+    mve::View::Ptr active_view = SceneManager::get().get_view();
+    this->on_offscreen_rephoto(active_view);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
+{
+    if (view.get() == NULL)
+    {
+        this->print_error("Error", "No view selected!");
+        return;
+    }
+    std::string source_name
+        = this->offscreen_rephoto_source.text().toStdString();
+    std::string dest_color_name
+        = this->offscreen_rephoto_color_dest.text().toStdString();
+    std::string dest_depth_name
+        = this->offscreen_rephoto_depth_dest.text().toStdString();
+
+    if (source_name.empty()
+        || (dest_color_name.empty() && dest_depth_name.empty()))
+    {
+        this->print_error("Error", "Invalid embedding names!");
+        return;
+    }
+    if (!view->has_embedding(source_name))
+    {
+        this->print_error("Error", "Embedding not available!");
+        return;
+    }
+
+    std::cout << "Re-photographing view "
+        << view->get_name() << "..." << std::endl;
+
+    /* Backup camera. */
+    ogl::Camera camera_backup = this->camera;
+
+    /* Get all parameters and check them. */
+    mve::MVEFileProxy const* proxy = view->get_proxy(source_name);
+    int const width = proxy->width;
+    int const height = proxy->height;
+    float const aspect = static_cast<float>(width) / static_cast<float>(height);
+    float const focal_length = view->get_camera().flen;
+    float const ppx = view->get_camera().ppoint[0];
+    float const ppy = view->get_camera().ppoint[1];
+
+    /* Fill OpenGL view matrix */
+    view->get_camera().fill_world_to_cam(*this->camera.view);
+
+    /* Construct OpenGL projection matrix */
+    math::Matrix4f& proj = this->camera.proj;
+    float const znear = 0.001f;
+    float const zfar = 1000.0f;
+    proj.fill(0.0f);
+    proj[0]  = 2.0f * focal_length * (height > width ? 1.0f / aspect : 1.0f);
+    proj[2]  = -2.0f * (0.5f - ppx);
+    proj[5]  = -2.0f * focal_length * (height > width ? 1.0f : aspect);
+    proj[6]  = -2.0f * (0.5f - ppy);
+    proj[10] = -(-zfar - znear) / (zfar - znear);
+    proj[11] = -2.0f * zfar * znear / (zfar - znear);
+    proj[14] = 1.0f;
+
+    /* Re-photograph. */
+    this->request_context();
+    glViewport(0, 0, width, height);
+    GLuint framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    GLuint renderbuffer[2];
+    glGenRenderbuffers(2, renderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer[0]);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer[1]);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+        GL_RENDERBUFFER, renderbuffer[0]);
+    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+        GL_RENDERBUFFER, renderbuffer[1]);
+    this->paint();
+
+    /* Read color image from OpenGL. */
+    mve::ByteImage::Ptr image = mve::ByteImage::create(width, height, 3);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image->begin());
+    mve::image::flip<uint8_t>(image, mve::image::FLIP_VERTICAL);
+
+    /* Read depth buffer from OpenGL. */
+    mve::FloatImage::Ptr depth = mve::FloatImage::create(width, height, 1);
+    glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT,
+        GL_FLOAT, depth->begin());
+    mve::image::flip<float>(depth, mve::image::FLIP_VERTICAL);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteRenderbuffers(2, renderbuffer);
+    glDeleteFramebuffers(1, &framebuffer);
+
+    /* Restore camera and viewport */
+    this->camera = camera_backup;
+    glViewport(0, 0, this->get_width(), this->get_height());
+    this->update_gl();
+    QApplication::processEvents();
+
+    /* Convert depth buffer to depth map. */
+    for (float* ptr = depth->begin(); ptr != depth->end(); ++ptr)
+        *ptr = (*ptr == 1.0f)
+            ? 0.0f
+            : (zfar * znear) / ((znear - zfar) * *ptr + zfar);
+
+    /* Put re-photography into view as embedding */
+    view->set_image(dest_color_name, image);
+    view->set_image(dest_depth_name, depth);
+    view->save_mve_file();
+    SceneManager::get().refresh_view();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+SceneContext::on_offscreen_rephoto_all (void)
+{
+    std::string source_embedding_name
+        = this->offscreen_rephoto_source.text().toStdString();
+    mve::Scene::ViewList& views = this->scene->get_views();
+    std::size_t num_rephotographed = 0;
+    for (size_t i = 0; i < views.size(); ++i)
+    {
+        mve::View::Ptr view = views[i];
+        if (view.get() == NULL)
+            continue;
+        if (!view->has_embedding(source_embedding_name))
+            continue;
+        this->on_offscreen_rephoto(view);
+        num_rephotographed += 1;
+        if (num_rephotographed % 10 == 0)
+            this->scene->cache_cleanup();
+    }
+    this->scene->cache_cleanup();
+    this->print_info("Info", "Re-Photographed "
+        + util::string::get(num_rephotographed) + " views!");
 }
 
 /* ---------------------------------------------------------------- */

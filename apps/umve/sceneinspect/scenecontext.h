@@ -73,6 +73,9 @@ private:
     QSpinBox offscreen_width;
     QSpinBox offscreen_height;
     bool offscreen_working;
+    QLineEdit offscreen_rephoto_source;
+    QLineEdit offscreen_rephoto_color_dest;
+    QLineEdit offscreen_rephoto_depth_dest;
 
     /* DM triangulate settings. */
     QComboBox dm_depthmap;
@@ -87,6 +90,9 @@ private slots:
     void on_set_clear_color (void);
     void on_frusta_size_changed (void);
     void on_offscreen_snapshot (void);
+    void on_offscreen_rephoto (void);
+    void on_offscreen_rephoto (mve::View::Ptr view);
+    void on_offscreen_rephoto_all (void);
     void on_offscreen_render_sequence (void);
     void on_offscreen_play_sequence (bool save = false);
     void on_offscreen_display_sequence (void);
