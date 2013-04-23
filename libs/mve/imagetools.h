@@ -1326,11 +1326,11 @@ expand_grayscale (typename Image<T>::ConstPtr image)
     if (!image.get())
         throw std::invalid_argument("NULL image given");
 
-    int ic = image->channels();
+    int const ic = image->channels();
     if (ic != 1 && ic != 2)
         throw std::invalid_argument("Image must be in G or GA");
 
-    bool has_alpha = (ic == 2);
+    bool const has_alpha = (ic == 2);
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(image->width(), image->height(), 3 + has_alpha);
@@ -1354,7 +1354,7 @@ template <typename T>
 void
 reduce_alpha (typename mve::Image<T>::Ptr img)
 {
-    int channels = img->channels();
+    int const channels = img->channels();
     if (channels != 2 && channels != 4)
         throw std::invalid_argument("Image must be in GA or RGBA");
     img->delete_channel(channels - 1);
@@ -1366,40 +1366,41 @@ template <typename T>
 typename mve::Image<T>::Ptr
 sobel_edge (typename mve::Image<T>::ConstPtr img)
 {
-    int w = img->width();
-    int h = img->height();
-    int c = img->channels(); // pixel stride
-    int rs = w * c; // row stride
+    int const width = img->width();
+    int const height = img->height();
+    int const chans = img->channels();
+    int const row_stride = width * chans;
 
     double const max_value = static_cast<double>(std::numeric_limits<T>::max());
-    typename mve::Image<T>::Ptr out = mve::Image<T>::create(w, h, c);
+    typename mve::Image<T>::Ptr out = mve::Image<T>::create
+        (width, height, chans);
     T* out_ptr = out->get_data_pointer();
 
     int pos = 0;
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x, pos += c)
+    for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x, pos += chans)
         {
-            if (y == 0 || y == h-1 || x == 0 || x == w-1)
+            if (y == 0 || y == height - 1 || x == 0 || x == width - 1)
             {
-                std::fill(out_ptr + pos, out_ptr + pos + c, T(0));
+                std::fill(out_ptr + pos, out_ptr + pos + chans, T(0));
                 continue;
             }
 
-            for (int cc = 0; cc < c; ++cc)
+            for (int cc = 0; cc < chans; ++cc)
             {
-                int i = pos + cc;
-                double gx = 1.0 * (double)img->at(i+c-rs)
-                    - 1.0 * (double)img->at(i-c-rs)
-                    + 2.0 * (double)img->at(i+c)
-                    - 2.0 * (double)img->at(i-c)
-                    + 1.0 * (double)img->at(i+c+rs)
-                    - 1.0 * (double)img->at(i-c+rs);
-                double gy = 1.0 * (double)img->at(i+rs-c)
-                    - 1.0 * (double)img->at(i-rs-c)
-                    + 2.0 * (double)img->at(i+rs)
-                    - 2.0 * (double)img->at(i-rs)
-                    + 1.0 * (double)img->at(i+rs+c)
-                    - 1.0 * (double)img->at(i-rs+c);
+                int const i = pos + cc;
+                double gx = 1.0 * (double)img->at(i + chans - row_stride)
+                    - 1.0 * (double)img->at(i - chans - row_stride)
+                    + 2.0 * (double)img->at(i + chans)
+                    - 2.0 * (double)img->at(i - chans)
+                    + 1.0 * (double)img->at(i + chans + row_stride)
+                    - 1.0 * (double)img->at(i - chans + row_stride);
+                double gy = 1.0 * (double)img->at(i + row_stride - chans)
+                    - 1.0 * (double)img->at(i - row_stride - chans)
+                    + 2.0 * (double)img->at(i + row_stride)
+                    - 2.0 * (double)img->at(i - row_stride)
+                    + 1.0 * (double)img->at(i + row_stride + chans)
+                    - 1.0 * (double)img->at(i - row_stride + chans);
                 double g = std::sqrt(gx * gx + gy * gy);
                 out_ptr[i] = static_cast<T>(std::min(max_value, g));
             }
@@ -1414,9 +1415,9 @@ template <typename T>
 typename Image<T>::Ptr
 subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
 {
-    int iw = i1->width();
-    int ih = i1->height();
-    int ic = i1->channels();
+    int const iw = i1->width();
+    int const ih = i1->height();
+    int const ic = i1->channels();
 
     if (!i1.get() || !i2.get())
         throw std::invalid_argument("NULL image given");
@@ -1440,9 +1441,9 @@ template <typename T>
 typename Image<T>::Ptr
 difference (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
 {
-    int iw = i1->width();
-    int ih = i1->height();
-    int ic = i1->channels();
+    int const iw = i1->width();
+    int const ih = i1->height();
+    int const ic = i1->channels();
 
     if (!i1.get() || !i2.get())
         throw std::invalid_argument("NULL image given");
@@ -1543,10 +1544,10 @@ typename Image<T>::Ptr
 create_thumbnail (typename Image<T>::ConstPtr image,
     int thumb_width, int thumb_height)
 {
-    int width = image->width();
-    int height = image->height();
-    float image_aspect = static_cast<float>(width) / height;
-    float thumb_aspect = static_cast<float>(thumb_width) / thumb_height;
+    int const width = image->width();
+    int const height = image->height();
+    float const image_aspect = static_cast<float>(width) / height;
+    float const thumb_aspect = static_cast<float>(thumb_width) / thumb_height;
 
     int rescale_width, rescale_height;
     int crop_left, crop_top;
