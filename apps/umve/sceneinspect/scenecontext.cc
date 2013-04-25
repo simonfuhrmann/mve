@@ -952,7 +952,8 @@ SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
         this->print_error("Error", "Invalid embedding names!");
         return;
     }
-    if (!view->has_embedding(source_name))
+    mve::MVEFileProxy const* proxy = view->get_proxy(source_name);
+    if (proxy == NULL || !proxy->is_image)
     {
         this->print_error("Error", "Embedding not available!");
         return;
@@ -965,26 +966,30 @@ SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
     ogl::Camera camera_backup = this->camera;
 
     /* Get all parameters and check them. */
-    mve::MVEFileProxy const* proxy = view->get_proxy(source_name);
+    mve::CameraInfo const& camera_info = view->get_camera();
     int const width = proxy->width;
     int const height = proxy->height;
-    float const aspect = static_cast<float>(width) / static_cast<float>(height);
+    float const dimension_aspect = static_cast<float>(width) / height;
+    float const pixel_aspect = camera_info.paspect;
+    float const image_aspect = dimension_aspect * pixel_aspect;
     float const focal_length = view->get_camera().flen;
     float const ppx = view->get_camera().ppoint[0];
     float const ppy = view->get_camera().ppoint[1];
 
     /* Fill OpenGL view matrix */
-    view->get_camera().fill_world_to_cam(*this->camera.view);
+    camera_info.fill_world_to_cam(*this->camera.view);
 
-    /* Construct OpenGL projection matrix */
+    /* Construct OpenGL projection matrix. */
     math::Matrix4f& proj = this->camera.proj;
     float const znear = 0.001f;
     float const zfar = 1000.0f;
     proj.fill(0.0f);
-    proj[0]  = 2.0f * focal_length * (height > width ? 1.0f / aspect : 1.0f);
+    proj[0]  = 2.0f * focal_length
+        * (image_aspect > 1.0f ? 1.0f : 1.0f / image_aspect);
     proj[2]  = -2.0f * (0.5f - ppx);
-    proj[5]  = -2.0f * focal_length * (height > width ? 1.0f : aspect);
-    proj[6]  = -2.0f * (0.5f - ppy);
+    proj[5]  = -2.0f * focal_length
+        * (image_aspect > 1.0f ? image_aspect : 1.0f);
+    proj[6]  = -2.0f * (ppy - 0.5f);
     proj[10] = -(-zfar - znear) / (zfar - znear);
     proj[11] = -2.0f * zfar * znear / (zfar - znear);
     proj[14] = 1.0f;
