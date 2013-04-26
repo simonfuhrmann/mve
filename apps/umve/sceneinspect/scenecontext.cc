@@ -972,9 +972,9 @@ SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
     float const dimension_aspect = static_cast<float>(width) / height;
     float const pixel_aspect = camera_info.paspect;
     float const image_aspect = dimension_aspect * pixel_aspect;
-    float const focal_length = view->get_camera().flen;
-    float const ppx = view->get_camera().ppoint[0];
-    float const ppy = view->get_camera().ppoint[1];
+    float const focal_length = camera_info.flen;
+    float const ppx = camera_info.ppoint[0];
+    float const ppy = camera_info.ppoint[1];
 
     /* Fill OpenGL view matrix */
     camera_info.fill_world_to_cam(*this->camera.view);
