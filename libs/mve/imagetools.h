@@ -6,6 +6,7 @@
 #ifndef MVE_IMAGE_TOOLS_HEADER
 #define MVE_IMAGE_TOOLS_HEADER
 
+#include <iostream>
 #include <limits>
 
 #include "util/exception.h"
@@ -477,7 +478,11 @@ rescale (typename Image<T>::ConstPtr img, RescaleInterpolation interp,
     if (width == 0 && height == 0)
         throw std::invalid_argument("Invalid size request");
 
-    /* Keep aspect ratio if one of width and height is 0. */
+    /* Duplicate input image if width and height match image size. */
+    if (width == img->width() && height == img->height())
+        return Image<T>::create(*img);
+
+    /* Keep aspect ratio if one of width or height is 0. */
     if (width == 0)
         width = height * img->width() / img->height();
     else if (height == 0)
@@ -523,11 +528,11 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_half_size (typename Image<T>::ConstPtr img)
 {
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
-    int ow = (iw + 1) >> 1;
-    int oh = (ih + 1) >> 1;
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    int const ow = (iw + 1) >> 1;
+    int const oh = (ih + 1) >> 1;
 
     if (iw < 2 || ih < 2)
         throw std::invalid_argument("Invalid input image");
@@ -565,11 +570,11 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_half_size_gaussian (typename Image<T>::ConstPtr img, float sigma)
 {
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
-    int ow = (iw + 1) >> 1;
-    int oh = (ih + 1) >> 1;
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    int const ow = (iw + 1) >> 1;
+    int const oh = (ih + 1) >> 1;
 
     if (iw < 2 || ih < 2)
         throw std::invalid_argument("Invalid input image");
@@ -646,12 +651,12 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_half_size_subsample (typename Image<T>::ConstPtr img)
 {
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
-    int ow = (iw + 1) >> 1;
-    int oh = (ih + 1) >> 1;
-    int irs = iw * ic; // input image row stride
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    int const ow = (iw + 1) >> 1;
+    int const oh = (ih + 1) >> 1;
+    int const irs = iw * ic; // input image row stride
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
@@ -680,12 +685,12 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_double_size (typename Image<T>::ConstPtr img)
 {
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
-    int ow = iw << 1;
-    int oh = ih << 1;
-    int irs = iw * ic;  // input image row stride
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    int const ow = iw << 1;
+    int const oh = ih << 1;
+    int const irs = iw * ic;  // input image row stride
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
@@ -736,11 +741,11 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_double_size_supersample (typename Image<T>::ConstPtr img)
 {
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
-    int ow = iw << 1;
-    int oh = ih << 1;
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    int const ow = iw << 1;
+    int const oh = ih << 1;
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
@@ -781,11 +786,11 @@ rescale_nearest (typename Image<T>::ConstPtr img, typename Image<T>::Ptr out)
     if (img->channels() != out->channels())
         throw std::invalid_argument("Image channel mismatch");
 
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
-    int ow = out->width();
-    int oh = out->height();
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    int const ow = out->width();
+    int const oh = out->height();
 
     int outpos = 0;
     for (int y = 0; y < oh; ++y)
@@ -811,13 +816,13 @@ rescale_linear (typename Image<T>::ConstPtr img, typename Image<T>::Ptr out)
     if (img->channels() != out->channels())
         throw std::invalid_argument("Image channel mismatch");
 
-    int iw = img->width();
-    int ih = img->height();
-    int ic = img->channels();
-    int ow = out->width();
-    int oh = out->height();
-    T* out_ptr = out->get_data_pointer();
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    int const ow = out->width();
+    int const oh = out->height();
 
+    T* out_ptr = out->get_data_pointer();
     int outpos = 0;
     for (int y = 0; y < oh; ++y)
     {
@@ -837,8 +842,8 @@ T
 gaussian_kernel (typename Image<T>::ConstPtr img,
     float x, float y, int c, float sigma)
 {
-    int w = img->width();
-    int h = img->height();
+    int const width = img->width();
+    int const height = img->height();
 
     /* Calculate kernel size for geometric gaussian (see bilateral.h). */
     float ks = sigma * 2.884f;
@@ -850,15 +855,15 @@ gaussian_kernel (typename Image<T>::ConstPtr img,
     float ky_max = std::ceil(y + ks - 1.0f);
 
     int kxi_min = static_cast<int>(std::max(0.0f, kx_min));
-    int kxi_max = static_cast<int>(std::min((float)w - 1.0f, kx_max));
+    int kxi_max = static_cast<int>(std::min((float)width - 1.0f, kx_max));
     int kyi_min = static_cast<int>(std::max(0.0f, ky_min));
-    int kyi_max = static_cast<int>(std::min((float)h - 1.0f, ky_max));
+    int kyi_max = static_cast<int>(std::min((float)height - 1.0f, ky_max));
 
     /* Determine pixel weight for kernel bounaries. */
     float wx_start = kx_min > 0.0f ? kx_min + 1.0f + ks - x : 1.0f;
-    float wx_end = kx_max < (float)w - 1.0f ? ks + x - kx_max : 1.0f;
+    float wx_end = kx_max < (float)width - 1.0f ? ks + x - kx_max : 1.0f;
     float wy_start = ky_min > 0.0f ? ky_min + 1.0f + ks - y : 1.0f;
-    float wy_end = ky_max < (float)h - 1.0f ? ks + y - ky_max : 1.0f;
+    float wy_end = ky_max < (float)height - 1.0f ? ks + y - ky_max : 1.0f;
 
     /* Apply kernel. */
     math::Accum<T> accum(0);
@@ -890,14 +895,14 @@ rescale_gaussian (typename Image<T>::ConstPtr img,
     if (img->channels() != out->channels())
         throw std::invalid_argument("Image channels mismatch");
 
-    int ow = out->width();
-    int oh = out->height();
-    int oc = out->channels();
+    int const ow = out->width();
+    int const oh = out->height();
+    int const oc = out->channels();
 
     /* Choose gaussian sigma parameter according to scale factor. */
-    float scale_x = (float)img->width() / (float)ow;
-    float scale_y = (float)img->height() / (float)oh;
-    float sigma = sigma_factor * std::max(scale_x, scale_y) / 2.0f;
+    float const scale_x = (float)img->width() / (float)ow;
+    float const scale_y = (float)img->height() / (float)oh;
+    float const sigma = sigma_factor * std::max(scale_x, scale_y) / 2.0f;
 
     /* Iterate pixels of dest image and convolute with gaussians on input. */
     int i = 0;
@@ -961,10 +966,10 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
     if (MATH_EPSILON_EQ(sigma, 0.0f, 0.1f))
         return in->duplicate();
 
-    int w = in->width();
-    int h = in->height();
-    int c = in->channels();
-    int ks = std::ceil(sigma * 2.884f); // Cap kernel at 1/128
+    int const w = in->width();
+    int const h = in->height();
+    int const c = in->channels();
+    int const ks = std::ceil(sigma * 2.884f); // Cap kernel at 1/128
     std::vector<float> kernel(ks + 1);
 
     /* Fill kernel values. */

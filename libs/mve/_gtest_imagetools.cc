@@ -81,6 +81,22 @@ TEST(ImageToolsTest, FloatImageNormalize)
     EXPECT_EQ(1.0f, fimg->at(3));
 }
 
+TEST(ImageToolsTest, RescaleImageSameSize)
+{
+    mve::FloatImage::Ptr img = mve::FloatImage::create(4, 4, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = static_cast<float>(i);
+
+    mve::FloatImage::Ptr out = mve::image::rescale<float>(img,
+        mve::image::RESCALE_GAUSSIAN, img->width(), img->height());
+
+    EXPECT_EQ(out->width(), img->width());
+    EXPECT_EQ(out->height(), img->height());
+    EXPECT_EQ(out->channels(), img->channels());
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        EXPECT_EQ(img->at(i), out->at(i)) << "at index " << i;
+}
+
 TEST(ImageToolsTest, ImageRotateAngle)
 {
     unsigned char const color_black_1[] = { 0 };
