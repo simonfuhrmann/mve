@@ -946,16 +946,15 @@ SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
     std::string dest_depth_name
         = this->offscreen_rephoto_depth_dest.text().toStdString();
 
-    if (source_name.empty()
-        || (dest_color_name.empty() && dest_depth_name.empty()))
+    if (dest_color_name.empty() && dest_depth_name.empty())
     {
-        this->print_error("Error", "Invalid embedding names!");
+        this->print_error("Error", "Neither output image nor depth specified");
         return;
     }
     mve::MVEFileProxy const* proxy = view->get_proxy(source_name);
     if (proxy == NULL || !proxy->is_image)
     {
-        this->print_error("Error", "Embedding not available!");
+        this->print_error("Error", "Source embedding not available!");
         return;
     }
 
@@ -981,7 +980,8 @@ SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
 
     /* Construct OpenGL projection matrix. */
     math::Matrix4f& proj = this->camera.proj;
-    float const znear = 0.001f;
+
+    float const znear = 0.1f;
     float const zfar = 1000.0f;
     proj.fill(0.0f);
     proj[0]  = 2.0f * focal_length
@@ -1033,15 +1033,27 @@ SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
     this->update_gl();
     QApplication::processEvents();
 
-    /* Convert depth buffer to depth map. */
-    for (float* ptr = depth->begin(); ptr != depth->end(); ++ptr)
-        *ptr = (*ptr == 1.0f)
-            ? 0.0f
-            : (zfar * znear) / ((znear - zfar) * *ptr + zfar);
+    /* Put re-photography into view as embedding. */
+    if (!dest_color_name.empty())
+        view->set_image(dest_color_name, image);
 
-    /* Put re-photography into view as embedding */
-    view->set_image(dest_color_name, image);
-    view->set_image(dest_depth_name, depth);
+    /* Put depth buffer into view as embedding. */
+    if (!dest_depth_name.empty())
+    {
+        /* Convert depth buffer to depth map. */
+        for (float* ptr = depth->begin(); ptr != depth->end(); ++ptr)
+            *ptr = (*ptr == 1.0f)
+                ? 0.0f
+                : (zfar * znear) / ((znear - zfar) * *ptr + zfar);
+
+        /* Convert depthmap to MVE format. */
+        math::Matrix3f inv_calib;
+        camera_info.fill_inverse_calibration(*inv_calib, width, height);
+        mve::image::depthmap_convert_conventions<float>(depth, inv_calib, true);
+
+        view->set_image(dest_depth_name, depth);
+    }
+
     view->save_mve_file();
     SceneManager::get().refresh_view();
 }
