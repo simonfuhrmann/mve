@@ -381,7 +381,7 @@ difference (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2);
 
 /**
  * Applies gamma correction to float/double images (in-place).
- * To get from intensities to color values, use 1.0/2.2 as exponent.
+ * To obtain color values from linear intensities, use 1/2.2 as exponent.
  * To remove gamma correction from an image, use 2.2 as exponent.
  */
 template <typename T>
@@ -394,6 +394,36 @@ gamma_correct (typename Image<T>::Ptr image, T const& power);
  */
 void
 gamma_correct (ByteImage::Ptr image, float power);
+
+/**
+ * Applies gamma correction to float/double images (in-place) with linear
+ * RGB values in range [0, 1] to nonlinear R'G'B' values according to the
+ * sRGB standard at http://www.w3.org/Graphics/Color/sRGB:
+ *
+ *   X' = 12.92 * X                   if X <= 0.00304
+ *   X' = 1.055 * X^(1/2.4) - 0.055   otherwise
+ *
+ * Warning: This only works correctly with float or double images.
+ * TODO: Implement overloading for integer image types.
+ */
+template <typename T>
+void
+gamma_correct_srgb (typename Image<T>::Ptr image);
+
+/**
+ * Applies inverse gamma correction to float/double (in-place) images with
+ * nonlinear R'G'B' values in the range [0, 1] to linear sRGB values according
+ * to the sRGB standard at http://www.w3.org/Graphics/Color/sRGB
+ *
+ *   X = X' / 12.92                     if X' <= 0.03928
+ *   X = ((X' + 0.055) / (1.055))^2.4   otherwise
+ *
+ * Warning: This only works correctly with float or double images.
+ * TODO: Implement overloading for integer image types.
+ */
+template <typename T>
+void
+gamma_correct_inv_srgb (typename Image<T>::Ptr image);
 
 /**
  * Calculates the integral image (or summed area table) for the input image.
@@ -1478,6 +1508,44 @@ gamma_correct (typename Image<T>::Ptr image, T const& power)
 {
     math::algo::foreach_constant_power<T> f(power);
     std::for_each(image->begin(), image->end(), f);
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+void
+gamma_correct_srgb (typename Image<T>::Ptr image)
+{
+    int const num_values = image->get_value_amount();
+    for (std::size_t i = 0; i < num_values; i++)
+    {
+        if (image->at(i) <= T(0.00304))
+            image->at(i) *= T(12.92);
+        else
+        {
+            T corrected = std::pow(image->at(i), T(1.0)/T(2.4));
+            image->at(i) = T(1.055) * corrected - T(0.055);
+        }
+    }
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+void
+gamma_correct_inv_srgb (typename Image<T>::Ptr image)
+{
+    int const num_values = image->get_value_amount();
+    for (std::size_t i = 0; i < num_values; i++)
+    {
+        if (image->at(i) <= T(0.03928))
+            image->at(i) /= T(12.92);
+        else
+        {
+            T base = (image->at(i) + T(0.055)) / T(1.055);
+            image->at(i) = std::pow(base, T(2.4));
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- */

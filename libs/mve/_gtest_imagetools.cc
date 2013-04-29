@@ -4,8 +4,20 @@
 #include <gtest/gtest.h>
 
 #include "mve/image.h"
-#include "mve/imagefile.h"
 #include "mve/imagetools.h"
+
+mve::FloatImage::Ptr
+create_test_float_image (int width, int height, int chans)
+{
+    mve::FloatImage::Ptr img = mve::FloatImage::create(width, height, chans);
+    for (int i = 0; i < img->get_pixel_amount(); i += chans)
+    {
+        img->at(i, 0) = i / static_cast<float>(width * height * chans);
+        img->at(i, 1) = 1.0f - img->at(i, 0);
+        img->at(i, 2) = std::abs(1.0f - 2.0f * img->at(i, 0));
+    }
+    return img;
+}
 
 TEST(ImageToolsTest, ImageConversion)
 {
@@ -259,4 +271,52 @@ TEST(ImageToolsTest, IntegralImage)
     EXPECT_EQ(112, sat->at(1, 3, 1));
     EXPECT_EQ(180, sat->at(2, 3, 1));
     EXPECT_EQ(256, sat->at(3, 3, 1));
+}
+
+TEST(ImageToolsTest, GammaCorrectGoldenValues)
+{
+    mve::FloatImage::Ptr img = mve::FloatImage::create(1, 1, 3);
+    img->at(0, 0, 0) = 1.0f;
+    img->at(0, 0, 1) = 4.4f;
+    img->at(0, 0, 2) = 0.3f;
+
+    {
+        mve::FloatImage::Ptr out = img->duplicate();
+        mve::image::gamma_correct<float>(out, 1.0f / 2.2f);
+        EXPECT_NEAR(out->at(0, 0, 0), std::pow(1.0, 1.0 / 2.2), 1e-10f);
+        EXPECT_NEAR(out->at(0, 0, 1), std::pow(4.4, 1.0 / 2.2), 1e-7f);
+        EXPECT_NEAR(out->at(0, 0, 2), std::pow(0.3, 1.0 / 2.2), 1e-7f);
+    }
+
+    {
+        mve::FloatImage::Ptr out = img->duplicate();
+        mve::image::gamma_correct<float>(out, 2.2f);
+        EXPECT_NEAR(out->at(0, 0, 0), std::pow(1.0, 2.2), 1e-10f);
+        EXPECT_NEAR(out->at(0, 0, 1), std::pow(4.4, 2.2), 1e-5f);
+        EXPECT_NEAR(out->at(0, 0, 2), std::pow(0.3, 2.2), 1e-7f);
+    }
+}
+
+TEST(ImageToolsTest, GammaCorrectBackAndForth)
+{
+    mve::FloatImage::Ptr img = create_test_float_image(100, 100, 3);
+    mve::FloatImage::Ptr out = img->duplicate();
+
+    mve::image::gamma_correct<float>(out, 1.0/2.2);
+    mve::image::gamma_correct<float>(out, 2.2);
+
+    for (int i = 0; i < out->get_value_amount(); ++i)
+        EXPECT_NEAR(img->at(i), out->at(i), 1e-6f);
+}
+
+TEST(ImageToolsTest, GammaCorrectSRGBBackAndForth)
+{
+    mve::FloatImage::Ptr img = create_test_float_image(100, 100, 3);
+    mve::FloatImage::Ptr out = img->duplicate();
+
+    mve::image::gamma_correct_srgb<float>(out);
+    mve::image::gamma_correct_inv_srgb<float>(out);
+
+    for (int i = 0; i < out->get_value_amount(); ++i)
+        EXPECT_NEAR(img->at(i), out->at(i), 1e-6f);
 }
