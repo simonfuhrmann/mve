@@ -13,7 +13,7 @@ MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
 /**
- * Applies an in-place color convertion to the given image. The conversion
+ * Applies an in-place color conversion to the given image. The conversion
  * is performed by applying the given conversion functor to every pixel.
  * The converter functor can either be a regular function which takes
  * a pointer to the image pixel, or a conversion object which overloads
@@ -107,9 +107,9 @@ color_rgb_to_ycbcr (T* values);
  * Converts an image from YCbCr to RGB color space according to
  * http://en.wikipedia.org/wiki/YCbCr
  *
- *    R   1.00  0.00000   1.40200   ( Y  - 0.0 )
- *    G = 1.00 -0.34414  -0.71414 * ( Cb - 0.5 )
- *    B   1.00  1.77200   0.00000   ( Cr - 0.5 )
+ *    R   1.00  0.00000  1.40200   ( Y  - 0.0 )
+ *    G = 1.00 -0.34414 -0.71414 * ( Cb - 0.5 )
+ *    B   1.00  1.77200  0.00000   ( Cr - 0.5 )
  *
  * Warning: This only works correctly with float or double images.
  * TODO: Implement template specializations for integer image types.
@@ -125,7 +125,7 @@ void
 color_convert (typename Image<T>::Ptr image, FUNCTOR& converter)
 {
     int const channels = image->channels();
-    if (channels < 3)
+    if (channels != 3)
         throw std::invalid_argument("Only 3-channel images supported");
 
     for (T* ptr = image->begin(); ptr != image->end(); ptr += channels)
@@ -182,9 +182,9 @@ color_xyz_to_xyy (T* v)
     T const sum = v[0] + v[1] + v[2];
     if (sum == T(0))
     {
-        v[0] == T(1);
-        v[1] == T(1);
-        v[2] == T(1);
+        v[0] == T(0);
+        v[1] == T(0);
+        v[2] == T(0);
     }
     else
     {
