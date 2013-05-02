@@ -96,8 +96,7 @@ color_xyz_to_xyy (T* values);
  *   Cb = -0.168736 -0.331264  0.500000 * G + 0.5
  *   Cr    0.500000 -0.418688 -0.081312   B   0.5
  *
- * Warning: This only works correctly with float or double images.
- * TODO: Implement template specializations for integer image types.
+ * Works with float, double and byte images.
  */
 template <typename T>
 void
@@ -111,8 +110,7 @@ color_rgb_to_ycbcr (T* values);
  *    G = 1.00 -0.34414 -0.71414 * ( Cb - 0.5 )
  *    B   1.00  1.77200  0.00000   ( Cr - 0.5 )
  *
- * Warning: This only works correctly with float or double images.
- * TODO: Implement template specializations for integer image types.
+ * Works with float, double and byte images.
  */
 template <typename T>
 void
@@ -207,6 +205,19 @@ color_rgb_to_ycbcr (T* v)
     std::copy(out, out + 3, v);
 }
 
+template <>
+void
+color_rgb_to_ycbcr<uint8_t> (uint8_t* v)
+{
+    double out[3];
+    out[0] = v[0] * 0.299     + v[1] * 0.587     + v[2] * 0.114     + 0.0;
+    out[1] = v[0] * -0.168736 + v[1] * -0.331264 + v[2] * 0.5       + 128.0;
+    out[2] = v[0] * 0.5       + v[1] * -0.418688 + v[2] * -0.081312 + 128.0;
+    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+}
+
 template <typename T>
 void
 color_ycbcr_to_rgb (T* v)
@@ -219,6 +230,19 @@ color_ycbcr_to_rgb (T* v)
     out[1] = v[0] * T(1) + v[1] * T(-0.34414) + v[2] * T(-0.71414);
     out[2] = v[0] * T(1) + v[1] * T(1.772) + v[2] * T(0);
     std::copy(out, out + 3, v);
+}
+
+template <>
+void
+color_ycbcr_to_rgb<uint8_t> (uint8_t* v)
+{
+    double out[3];
+    out[0] = v[0]                            + 1.402   * (v[2] - 128.0);
+    out[1] = v[0] - 0.34414 * (v[1] - 128.0) - 0.71414 * (v[2] - 128.0);
+    out[2] = v[0] + 1.772   * (v[1] - 128.0);
+    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
 }
 
 MVE_IMAGE_NAMESPACE_END
