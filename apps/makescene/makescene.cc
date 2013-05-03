@@ -32,6 +32,8 @@
 #include "mve/imagetools.h"
 #include "mve/imagefile.h"
 #include "mve/imageexif.h" // extract EXIF for JPEG images
+#include "mve/trianglemesh.h"
+#include "mve/meshtools.h"
 
 #define THUMBNAIL_SIZE 50
 
@@ -289,6 +291,246 @@ create_thumbnail (mve::ImageBase::ConstPtr img)
 
 /* ---------------------------------------------------------------- */
 
+/*
+ * NVM_V3 [optional calibration]                        # file version header
+ * <Model1> <Model2> ...                                # multiple reconstructed models
+ * <Empty Model containing the unregistered Images>     # number of camera > 0, but number of points = 0
+ * <0>                                                  # 0 camera to indicate the end of model section
+ * <Some comments describing the PLY section>
+ * <Number of PLY files> <List of indices of models that have associated PLY>
+ *
+ * The [optional calibration] exists only if you use "Set Fixed Calibration" Function
+ * FixedK fx cx fy cy
+ *
+ * Each reconstructed <model> contains the following
+ * <Number of cameras>   <List of cameras>
+ * <Number of 3D points> <List of points>
+ *
+ * The cameras and 3D points are saved in the following format
+ * <Camera> = <File name> <focal length> <quaternion rotation> <camera center> <radial distortion> 0
+ * <Point>  = <XYZ> <RGB> <number of measurements> <List of Measurements>
+ * <Measurement> = <Image index> <Feature Index> <xy>
+ */
+
+struct NVMView
+{
+    std::string filename;
+    double focal_length;
+    double quaternion[4];
+    double camera_center[3];
+    double radial_distortion;
+};
+
+
+struct NVMRef
+{
+    int image_id;
+    int feature_id;
+    float pos[2];
+};
+
+struct NVMPoint
+{
+    double pos[3];
+    unsigned char color[3];
+    std::vector<NVMRef> refs;
+};
+
+math::Matrix3f
+get_rot_from_quaternion(double const* values)
+{
+    math::Vec4f q(values);
+    q.normalize();
+
+    math::Matrix3f rot;
+    rot[0] = 1.0f - 2.0f * q[2]*q[2] - 2.0f * q[3]*q[3];
+    rot[1] = 2.0f * q[1]*q[2] - 2.0f * q[3]*q[0];
+    rot[2] = 2.0f * q[1]*q[3] + 2.0f * q[2]*q[0];
+
+    rot[3] = 2.0f * q[1]*q[2] + 2.0f * q[3]*q[0];
+    rot[4] = 1.0f - 2.0f * q[1]*q[1] - 2.0f * q[3]*q[3];
+    rot[5] = 2.0f * q[2]*q[3] - 2.0f * q[1]*q[0];
+
+    rot[6] = 2.0f * q[1]*q[3] - 2.0f * q[2]*q[0];
+    rot[7] = 2.0f * q[2]*q[3] + 2.0f * q[1]*q[0];
+    rot[8] = 1.0f - 2.0f * q[1]*q[1] - 2.0f * q[2]*q[2];
+    return rot;
+}
+
+void
+import_bundle_nvm (AppSettings const& conf)
+{
+    std::ifstream in(conf.input_dir.c_str());
+    if (!in.good())
+    {
+        std::cerr << "Error: Cannot open NVM file" << std::endl;
+        return;
+    }
+
+    /* Check NVM file signature. */
+    std::string signature;
+    in >> signature;
+    if (signature != "NVM_V3")
+    {
+        std::cerr << "Error: Invalid NVM signature" << std::endl;
+        in.close();
+        return;
+    }
+
+    // TODO: Handle multiple models.
+
+    /* Read number of views. */
+    int num_views = 0;
+    in >> num_views;
+    if (num_views < 0 || num_views > 10000)
+    {
+        std::cerr << "Error: Invalid number of views" << std::endl;
+        in.close();
+        return;
+    }
+    std::cout << "Num views: " << num_views << std::endl;
+
+    /* Read views. */
+    std::vector<NVMView> views;
+    for (int i = 0; i < num_views; ++i)
+    {
+        NVMView view;
+        in >> view.filename;
+        in >> view.focal_length;
+        for (int j = 0; j < 4; ++j)
+            in >> view.quaternion[j];
+        for (int j = 0; j < 3; ++j)
+            in >> view.camera_center[j];
+        in >> view.radial_distortion;
+        views.push_back(view);
+
+        int temp;
+        in >> temp;
+    }
+
+    /* Read number of points. */
+    int num_points = 0;
+    in >> num_points;
+    if (num_points < 0 || num_points > 1000000000)
+    {
+        std::cerr << "Error: Invalid number of SfM points" << std::endl;
+        in.close();
+        return;
+    }
+    std::cout << "Num points: " << num_points << std::endl;
+
+    /* Read points. */
+    std::vector<NVMPoint> points;
+    for (int i = 0; i < num_points; ++i)
+    {
+        NVMPoint point;
+
+        /* Read position and color. */
+        for (int j = 0; j < 3; ++j)
+            in >> point.pos[j];
+        int color_tmp[3];
+        for (int j = 0; j < 3; ++j)
+            in >> color_tmp[j];
+        std::copy(color_tmp, color_tmp + 3, point.color);
+
+        /* Read number of refs. */
+        int num_refs = 0;
+        in >> num_refs;
+        if (num_refs < 2 || num_refs > 1000)
+        {
+            std::cerr << "Error: Invalid number of refs: " << num_refs << std::endl;
+            in.close();
+            return;
+        }
+
+        /* Read refs. */
+        for (int j = 0; j < num_refs; ++j)
+        {
+            NVMRef ref;
+            in >> ref.image_id >> ref.feature_id >> ref.pos[0] >> ref.pos[1];
+            point.refs.push_back(ref);
+        }
+        points.push_back(point);
+    }
+    in.close();
+
+    /* Create output directories. */
+    util::fs::mkdir(conf.output_dir.c_str());
+    util::fs::mkdir(conf.views_path.c_str());
+
+    /* Write output bundle file for MVE. */
+    std::ofstream out((conf.output_dir + "/synth_0.out").c_str());
+    if (!out.good())
+    {
+        std::cerr << "Error: Cannot open output bundle file" << std::endl;
+        in.close();
+        return;
+    }
+    out << "drews 1.0" << std::endl;
+    out << num_views << " " << num_points << std::endl;
+    for (std::size_t i = 0; i < views.size(); ++i)
+    {
+        NVMView const& view = views[i];
+        math::Matrix3f rot = get_rot_from_quaternion(view.quaternion);
+        math::Vec3f trans = rot * -math::Vec3f(view.camera_center);
+
+        out << view.focal_length << " " << views[i].radial_distortion
+            << " 0" << std::endl;
+        out << rot[0] << " " << rot[1] << " " << rot[2] << std::endl;
+        out << rot[3] << " " << rot[4] << " " << rot[5] << std::endl;
+        out << rot[6] << " " << rot[7] << " " << rot[8] << std::endl;
+        out << trans[0] << " " << trans[1] << " " << trans[2] << std::endl;
+    }
+    for (std::size_t i = 0; i < points.size(); ++i)
+    {
+        NVMPoint const& point = points[i];
+        out << point.pos[0] << " " << point.pos[1] << " " << point.pos[2] << std::endl;
+        out << static_cast<int>(point.color[0]) << " "
+            << static_cast<int>(point.color[1]) << " "
+            << static_cast<int>(point.color[2]) << std::endl;
+        out << point.refs.size();
+        for (std::size_t j = 0; j < point.refs.size(); ++j)
+            out << " " << point.refs[j].image_id << " "
+                << point.refs[j].feature_id << " 0";
+        out << std::endl;
+    }
+    out.close();
+
+    /* Create and write views. */
+    for (std::size_t i = 0; i < views.size(); ++i)
+    {
+        mve::View::Ptr view = mve::View::create();
+        view->set_id(i);
+        view->set_name(util::string::get_filled(i, 4, '0'));
+
+        mve::ByteImage::Ptr image = mve::image::load_file(views[i].filename);
+        int const maxdim = std::max(image->width(), image->height());
+        view->add_image("original", image);
+        view->add_image("thumbnail", create_thumbnail(image));
+
+        mve::ByteImage::Ptr undist = mve::image::image_undistort_ccwu<uint8_t>
+            (image, views[i].radial_distortion);
+        view->add_image("undistorted", undist);
+
+        math::Matrix3f rot = get_rot_from_quaternion(views[i].quaternion);
+        math::Vec3f trans(views[i].camera_center);
+        trans = rot * -trans;
+
+        mve::CameraInfo cam;
+        cam.flen = views[i].focal_length / static_cast<float>(maxdim);
+        cam.dist[0] = views[i].radial_distortion;
+        cam.dist[1] = 0.0f;
+
+        std::copy(*rot, *rot + 9, cam.rot);
+        std::copy(*trans, *trans + 3, cam.trans);
+        view->set_camera(cam);
+        view->save_mve_file_as(conf.views_path + "view_"
+            + util::string::get_filled(i, 4, '0') + ".mve");
+    }
+}
+
+/* ---------------------------------------------------------------- */
+
 void
 import_bundle (AppSettings const& conf)
 {
@@ -299,8 +541,22 @@ import_bundle (AppSettings const& conf)
     std::string undist_path;
     mve::BundleFormat bundler_fmt = mve::BUNDELR_UNKNOWN;
 
+    /**
+     * Try to detect VisualSFM bundle format. This is detected if the input
+     * is a file with extension "nmv".
+     */
+    if (bundler_fmt == mve::BUNDELR_UNKNOWN)
+    {
+        if (util::string::right(conf.input_dir, 4) == ".nvm"
+            && util::fs::file_exists(conf.input_dir.c_str()))
+        {
+            import_bundle_nvm(conf);
+            return;
+        }
+    }
+
     /*
-     * Try to detect Photosynther software. This is deteected if the
+     * Try to detect Photosynther software. This is detected if the
      * file synth_N.out (for bundle N) is present in the bundler dir.
      */
     if (bundler_fmt == mve::BUNDELR_UNKNOWN)
