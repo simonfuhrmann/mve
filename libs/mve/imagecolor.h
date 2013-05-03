@@ -180,9 +180,9 @@ color_xyz_to_xyy (T* v)
     T const sum = v[0] + v[1] + v[2];
     if (sum == T(0))
     {
-        v[0] == T(0);
-        v[1] == T(0);
-        v[2] == T(0);
+        v[0] = T(0);
+        v[1] = T(0);
+        v[2] = T(0);
     }
     else
     {
