@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <limits>
+#include <complex>
 
 #include "util/exception.h"
 #include "math/accum.h"
@@ -119,6 +120,14 @@ image_undistort (typename Image<T>::ConstPtr img, CameraInfo const& cam);
 template <typename T>
 typename Image<T>::Ptr
 image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam);
+
+/**
+ * Undistorts the input image using the given the distortion parameter.
+ * This single parameter undistortion model is used by VisualSfM.
+ */
+template <typename T>
+typename Image<T>::Ptr
+image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1);
 
 /*
  * ------------------- Image scaling and cropping -----------------
@@ -1654,14 +1663,14 @@ typename Image<T>::Ptr
 image_undistort (typename Image<T>::ConstPtr img, CameraInfo const& cam)
 {
     /* FIXME: Does not support irregular principal point. */
-    int w = img->width();
-    int h = img->height();
-    int c = img->channels();
-    int D = std::max(w,h);
+    int const w = img->width();
+    int const h = img->height();
+    int const c = img->channels();
+    int const D = std::max(w,h);
 
     /* major hacking -> focal_length^2 */
-    float k0 = cam.dist[0] * MATH_POW2(cam.flen);
-    float k1 = cam.dist[1] * MATH_POW2(cam.flen);
+    float const k0 = cam.dist[0] * MATH_POW2(cam.flen);
+    float const k1 = cam.dist[1] * MATH_POW2(cam.flen);
 
     typename Image<T>::Ptr out = Image<T>::create(w, h, c);
     T* out_ptr = out->get_data_pointer();
@@ -1716,14 +1725,14 @@ image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam)
     if (k0 == 0.0f && k1 == 0.0f)
         return img->duplicate();
 
-    int w = img->width();
-    int h = img->height();
-    int c = img->channels();
-    float fw = static_cast<float>(w);
-    float fh = static_cast<float>(h);
-    float fw2 = fw * 0.5f;
-    float fh2 = fh * 0.5f;
-    float noah_flen = cam.flen * std::max(fw, fh);
+    int const w = img->width();
+    int const h = img->height();
+    int const c = img->channels();
+    float const fw = static_cast<float>(w);
+    float const fh = static_cast<float>(h);
+    float const fw2 = fw * 0.5f;
+    float const fh2 = fh * 0.5f;
+    float const noah_flen = cam.flen * std::max(fw, fh);
 
     float f2inv = 1.0f / (noah_flen * noah_flen);
 
@@ -1746,6 +1755,79 @@ image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam)
                 continue;
             img->linear_at(xc, yc, out_ptr + outpos);
         }
+
+    return out;
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+typename Image<T>::Ptr
+image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1)
+{
+    if (!img.get())
+        throw std::invalid_argument("NULL image given");
+
+    int const width = img->width();
+    int const height = img->height();
+    int const chans = img->channels();
+
+    typename Image<T>::Ptr out = Image<T>::create(width, height, chans);
+    T* out_ptr = out->begin();
+
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x, out_ptr += chans)
+        {
+            double fx = static_cast<double>(x) / width - 0.5f;
+            double fy = static_cast<double>(y) / height - 0.5f;
+
+            if (fy == 0.0f)
+                fy = 1e-10;
+
+            if (k1 != 0.0)
+            {
+                double const t2 = fy * fy;
+                double const t3 = t2 * t2 * t2;
+                double const t4 = fx * fx;
+                double const t7 = k1 * (t2 + t4);
+
+                if (k1 > 0.0)
+                {
+                    double const t8 = 1.0 / t7;
+                    double const t10 = t3 / (t7 * t7);
+                    double const t14 = std::sqrt(t10 * (0.25 + t8 / 27.0));
+                    double const t15 = t2 * t8 * fy * 0.5;
+                    double const t17 = std::pow(t14 + t15, 1.0/3.0);
+                    double const t18 = t17 - t2 * t8 / (t17 * 3.0);
+                    fx = t18 * fx / fy;
+                    fy = t18;
+                }
+                else
+                {
+                    double const t9 = t3 / (t7 * t7 * 4.0);
+                    double const t11 = t3 / (t7 * t7 * t7 * 27.0);
+                    std::complex<double> const t12 = t9 + t11;
+                    std::complex<double> const t13 = std::sqrt(t12);
+                    double const t14 = t2 / t7;
+                    double const t15 = t14 * fy * 0.5;
+                    std::complex<double> const t16 = t13 + t15;
+                    std::complex<double> const t17 = std::pow(t16, 1.0/3.0);
+                    std::complex<double> const t18 = (t17 + t14 / (t17 * 3.0))
+                        * std::complex<double>(0.0, std::sqrt(3.0));
+                    std::complex<double> const t19 = -0.5 * (t17 + t18)
+                        + t14 / (t17 * 6.0);
+                    fx = t19.real() * fx / fy;
+                    fy = t19.real();
+                }
+            }
+
+            fx = (fx + 0.5f) * width;
+            fy = (fy + 0.5f) * height;
+
+            img->linear_at(fx, fy, out_ptr);
+        }
+    }
 
     return out;
 }
