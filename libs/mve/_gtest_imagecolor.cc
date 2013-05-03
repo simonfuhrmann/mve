@@ -32,7 +32,7 @@ create_byte_test_image (void)
     return img;
 }
 
-TEST(ImageColorTest, Float_RGBtoXYZ_BackAndForth)
+TEST(ImageColorTest, RGBtoXYZ_Float_BackAndForth)
 {
     using mve::image::color_convert;
     mve::FloatImage::Ptr img = create_float_test_image();
@@ -43,7 +43,7 @@ TEST(ImageColorTest, Float_RGBtoXYZ_BackAndForth)
         EXPECT_NEAR(img->at(i), out->at(i), 1e-3f);
 }
 
-TEST(ImageColorTest, Float_XYYtoXYZ_BackAndForth)
+TEST(ImageColorTest, XYYtoXYZ_Float_BackAndForth)
 {
     using mve::image::color_convert;
     mve::FloatImage::Ptr img = create_float_test_image();
@@ -54,7 +54,7 @@ TEST(ImageColorTest, Float_XYYtoXYZ_BackAndForth)
         EXPECT_NEAR(img->at(i), out->at(i), 1e-3f);
 }
 
-TEST(ImageColorTest, Float_RGBtoYCbCr_BackAndForth)
+TEST(ImageColorTest, RGBtoYCbCr_Float_BackAndForth)
 {
     using mve::image::color_convert;
     mve::FloatImage::Ptr img = create_float_test_image();
@@ -65,7 +65,7 @@ TEST(ImageColorTest, Float_RGBtoYCbCr_BackAndForth)
         EXPECT_NEAR(img->at(i), out->at(i), 1e-3f);
 }
 
-TEST(ImageColorTest, Byte_RGBtoYCbCr_BackAndForth)
+TEST(ImageColorTest, RGBtoYCbCr_Byte_BackAndForth)
 {
     using mve::image::color_convert;
     mve::ByteImage::Ptr img = create_byte_test_image();

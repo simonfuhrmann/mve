@@ -1517,7 +1517,7 @@ void
 gamma_correct_srgb (typename Image<T>::Ptr image)
 {
     int const num_values = image->get_value_amount();
-    for (std::size_t i = 0; i < num_values; i++)
+    for (int i = 0; i < num_values; i++)
     {
         if (image->at(i) <= T(0.00304))
             image->at(i) *= T(12.92);
@@ -1536,7 +1536,7 @@ void
 gamma_correct_inv_srgb (typename Image<T>::Ptr image)
 {
     int const num_values = image->get_value_amount();
-    for (std::size_t i = 0; i < num_values; i++)
+    for (int i = 0; i < num_values; i++)
     {
         if (image->at(i) <= T(0.03928))
             image->at(i) /= T(12.92);

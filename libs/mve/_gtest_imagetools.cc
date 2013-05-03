@@ -273,7 +273,7 @@ TEST(ImageToolsTest, IntegralImage)
     EXPECT_EQ(256, sat->at(3, 3, 1));
 }
 
-TEST(ImageToolsTest, GammaCorrectGoldenValues)
+TEST(ImageToolsTest, GammaCorrect_Float_GoldenValues)
 {
     mve::FloatImage::Ptr img = mve::FloatImage::create(1, 1, 3);
     img->at(0, 0, 0) = 1.0f;
@@ -297,7 +297,7 @@ TEST(ImageToolsTest, GammaCorrectGoldenValues)
     }
 }
 
-TEST(ImageToolsTest, GammaCorrectBackAndForth)
+TEST(ImageToolsTest, GammaCorrect_Float_BackAndForth)
 {
     mve::FloatImage::Ptr img = create_test_float_image(100, 100, 3);
     mve::FloatImage::Ptr out = img->duplicate();
@@ -309,7 +309,7 @@ TEST(ImageToolsTest, GammaCorrectBackAndForth)
         EXPECT_NEAR(img->at(i), out->at(i), 1e-6f);
 }
 
-TEST(ImageToolsTest, GammaCorrectSRGBBackAndForth)
+TEST(ImageToolsTest, GammaCorrectSRGB_Float_BackAndForth)
 {
     mve::FloatImage::Ptr img = create_test_float_image(100, 100, 3);
     mve::FloatImage::Ptr out = img->duplicate();
