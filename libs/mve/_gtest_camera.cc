@@ -6,7 +6,7 @@
 #include "math/matrix.h"
 #include "mve/camera.h"
 
-TEST(MveCameraTest, CalibrationTest)
+TEST(MveCameraTest, CalibrationAndInverseTest)
 {
     /* Test if K * K^-1 = I. */
     mve::CameraInfo cam;

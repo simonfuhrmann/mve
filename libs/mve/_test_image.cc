@@ -16,7 +16,7 @@ main (int argc, char** argv)
 {
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
-#if 1
+#if 0
     // Test image undistortion
     mve::ByteImage::Ptr img = mve::image::load_file("/tmp/mouse.jpg");
     mve::ByteImage::Ptr out = mve::image::image_undistort_msps<uint8_t>(img, 2.0f, 0.0f);
@@ -27,54 +27,6 @@ main (int argc, char** argv)
     out = mve::image::image_undistort_msps<uint8_t>(out, 2.0f, 0.0f);
     mve::image::save_file(out, "/tmp/undist_msps_test-2.png");
 
-#endif
-
-#if 0
-    // Reader and writer for PFM.
-    mve::FloatImage::Ptr img = mve::FloatImage::create(100, 100, 3);
-    for (int i = 0; i < 100 * 100 * 3; ++i)
-      img->at(i) = ::rand() / 1000.0f;
-
-    mve::image::save_pfm_file(img, "/tmp/file.pfm");
-    mve::FloatImage::Ptr check = mve::image::load_pfm_file("/tmp/file.pfm");
-
-    std::cout << "Sizes: " << check->width() << " " << check->height() << " " << check->channels() << std::endl;
-    for (int i = 0; i < 100 * 100 * 3; ++i)
-        if (check->at(i) != img->at(i))
-            std::cout << "Images DO NOT MATCH!" << std::endl;
-    std::cout << "Done!" << std::endl;
-#endif
-
-#if 0
-    // 16 bit PPM test.
-    mve::RawImage::Ptr img = mve::RawImage::create(3, 1, 3);
-
-    img->at(0, 0, 0) = 0xff00;  // Visible after converting to 8 bit.
-    img->at(0, 0, 1) = 0x0000;
-    img->at(0, 0, 2) = 0x0000;
-
-    img->at(1, 0, 0) = 0x0000;
-    img->at(1, 0, 1) = 0xffff;  // Visible after converting to 8 bit.
-    img->at(1, 0, 2) = 0x0000;
-
-    img->at(2, 0, 0) = 0x0000;
-    img->at(2, 0, 1) = 0x0000;
-    img->at(2, 0, 2) = 0x00ff;  // Invisible after converting to 8 bit.
-
-    mve::image::save_ppm_16_file(img, "/tmp/rawimage.ppm");
-
-    img = mve::image::load_ppm_16_file("/tmp/rawimage.ppm");
-    mve::ByteImage::Ptr tmp = mve::ByteImage::create(3, 1, 3);
-    for (int i = 0; i < img->get_value_amount(); ++i)
-        tmp->at(i) = (uint8_t)(img->at(i) >> 8);
-    mve::image::save_file(tmp, "/tmp/converted.png");
-#endif
-
-#if 0
-    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/image.png");
-    mve::image::save_ppm_file(img, "/tmp/image.ppm");
-    img = mve::image::load_ppm_file("/tmp/image.ppm");
-    mve::image::save_file(img, "/tmp/image2.png");
 #endif
 
 #if 0
@@ -116,20 +68,6 @@ main (int argc, char** argv)
     }
     std::cout << "Performed float " << num << " lookups in "
         << timer.get_elapsed() << "ms." << std::endl;
-#endif
-
-#if 0
-    /* Test load 16 bit PNG. */
-    mve::ByteImage::Ptr img;
-    try
-    {
-        img = mve::image::load_png_file("/gris/scratch/home/jackerma/tmp/both.png");
-    }
-    catch (std::exception& e)
-    {
-        std::cout << "Error loading: " << e.what() << std::endl;
-    }
-
 #endif
 
 #if 0
@@ -178,20 +116,6 @@ main (int argc, char** argv)
             std::cout << "    Corrupt EXIF: " << e.what() << std::endl;
         }
     }
-#endif
-
-#if 0
-    util::ClockTimer ctimer;
-    util::WallTimer wtimer;
-    mve::ByteImage::Ptr img(mve::image::load_file
-        //("../../data/testimages/diaz_color.png"));
-        //("/tmp/_testnoise.png"));
-        (argv[1]));
-
-    img = mve::image::nl_means_filter<uint8_t>(img, 5.0f);
-    mve::image::save_file(img, "/tmp/nlmeans_out.png");
-    std::cout << "took " << ctimer.get_elapsed() << "ms cpu time" << std::endl;
-    std::cout << "took " << wtimer.get_elapsed() << "ms real time" << std::endl;
 #endif
 
 #if 0
@@ -332,21 +256,6 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-    /* Hack to create gnuplot data file for scanline. */
-    mve::ByteImage::Ptr img = mve::image::load_file(argv[1]);
-
-    std::ofstream out("/tmp/scanline.gp");
-    if (!out.good())
-        return 1;
-    for (std::size_t i = 0; i < img->get_pixel_amount(); ++i)
-        out << i << " "
-            << (int)img->at(i, 0) << " "
-            << (int)img->at(i, 1) << " "
-            << (int)img->at(i, 2) << std::endl;
-    out.close();
-#endif
-
-#if 0
     /* Test broken image loading. */
     if (argc < 2)
     {
@@ -429,22 +338,6 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-    /* Test dark channel filter. */
-    if (argc < 2)
-    {
-        std::cout << "Pass image as parameter" << std::endl;
-        return 1;
-    }
-
-    mve::ByteImage::Ptr image(mve::image::load_file(argv[1]));
-    mve::ByteImage::Ptr dark(mve::image::dark_channel<uint8_t>(image, 7));
-
-    mve::image::save_file(dark, "/tmp/dc.png");
-
-    return 0;
-#endif
-
-#if 0
     /* Test image type conversion. */
 
     mve::ByteImage::Ptr img(mve::image::load_file
@@ -506,7 +399,6 @@ main (int argc, char** argv)
     out = mve::image::float_to_byte_image(out2);
     mve::image::save_file(out, "/tmp/test_rings_linear.png");
 #endif
-
 
 #if 0
     /* Test rescaling of small images. */
@@ -578,232 +470,6 @@ main (int argc, char** argv)
     std::cout << "image " << out->width() << "x" << out->height() << std::endl;
     out = mve::image::rescale_half_size<unsigned char>(out);
     mve::image::save_file(out, "/tmp/lenna_by16.png");
-#endif
-
-
-#if 0
-    /* Test new image load interface. */
-    std::cout << "Loading image..." << std::endl;
-    //mve::ByteImage::Ptr image = mve::image::load_png_file("../../data/testimages/test_rgba_32x32.png");
-    mve::ByteImage::Ptr image = mve::image::load_tiff_file("../../data/testimages/test_rgba_32x32.tiff");
-    //mve::ByteImage::Ptr image = mve::image::load_tiff_file("/tmp/testtiff.tiff");
-
-    std::cout << "Image loaded. "
-        << image->width() << "x"
-        << image->height() << "x"
-        << image->channels() << std::endl;
-
-    //mve::image::save_png_file(image, "/tmp/testpng.png");
-    //mve::image::save_tiff_file(image, "/tmp/testtiff.tiff");
-
-    std::size_t _w = image->width();
-    std::size_t _h = image->height();
-    std::size_t _c = image->channels();
-
-    for (std::size_t i = 0; i < 20; ++i)
-    {
-        std::size_t x = i % _w;
-        std::size_t y = i / _w;
-        std::cout << "  Pixel " << i << ": ";
-        /* Actual values. */
-        std::cout << "P(";
-        for (std::size_t c = 0; c < _c; ++c)
-            std::cout << (int)image->at(x, y, c) << " ";
-        std::cout << ")" << std::endl;
-    }
-    std::cout << std::endl;
-
-#endif
-
-
-#if 0
-
-    /* Test PNG file reading. */
-    mve::PNGFile png;
-    std::cout << "Loading PNG..." << std::endl;
-    try
-    {
-        png.load_png("../../data/testimages/test_rgba_32x32.png");
-    }
-    catch (util::Exception& e)
-    {
-        std::cout << "Error loading PNG: " << e << std::endl;
-        return 1;
-    }
-
-    std::cout << "  Is valid: " << png.is_valid_png() << std::endl;
-    std::cout << "  Size: " << png.width() << "x" << png.height() << std::endl;
-    std::cout << "  Channels: " << png.channels() << std::endl;
-
-    std::cout << "  First N pixels: " << std::endl;
-
-    std::size_t _w = png.width();
-    std::size_t _h = png.height();
-    std::size_t _c = png.channels();
-
-    for (std::size_t i = 0; i < 20; ++i)
-    {
-        std::size_t x = i % _w;
-        std::size_t y = i / _w;
-        std::cout << "  Pixel " << i << ": ";
-        /* Actual values. */
-        std::cout << "P(";
-        for (std::size_t c = 0; c < _c; ++c)
-            std::cout << (int)png.at(x, y, c) << " ";
-        std::cout << "), RGB(";
-        for (std::size_t c = 0; c < 3; ++c)
-            std::cout << (int)png.at_rgb(x, y, c) << " ";
-        std::cout << "), RGBA(";
-        for (std::size_t c = 0; c < 4; ++c)
-            std::cout << (int)png.at_rgba(x, y, c) << " ";
-        std::cout << ")" << std::endl;
-    }
-    std::cout << std::endl;
-
-    std::cout << "Saving PNG to file..." << std::endl;
-    try
-    {
-        png.save_png("/tmp/output.png");
-    }
-    catch (util::Exception& e)
-    {
-        std::cout << "Error writing PNG: " << e.what() << std::endl;
-    }
-
-#endif
-
-#if 0
-    /* Test PFM file reading */
-    mve::FloatImage::Ptr img = mve::image::load_pfm_file("../../data/testimages/uffizi_probe.pfm");
-
-    std::cout << "Size: " << img->width() << ", " << img->height() << ", " << img->channels() << std::endl;
-
-    /* Test PFM writing */
-    mve::image::save_pfm_file(img, "/tmp/output.pfm");
-#endif
-
-#if 0
-
-    /* Test JPG file reading. */
-    mve::JPGFile jpg;
-    std::cout << "Loading jpg..." << std::endl;
-    try
-    {
-        //jpg.load_jpg("../../data/testimages/test_rgb_32x32.jpg");
-        jpg.load_jpg("/home/simlan/temp/diaz16.jpg");
-    }
-    catch (util::Exception& e)
-    {
-        std::cout << "Error loading JPG: " << e << std::endl;
-        return 1;
-    }
-
-    std::cout << "  Is valid: " << jpg.is_valid_jpg() << std::endl;
-    std::cout << "  Size: " << jpg.width() << "x" << jpg.height() << std::endl;
-    std::cout << "  Channels: " << jpg.channels() << std::endl;
-
-    std::cout << "  First N pixels: " << std::endl;
-
-    std::size_t _w = jpg.width();
-    std::size_t _h = jpg.height();
-    std::size_t _c = jpg.channels();
-
-    for (std::size_t i = 0; i < 20; ++i)
-    {
-        std::size_t x = i % _w;
-        std::size_t y = i / _w;
-        std::cout << "  Pixel " << i << ": ";
-        /* Actual values. */
-        std::cout << "P(";
-        for (std::size_t c = 0; c < _c; ++c)
-            std::cout << (int)jpg.at(x, y, c) << " ";
-        std::cout << "), RGB(";
-        for (std::size_t c = 0; c < 3; ++c)
-            std::cout << (int)jpg.at_rgb(x, y, c) << " ";
-        std::cout << "), RGBA(";
-        for (std::size_t c = 0; c < 4; ++c)
-            std::cout << (int)jpg.at_rgba(x, y, c) << " ";
-        std::cout << ")" << std::endl;
-    }
-    std::cout << std::endl;
-
-    /* Test JPG file writing. */
-    std::cout << "Saving JPG to file..." << std::endl;
-    try
-    {
-        jpg.save_jpg("/tmp/output.jpg", 85);
-    }
-    catch (util::Exception& e)
-    {
-        std::cout << "Error writing JPG: " << e.what() << std::endl;
-    }
-
-#endif
-
-
-#if 0
-    /* Test PPM file reading */
-
-
-    mve::FloatImage::Ptr img = mve::image::load_ppm_16_file("/tmp/in.ppm");
-    /*
-    mve::FloatImage::Ptr img = mve::FloatImage::create(100,100,3);
-    float v = ((0x00000001) << 14) | ((0x00000001) << 2)  | ((0x00000001) << 5) ;
-
-    std::cout << v << std::endl;
-    img->fill(v);
-
-    img->at(0) = 0.0f;
-    img->at(1) = v+30;
-    */
-    std::cout << "Size: " << img->width() << ", " << img->height() << ", " << img->channels() << std::endl;
-
-    /* Test PPM writing */
-    mve::image::save_png_file(mve::image::float_to_byte_image(img), "/tmp/output.png");
-    mve::image::save_ppm_16_file(img, "/tmp/output.ppm");
-
-    mve::FloatImage::Ptr img2 = mve::image::load_ppm_16_file("/tmp/output.ppm");
-    mve::image::save_ppm_16_file(img2, "/tmp/output2.ppm");
-    mve::image::save_png_file(mve::image::float_to_byte_image(img2), "/tmp/output2.png");
-#endif
-
-#if 0
-    /* Test TIFF image reading and writing. */
-    mve::Image<uint16_t>::Ptr testPattern = mve::Image<uint16_t>::create(100, 100, 3);
-    for (std::size_t x=0; x < testPattern->width(); x++) {
-    for (std::size_t y=0; y < testPattern->height(); y++) {
-        math::Vec3ui color;
-        if (y < testPattern->height()/2) {
-        if (x < testPattern->width()/2) {
-            color = math::Vec3ui(0xFFFF, 0, 0);
-        }
-        else {
-            color = math::Vec3ui(0, 0xFFFF, 0);
-        }
-        }
-        else {
-        if (x < testPattern->width()/2) {
-            color = math::Vec3ui(0, 0, 0xFFFF);
-        }
-        else {
-            color = math::Vec3ui(0xFFFF, 0xFFFF, 0);
-        }
-        }
-        for (std::size_t c=0; c<3; c++) {
-        testPattern->at(x,y,c) = color[c];
-        }
-    }
-    }
-
-    /* Test 16bit TIFF file writing */
-    mve::image::save_tiff_16_file(testPattern, "/tmp/test16bit.tiff");
-
-    /* Test 16bit TIFF file reading */
-    mve::Image<uint16_t>::Ptr img = mve::image::load_tiff_16_file("/tmp/test16bit.tiff");
-    std::cout << "Size: " << img->width() << ", " << img->height() << ", " << img->channels() << std::endl;
-
-    /* check consistency */
-    mve::image::save_tiff_16_file(img, "/tmp/test16bit2.tiff");
 #endif
 
     return 0;

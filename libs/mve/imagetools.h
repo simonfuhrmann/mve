@@ -14,7 +14,6 @@
 #include "math/accum.h"
 #include "math/algo.h"
 #include "mve/defines.h"
-#include "mve/camera.h"
 #include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
@@ -104,6 +103,7 @@ float_image_normalize (FloatImage::Ptr image);
 
 /**
  * Undistorts the input image given the two undistortion parameters.
+ * If both distortion parameters are equal, undistortion has no effect.
  * This distortion model is used by Microsoft's Photosynther and is
  * independent of the focal length.
  */
@@ -126,7 +126,7 @@ image_undistort_bundler (typename Image<T>::ConstPtr img,
  * Undistorts the input image given the focal length of the image and
  * a single distortion parameter. If the distortion parameter is 0, the
  * undistortion has no effect. The focal length is expected to be in
- * unit format. This model is used by VisualSfM.
+ * unit format. This distortion model is used by VisualSfM.
  */
 template <typename T>
 typename Image<T>::Ptr
