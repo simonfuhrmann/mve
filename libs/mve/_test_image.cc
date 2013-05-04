@@ -16,6 +16,19 @@ main (int argc, char** argv)
 {
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
+#if 1
+    // Test image undistortion
+    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/mouse.jpg");
+    mve::ByteImage::Ptr out = mve::image::image_undistort_msps<uint8_t>(img, 2.0f, 0.0f);
+    out = mve::image::rescale_half_size<uint8_t>(out);
+    mve::image::save_file(out, "/tmp/undist_msps_test-1.png");
+
+    out = mve::image::rescale_half_size<uint8_t>(img);
+    out = mve::image::image_undistort_msps<uint8_t>(out, 2.0f, 0.0f);
+    mve::image::save_file(out, "/tmp/undist_msps_test-2.png");
+
+#endif
+
 #if 0
     // Reader and writer for PFM.
     mve::FloatImage::Ptr img = mve::FloatImage::create(100, 100, 3);
