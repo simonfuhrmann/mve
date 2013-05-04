@@ -122,12 +122,14 @@ typename Image<T>::Ptr
 image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam);
 
 /**
- * Undistorts the input image using the given the distortion parameter.
- * This single parameter undistortion model is used by VisualSfM.
+ * Undistorts the input image given the focal length of the image and
+ * a single distortion parameter. The focal length is expected to be in
+ * unit format. This model is used by VisualSfM.
  */
 template <typename T>
 typename Image<T>::Ptr
-image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1);
+image_undistort_ccwu (typename Image<T>::ConstPtr img,
+    double focal_length, double k1);
 
 /*
  * ------------------- Image scaling and cropping -----------------
@@ -1763,7 +1765,8 @@ image_undistort_noah (typename Image<T>::ConstPtr img, CameraInfo const& cam)
 
 template <typename T>
 typename Image<T>::Ptr
-image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1)
+image_undistort_ccwu (typename Image<T>::ConstPtr img,
+    double focal_length, double k1)
 {
     if (!img.get())
         throw std::invalid_argument("NULL image given");
@@ -1772,6 +1775,15 @@ image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1)
     int const height = img->height();
     int const chans = img->channels();
 
+    /*
+     * The image coordinates must be normalized before the distortion
+     * model is applied. The image coordinates are first centered at
+     * the origin and then scaled w.r.t. the focal length in pixel.
+     */
+    double const norm = focal_length * std::max(width, height);
+    double const width_half = static_cast<double>(width) / 2.0;
+    double const height_half = static_cast<double>(height) / 2.0;
+
     typename Image<T>::Ptr out = Image<T>::create(width, height, chans);
     T* out_ptr = out->begin();
 
@@ -1779,10 +1791,10 @@ image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1)
     {
         for (int x = 0; x < width; ++x, out_ptr += chans)
         {
-            double fx = static_cast<double>(x) / width - 0.5f;
-            double fy = static_cast<double>(y) / height - 0.5f;
+            double fx = (static_cast<double>(x) - width_half) / norm;
+            double fy = (static_cast<double>(y) - height_half) / norm;
 
-            if (fy == 0.0f)
+            if (fy == 0.0)
                 fy = 1e-10;
 
             if (k1 != 0.0)
@@ -1822,8 +1834,8 @@ image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1)
                 }
             }
 
-            fx = (fx + 0.5f) * width;
-            fy = (fy + 0.5f) * height;
+            fx = fx * norm + width_half;
+            fy = fy * norm + height_half;
 
             img->linear_at(fx, fy, out_ptr);
         }
