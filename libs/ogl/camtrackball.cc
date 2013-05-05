@@ -122,60 +122,46 @@ CamTrackball::handle_tb_rotation (int x, int y)
 math::Vec3f
 CamTrackball::get_center (int x, int y)
 {
-    /* Patchsize should be odd and larger than one. */
-    int const patchsize = 9;
-    int const half_patchsize = patchsize / 2;
-
+    /* Try to find a valid depth value in a spiral around the click point. */
     float depth = 1.0f;
-    float deptharr[patchsize][patchsize];
-
-    int const min_x = x - half_patchsize;
-    int const min_y = this->cam->height - 1 - y - half_patchsize;
-
-    if (min_x >= 0 && min_x + patchsize < this->cam->width
-        && min_y >= 0 && min_y + patchsize < this->cam->height)
     {
-        /* Read depth value from depth buffer. */
-        glReadPixels(min_x, min_y, patchsize, patchsize,
-            GL_DEPTH_COMPONENT, GL_FLOAT, &deptharr);
-
-        /* searches for valid depth values in spiral beginning at the center */
+        /* Patchsize should be odd and larger than one. */
+        int const patch_size = 9;
+        int const patch_halfsize = patch_size / 2;
+        int const screen_width = this->cam->width;
+        int const screen_height = this->cam->height;
+        int const center_x = x;
+        int const center_y = y;
         int dx = 1;
         int dy = 0;
         int radius = 0;
-        int x = half_patchsize;
-        int y = half_patchsize;
-        for (int i = 0; i < patchsize * patchsize; i++)
+        while (radius <= patch_halfsize)
         {
-            if (deptharr[x][y] != 1.0f)
-            {
-                depth = deptharr[x][y];
+            if (x >= 0 && x < screen_width && y > 0 && y < screen_height)
+                glReadPixels(x, screen_height - y - 1, 1, 1,
+                    GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+            if (depth != 1.0f)
                 break;
-            }
 
             x += dx;
             y += dy;
-
-            if (x > half_patchsize + radius)
+            if (x > center_x + radius)
             {
-                radius++;
+                radius += 1;
                 dx = 0;
                 dy = -1;
             }
-
-            if (y <= half_patchsize - radius)
+            if (y <= center_y - radius)
             {
                 dx = -1;
                 dy = 0;
             }
-
-            if (x <= half_patchsize - radius)
+            if (x <= center_x - radius)
             {
                 dx = 0;
                 dy = 1;
             }
-
-            if (y >= half_patchsize + radius)
+            if (y >= center_y + radius)
             {
                 dx = 1;
                 dy = 0;
@@ -187,10 +173,10 @@ CamTrackball::get_center (int x, int y)
     if (depth == 1.0f)
         return math::Vec3f(0.0f); // TODO: Better "error" reporting
 
-    float fx = (float)x;
-    float fy = (float)y;
-    float fw = (float)this->cam->width;
-    float fh = (float)this->cam->height;
+    float const fx = static_cast<float>(x);
+    float const fy = static_cast<float>(y);
+    float const fw = static_cast<float>(this->cam->width);
+    float const fh = static_cast<float>(this->cam->height);
 
     /* Calculate camera-to-surface distance (orthographic). */
     float dist = (this->cam->z_far * this->cam->z_near)
@@ -204,7 +190,6 @@ CamTrackball::get_center (int x, int y)
             this->cam->z_near);
         float cosangle = pnp.normalized()[2];
         dist /= cosangle;
-        //std::cout << "Distance value: " << dist << std::endl;
     }
 
     /* Create a point in unit cube corresponding to the click coords. */
@@ -216,9 +201,6 @@ CamTrackball::get_center (int x, int y)
     ray = ray.normalized() * dist;
     /* Ray to new camera center in world coords. */
     ray = this->cam->inv_view.mult(ray, 0.0f);
-
-    //std::cout << "Ray: " << ray << ", new center: "
-    //    << (this->cam->pos + ray) << std::endl;
 
     return this->cam->pos + ray;
 }
