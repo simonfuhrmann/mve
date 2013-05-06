@@ -292,24 +292,8 @@ create_thumbnail (mve::ImageBase::ConstPtr img)
 /* ---------------------------------------------------------------- */
 
 /*
- * NVM_V3 [optional calibration]                        # file version header
- * <Model1> <Model2> ...                                # multiple reconstructed models
- * <Empty Model containing the unregistered Images>     # number of camera > 0, but number of points = 0
- * <0>                                                  # 0 camera to indicate the end of model section
- * <Some comments describing the PLY section>
- * <Number of PLY files> <List of indices of models that have associated PLY>
- *
- * The [optional calibration] exists only if you use "Set Fixed Calibration" Function
- * FixedK fx cx fy cy
- *
- * Each reconstructed <model> contains the following
- * <Number of cameras>   <List of cameras>
- * <Number of 3D points> <List of points>
- *
- * The cameras and 3D points are saved in the following format
- * <Camera> = <File name> <focal length> <quaternion rotation> <camera center> <radial distortion> 0
- * <Point>  = <XYZ> <RGB> <number of measurements> <List of Measurements>
- * <Measurement> = <Image index> <Feature Index> <xy>
+ * The VisualSFM tool saves bundles in NVM format. Docs are here:
+ * http://homes.cs.washington.edu/~ccwu/vsfm/doc.html#nvm
  */
 
 struct NVMView
@@ -320,7 +304,6 @@ struct NVMView
     double camera_center[3];
     double radial_distortion;
 };
-
 
 struct NVMRef
 {
