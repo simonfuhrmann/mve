@@ -61,15 +61,15 @@ save_file (FloatImage::Ptr image, std::string const& filename);
 
 /**
  * Loads a PNG file.
+ * PNG has 1, 2, 3 or 4 channels with gray, gray-alpha, RGB or RGBA values.
  * Conversion of 1, 2, 4 and 16 bit values to 8 bit is auto-applied.
- * PNG has 1 to 4 channels with gray, gray-alpha, RGB or RGBA values.
  * May throw util::FileException and util::Exception.
  */
 ByteImage::Ptr
 load_png_file (std::string const& filename);
 
 /**
- * Saves image data to a PNG file.
+ * Saves image data to a PNG file. Supports 1, 2, 3 and 4 channel images.
  * May throw util::FileException and util::Exception.
  */
 void
@@ -91,7 +91,7 @@ ByteImage::Ptr
 load_jpg_file (std::string const& filename, std::string* exif = 0);
 
 /**
- * Saves image data to a JPG file.
+ * Saves image data to a JPG file. Supports 1 and 3 channel images.
  * The quality value is in range [0, 100] from worst to best quality.
  * May throw util::FileException and util::Exception.
  */
@@ -112,7 +112,7 @@ ByteImage::Ptr
 load_tiff_file (std::string const& filename);
 
 /**
- * Writes a TIFF to file.
+ * Writes a TIFF to file. Supports any number of channels.
  * May throw util::FileException and util::Exception.
  */
 void
@@ -126,7 +126,7 @@ RawImage::Ptr
 load_tiff_16_file (std::string const& filename);
 
 /**
- * Writes a 16bit TIFF to file.
+ * Writes a 16bit TIFF to file. Supports any number of channels.
  * May throw util::FileException and util::Exception.
  */
 void
@@ -145,7 +145,7 @@ FloatImage::Ptr
 load_pfm_file (std::string const& filename);
 
 /**
- * Saves float image data to PFM file.
+ * Saves float image data to PFM file. Supports 1 and 3 channel images.
  * May throw util::FileException and util::Exception.
  */
 void
@@ -161,7 +161,7 @@ RawImage::Ptr
 load_ppm_16_file (std::string const& filename);
 
 /**
- * Save a 16 bit PPM file (1 and 3 channel images only).
+ * Save a 16 bit PPM file. Supports 1 and 3 channel images.
  * May throw util::FileException and util::Exception.
  */
 void
@@ -177,7 +177,7 @@ ByteImage::Ptr
 load_ppm_file (std::string const& filename);
 
 /**
- * Writes a 8 bit PPM file (1 and 3 channel images only).
+ * Writes a 8 bit PPM file. Supports 1 and 3 channel images.
  * May throw util::FileException and std::invalid_argument.
  */
 void

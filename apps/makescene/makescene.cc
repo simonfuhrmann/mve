@@ -517,21 +517,19 @@ import_bundle_nvm (AppSettings const& conf)
         view->add_image("original", image);
         view->add_image("thumbnail", create_thumbnail(image));
 
-        mve::ByteImage::Ptr undist = mve::image::image_undistort_ccwu<uint8_t>
-            (image, views[i].radial_distortion);
-        view->add_image("undistorted", undist);
-
-        math::Matrix3f rot = get_rot_from_quaternion(views[i].quaternion);
-        math::Vec3f trans(views[i].camera_center);
-        trans = rot * -trans;
-
         mve::CameraInfo cam;
         cam.flen = views[i].focal_length / static_cast<float>(maxdim);
         cam.dist[0] = views[i].radial_distortion;
         cam.dist[1] = 0.0f;
-
+        math::Matrix3f rot = get_rot_from_quaternion(views[i].quaternion);
+        math::Vec3f trans = rot * -math::Vec3f(views[i].camera_center);
         std::copy(*rot, *rot + 9, cam.rot);
         std::copy(*trans, *trans + 3, cam.trans);
+
+        mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
+            (image, cam.flen, views[i].radial_distortion);
+        view->add_image("undistorted", undist);
+
         view->set_camera(cam);
         view->save_mve_file_as(conf.views_path + "view_"
             + util::string::get_filled(i, 4, '0') + ".mve");
@@ -779,7 +777,8 @@ import_bundle (AppSettings const& conf)
             view->set_camera(cam);
 
             if (cam.flen != 0.0f)
-                undist = mve::image::image_undistort_noah<uint8_t>(original, cam);
+                undist = mve::image::image_undistort_bundler<uint8_t>
+                    (original, cam.flen, cam.dist[0], cam.dist[1]);
 
             if (!conf.import_orig)
                 original.reset();
@@ -799,7 +798,8 @@ import_bundle (AppSettings const& conf)
                 original = load_8bit_image(orig_filename, &exif);
                 /* Overwrite undistorted images with manually undistorted
                  * original images. This reduces JPEG artifacts. */
-                undist = mve::image::image_undistort<uint8_t>(original, cam);
+                undist = mve::image::image_undistort_msps<uint8_t>
+                    (original, cam.dist[0], cam.dist[1]);
             }
         }
 
