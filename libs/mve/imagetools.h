@@ -1779,10 +1779,10 @@ image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1)
     {
         for (int x = 0; x < width; ++x, out_ptr += chans)
         {
-            double fx = static_cast<double>(x) / width - 0.5f;
-            double fy = static_cast<double>(y) / height - 0.5f;
+            double fx = static_cast<double>(x) / width - 0.5;
+            double fy = static_cast<double>(y) / height - 0.5;
 
-            if (fy == 0.0f)
+            if (fy == 0.0)
                 fy = 1e-10;
 
             if (k1 != 0.0)
@@ -1822,8 +1822,8 @@ image_undistort_ccwu (typename Image<T>::ConstPtr img, double k1)
                 }
             }
 
-            fx = (fx + 0.5f) * width;
-            fy = (fy + 0.5f) * height;
+            fx = (fx + 0.5) * width;
+            fy = (fy + 0.5) * height;
 
             img->linear_at(fx, fy, out_ptr);
         }

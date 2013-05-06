@@ -367,6 +367,8 @@ import_bundle_nvm (AppSettings const& conf)
         return;
     }
 
+    std::cout << "Start parsing NVM file..." << std::endl;
+
     /* Check NVM file signature. */
     std::string signature;
     in >> signature;
@@ -384,11 +386,12 @@ import_bundle_nvm (AppSettings const& conf)
     in >> num_views;
     if (num_views < 0 || num_views > 10000)
     {
-        std::cerr << "Error: Invalid number of views" << std::endl;
+        std::cerr << "Error: Invalid number of views: "
+            << num_views << std::endl;
         in.close();
         return;
     }
-    std::cout << "Num views: " << num_views << std::endl;
+    std::cout << "Number of views: " << num_views << std::endl;
 
     /* Read views. */
     std::vector<NVMView> views;
@@ -413,11 +416,12 @@ import_bundle_nvm (AppSettings const& conf)
     in >> num_points;
     if (num_points < 0 || num_points > 1000000000)
     {
-        std::cerr << "Error: Invalid number of SfM points" << std::endl;
+        std::cerr << "Error: Invalid number of SfM points: "
+            << num_points << std::endl;
         in.close();
         return;
     }
-    std::cout << "Num points: " << num_points << std::endl;
+    std::cout << "Number of points: " << num_points << std::endl;
 
     /* Read points. */
     std::vector<NVMPoint> points;
@@ -438,7 +442,8 @@ import_bundle_nvm (AppSettings const& conf)
         in >> num_refs;
         if (num_refs < 2 || num_refs > 1000)
         {
-            std::cerr << "Error: Invalid number of refs: " << num_refs << std::endl;
+            std::cerr << "Error: Invalid number of feature refs: "
+                << num_refs << std::endl;
             in.close();
             return;
         }
@@ -455,10 +460,12 @@ import_bundle_nvm (AppSettings const& conf)
     in.close();
 
     /* Create output directories. */
+    std::cout << "Creating output directories..." << std::endl;
     util::fs::mkdir(conf.output_dir.c_str());
     util::fs::mkdir(conf.views_path.c_str());
 
     /* Write output bundle file for MVE. */
+    std::cout << "Writing bundle file..." << std::endl;
     std::ofstream out((conf.output_dir + "/synth_0.out").c_str());
     if (!out.good())
     {
@@ -497,6 +504,8 @@ import_bundle_nvm (AppSettings const& conf)
     out.close();
 
     /* Create and write views. */
+    std::cout << "Writing MVE files..." << std::endl;
+#pragma omp parallel for schedule(dynamic, 1)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view = mve::View::create();
@@ -527,6 +536,7 @@ import_bundle_nvm (AppSettings const& conf)
         view->save_mve_file_as(conf.views_path + "view_"
             + util::string::get_filled(i, 4, '0') + ".mve");
     }
+    std::cout << std::endl << "Done importing NVM file!" << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
