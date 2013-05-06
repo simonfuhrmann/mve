@@ -768,12 +768,22 @@ import_bundle (AppSettings const& conf)
         }
         else if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER)
         {
-            /* With the Photosynther, load undistorted and original. */
-            std::string undist_filename = undist_path + "undistorted_"
+            /*
+             * With the Photosynther, load undistorted and original.
+             * The new version uses "forStereo_xxxx_yyyy.png" as file
+             * name and the older version uses "undistorted_xxxx_yyyy.jpg".
+             */
+            std::string undist_new_filename = undist_path + "forStereo_"
+                + util::string::get_filled(conf.bundle_id, 4) + "_"
+                + util::string::get_filled(valid_cnt, 4) + ".png";
+            std::string undist_old_filename = undist_path + "undistorted_"
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
                 + util::string::get_filled(valid_cnt, 4) + ".jpg";
-            undist = mve::image::load_file(undist_filename);
-            thumb = create_thumbnail(original);
+            /* Try the newer file name and fall back if not existing. */
+            if (util::fs::file_exists(undist_new_filename.c_str()))
+                undist = mve::image::load_file(undist_new_filename);
+            else
+                undist = mve::image::load_file(undist_old_filename);
 
             if (conf.import_orig)
             {
@@ -784,6 +794,7 @@ import_bundle (AppSettings const& conf)
                 undist = mve::image::image_undistort_msps<uint8_t>
                     (original, cam.dist[0], cam.dist[1]);
             }
+            thumb = create_thumbnail(undist);
         }
 
         /* Add images to view. */
