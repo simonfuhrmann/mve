@@ -206,7 +206,7 @@ color_rgb_to_ycbcr (T* v)
 }
 
 template <>
-void
+inline void
 color_rgb_to_ycbcr<uint8_t> (uint8_t* v)
 {
     double out[3];
@@ -233,7 +233,7 @@ color_ycbcr_to_rgb (T* v)
 }
 
 template <>
-void
+inline void
 color_ycbcr_to_rgb<uint8_t> (uint8_t* v)
 {
     double out[3];
