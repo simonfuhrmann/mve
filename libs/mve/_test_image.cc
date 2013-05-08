@@ -10,11 +10,21 @@
 #include "mve/imagetools.h"
 #include "mve/imagefile.h"
 #include "mve/imageexif.h"
+#include "mve/bilateral.h"
 
 int
 main (int argc, char** argv)
 {
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
+
+#if 1
+    /* Timing test for bilateral filter. */
+    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/mouse.jpg");
+    util::WallTimer timer;
+    img = mve::image::bilateral_filter<uint8_t, 3>(img, 20.0f, 50.0f);
+    std::cout << "Took " << timer.get_elapsed() << "ms." << std::endl;
+    mve::image::save_file(img, "/tmp/bilateral.png");
+#endif
 
 #if 0
     // Test image undistortion
