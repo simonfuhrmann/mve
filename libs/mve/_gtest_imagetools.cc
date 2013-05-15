@@ -227,6 +227,38 @@ TEST(ImageToolsTest, CropImageOverlap2)
     EXPECT_EQ(127, img->at(7));
 }
 
+TEST(ImageToolsTest, ImageHalfSizeEvenSize)
+{
+    mve::FloatImage::Ptr img = mve::FloatImage::create(4, 2, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+
+    mve::FloatImage::Ptr out = mve::image::rescale_half_size<float>(img);
+    EXPECT_EQ(2, out->width());
+    EXPECT_EQ(1, out->height());
+    EXPECT_EQ(2, out->channels());
+    EXPECT_EQ((0.0f + 2.0f + 8.0f + 10.0f) / 4.0f, out->at(0, 0, 0));
+    EXPECT_EQ((1.0f + 3.0f + 9.0f + 11.0f) / 4.0f, out->at(0, 0, 1));
+    EXPECT_EQ((4.0f + 6.0f + 12.0f + 14.0f) / 4.0f, out->at(1, 0, 0));
+    EXPECT_EQ((5.0f + 7.0f + 13.0f + 15.0f) / 4.0f, out->at(1, 0, 1));
+}
+
+TEST(ImageToolsTest, ImageHalfSizeOddSize)
+{
+    mve::FloatImage::Ptr img = mve::FloatImage::create(3, 2, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+
+    mve::FloatImage::Ptr out = mve::image::rescale_half_size<float>(img);
+    EXPECT_EQ(2, out->width());
+    EXPECT_EQ(1, out->height());
+    EXPECT_EQ(2, out->channels());
+    EXPECT_EQ((0.0f + 2.0f + 6.0f + 8.0f) / 4.0f, out->at(0, 0, 0));
+    EXPECT_EQ((1.0f + 3.0f + 7.0f + 9.0f) / 4.0f, out->at(0, 0, 1));
+    EXPECT_EQ((4.0f + 10.0f) / 2.0f, out->at(1, 0, 0));
+    EXPECT_EQ((5.0f + 11.0f) / 2.0f, out->at(1, 0, 1));
+}
+
 TEST(ImageToolsTest, IntegralImage)
 {
     mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);

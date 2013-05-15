@@ -169,7 +169,8 @@ rescale (typename Image<T>::ConstPtr image, RescaleInterpolation interp,
 
 /**
  * Returns a rescaled version of image, scaled by factor 1/2, by grouping
- * blocks of 2x2 pixel to one pixel in the new image.
+ * blocks of 2x2 pixel into one pixel in the new image. If the image size
+ * is odd, the new size is computed as new_size = (old_size + 1) / 2.
  */
 template <typename T>
 typename Image<T>::Ptr
@@ -578,7 +579,7 @@ rescale_half_size (typename Image<T>::ConstPtr img)
     int const oh = (ih + 1) >> 1;
 
     if (iw < 2 || ih < 2)
-        throw std::invalid_argument("Invalid input image");
+        throw std::invalid_argument("Input image too small for half-sizing");
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
