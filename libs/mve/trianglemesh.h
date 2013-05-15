@@ -212,13 +212,15 @@ MeshBase::clear (void)
 inline bool
 MeshBase::has_vertex_colors (void) const
 {
-    return this->vertex_colors.size() == this->vertices.size();
+    return !this->vertices.empty()
+        && this->vertex_colors.size() == this->vertices.size();
 }
 
 inline bool
 MeshBase::has_vertex_confidences (void) const
 {
-    return this->vertex_confidences.size() == this->vertices.size();
+    return !this->vertices.empty()
+        && this->vertex_confidences.size() == this->vertices.size();
 }
 
 /* ---------------------------------------------------------------- */
@@ -325,19 +327,22 @@ TriangleMesh::clear (void)
 inline bool
 TriangleMesh::has_vertex_normals (void) const
 {
-    return this->vertex_normals.size() == this->vertices.size();
+    return !this->vertices.empty()
+        && this->vertex_normals.size() == this->vertices.size();
 }
 
 inline bool
 TriangleMesh::has_face_normals (void) const
 {
-    return this->faces.size() == this->face_normals.size() * 3;
+    return !this->faces.empty()
+        && this->faces.size() == this->face_normals.size() * 3;
 }
 
 inline bool
 TriangleMesh::has_face_colors (void) const
 {
-    return this->faces.size() == this->face_colors.size() * 3;
+    return !this->faces.empty()
+        && this->faces.size() == this->face_colors.size() * 3;
 }
 
 MVE_NAMESPACE_END
