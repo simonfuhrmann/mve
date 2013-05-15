@@ -1,6 +1,7 @@
 // Test cases for the MVE image file reader/writer.
 // Written by Simon Fuhrmann.
 
+#include <fstream>
 #include <cstdio>
 #include <string>
 #include <gtest/gtest.h>
@@ -191,6 +192,22 @@ TEST(ImageFileTest, PFMSaveLoad)
     mve::image::save_pfm_file(img1, filename);
     img2 = mve::image::load_pfm_file(filename);
     EXPECT_TRUE(compare_exact<float>(img1, img2));
+}
+
+TEST(ImageFileTest, PFMLoadScale)
+{
+    TempFile filename("pfmtestscale");
+    std::ofstream out(filename.c_str());
+    float value = 10.0f;
+    out << "Pf\n1 1 -2.0\n";
+    out.write(reinterpret_cast<char const*>(&value), sizeof(float));
+    out.close();
+
+    mve::FloatImage::Ptr img = mve::image::load_pfm_file(filename);
+    EXPECT_EQ(img->width(), 1);
+    EXPECT_EQ(img->height(), 1);
+    EXPECT_EQ(img->channels(), 1);
+    EXPECT_EQ(img->at(0), 20.0f);
 }
 
 TEST(ImageFileTest, PPM16SaveLoad)
