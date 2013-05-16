@@ -241,8 +241,8 @@ Sift::extrema_detection (void)
 std::size_t
 Sift::extrema_detection (mve::FloatImage::ConstPtr s[3], int oi, int si)
 {
-    std::size_t const w = s[1]->width();
-    std::size_t const h = s[1]->height();
+    int const w = s[1]->width();
+    int const h = s[1]->height();
 
     /* Offsets for the 9-neighborhood w.r.t. center pixel. */
     int noff[9] = { -1 - w, 0 - w, 1 - w, -1, 0, 1, -1 + w, 0 + w, 1 + w };
@@ -251,12 +251,12 @@ Sift::extrema_detection (mve::FloatImage::ConstPtr s[3], int oi, int si)
      * Iterate over all pixels in s[1], and check if pixel is maximum
      * (or minumum) in its 27-neighborhood.
      */
-    std::size_t detected = 0;
-    std::size_t off = w;
-    for (std::size_t y = 1; y < h - 1; ++y, off += w)
-        for (std::size_t x = 1; x < w - 1; ++x)
+    int detected = 0;
+    int off = w;
+    for (int y = 1; y < h - 1; ++y, off += w)
+        for (int x = 1; x < w - 1; ++x)
         {
-            std::size_t idx = off + x;
+            int idx = off + x;
 
             bool largest = true;
             bool smallest = true;
@@ -300,8 +300,8 @@ Sift::keypoint_localization (void)
      * around the keypoint.
      */
 
-    std::size_t num_singular = 0;
-    std::size_t witer = 0; // Write iterator
+    int num_singular = 0;
+    int num_keypoints = 0; // Write iterator
     for (std::size_t i = 0; i < this->keypoints.size(); ++i)
     {
         /* Copy keypoint. */
@@ -426,12 +426,12 @@ Sift::keypoint_localization (void)
         }
 
         /* Keypoint is accepted, copy to write iter and advance. */
-        this->keypoints[witer] = kp;
-        witer += 1;
+        this->keypoints[num_keypoints] = kp;
+        num_keypoints += 1;
     }
 
-    /* Limit vector size to accepted keypoints. */
-    this->keypoints.resize(witer);
+    /* Limit vector size to number of accepted keypoints. */
+    this->keypoints.resize(num_keypoints);
 
     //if (num_singular)
     //{
@@ -510,30 +510,31 @@ Sift::generate_grad_ori_images (Octave* octave)
     octave->ori.clear();
     octave->ori.reserve(octave->img.size());
 
-    std::size_t const w = octave->img[0]->width();
-    std::size_t const h = octave->img[0]->height();
+    int const width = octave->img[0]->width();
+    int const height = octave->img[0]->height();
 
     //std::cout << "Generating gradient and orientation images..." << std::endl;
     for (std::size_t i = 0; i < octave->img.size(); ++i)
     {
-        mve::FloatImage::ConstPtr img(octave->img[i]);
-        mve::FloatImage::Ptr grad(mve::FloatImage::create(w, h, 1));
-        mve::FloatImage::Ptr ori(mve::FloatImage::create(w, h, 1));
+        mve::FloatImage::ConstPtr img = octave->img[i];
+        mve::FloatImage::Ptr grad = mve::FloatImage::create(width, height, 1);
+        mve::FloatImage::Ptr ori = mve::FloatImage::create(width, height, 1);
 
-        std::size_t iiter = w + 1;
-        for (std::size_t y = 1; y < h - 1; ++y, iiter += 2)
-            for (std::size_t x = 1; x < w - 1; ++x, ++iiter)
+        int image_iter = width + 1;
+        for (int y = 1; y < height - 1; ++y, image_iter += 2)
+            for (int x = 1; x < width - 1; ++x, ++image_iter)
             {
-                float m1x = img->at(iiter - 1);
-                float p1x = img->at(iiter + 1);
-                float m1y = img->at(iiter - w);
-                float p1y = img->at(iiter + w);
-                float dx = 0.5f * (p1x - m1x); // Does the 0.5 make any difference?
+                float m1x = img->at(image_iter - 1);
+                float p1x = img->at(image_iter + 1);
+                float m1y = img->at(image_iter - width);
+                float p1y = img->at(image_iter + width);
+                float dx = 0.5f * (p1x - m1x);
                 float dy = 0.5f * (p1y - m1y);
 
                 float atan2f = std::atan2(dy, dx);
-                grad->at(iiter) = std::sqrt(dx * dx + dy * dy);
-                ori->at(iiter) = atan2f < 0.0f ? atan2f + MATH_PI * 2.0f : atan2f;
+                grad->at(image_iter) = std::sqrt(dx * dx + dy * dy);
+                ori->at(image_iter) = atan2f < 0.0f
+                    ? atan2f + MATH_PI * 2.0f : atan2f;
             }
         octave->grad.push_back(grad);
         octave->ori.push_back(ori);
