@@ -7,13 +7,13 @@ LIBRARY := libmve.a
 EXT_INCL := -I..
 EXT_LIBS := -L. -L../util -lmve -lutil -lpng -ljpeg -ltiff
 
-TEST_SRC := _test_nms.cc
+TEST_SRC := _test_image.cc
 TEST_BIN := _test
 
 GTEST_SRCS := $(wildcard _gtest_*.cc)
 GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
 GTEST_INCL := -I${GTEST_PATH}/include
-GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main
+GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main -lpthread
 
 libmve: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}
@@ -22,7 +22,7 @@ libmve: ${OBJECTS}
 test: libmve FORCE
 	${CXX} -o ${TEST_BIN} ${TEST_SRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
 
-gtest: ${GTEST_OBJS}
+gtest: ${GTEST_OBJS} ${OBJECTS}
 	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
 
 _gtest_%.o: _gtest_%.cc

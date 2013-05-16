@@ -6,11 +6,13 @@
 #ifndef MVE_PLY_FILE_HEADER
 #define MVE_PLY_FILE_HEADER
 
-#include "defines.h"
-#include "image.h"
-#include "camera.h"
-#include "view.h"
-#include "trianglemesh.h"
+#include <string>
+
+#include "mve/defines.h"
+#include "mve/image.h"
+#include "mve/camera.h"
+#include "mve/view.h"
+#include "mve/trianglemesh.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

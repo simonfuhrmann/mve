@@ -2,9 +2,9 @@
 
 #include "util/system.h"
 
-#include "imagefile.h"
-#include "imageexif.h"
-#include "view.h"
+#include "mve/imagefile.h"
+#include "mve/imageexif.h"
+#include "mve/view.h"
 
 int
 main (int argc, char** argv)

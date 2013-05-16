@@ -25,11 +25,10 @@
 
 #include "util/refptr.h"
 #include "util/atomic.h"
-
-#include "defines.h"
-#include "camera.h"
-#include "imagebase.h"
-#include "image.h"
+#include "mve/defines.h"
+#include "mve/camera.h"
+#include "mve/imagebase.h"
+#include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
 

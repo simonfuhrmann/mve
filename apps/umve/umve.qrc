@@ -39,5 +39,6 @@
         <file>images/icon_eye.svg</file>
         <file>images/icon_video.svg</file>
         <file>images/icon_refresh.svg</file>
+        <file>images/icon_new_file.svg</file>
     </qresource>
 </RCC>

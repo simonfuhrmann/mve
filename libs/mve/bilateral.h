@@ -14,9 +14,8 @@
 
 #include "math/vector.h"
 #include "math/accum.h"
-
-#include "defines.h"
-#include "image.h"
+#include "mve/defines.h"
+#include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
@@ -52,8 +51,8 @@ bilateral_filter (typename Image<T>::ConstPtr img,
  */
 template <typename T, int N, typename GCF, typename PCF>
 math::Vector<T,N>
-bilateral_kernel (Image<T> const& img, std::size_t cx,
-    std::size_t cy, std::size_t ks, GCF& gcf, PCF& pcf);
+bilateral_kernel (Image<T> const& img, int cx, int cy, int ks,
+    GCF& gcf, PCF& pcf);
 
 /**
  * A default geometric closeness functor for bilateral filtering.
@@ -130,27 +129,27 @@ BilateralPhotoCloseness<T,N>::operator() (math::Vector<T,N> const& cv,
 
 template <typename T, int N, typename GCF, typename PCF>
 math::Vector<T,N>
-bilateral_kernel (Image<T> const& img, std::size_t cx,
-    std::size_t cy, std::size_t ks, GCF& gcf, PCF& pcf)
+bilateral_kernel (Image<T> const& img, int cx, int cy, int ks,
+    GCF& gcf, PCF& pcf)
 {
-    std::size_t w = img.width();
-    std::size_t h = img.height();
-    std::size_t x1, x2, y1, y2;
-    math::algo::kernel_region(cx, cy, ks, w, h, x1, x2, y1, y2);
+    int const w = img.width();
+    int const h = img.height();
+    int x1, x2, y1, y2;
+    math::algo::kernel_region(cx, cy, ks, w, h, &x1, &x2, &y1, &y2);
 
-    math::Vector<T,N> center_value;
-    std::size_t idx = cy * w + cx;
+    math::Vector<T, N> center_value;
+    int idx = (cy * w + cx) * img.channels();
     for (int c = 0; c < N; ++c)
-        center_value[c] = img.at(idx, c);
+        center_value[c] = img.at(idx + c);
 
     math::Vector<math::Accum<T>, N> accums(math::Accum<T>(T(0)));
-    for (std::size_t y = y1; y <= y2; ++y)
-        for (std::size_t x = x1; x <= x2; ++x)
+    for (int y = y1; y <= y2; ++y)
+        for (int x = x1; x <= x2; ++x)
         {
-            math::Vector<T,N> local_value;
-            std::size_t lidx = y * w + x;
+            math::Vector<T, N> local_value;
+            std::size_t lidx = (y * w + x) * img.channels();
             for (int c = 0; c < N; ++c)
-                local_value[c] = img.at(lidx, c);
+                local_value[c] = img.at(lidx + c);
 
             float gc = gcf(cx, cy, x, y);
             float pc = pcf(center_value, local_value);
@@ -201,15 +200,13 @@ bilateral_filter (typename Image<T>::ConstPtr img,
     PCF pcf(pc_sigma);
 
     /* Apply kernel to each pixel. */
-    std::size_t i = 0;
-    for (std::size_t y = 0; y < img->height(); ++y)
-        for (std::size_t x = 0; x < img->width(); ++x, ++i)
+    for (int y = 0; y < img->height(); ++y)
+        for (int x = 0; x < img->width(); ++x)
         {
             math::Vector<T,N> v = bilateral_kernel<T, N, GCF, PCF>
                 (*img, x, y, ks, gcf, pcf);
-
             for (int c = 0; c < N; ++c)
-                ret->at(i, c) = v[c];
+                ret->at(x, y, c) = v[c];
         }
 
     return ret;

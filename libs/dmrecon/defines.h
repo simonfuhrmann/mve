@@ -1,7 +1,9 @@
-#ifndef DEFINES_H
-#define DEFINES_H
+#ifndef DMRECON_DEFINES_H
+#define DMRECON_DEFINES_H
 
+#include <vector>
 #include <set>
+
 #include "math/vector.h"
 
 #define MVS_NAMESPACE_BEGIN namespace mvs {

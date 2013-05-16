@@ -11,9 +11,8 @@
 #include "util/refptr.h"
 #include "math/vector.h"
 #include "math/matrix.h"
-
-#include "defines.h"
-#include "opengl.h"
+#include "ogl/defines.h"
+#include "ogl/opengl.h"
 
 #define OGL_ATTRIB_POSITION "pos"
 #define OGL_ATTRIB_NORMAL "normal"

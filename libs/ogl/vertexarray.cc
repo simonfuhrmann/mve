@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "vertexarray.h"
+#include "ogl/vertexarray.h"
 
 OGL_NAMESPACE_BEGIN
 

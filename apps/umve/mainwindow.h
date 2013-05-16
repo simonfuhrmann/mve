@@ -30,10 +30,12 @@ private:
     ViewInspect* tab_viewinspect;
     SceneInspect* tab_sceneinspect;
 
+    QAction* action_new_scene;
     QAction* action_open_scene;
     QAction* action_reload_scene;
     QAction* action_save_scene;
     QAction* action_close_scene;
+    QAction* action_import_images;
     QAction* action_recon_export;
     QAction* action_batch_delete;
     QAction* action_cache_cleanup;
@@ -42,22 +44,24 @@ private:
     QAction* action_about;
     QAction* action_about_qt;
 
-    QMenu* menu_file;
+    QMenu* menu_scene;
     QMenu* menu_help;
 
 private:
     void create_actions (void);
     void create_menus (void);
-
     bool perform_close_scene (void);
+    void enable_scene_actions (bool value);
 
 private slots:
+    void on_new_scene (void);
     void on_reload_scene (void);
     void on_save_scene (void);
     void on_close_scene (void);
     void on_refresh_scene (void);
     void on_about (void);
 
+    void on_import_images (void);
     void on_update_memory (void);
     void on_cache_cleanup (void);
     void on_recon_export (void);
@@ -66,7 +70,7 @@ private slots:
     void closeEvent (QCloseEvent* event);
 
 public slots:
-    void raise_open_dialog (void);
+    void raise_open_scene_dialog (void);
 
 public:
     MainWindow (void);

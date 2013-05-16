@@ -1,7 +1,6 @@
 #include "mve/trianglemesh.h"
-
-#include "meshrenderer.h"
-#include "rendertools.h"
+#include "ogl/meshrenderer.h"
+#include "ogl/rendertools.h"
 
 OGL_NAMESPACE_BEGIN
 

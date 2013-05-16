@@ -8,7 +8,7 @@
 #ifndef MATH_ACCUM_HEADER
 #define MATH_ACCUM_HEADER
 
-#include "defines.h"
+#include "math/defines.h"
 
 MATH_NAMESPACE_BEGIN
 

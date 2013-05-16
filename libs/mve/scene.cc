@@ -2,11 +2,9 @@
 #include <algorithm>
 
 #include "util/exception.h"
-#include "util/inifile.h"
 #include "util/timer.h"
-#include "util/fs.h"
-
-#include "scene.h"
+#include "util/filesystem.h"
+#include "mve/scene.h"
 
 MVE_NAMESPACE_BEGIN
 
@@ -160,32 +158,33 @@ Scene::init_views (void)
     util::WallTimer timer;
 
     /* Iterate over all mve files and create view. */
-    util::fs::Directory dir;
+    std::string views_path = this->basedir + "/" MVE_SCENE_VIEWS_DIR;
+    util::fs::Directory views_dir;
     try
     {
-        dir.scan(this->basedir + "/" MVE_SCENE_VIEWS_DIR);
+        views_dir.scan(views_path);
     }
     catch (util::Exception& e)
     {
-        throw util::Exception("Cannot init views: ", e.what());
+        throw util::Exception(views_path + ": ", e.what());
     }
-    std::sort(dir.begin(), dir.end());
+    std::sort(views_dir.begin(), views_dir.end());
 
     /* Give some feedback... */
-    std::cout << "Initializing scene with " << dir.size()
+    std::cout << "Initializing scene with " << views_dir.size()
         << " views..." << std::endl;
 
     /* Load views in a temp list. */
     ViewList temp_list;
     std::size_t max_id = 0;
-    for (std::size_t i = 0; i < dir.size(); ++i)
+    for (std::size_t i = 0; i < views_dir.size(); ++i)
     {
-        if (dir[i].name.size() < 4)
+        if (views_dir[i].name.size() < 4)
             continue;
-        if (util::string::right(dir[i].name, 4) != ".mve")
+        if (util::string::right(views_dir[i].name, 4) != ".mve")
             continue;
         View::Ptr view = View::create();
-        view->load_mve_file(dir[i].get_absolute_name());
+        view->load_mve_file(views_dir[i].get_absolute_name());
         temp_list.push_back(view);
         max_id = std::max(max_id, view->get_id());
     }
@@ -195,7 +194,8 @@ Scene::init_views (void)
 
     /* Transfer temp list to real list. */
     this->views.clear();
-    this->views.resize(max_id + 1);
+    if (!temp_list.empty())
+        this->views.resize(max_id + 1);
     for (std::size_t i = 0; i < temp_list.size(); ++i)
     {
         std::size_t id = temp_list[i]->get_id();

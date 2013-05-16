@@ -8,8 +8,8 @@
 
 #include <algorithm>
 
-#include "defines.h"
-#include "atomic.h"
+#include "util/defines.h"
+#include "util/atomic.h"
 
 UTIL_NAMESPACE_BEGIN
 

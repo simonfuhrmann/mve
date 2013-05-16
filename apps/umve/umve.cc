@@ -3,7 +3,7 @@
 
 #include <QApplication>
 
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/arguments.h"
 
 #include "mainwindow.h"
@@ -93,7 +93,7 @@ main (int argc, char** argv)
     }
 
     if (!sth_opened && !conf.no_open)
-        win.raise_open_dialog();
+        win.raise_open_scene_dialog();
 
     return app.exec();
 }

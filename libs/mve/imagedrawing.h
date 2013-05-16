@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "defines.h"
+#include "mve/defines.h"
 #include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN

@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "math/matrixtools.h"
-#include "camera.h"
+#include "mve/camera.h"
 
 MVE_NAMESPACE_BEGIN
 
@@ -42,7 +42,7 @@ void
 CameraInfo::fill_viewing_direction (float* viewdir) const
 {
     for (int i = 0; i < 3; ++i)
-        viewdir[i] = -this->rot[6 + i];
+        viewdir[i] = this->rot[6 + i];
 }
 
 /* ---------------------------------------------------------------- */
@@ -101,41 +101,50 @@ CameraInfo::set_transformation (float const* mat)
 /* ---------------------------------------------------------------- */
 
 void
-CameraInfo::fill_projection (float* mat, std::size_t w, std::size_t h) const
+CameraInfo::fill_calibration (float* mat, float width, float height) const
 {
-    float aspect = (float)w / (float)h; // ratio between width and height
-    float iaspect = aspect * this->paspect; // aspect ratio of the image
+    float dim_aspect = width / height;
+    float image_aspect = dim_aspect * this->paspect;
+    float ax, ay;
+    if (image_aspect < 1.0f) /* Portrait. */
+    {
+        ax = this->flen * height / this->paspect;
+        ay = this->flen * height;
+    }
+    else /* Landscape. */
+    {
+        ax = this->flen * width;
+        ay = this->flen * width * this->paspect;
+    }
 
-    /* mx and my are the number of pixels per unit distance. */
-    float mx = (iaspect < 1 ? (float)h / this->paspect : (float)w);
-    float my = (iaspect < 1 ? (float)h : (float)w * this->paspect);
-    float ax = this->flen * mx; // horizontal focal length in pixels
-    float ay = this->flen * my; // vertical focal length in pixels
-
-    mat[0] =  -ax; mat[1] = 0.0f; mat[2] = -(float)w * this->ppoint[0];
-    mat[3] = 0.0f; mat[4] =   ay; mat[5] = -(float)h * this->ppoint[1];
-    mat[6] = 0.0f; mat[7] = 0.0f; mat[8] = -1.0f;
+    mat[0] =   ax; mat[1] = 0.0f; mat[2] = width * this->ppoint[0];
+    mat[3] = 0.0f; mat[4] =   ay; mat[5] = height * this->ppoint[1];
+    mat[6] = 0.0f; mat[7] = 0.0f; mat[8] = 1.0f;
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-CameraInfo::fill_inverse_projection (float* mat,
-    std::size_t w, std::size_t h) const
+CameraInfo::fill_inverse_calibration (float* mat,
+    float width, float height) const
 {
-    float aspect = (float)w / (float)h;
-    float iaspect = aspect * this->paspect;
+    float dim_aspect = width / height;
+    float image_aspect = dim_aspect * this->paspect;
+    float ax, ay;
+    if (image_aspect < 1.0f) /* Portrait. */
+    {
+        ax = this->flen * height / this->paspect;
+        ay = this->flen * height;
+    }
+    else /* Landscape. */
+    {
+        ax = this->flen * width;
+        ay = this->flen * width * this->paspect;
+    }
 
-    float mx = (iaspect < 1 ? (float)h / this->paspect : (float)w);
-    float my = (iaspect < 1 ? (float)h : (float)w * this->paspect);
-    float ax = this->flen * mx;
-    float ay = this->flen * my;
-
-    mat[0] = -1.0f / ax; mat[1] = 0.0f;
-    mat[2] = (float)w * this->ppoint[0] / ax;
-    mat[3] = 0.0f; mat[4] = 1.0f / ay;
-    mat[5] = -(float)h * this->ppoint[1] / ay;
-    mat[6] = 0.0f; mat[7] = 0.0f; mat[8] = -1.0f;
+    mat[0] = 1.0f / ax; mat[1] = 0.0f; mat[2] = -width * this->ppoint[0] / ax;
+    mat[3] = 0.0f; mat[4] = 1.0f / ay; mat[5] = -height * this->ppoint[1] / ay;
+    mat[6] = 0.0f; mat[7] = 0.0f;      mat[8] = 1.0f;
 }
 
 /* ---------------------------------------------------------------- */

@@ -1,6 +1,6 @@
 /*
  * Atomic operations abstraction.
- * Written by Simon Fuhrmann
+ * Written by Simon Fuhrmann.
  *
  * Note: Windows implementatoin only supports 32bit int types.
  */
@@ -17,7 +17,7 @@
 #   include "windows.h"
 #endif
 
-#include "defines.h"
+#include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
 

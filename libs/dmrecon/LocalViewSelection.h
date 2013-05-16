@@ -1,13 +1,12 @@
-#ifndef LOCALVIEWSELECTION_H
-#define LOCALVIEWSELECTION_H
+#ifndef DMRECON_LOCALVIEWSELECTION_H
+#define DMRECON_LOCALVIEWSELECTION_H
 
 #include "util/refptr.h"
-#include "ViewSelection.h"
-#include "PatchSampler.h"
-#include "SingleView.h"
+#include "dmrecon/ViewSelection.h"
+#include "dmrecon/PatchSampler.h"
+#include "dmrecon/SingleView.h"
 
 MVS_NAMESPACE_BEGIN
-
 
 class LocalViewSelection : public ViewSelection
 {
@@ -27,7 +26,6 @@ private:
     SingleViewPtrList const& views;
     PatchSampler::Ptr sampler;
 };
-
 
 MVS_NAMESPACE_END
 

@@ -27,9 +27,9 @@
 #   define PATH_MAX 2048
 #endif
 
-#include "exception.h"
-#include "system.h"
-#include "fs.h"
+#include "util/exception.h"
+#include "util/system.h"
+#include "util/filesystem.h"
 
 UTIL_NAMESPACE_BEGIN
 UTIL_FS_NAMESPACE_BEGIN
@@ -310,7 +310,7 @@ get_path_component (std::string const& path)
     std::size_t pos1 = path.find_first_of('/');
     std::size_t pos2 = path.find_last_of('/');
 
-    if (pos1 == std::string::npos && pos2 == std::string::npos)
+    if (pos1 == std::string::npos)
         return get_cwd_string();
     else if (pos1 == pos2 && pos1 == 0)
         return std::string("/");
@@ -346,15 +346,12 @@ replace_extension (std::string const& fn, std::string const& ext)
     std::size_t slashpos = fn.find_last_of('/');
     if (slashpos == std::string::npos)
         slashpos = 0;
+
     std::size_t dotpos = fn.find_last_of('.');
     if (dotpos == std::string::npos || dotpos < slashpos)
         return fn + "." + ext;
 
-    std::string ret;
-    ret.insert(ret.end(), fn.begin(), fn.begin() + dotpos);
-    ret.push_back('.');
-    ret.insert(ret.end(), ext.begin(), ext.end());
-    return ret;
+    return fn.substr(0, dotpos) + "." + ext;
 }
 
 UTIL_FS_NAMESPACE_END
@@ -433,49 +430,64 @@ Directory::scan (std::string const& path)
  * --------------------- File locking mechanism ----------------------
  */
 
-bool
+FileLock::FileLock (std::string const& filename)
+{
+    switch (this->acquire_retry(filename))
+    {
+        case LOCK_CREATED: break;
+        default: throw util::Exception(this->reason);
+    }
+}
+
+FileLock::Status
 FileLock::acquire (std::string const& filename)
 {
     /* Check if lock file exists. */
     this->lockfile = filename + ".lock";
+    this->reason.clear();
     if (fs::file_exists(this->lockfile.c_str()))
     {
-        this->reason = "File is locked";
-        return false;
+        this->reason = "Previous lock existing";
+        return FileLock::LOCK_EXISTS;
     }
 
     /* Finally create the lock file. */
     std::ofstream touch(this->lockfile.c_str());
     if (!touch.good())
     {
-        this->reason = ::strerror(errno);
-        return false;
+        this->reason = "Error locking: ";
+        this->reason += std::strerror(errno);
+        return FileLock::LOCK_CREATE_ERROR;
     }
     touch.close();
 
     /* Return success, lock is created. */
-    return true;
+    return FileLock::LOCK_CREATED;
 }
 
-bool
+FileLock::Status
 FileLock::acquire_retry (std::string const& filename, int retries, int sleep)
 {
     /* Try to acquire file lock for 'retry' times. */
-    while (retries && !this->acquire(filename))
+    while (retries > 0)
     {
+        Status status = this->acquire(filename);
+        if (status != FileLock::LOCK_EXISTS)
+            return status;
+
         system::sleep(sleep);
         retries -= 1;
 
         /* Fail if all retries have been used. */
-        if (!retries)
+        if (retries <= 0)
         {
-            this->reason = "Previous lock persisted";
-            return false;
+            this->reason = "Previous lock persisting";
+            return FileLock::LOCK_PERSISTENT;
         }
     }
 
     /* Return success, lock is created. */
-    return true;
+    return FileLock::LOCK_CREATED;
 }
 
 bool
@@ -488,18 +500,13 @@ FileLock::is_locked (std::string const& filename)
 bool
 FileLock::wait_lock (std::string const& filename, int retries, int sleep)
 {
-    while (retries && this->is_locked(filename))
+    while (retries > 0 && this->is_locked(filename))
     {
         system::sleep(sleep);
         retries -= 1;
-
-        if (!retries)
-        {
-            this->reason = "Lock persisted";
+        if (retries <= 0)
             return false;
-        }
     }
-
     return true;
 }
 

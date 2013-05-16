@@ -5,11 +5,10 @@
 
 #include "math/defines.h"
 #include "math/matrix.h"
-
-#include "vertexinfo.h"
-#include "depthmap.h"
-#include "meshtools.h"
-#include "bilateral.h"
+#include "mve/vertexinfo.h"
+#include "mve/depthmap.h"
+#include "mve/meshtools.h"
+#include "mve/bilateral.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
@@ -186,48 +185,9 @@ MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
 
 /* ---------------------------------------------------------------- */
-/* ---------------------------------------------------------------- */
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
-
-#if 0
-
-/* Old code from the ancient days where the K matrix was simple. */
-
-float
-pixel_footprint (std::size_t x, std::size_t y, float depth,
-    std::size_t w, std::size_t h, float focal_len)
-{
-    float D = (float)std::max(w, h);
-    float x2d = (float)x + 0.5f - 0.5f * (float)w;
-    float y2d = (float)y + 0.5f - 0.5f * (float)h;
-    float fl = focal_len * D;
-    float fxy = std::sqrt(x2d * x2d + y2d * y2d + fl * fl);
-
-    return depth / fxy;
-}
-
-math::Vec3f
-pixel_3dpos (std::size_t x, std::size_t y, float depth,
-    std::size_t w, std::size_t h, float focal_len)
-{
-/*
-    math::Vec3f p3d((float)x + 0.5f - 0.5f * (float)w,
-        (float)y + 0.5f - 0.5f * (float)h,
-        focal_len * (float)std::max(w, h));
-*/
-    std::size_t xinv = w - x - 1;
-    math::Vec3f p3d((float)xinv - 0.5f * (float)(w - 1),
-        (float)y - 0.5f * (float)(h - 1),
-        -focal_len * (float)std::max(w, h));
-
-    return p3d.normalized() * depth;
-}
-
-#endif
-
-/* ---------------------------------------------------------------- */
 
 float
 pixel_footprint (std::size_t x, std::size_t y, float depth,
@@ -235,8 +195,7 @@ pixel_footprint (std::size_t x, std::size_t y, float depth,
 {
     math::Vec3f v = invproj * math::Vec3f
         ((float)x + 0.5f, (float)y + 0.5f, 1.0f);
-    float fp = invproj[0] * depth / v.norm();
-    return -fp;
+    return invproj[0] * depth / v.norm();
 }
 
 /* ---------------------------------------------------------------- */
@@ -475,7 +434,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
 
     /* Triangulate depth map. */
     math::Matrix3f invproj;
-    cam.fill_inverse_projection(*invproj, dm->width(), dm->height());
+    cam.fill_inverse_calibration(*invproj, dm->width(), dm->height());
     mve::TriangleMesh::Ptr mesh;
     mesh = mve::geom::depthmap_triangulate(dm, ci, invproj, dd_factor);
 
@@ -494,27 +453,16 @@ bool
 dm_is_depth_disc (math::Vec3f const& v1,
     math::Vec3f const& v2, math::Vec3f const& v3)
 {
-#if 0
-    /* Depth discontinuity detection based on edge length ratio. */
-    float len[3] = { (v2 - v1).square_norm(),
-        (v3 - v2).square_norm(), (v1 - v3).square_norm() };
-    float min = math::algo::min(len[0], len[1], len[2]);
-    float max = math::algo::max(len[0], len[1], len[2]);
-    return (std::sqrt(min) / std::sqrt(max)) < 0.2f;
-#endif
-
-#if 1
-#   define ANGLE_THRES ((float)MATH_DEG2RAD(15.0f))
+    float const angle_threshold = MATH_DEG2RAD(15.0f);
     /* Depth discontinuity detection based on minimal angle in triangle. */
     math::Vec3f e[3] = { (v2 - v1).normalized(),
         (v3 - v2).normalized(), (v1 - v3).normalized() };
-    float min_angle = ANGLE_THRES;
+    float min_angle = angle_threshold;
     for (int i = 0; i < 3; ++i)
         min_angle = std::min(min_angle, std::acos(e[i].dot(-e[(i + 1) % 3])));
     //std::cout << "Min angle is " << MATH_RAD2DEG(min_angle) << ", "
     //    << (min_angle < ANGLE_THRES) << std::endl;
-    return min_angle < ANGLE_THRES;
-#endif
+    return min_angle < angle_threshold;
 }
 
 void

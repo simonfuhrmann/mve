@@ -9,9 +9,8 @@
 #include "util/endian.h"
 #include "math/vector.h"
 #include "math/matrix.h"
-
-#include "depthmap.h"
-#include "plyfile.h"
+#include "mve/depthmap.h"
+#include "mve/plyfile.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
@@ -178,8 +177,8 @@ load_ply_mesh (std::string const& filename)
     while (input.good())
     {
         std::getline(input, buffer);
-        util::string::chop(buffer);
-        util::string::clip(buffer);
+        util::string::clip_newlines(&buffer);
+        util::string::clip_whitespaces(&buffer);
 
         //std::cout << "Buffer: " << buffer << std::endl;
 
@@ -838,7 +837,7 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     int w = depth_map->width();
     int h = depth_map->height();
     math::Matrix3f invproj;
-    camera.fill_inverse_projection(*invproj, w, h);
+    camera.fill_inverse_calibration(*invproj, w, h);
 
     if (confidence_map.get() && (confidence_map->height() != h
         || confidence_map->width() != w))
@@ -1067,8 +1066,8 @@ load_ply_depthmap (std::string const& filename)
     while (input.good())
     {
         std::getline(input, buffer);
-        util::string::chop(buffer);
-        util::string::clip(buffer);
+        util::string::clip_newlines(&buffer);
+        util::string::clip_whitespaces(&buffer);
 
         util::Tokenizer t;
         t.split(buffer);
@@ -1114,8 +1113,8 @@ load_ply_depthmap (std::string const& filename)
         std::size_t idx = (height - (i / width) - 1) * width + (i % width);
 
         std::getline(input, buffer);
-        util::string::chop(buffer);
-        util::string::clip(buffer);
+        util::string::clip_newlines(&buffer);
+        util::string::clip_whitespaces(&buffer);
         util::Tokenizer t;
         t.split(buffer);
 

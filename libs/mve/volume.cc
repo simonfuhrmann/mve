@@ -1,8 +1,7 @@
 #include "math/vector.h"
-
-#include "marchingtets.h"
-#include "marchingcubes.h"
-#include "volume.h"
+#include "mve/marchingtets.h"
+#include "mve/marchingcubes.h"
+#include "mve/volume.h"
 
 MVE_NAMESPACE_BEGIN
 
@@ -36,8 +35,6 @@ VolumeMTAccessor::next (void)
         this->pos[i] = this->cube_pos[vertexid];
     }
 
-    //if (!(iter % 100000))
-    //    std::cout << "Iterator: " << iter << std::endl;
     return true;
 }
 
@@ -78,8 +75,6 @@ VolumeMTAccessor::load_new_cube (void)
 }
 
 /* ---------------------------------------------------------------- */
-/* ---------------------------------------------------------------- */
-
 
 VolumeMCAccessor::VolumeMCAccessor (void)
     : iter(-1)

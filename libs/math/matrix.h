@@ -6,9 +6,9 @@
 #ifndef MATH_MATRIX_HEADER
 #define MATH_MATRIX_HEADER
 
-#include "defines.h"
-#include "algo.h"
-#include "vector.h"
+#include "math/defines.h"
+#include "math/algo.h"
+#include "math/vector.h"
 
 MATH_NAMESPACE_BEGIN
 

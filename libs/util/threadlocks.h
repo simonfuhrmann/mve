@@ -10,8 +10,8 @@
 #ifndef UTIL_THREAD_LOCKS_HEADER
 #define UTIL_THREAD_LOCKS_HEADER
 
-#include "defines.h"
-#include "thread.h"
+#include "util/defines.h"
+#include "util/thread.h"
 
 UTIL_NAMESPACE_BEGIN
 

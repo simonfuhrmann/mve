@@ -7,9 +7,8 @@
 #include <cerrno>
 
 #include "util/exception.h"
-#include "util/fs.h"
-
-#include "shaderprogram.h"
+#include "util/filesystem.h"
+#include "ogl/shaderprogram.h"
 
 OGL_NAMESPACE_BEGIN
 

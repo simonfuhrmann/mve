@@ -5,7 +5,7 @@
 
 #include "util/exception.h"
 #include "util/string.h"
-#include "bundlefile.h"
+#include "mve/bundlefile.h"
 
 MVE_NAMESPACE_BEGIN
 
@@ -19,8 +19,8 @@ BundleFile::read_bundle (std::string const& filename)
     std::getline(in, first_line);
     in.close();
 
-    util::string::chop(first_line);
-    util::string::clip(first_line);
+    util::string::clip_newlines(&first_line);
+    util::string::clip_whitespaces(&first_line);
 
     if (first_line == "drews 1.0")
         this->format = BUNDLER_PHOTOSYNTHER;
@@ -39,10 +39,10 @@ BundleFile::read_bundle (std::string const& filename)
  *
  * "drews 1.0"
  * <num_cameras> <num_points>
- * <cam 1 line 1> // Focal length, Radial distortion: f r1 r2
- * <cam 1 line 2> // Rotation matrix row 1: a11 a12 a13
- * <cam 1 line 3> // Rotation matrix row 2: a21 a22 a23
- * <cam 1 line 4> // Rotation matrix row 3: a31 a32 a33
+ * <cam 1 line 1> // Focal length, Radial distortion: f rd1 rd2
+ * <cam 1 line 2> // Rotation matrix row 1: r11 r12 r13
+ * <cam 1 line 3> // Rotation matrix row 2: r21 r22 r23
+ * <cam 1 line 4> // Rotation matrix row 3: r31 r32 r33
  * <cam 1 line 5> // Translation vector: t1 t2 t3
  * ...
  * <point 1 position (float)> // x y z
@@ -56,9 +56,9 @@ BundleFile::read_bundle (std::string const& filename)
  * "# Bundle file v0.3"
  * <num_cameras> <num_points>
  * <cam 1 line 1> // Focal length, Radial distortion: f k1 k2
- * <cam 1 line 2> // Rotation matrix row 1: a11 a12 a13
- * <cam 1 line 3> // Rotation matrix row 2: a21 a22 a23
- * <cam 1 line 4> // Rotation matrix row 3: a31 a32 a33
+ * <cam 1 line 2> // Rotation matrix row 1: r11 r12 r13
+ * <cam 1 line 3> // Rotation matrix row 2: r21 r22 r23
+ * <cam 1 line 4> // Rotation matrix row 3: r31 r32 r33
  * <cam 1 line 5> // Translation vector: t1 t2 t3
  * ...
  * <point 1 position (float)> // x y z
@@ -88,8 +88,8 @@ BundleFile::read_bundle_intern (std::string const& filename)
 
     /* Read version information in the first line. */
     std::getline(in, this->version);
-    util::string::chop(this->version);
-    util::string::clip(this->version);
+    util::string::clip_newlines(&this->version);
+    util::string::clip_whitespaces(&this->version);
 
     /* Read number of cameras and number of points. */
     this->num_valid_cams = 0;

@@ -33,10 +33,13 @@ class QMeshContextMenu : public QMenu
 private slots:
     void on_reload_mesh (void);
     void on_invert_faces (void);
-    void on_strip_faces (void);
+    void on_delete_faces (void);
     void on_scale_and_center (void);
     void on_save_mesh (void);
     void on_rename_mesh (void);
+    void on_delete_vertex_colors (void);
+    void on_delete_vertex_confidences (void);
+    void on_colorize_confidences (void);
 
 public:
     QListWidgetItem* item;

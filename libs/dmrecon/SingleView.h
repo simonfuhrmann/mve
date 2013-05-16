@@ -1,5 +1,5 @@
-#ifndef SINGLEVIEW_H
-#define SINGLEVIEW_H
+#ifndef DMRECON_SINGLEVIEW_H
+#define DMRECON_SINGLEVIEW_H
 
 #include <cassert>
 #include <set>
@@ -11,7 +11,7 @@
 #include "mve/view.h"
 #include "mve/bundlefile.h"
 #include "mve/image.h"
-#include "defines.h"
+#include "dmrecon/defines.h"
 
 MVS_NAMESPACE_BEGIN
 
@@ -181,7 +181,7 @@ SingleView::worldToScreen(math::Vec3f const& point, int level)
     math::Vec2f res(sp[0] / sp[2] - 0.5f, sp[1] / sp[2] - 0.5f);
     return res;
 }
- 
+
 MVS_NAMESPACE_END
 
 #endif

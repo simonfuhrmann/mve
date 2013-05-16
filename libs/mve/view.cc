@@ -5,11 +5,10 @@
 
 #include "util/tokenizer.h"
 #include "util/exception.h"
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/string.h"
-
-#include "image.h"
-#include "view.h"
+#include "mve/image.h"
+#include "mve/view.h"
 
 /* The signature to identify MVE files. */
 #define MVE_FILE_SIGNATURE "\211MVE\n"
@@ -251,9 +250,9 @@ View::parse_header_line (std::string const& header_line)
 {
     /* Clean header line. */
     std::string str(header_line);
-    util::string::chop(str);
-    util::string::clip(str);
-    util::string::normalize(str);
+    util::string::clip_newlines(&str);
+    util::string::clip_whitespaces(&str);
+    util::string::normalize(&str);
 
     /* Tokenize header. */
     util::Tokenizer tokens;
@@ -358,8 +357,8 @@ View::save_mve_file_as (std::string const& filename)
 
     /* Acquire file lock for the view. */
     util::fs::FileLock lock;
-    bool locked = lock.acquire_retry(filename);
-    if (!locked)
+    util::fs::FileLock::Status lock_status = lock.acquire_retry(filename);
+    if (lock_status != util::fs::FileLock::LOCK_CREATED)
         throw util::Exception("Cannot acquire lock: ", lock.get_reason());
 
     /*
@@ -487,8 +486,8 @@ View::save_mve_file (bool force_rebuild)
 
     /* Acquire file lock for the view. */
     util::fs::FileLock lock;
-    bool locked = lock.acquire_retry(this->filename);
-    if (!locked)
+    util::fs::FileLock::Status lock_status = lock.acquire_retry(this->filename);
+    if (lock_status != util::fs::FileLock::LOCK_CREATED)
         throw util::Exception("Cannot acquire lock: ", lock.get_reason());
 
     /* Write embeddings directly to view file. */

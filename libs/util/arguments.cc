@@ -4,9 +4,9 @@
 #include <iomanip>
 #include <limits>
 
-#include "string.h"
-#include "tokenizer.h"
-#include "arguments.h"
+#include "util/string.h"
+#include "util/tokenizer.h"
+#include "util/arguments.h"
 
 UTIL_NAMESPACE_BEGIN
 
@@ -211,7 +211,9 @@ Arguments::parse_intern (std::vector<std::string> const& args)
             continue;
         }
 
-        std::string tok = string::clipped(string::chopped(args[i]));
+        std::string tok = args[i];
+        string::clip_newlines(&tok);
+        string::clip_whitespaces(&tok);
 
         /* Skip empty tokens. */
         if (tok.empty())
@@ -233,7 +235,11 @@ Arguments::parse_intern (std::vector<std::string> const& args)
             /* Short option, possibly requiring the next token. */
             std::string next_tok;
             if (i + 1 < args.size())
-                next_tok = string::clipped(string::chopped(args[i + 1]));
+            {
+                next_tok = args[i + 1];
+                string::clip_newlines(&next_tok);
+                string::clip_whitespaces(&next_tok);
+            }
             bool used_next = this->parse_short_opt(tok, next_tok);
             if (used_next)
                 i += 1;

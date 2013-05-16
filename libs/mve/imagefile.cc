@@ -6,12 +6,6 @@
 #include <cstring>
 #include <cerrno>
 
-#include "util/endian.h"
-#include "util/exception.h"
-#include "util/string.h"
-
-#include "imagefile.h"
-
 #ifndef MVE_NO_PNG_SUPPORT
 #   include <png.h>
 #endif
@@ -24,6 +18,12 @@
 #   include <tiff.h>
 #   include <tiffio.h>
 #endif
+
+#include "math/algo.h"
+#include "util/endian.h"
+#include "util/exception.h"
+#include "util/string.h"
+#include "mve/imagefile.h"
 
 #define PPM_MAX_PIXEL_AMOUNT (16384 * 16384)
 
@@ -146,9 +146,12 @@ load_png_file (std::string const& filename)
 
     /* Identify the PNG signature. */
     png_byte signature[8];
-    std::fread(signature, 1, 8, fp);
-    bool is_png = !png_sig_cmp(signature, 0, 8);
-    if (!is_png)
+    if (std::fread(signature, 1, 8, fp) != 8)
+    {
+        std::fclose(fp);
+        throw util::Exception("PNG signature could not be read");
+    }
+    if (png_sig_cmp(signature, 0, 8) != 0)
     {
         std::fclose(fp);
         throw util::Exception("PNG signature did not match");
@@ -710,28 +713,35 @@ load_pfm_file (std::string const& filename)
         throw util::Exception("Image too friggin huge");
     }
 
-    FloatImage::Ptr ret = FloatImage::create(width, height, channels);
-    in.read(ret->get_byte_pointer(), ret->get_byte_size());
+    /* Read image rows in reverse order according to PFM specification. */
+    FloatImage::Ptr image = FloatImage::create(width, height, channels);
+    std::size_t row_size = image->get_byte_size() / image->height();
+    char* ptr = reinterpret_cast<char*>(image->end()) - row_size;
+    for (int y = 0; y < height; ++y, ptr -= row_size)
+        in.read(ptr, row_size);
     in.close();
 
     /* Handle endianess. BE if scale > 0, LE if scale < 0. */
     if (scale < 0.0f)
     {
-        std::transform(ret->get_data().begin(), ret->get_data().end(),
-            ret->get_data().begin(),
+        std::transform(image->begin(), image->end(), image->begin(),
             (float(*)(float const&))util::system::letoh<float>);
         scale = -scale;
     }
     else
     {
-        std::transform(ret->get_data().begin(), ret->get_data().end(),
-            ret->get_data().begin(),
+        std::transform(image->begin(), image->end(), image->begin(),
             (float(*)(float const&))util::system::betoh<float>);
     }
 
-   // TODO: scale handling
+    /* Handle scale. Multiply image values if scale is not 1.0. */
+    if (scale != 1.0f)
+    {
+        std::for_each(image->begin(), image->end(),
+            math::algo::foreach_multiply_with_const<float>(scale));
+    }
 
-   return ret;
+   return image;
 }
 
 /* ---------------------------------------------------------------- */
@@ -739,7 +749,7 @@ load_pfm_file (std::string const& filename)
 void
 save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     std::string magic_number;
@@ -762,7 +772,12 @@ save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
 
     out << magic_number << "\n";
     out << image->width() << " " << image->height() << " " << scale << "\n";
-    out.write(image->get_byte_pointer(), image->get_byte_size());
+
+    /* Output rows in reverse order according to PFM specification. */
+    std::size_t row_size = image->get_byte_size() / image->height();
+    char const* ptr = reinterpret_cast<char const*>(image->end()) - row_size;
+    for (int y = 0; y < image->height(); ++y, ptr -= row_size)
+        out.write(ptr, row_size);
     out.close();
 }
 

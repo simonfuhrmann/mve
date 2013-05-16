@@ -1,10 +1,9 @@
 #include "math/defines.h"
 #include "math/matrix.h"
 #include "math/vector.h"
-
-#include "defines.h"
-#include "mvstools.h"
-#include "PatchSampler.h"
+#include "dmrecon/defines.h"
+#include "dmrecon/mvstools.h"
+#include "dmrecon/PatchSampler.h"
 
 MVS_NAMESPACE_BEGIN
 

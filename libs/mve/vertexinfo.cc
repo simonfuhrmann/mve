@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <set>
 
-#include "vertexinfo.h"
+#include "mve/vertexinfo.h"
 
 MVE_NAMESPACE_BEGIN
 

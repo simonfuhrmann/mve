@@ -8,11 +8,11 @@
 
 #include <algorithm>
 
-#include "defines.h"
-#include "events.h"
-#include "camera.h"
-#include "camtrackball.h"
-#include "cam2d.h"
+#include "ogl/defines.h"
+#include "ogl/events.h"
+#include "ogl/camera.h"
+#include "ogl/camtrackball.h"
+#include "ogl/cam2d.h"
 
 OGL_NAMESPACE_BEGIN
 

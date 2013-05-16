@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "util/fs.h"
+#include "util/filesystem.h"
 #include "util/string.h"
 #include "mve/trianglemesh.h"
 #include "mve/meshtools.h"
@@ -21,20 +21,11 @@ void
 QMeshContextMenu::build (void)
 {
     QAction* action_reload_mesh = new QAction("Reload mesh", this);
-    QAction* action_scale_and_center = new QAction("Scale and center", this);
-    QAction* action_invert_faces = new QAction("Invert faces", this);
-    QAction* action_strip_faces = new QAction("Strip faces", this);
     QAction* action_save_mesh = new QAction("Save mesh...", this);
     QAction* action_rename_mesh = new QAction("Rename mesh...", this);
 
     this->connect(action_reload_mesh, SIGNAL(triggered()),
         this, SLOT(on_reload_mesh()));
-    this->connect(action_invert_faces, SIGNAL(triggered()),
-        this, SLOT(on_invert_faces()));
-    this->connect(action_strip_faces, SIGNAL(triggered()),
-        this, SLOT(on_strip_faces()));
-    this->connect(action_scale_and_center, SIGNAL(triggered()),
-        this, SLOT(on_scale_and_center()));
     this->connect(action_save_mesh, SIGNAL(triggered()),
         this, SLOT(on_save_mesh()));
     this->connect(action_rename_mesh, SIGNAL(triggered()),
@@ -42,15 +33,58 @@ QMeshContextMenu::build (void)
 
     std::string num_verts(util::string::get(rep->mesh->get_vertices().size()));
     std::string num_faces(util::string::get(rep->mesh->get_faces().size() / 3));
-    util::string::punctate(num_verts, '\'');
-    util::string::punctate(num_faces, '\'');
+    util::string::punctate(&num_verts, '\'');
+    util::string::punctate(&num_faces, '\'');
 
-    this->addAction(tr("Vertices: %1").arg(num_verts.c_str()))->setEnabled(false);
-    this->addAction(tr("Faces: %1").arg(num_faces.c_str()))->setEnabled(false);
-    this->addSeparator();
-    this->addAction(action_scale_and_center);
-    this->addAction(action_invert_faces);
-    this->addAction(action_strip_faces);
+    QMenu* vertices_menu =
+        this->addMenu(tr("Vertices: %1").arg(num_verts.c_str()));
+    {
+        QAction* scale = vertices_menu->addAction(tr("Scale and center"));
+        this->connect(scale, SIGNAL(triggered()),
+            this, SLOT(on_scale_and_center()));
+        if (rep->mesh->get_vertices().empty())
+        {
+            scale->setEnabled(false);
+        }
+    }
+
+    QMenu* faces_menu = this->addMenu(tr("Faces: %1").arg(num_faces.c_str()));
+    {
+        QAction* invert_faces = faces_menu->addAction(tr("Invert faces"));
+        QAction* delete_faces = faces_menu->addAction(tr("Delete faces"));
+        this->connect(invert_faces, SIGNAL(triggered()),
+            this, SLOT(on_invert_faces()));
+        this->connect(delete_faces, SIGNAL(triggered()),
+            this, SLOT(on_delete_faces()));
+        if (rep->mesh->get_faces().empty())
+        {
+            invert_faces->setEnabled(false);
+            delete_faces->setEnabled(false);
+        }
+    }
+
+    if (rep->mesh->has_vertex_colors())
+    {
+        QMenu* menu = this->addMenu(tr("Vertex Colors"));
+        QAction* delete_vcolor = menu->addAction(tr("Delete colors"));
+        this->connect(delete_vcolor, SIGNAL(triggered()),
+            this, SLOT(on_delete_vertex_colors()));
+    }
+
+    if (rep->mesh->has_vertex_confidences())
+    {
+        QMenu* menu = this->addMenu(tr("Vertex Confidences"));
+        QAction* convert_color = menu->addAction(tr("Map to color"));
+        QAction* delete_vconf = menu->addAction(tr("Delete confidences"));
+        this->connect(convert_color, SIGNAL(triggered()),
+            this, SLOT(on_colorize_confidences()));
+        this->connect(delete_vconf, SIGNAL(triggered()),
+            this, SLOT(on_delete_vertex_confidences()));
+    }
+
+    if (rep->mesh->has_face_colors())
+        this->addAction(tr("Face Colors: Yes"))->setEnabled(false);
+
     this->addSeparator();
     this->addAction(action_reload_mesh);
     this->addAction(action_rename_mesh);
@@ -58,11 +92,6 @@ QMeshContextMenu::build (void)
 
     /* Enable / disable certain actions. */
     action_reload_mesh->setEnabled(!rep->filename.empty());
-    if (rep->mesh->get_faces().empty())
-    {
-        action_invert_faces->setEnabled(false);
-        action_strip_faces->setEnabled(false);
-    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -101,7 +130,7 @@ QMeshContextMenu::on_invert_faces (void)
 /* ---------------------------------------------------------------- */
 
 void
-QMeshContextMenu::on_strip_faces (void)
+QMeshContextMenu::on_delete_faces (void)
 {
     this->rep->mesh->get_faces().clear();
     this->rep->renderer.reset();
@@ -168,6 +197,48 @@ QMeshContextMenu::on_rename_mesh (void)
     this->rep->name = new_name;
     this->rep->filename.clear();
     this->item->setText(new_name.c_str());
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_delete_vertex_colors (void)
+{
+    this->rep->mesh->get_vertex_colors().clear();
+    this->rep->renderer.reset();
+    emit this->parent->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_delete_vertex_confidences (void)
+{
+    this->rep->mesh->get_vertex_confidences().clear();
+    this->rep->renderer.reset();
+    emit this->parent->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_colorize_confidences (void)
+{
+    mve::TriangleMesh::ConfidenceList const& vconf
+        = this->rep->mesh->get_vertex_confidences();
+    mve::TriangleMesh::ColorList& vcolor
+        = this->rep->mesh->get_vertex_colors();
+
+    if (vconf.size() != this->rep->mesh->get_vertices().size())
+        return;
+
+    vcolor.clear();
+    vcolor.resize(vconf.size());
+    for (std::size_t i = 0; i < vconf.size(); ++i)
+        vcolor[i] = math::Vec4f(vconf[i], vconf[i], vconf[i], 1.0f);
+
+    this->rep->renderer.reset();
+    emit this->parent->signal_redraw();
 }
 
 /* ---------------------------------------------------------------- */

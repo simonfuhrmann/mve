@@ -1,14 +1,15 @@
 /*
  * Aligned memory allocation.
- * Written by Simon Fuhrmann
+ * Written by Simon Fuhrmann.
  */
 
 #ifndef UTIL_ALIGNED_MEMORY_HEADER
 #define UTIL_ALIGNED_MEMORY_HEADER
 
 #include <cstddef>
+#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 
-#include "defines.h"
+#include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
 

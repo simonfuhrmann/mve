@@ -1,8 +1,8 @@
 #ifndef MATH_LINE_HEADER
 #define MATH_LINE_HEADER
 
-#include "defines.h"
-#include "vector.h"
+#include "math/defines.h"
+#include "math/vector.h"
 
 MATH_NAMESPACE_BEGIN
 

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "alignedmemory.h"
+#include "util/alignedmemory.h"
 
 TEST(AlignedMemoryTest, AlignmentTest)
 {

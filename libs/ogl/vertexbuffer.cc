@@ -1,4 +1,4 @@
-#include "vertexbuffer.h"
+#include "ogl/vertexbuffer.h"
 
 OGL_NAMESPACE_BEGIN
 

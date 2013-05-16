@@ -10,12 +10,11 @@
 #include "util/string.h"
 #include "math/algo.h"
 #include "math/vector.h"
-
-#include "offfile.h"
-#include "plyfile.h"
-#include "pbrtfile.h"
-#include "vertexinfo.h"
-#include "meshtools.h"
+#include "mve/offfile.h"
+#include "mve/plyfile.h"
+#include "mve/pbrtfile.h"
+#include "mve/vertexinfo.h"
+#include "mve/meshtools.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN

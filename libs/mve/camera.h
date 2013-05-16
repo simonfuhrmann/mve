@@ -8,7 +8,7 @@
 
 #include <string>
 
-#include "defines.h"
+#include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
 
@@ -92,9 +92,9 @@ public:
     void set_transformation (float const* mat);
 
     /**
-     * Stores 3x3 projection matrix (K-matrix in Hartley, Zisserman).
-     * The matrix projects a point in camera coordinates to the image
-     * plane with dimensions 'w' and 'h'.
+     * Stores the 3x3 calibration (or projection) matrix (K-matrix in
+     * Hartley, Zisserman). The matrix projects a point in camera coordinates
+     * to the image plane with dimensions 'w' and 'h'.
      *
      * If the dimensions of the image are unknown, the generic projection
      * matrix with w=1 and h=1 can be used. Image coordinates x' and y' for
@@ -103,15 +103,15 @@ public:
      * For w > h:  x' = x * w  and  y' = y * w - (w - h) / 2.
      * For h > w:  x' = x * h - (h - w) / 2  and  y' = y * h.
      */
-    void fill_projection (float* mat, std::size_t w, std::size_t h) const;
+    void fill_calibration (float* mat, float width, float height) const;
 
     /**
-     * Stores 3x3 inverse projection matrix.
-     * The matrix projects a point on the image plane with dimension 'w'
-     * and 'h' to 3D in camera coordinate system at z = -1.
+     * Stores 3x3 inverse calibration (or inverse projection) matrix.
+     * The matrix projects a point (x, y, 1) on the image plane into
+     * the camera coordinate system.
      */
-    void fill_inverse_projection (float* mat,
-        std::size_t w, std::size_t h) const;
+    void fill_inverse_calibration (float* mat,
+        float width, float height) const;
 
     /**
      * Generates space separated list of floats for extrinsic parameters.

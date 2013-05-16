@@ -10,10 +10,9 @@
 #include <string>
 
 #include "util/refptr.h"
-
-#include "defines.h"
-#include "view.h"
-#include "bundlefile.h"
+#include "mve/defines.h"
+#include "mve/view.h"
+#include "mve/bundlefile.h"
 
 #define MVE_SCENE_VIEWS_DIR "views/"
 #define MVE_SCENE_BUNDLE_FILE "synth_0.out"
@@ -33,15 +32,6 @@ class Scene
 public:
     typedef util::RefPtr<Scene> Ptr;
     typedef std::vector<View::Ptr> ViewList;
-
-private:
-    std::string basedir;
-    ViewList views;
-    BundleFile::Ptr bundle;
-    bool bundle_dirty;
-
-private:
-    void init_views (void);
 
 public:
     /** Constructs an unmanaged scene, which should not be copied. */
@@ -95,6 +85,15 @@ public:
     std::size_t get_view_mem_usage (void);
     /** Returns key point memory usage. */
     std::size_t get_bundle_mem_usage (void);
+
+private:
+    std::string basedir;
+    ViewList views;
+    BundleFile::Ptr bundle;
+    bool bundle_dirty;
+
+private:
+    void init_views (void);
 };
 
 /* ---------------------------------------------------------------- */

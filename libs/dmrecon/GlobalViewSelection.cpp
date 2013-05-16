@@ -1,7 +1,7 @@
-#include "GlobalViewSelection.h"
 #include "math/vector.h"
-#include "mvstools.h"
-#include "Settings.h"
+#include "dmrecon/GlobalViewSelection.h"
+#include "dmrecon/mvstools.h"
+#include "dmrecon/Settings.h"
 
 MVS_NAMESPACE_BEGIN
 

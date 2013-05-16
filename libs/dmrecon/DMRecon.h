@@ -1,5 +1,5 @@
-#ifndef DMRECON_H
-#define DMRECON_H
+#ifndef DMRECON_DMRECON_H
+#define DMRECON_DMRECON_H
 
 #include <fstream>
 #include <string>
@@ -9,12 +9,10 @@
 #include "mve/bundlefile.h"
 #include "mve/image.h"
 #include "mve/scene.h"
-
-#include "defines.h"
-#include "PatchOptimization.h"
-#include "SingleView.h"
-#include "Progress.h"
-
+#include "dmrecon/defines.h"
+#include "dmrecon/PatchOptimization.h"
+#include "dmrecon/SingleView.h"
+#include "dmrecon/Progress.h"
 
 MVS_NAMESPACE_BEGIN
 

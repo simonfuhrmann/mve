@@ -1,9 +1,9 @@
 #include <iostream> // cout
 #include <cstdlib> // ::exit
 #include <csignal>
-#include <execinfo.h> // ::backtrace*
+#include <execinfo.h> // ::backtrace
 
-#include "system.h"
+#include "util/system.h"
 
 UTIL_NAMESPACE_BEGIN
 UTIL_SYSTEM_NAMESPACE_BEGIN
