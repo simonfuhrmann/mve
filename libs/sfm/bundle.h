@@ -30,9 +30,9 @@ public:
     struct Options
     {
         Sift::Options sift_options;
-        MatchingOptions sift_matching_options;
+        Matching::Options sift_matching_options;
         Surf::Options surf_options;
-        MatchingOptions surf_matching_options;
+        Matching::Options surf_matching_options;
         PoseRansac2D2D::Options ransac2d2d_options;
         PoseRansac2D3D::Options ransac2d3d_options;
 

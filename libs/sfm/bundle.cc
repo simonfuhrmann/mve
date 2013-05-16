@@ -79,16 +79,16 @@ Bundle::two_view_pose (ImagePair* image_pair)
     Viewport const& view_2 = this->viewports[image_pair->second];
 
     /* Perform two-view descriptor matching. */
-    MatchingResult matching_result;
+    Matching::Result matching_result;
     {
         util::WallTimer timer;
-        sfm::match_features(this->options.sift_matching_options,
+        sfm::Matching::twoway_match(this->options.sift_matching_options,
             view_1.descr_data.begin(), view_1.descr_info.size(),
             view_2.descr_data.begin(), view_2.descr_info.size(),
             &matching_result);
-        sfm::remove_inconsistent_matches(&matching_result);
+        sfm::Matching::remove_inconsistent_matches(&matching_result);
         std::cout << "Two-view matching took " << timer.get_elapsed() << "ms, "
-            << sfm::count_consistent_matches(matching_result)
+            << sfm::Matching::count_consistent_matches(matching_result)
             << " matches." << std::endl;
     }
 

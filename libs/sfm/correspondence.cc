@@ -1,3 +1,5 @@
+#include <limits>
+
 #include "sfm/correspondence.h"
 
 SFM_NAMESPACE_BEGIN

@@ -41,6 +41,7 @@
 #ifndef SFM_FUNDAMENTAL_HEADER
 #define SFM_FUNDAMENTAL_HEADER
 
+#include <limits>
 #include <vector>
 
 #include "math/vector.h"

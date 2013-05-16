@@ -13,7 +13,7 @@ TESTBIN := test
 GTEST_SRCS := _gtest_matrixqrdecomp.cc _gtest_matrixsvd.cc _gtest_matrixpinv.cc _gtest_pose.cc # $(wildcard _gtest_*.cc)
 GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
 GTEST_INCL := -I${GTEST_PATH}/include
-GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main
+GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main -lpthread
 
 libsfm: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}

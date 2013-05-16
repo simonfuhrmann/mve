@@ -1,4 +1,7 @@
-/* A helpful SSE/MMX overview.
+/* Nearest Neighbor implementation using exhaustive search.
+ * Written by Simon Fuhrmann.
+ *
+ * A helpful SSE/MMX overview.
  * Taken from: http://www.linuxjournal.com/content/
  *         ... introduction-gcc-compiler-intrinsics-vector-processing
  *
@@ -26,6 +29,7 @@
  * - altivec functions  __VEC__
  * - neon functions     __ARM_NEON__
  */
+#include <limits>
 #include <iostream>
 #include <emmintrin.h>
 
@@ -144,8 +148,8 @@ NearestNeighbor<float>::find (float const* query,
     for (int i = 0; i < this->num_elements; ++i)
     {
         float inner_product = 0.0f;
-        for (int i = 0; i < this->dimensions; ++i, ++descr_ptr)
-            inner_product += query[i] * *descr_ptr;
+        for (int j = 0; j < this->dimensions; ++j, ++descr_ptr)
+            inner_product += query[j] * *descr_ptr;
 
         /* Check if new largest inner product has been found. */
         if (inner_product > result->dist_2nd_best)

@@ -7,7 +7,7 @@
 SFM_NAMESPACE_BEGIN
 
 void
-remove_inconsistent_matches (MatchingResult* matches)
+Matching::remove_inconsistent_matches (Matching::Result* matches)
 {
     for (std::size_t i = 0; i < matches->matches_1_2.size(); ++i)
         if (matches->matches_2_1[matches->matches_1_2[i]] != (int)i)
@@ -18,7 +18,7 @@ remove_inconsistent_matches (MatchingResult* matches)
 }
 
 int
-count_consistent_matches (MatchingResult const& matches)
+Matching::count_consistent_matches (Matching::Result const& matches)
 {
     int counter = 0;
     for (int i = 0; i < static_cast<int>(matches.matches_1_2.size()); ++i)
