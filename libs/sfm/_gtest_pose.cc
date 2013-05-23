@@ -152,10 +152,15 @@ namespace {
         p2(0, 6) = 114; p2(1, 6) = 69;  p2(2, 6) = 1;
         p2(0, 7) = 87;  p2(1, 7) = 86;  p2(2, 7) = 1;
 
-        F(0,0) = 0.000000014805557;  F(0,1) = 0.000002197550186;  F(0,2) = 0.001632934316777;
-        F(1,0) = -0.000002283909471; F(1,1) = -0.000001354336179; F(1,2) = 0.008734421917905;
-        F(2,0) = -0.001472308151103; F(2,1) = -0.008375559378962; F(2,2) = -0.160734037191207;
-
+        F(0,0) = 0.000000014805557;
+        F(0,1) = 0.000002197550186;
+        F(0,2) = 0.001632934316777;
+        F(1,0) = -0.000002283909471;
+        F(1,1) = -0.000001354336179;
+        F(1,2) = 0.008734421917905;
+        F(2,0) = -0.001472308151103;
+        F(2,1) = -0.008375559378962;
+        F(2,2) = -0.160734037191207;
     }
 
 }  // namespace
@@ -418,6 +423,17 @@ TEST(PoseTest, PoseFrom2D3DCorrespondences)
         EXPECT_NEAR(new_pose.R[i], pose.R[i], 0.001f) << "for i=" << i;
     for (int i = 0; i < 3; ++i)
         EXPECT_NEAR(new_pose.t[i], pose.t[i], 0.001f) << "for i=" << i;
+}
+
+TEST(PoseTest, ComputeRANSACIterations)
+{
+    double inlier_ratio = 0.5;
+    double success_rate = 0.99;
+    int num_samples = 8;
+    EXPECT_EQ(1177, sfm::compute_ransac_iterations(
+        inlier_ratio, num_samples, success_rate));
+
+   std::cout << sfm::compute_ransac_iterations(0.5, 6, 0.99);
 }
 
 #if 0 // This test case is disabled because it is not deterministic.

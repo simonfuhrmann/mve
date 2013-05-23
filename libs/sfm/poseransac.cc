@@ -11,7 +11,7 @@
 SFM_NAMESPACE_BEGIN
 
 PoseRansac2D2D::Options::Options (void)
-    : max_iterations(100)
+    : max_iterations(1000)
     , threshold(1e-3)
     , already_normalized(true)
 {
@@ -216,6 +216,19 @@ PoseRansac2D3D::find_inliers (Correspondences2D3D const& corresp,
         if (square_distance < square_threshold)
             result->push_back(i);
     }
+}
+
+/* ---------------------------------------------------------------- */
+
+int
+compute_ransac_iterations (double inlier_ratio,
+    int num_samples,
+    double desired_success_rate)
+{
+    double prob_all_good = math::algo::fastpow(inlier_ratio, num_samples);
+    double num_iterations = std::log(1.0 - desired_success_rate)
+        / std::log(1.0 - prob_all_good);
+    return static_cast<int>(math::algo::round(num_iterations));
 }
 
 SFM_NAMESPACE_END

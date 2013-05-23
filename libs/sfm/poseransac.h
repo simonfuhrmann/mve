@@ -31,8 +31,9 @@ public:
         Options (void);
 
         /**
-         * The number of RANSAC iterations. Defaults to 100.
-         * TODO: Document reasonable default values and RANSAC theory.
+         * The number of RANSAC iterations. Defaults to 1000.
+         * Function compute_ransac_iterations() can be used to estimate the
+         * required number of iterations for a certain RANSAC success rate.
          */
         int max_iterations;
 
@@ -81,6 +82,15 @@ private:
 
 /* ---------------------------------------------------------------- */
 
+/**
+ * RANSAC pose estimation from noisy 2D-3D image correspondences.
+ *
+ * The pose of a new view is to be determined from a set of point to
+ * image correspondences contaminated with outliers. The algorithm
+ * randomly selects N correspondences (where N depends on the pose
+ * algorithm) to estimate the pose. Running for a number of iterations,
+ * the pose supporting the most matches is returned as result.
+ */
 class PoseRansac2D3D
 {
 public:
@@ -90,7 +100,8 @@ public:
 
         /**
          * The number of RANSAC iterations. Defaults to 100.
-         * TODO: Document reasonable default values and RANSAC theory.
+         * Function compute_ransac_iterations() can be used to estimate the
+         * required number of iterations for a certain RANSAC success rate.
          */
         int max_iterations;
 
@@ -124,6 +135,27 @@ private:
 private:
     Options opts;
 };
+
+/* ---------------------------------------------------------------- */
+
+/**
+ * The function returns the required number of iterations for a desired
+ * RANSAC success rate. If w is the probability of choosing one good sample
+ * (the inlier ratio), then w^n is the probability that all n samples are
+ * inliers. Then k is the number of iterations required to draw only inliers
+ * with a certain probability of success, p:
+ *
+ *          log(1 - p)
+ *     k = ------------
+ *         log(1 - w^n)
+ *
+ * Example: For w = 50%, p = 99%, n = 8: k = log(0.001) / log(0.99609) = 1176.
+ * Thus, it requires 1176 iterations for RANSAC to succeed with a 99% chance.
+ */
+int
+compute_ransac_iterations (double inlier_ratio,
+    int num_samples,
+    double desired_success_rate = 0.99);
 
 SFM_NAMESPACE_END
 
