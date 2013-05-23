@@ -6,6 +6,7 @@
 
 struct JobProgress
 {
+    virtual ~JobProgress (void) {}
     virtual char const* get_name (void) = 0;
     virtual char const* get_message (void) = 0;
     virtual bool is_completed (void) = 0;
