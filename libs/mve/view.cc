@@ -47,31 +47,7 @@ MVEFileProxy::get_type (void) const
 {
     if (this->image.get())
         return this->image->get_type();
-
-    // TODO Move this type mapping to imagebase.h somehow
-    // return ImageBase::to_type(this->datatype);
-    if (this->datatype == "sint8")
-        return IMAGE_TYPE_SINT8;
-    else if (this->datatype == "sint16")
-        return IMAGE_TYPE_SINT16;
-    else if (this->datatype == "sint32")
-        return IMAGE_TYPE_SINT32;
-    else if (this->datatype == "sint64")
-        return IMAGE_TYPE_SINT64;
-    else if (this->datatype == "uint8")
-        return IMAGE_TYPE_UINT8;
-    else if (this->datatype == "uint16")
-        return IMAGE_TYPE_UINT16;
-    else if (this->datatype == "uint32")
-        return IMAGE_TYPE_UINT32;
-    else if (this->datatype == "uint64")
-        return IMAGE_TYPE_UINT64;
-    else if (this->datatype == "float")
-        return IMAGE_TYPE_FLOAT;
-    else if (this->datatype == "double")
-        return IMAGE_TYPE_DOUBLE;
-    else
-        return IMAGE_TYPE_UNKNOWN;
+    return ImageBase::get_type_for_string(this->datatype);
 }
 
 /* ---------------------------------------------------------------- */
