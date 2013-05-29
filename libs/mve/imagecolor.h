@@ -21,6 +21,11 @@ MVE_IMAGE_NAMESPACE_BEGIN
  *
  * The conversion function is expected to process pixels with 3 channels,
  * and this function checks that images have at least 3 channels.
+ *
+ * Note that color conversion with byte images is supported but not
+ * recommended. Color conversion often produces values outside the usual
+ * range and clamping occurs. Due to rounding and clampling, back and forth
+ * conversion (A -> B -> A') is often very unstable (A != A').
  */
 template <typename T, typename FUNCTOR>
 void
@@ -36,8 +41,7 @@ color_convert (typename Image<T>::Ptr image, FUNCTOR& converter);
  *   Y =  0.2126 0.7152 0.0722 * G
  *   Z    0.0193 0.1192 0.9505   B
  *
- * Warning: This only works correctly with float or double images.
- * TODO: Implement template specializations for integer image types.
+ * Warning: Conversion of byte images is supported, but clamping can occur.
  */
 template <typename T>
 void
@@ -51,8 +55,7 @@ color_srgb_to_xyz (T* values);
  *   G = -0.9692  1.8760  0.0416 * Y
  *   B    0.0556 -0.2040  1.0570   Z
  *
- * Warning: This only works correctly with float or double images.
- * TODO: Implement template specializations for integer image types.
+ * Warning: Conversion of byte images is supported, but clamping can occur.
  */
 template <typename T>
 void
@@ -66,8 +69,8 @@ color_xyz_to_srgb (T* values);
  *   Y = Y
  *   Z = (1 - x - y) * Y / y
  *
- * Warning: This only works correctly with float or double images.
- * TODO: Implement template specializations for integer image types.
+ * Warning: Conversion of byte images is supported, but clamping occurs.
+ * Also note that back and forth conversion with byte images is inaccurate.
  */
 template <typename T>
 void
@@ -81,8 +84,8 @@ color_xyy_to_xyz (T* values);
  *    y = Y / (X + Y + Z)
  *    Y = Y
  *
- * Warning: This only works correctly with float or double images.
- * TODO: Implement template specializations for integer image types.
+ * Warning: Conversion of byte images is supported, but clamping occurs.
+ * Also note that back and forth conversion with byte images is inaccurate.
  */
 template <typename T>
 void
@@ -141,6 +144,19 @@ color_srgb_to_xyz (T* v)
     std::copy(out, out + 3, v);
 }
 
+template <>
+inline void
+color_srgb_to_xyz<uint8_t> (uint8_t* v)
+{
+    double out[3];
+    out[0] = v[0] * 0.4124 + v[1] * 0.3576 + v[2] * 0.1805;
+    out[1] = v[0] * 0.2126 + v[1] * 0.7152 + v[2] * 0.0722;
+    out[2] = v[0] * 0.0193 + v[1] * 0.1192 + v[2] * 0.9505;
+    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+}
+
 template <typename T>
 void
 color_xyz_to_srgb (T* v)
@@ -150,6 +166,19 @@ color_xyz_to_srgb (T* v)
     out[1] = v[0] * T(-0.9692) + v[1] * T( 1.8760) + v[2] * T( 0.0416);
     out[2] = v[0] * T( 0.0556) + v[1] * T(-0.2040) + v[2] * T( 1.0570);
     std::copy(out, out + 3, v);
+}
+
+template <>
+inline void
+color_xyz_to_srgb<uint8_t> (uint8_t* v)
+{
+    double out[3];
+    out[0] = v[0] *  3.2410 + v[1] * -1.5374 + v[2] * -0.4986;
+    out[1] = v[0] * -0.9692 + v[1] *  1.8760 + v[2] *  0.0416;
+    out[2] = v[0] *  0.0556 + v[1] * -0.2040 + v[2] *  1.0570;
+    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
 }
 
 template <typename T>
@@ -173,6 +202,29 @@ color_xyy_to_xyz (T* v)
     }
 }
 
+template <>
+inline void
+color_xyy_to_xyz<uint8_t> (uint8_t* v)
+{
+    if (v[1] == 0)
+    {
+        v[0] = 0;
+        v[1] = 0;
+        v[2] = 0;
+    }
+    else
+    {
+        double const ratio = v[2] / static_cast<double>(v[1]);
+        double out[3];
+        out[0] = v[0] * ratio;
+        out[1] = v[2];
+        out[2] = (255 - v[0] - v[1]) * ratio;
+        v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
+        v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
+        v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+    }
+}
+
 template <typename T>
 void
 color_xyz_to_xyy (T* v)
@@ -191,6 +243,29 @@ color_xyz_to_xyy (T* v)
         out[1] = v[1] / sum;
         out[2] = v[1];
         std::copy(out, out + 3, v);
+    }
+}
+
+template <>
+inline void
+color_xyz_to_xyy<uint8_t> (uint8_t* v)
+{
+    if (v[0] == 0 && v[1] == 0 && v[2] == 0)
+    {
+        v[0] = 0;
+        v[1] = 0;
+        v[2] = 0;
+    }
+    else
+    {
+        double const sum = v[0] + v[1] + v[2];
+        double out[3];
+        out[0] = 255.0 * v[0] / sum;
+        out[1] = 255.0 * v[1] / sum;
+        out[2] = static_cast<double>(v[1]);
+        v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
+        v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
+        v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
     }
 }
 
