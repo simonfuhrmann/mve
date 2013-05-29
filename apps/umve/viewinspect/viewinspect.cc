@@ -407,7 +407,6 @@ ViewInspect::display_image (mve::ByteImage::Ptr img)
 
     QImage img_qimage(iw, ih, QImage::Format_ARGB32);
     {
-        QPainter painter(&img_qimage);
         std::size_t inpos = 0;
         for (std::size_t y = 0; y < ih; ++y)
             for (std::size_t x = 0; x < iw; ++x)
