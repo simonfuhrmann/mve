@@ -3,10 +3,9 @@
 
 #include <QtGui>
 
-#include "mve/imagebase.h"
+#include "mve/image.h"
 
 #include "clickimage.h"
-#include "transferfunction.h"
 
 #if 0
 #   define MAGNIFY_LARGE_PATCH 35
@@ -29,8 +28,8 @@ class ImageInspectorWidget : public QWidget
     Q_OBJECT
 
 private:
-    mve::ImageBase::ConstPtr image;
-    TransferFunction func;
+    mve::ByteImage::ConstPtr byte_image;
+    mve::ImageBase::ConstPtr orig_image;
 
     QLabel* label_dimension;
     QLabel* label_channels;
@@ -59,9 +58,8 @@ private:
 public:
     ImageInspectorWidget (void);
 
-    void set_image (mve::ImageBase::ConstPtr image);
-    void set_transfer_function (TransferFunction func);
-
+    void set_image (mve::ByteImage::ConstPtr byte_image,
+        mve::ImageBase::ConstPtr orig_image);
     void magnify (int x, int y);
     void reset (void);
 };
@@ -69,17 +67,11 @@ public:
 /* ---------------------------------------------------------------- */
 
 inline void
-ImageInspectorWidget::set_transfer_function (TransferFunction func)
-{
-    this->func = func;
-    this->magnify(this->inspect_x, this->inspect_y);
-}
-
-inline void
 ImageInspectorWidget::reset (void)
 {
     this->reset_images();
-    this->image.reset();
+    this->byte_image.reset();
+    this->orig_image.reset();
 }
 
 #endif /* IMAGE_INSPECTOR_HEADER */
