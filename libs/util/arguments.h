@@ -78,7 +78,7 @@ private:
     std::vector<ArgOption> options;
     std::string usage_str;
     std::string descr_str;
-    int helptext_ident;
+    int helptext_indent;
     int descrtext_width;
 
     /* Parse result. */
@@ -214,7 +214,7 @@ Arguments::set_description_word_wrap (int width)
 inline void
 Arguments::set_helptext_indent (int indent)
 {
-    this->helptext_ident = indent;
+    this->helptext_indent = indent;
 }
 
 inline void
