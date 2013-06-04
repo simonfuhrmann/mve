@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 
+#include "util/timer.h"
 #include "util/string.h"
 #include "mve/image.h"
 #include "mve/imagetools.h"
@@ -229,11 +230,10 @@ ToneMappingHistogram::on_timer_expired()
 }
 
 void
-ToneMappingHistogram::get_mapping_area_for_range (float vmin, float vmax,
-    float* map_min, float* map_max)
+ToneMappingHistogram::get_mapping_range (float* map_min, float* map_max)
 {
-    *map_min = vmin + this->mapped_left * (vmax - vmin);
-    *map_max = vmin + this->mapped_right * (vmax - vmin);
+    *map_min = this->mapped_left;
+    *map_max = this->mapped_right;
 }
 
 /* ---------------------------------------------------------------- */
@@ -312,7 +312,7 @@ ToneMapping::on_gamma_value_changed (void)
 {
     std::string exp_string = util::string::get_fixed(gamma_from_slider(), 2);
     this->gamma_label->setText(exp_string.c_str());
-    this->timer.start(250);
+    this->timer.start(400);
 }
 
 void
@@ -320,7 +320,7 @@ ToneMapping::on_highlight_value_changed (void)
 {
     std::string fstr = util::string::get_fixed(highlight_from_slider(), 2);
     this->highlight_label->setText(tr("<= %1").arg(fstr.c_str()));
-    this->timer.start(250);
+    this->timer.start(400);
 }
 
 void
@@ -355,18 +355,22 @@ ToneMapping::highlight_from_slider (void) const
 void
 ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
 {
-    // TODO: Better histogram scale, both x and y
-
+    util::WallTimer timer;
+    std::cout << "Computing histogram..." << std::flush;
     float const vmin = this->image_vmin;
     float const vmax = this->image_vmax;
+    float const log_vmin = std::log10(vmin);
+    float const log_vmax = std::log10(vmax);
     int const num_bins = this->histogram->preferred_num_bins();
     std::vector<int> bins(num_bins, 0);
     for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
     {
-        int bin = (*ptr - vmin) / (vmax - vmin) * (num_bins - 1);
+        float value = std::log10(*ptr);
+        int bin = (value - log_vmin) / (log_vmax - log_vmin) * (num_bins - 1);
         bins[bin]++;
     }
     this->histogram->set_bins(bins);
+    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 }
 
 void
@@ -496,7 +500,9 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 mve::ByteImage::ConstPtr
 ToneMapping::render (void)
 {
-    std::cout << "Rendering!" << std::endl;
+    util::WallTimer timer;
+    std::cout << "Rendering..." << std::flush;
+
     if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
     {
         return this->image;
@@ -516,8 +522,11 @@ ToneMapping::render (void)
     float const gamma_exp = this->gamma_from_slider();
     float const highlight = this->highlight_from_slider();
     float map_min, map_max;
-    this->histogram->get_mapping_area_for_range(this->image_vmin,
-        this->image_vmax, &map_min, &map_max);
+    this->histogram->get_mapping_range(&map_min, &map_max);
+    float log_vmin = std::log10(this->image_vmin);
+    float log_vmax = std::log10(this->image_vmax);
+    map_min = std::pow(10.0f, log_vmin + map_min * (log_vmax - log_vmin));
+    map_max = std::pow(10.0f, log_vmin + map_max * (log_vmax - log_vmin));
     mve::FloatImage::ConstPtr fimg = this->image;
     uint8_t* out_ptr = ret->begin();
     for (float const* px = fimg->begin();
@@ -554,6 +563,7 @@ ToneMapping::render (void)
             out_ptr[2] = 127;
         }
     }
+    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 
     return ret;
 }

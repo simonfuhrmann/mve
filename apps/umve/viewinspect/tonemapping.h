@@ -18,8 +18,7 @@ public:
     /* Clears the histogram bins. */
     void clear (void);
     /* Returns the mapping in range [0, 1]. */
-    void get_mapping_area_for_range (float vmin, float vmax,
-        float* map_min, float* map_max);
+    void get_mapping_range (float* map_min, float* map_max);
     /* Returns the preferred number of bins depending on width. */
     int preferred_num_bins (void) const;
 
