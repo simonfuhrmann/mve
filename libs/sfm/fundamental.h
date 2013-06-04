@@ -101,12 +101,16 @@ enforce_essential_constraints (EssentialMatrix* matrix);
 
 /**
  * Retrieves the camera matrices from the essential matrix. This routine
- * recovers P' = [M|m] with M = K*R and m = K*t for the second camera where the
- * first camera is given in canonical form P = [I|0]. The pose can be computed
- * up to scale and a four-fold ambiguity. That is, the translation has length
- * one and four possible solutions are provided. Each of the solutions must be
- * tested: It is sufficient to test if a single point is in front of
- * both cameras.
+ * recovers P' = [R|t] for the second camera where the first camera is given
+ * in canonical form P = [I|0]. The pose can be computed up to scale and a
+ * four-fold ambiguity. That is, the resulting translation has length one and
+ * four possible solutions are provided. In case of two cameras in the same
+ * location, the rotation is still reliable but the translation is unstable.
+ *
+ * Each of the solutions must be tested: It is sufficient to test if a single
+ * point (triangulated from a 2D-2D correspondence) is in front of both
+ * cameras. Note: The resulting camera pose does not contain the K matrix.
+ * Before testing the resulting poses, the K-matrix must be set!
  */
 void
 pose_from_essential (EssentialMatrix const& matrix,

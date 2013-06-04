@@ -102,7 +102,7 @@ pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
                 Q(i, k) = -Q(i, k);
             }
 
-    /* Rranslation t is K^-1 multiplied with the last column of P. */
+    /* Translation t is K^-1 multiplied with the last column of P. */
     math::Vector<double, 3> trans = math::matrix_inverse(R) * p_matrix.col(3);
 
     /* Q of P = RQ is the rotation R of P = K [R|t]. */
