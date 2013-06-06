@@ -133,6 +133,7 @@ void
 QMeshContextMenu::on_delete_faces (void)
 {
     this->rep->mesh->get_faces().clear();
+    this->rep->mesh->get_face_normals().clear();
     this->rep->renderer.reset();
     emit this->parent->signal_redraw();
 }
