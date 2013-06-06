@@ -357,15 +357,15 @@ ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
 {
     util::WallTimer timer;
     std::cout << "Computing histogram..." << std::flush;
-    float const vmin = this->image_vmin;
-    float const vmax = this->image_vmax;
+    float const vmin = std::max(0.000001f, this->image_vmin);
+    float const vmax = std::max(0.000001f, this->image_vmax);
     float const log_vmin = std::log10(vmin);
     float const log_vmax = std::log10(vmax);
     int const num_bins = this->histogram->preferred_num_bins();
     std::vector<int> bins(num_bins, 0);
     for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
     {
-        float value = std::log10(*ptr);
+        float value = std::log10(std::max(0.000001f, *ptr));
         int bin = (value - log_vmin) / (log_vmax - log_vmin) * (num_bins - 1);
         bins[bin]++;
     }
@@ -523,8 +523,8 @@ ToneMapping::render (void)
     float const highlight = this->highlight_from_slider();
     float map_min, map_max;
     this->histogram->get_mapping_range(&map_min, &map_max);
-    float log_vmin = std::log10(this->image_vmin);
-    float log_vmax = std::log10(this->image_vmax);
+    float log_vmin = std::log10(std::max(0.000001f, this->image_vmin));
+    float log_vmax = std::log10(std::max(0.000001f, this->image_vmax));
     map_min = std::pow(10.0f, log_vmin + map_min * (log_vmax - log_vmin));
     map_max = std::pow(10.0f, log_vmin + map_max * (log_vmax - log_vmin));
     mve::FloatImage::ConstPtr fimg = this->image;
