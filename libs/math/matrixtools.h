@@ -73,6 +73,13 @@ T*
 matrix_set_identity (T* mat, int n);
 
 /**
+ * Returns true if and only if the given matrix is the identity matrix.
+ */
+template <typename T, int N>
+bool
+matrix_is_identity (Matrix<T,N,N> const& mat);
+
+/**
  * Returns a diagonal matrix from the given vector.
  */
 template <typename T, int N>
@@ -218,6 +225,17 @@ matrix_set_identity (T* mat, int n)
     for (int i = 0; i < len; i += n + 1)
         mat[i] = T(1);
     return mat;
+}
+
+template <typename T, int N>
+bool
+matrix_is_identity (Matrix<T,N,N> const& mat)
+{
+    for (int y = 0, i = 0; y < N; ++y)
+        for (int x = 0; x < N; ++x, ++i)
+            if ((x == y && mat[i] != T(1)) || (x != y && mat[i] != T(0)))
+                return false;
+    return true;
 }
 
 template <typename T, int N>

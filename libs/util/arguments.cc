@@ -14,7 +14,7 @@ Arguments::Arguments (void)
     : nonopt_min(0)
     , nonopt_max(std::numeric_limits<std::size_t>::max())
     , auto_exit(false)
-    , helptext_ident(16)
+    , helptext_indent(16)
     , descrtext_width(75)
     , cur_result(std::numeric_limits<std::size_t>::max())
 {
@@ -388,7 +388,7 @@ Arguments::generate_helptext (std::ostream& stream) const
         optstr << "  ";
 
         stream << "  " << std::setiosflags(std::ios::left)
-            << std::setw(this->helptext_ident) << optstr.str()
+            << std::setw(this->helptext_indent) << optstr.str()
             << opt.desc << std::endl;
     }
 }

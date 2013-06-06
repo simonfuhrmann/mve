@@ -84,6 +84,9 @@ public:
     /** Returns a string representation of the image data type. */
     virtual char const* get_type_string (void) const;
 
+    /** Returns the type for a valid type string, otherwise UNKNOWN. */
+    static ImageType get_type_for_string (std::string const& type_string);
+
 protected:
     int w, h, c;
 };
@@ -270,6 +273,33 @@ inline char const*
 ImageBase::get_type_string (void) const
 {
     return "unknown";
+}
+
+inline ImageType
+ImageBase::get_type_for_string (std::string const& type_string)
+{
+    if (type_string == "sint8")
+        return IMAGE_TYPE_SINT8;
+    else if (type_string == "sint16")
+        return IMAGE_TYPE_SINT16;
+    else if (type_string == "sint32")
+        return IMAGE_TYPE_SINT32;
+    else if (type_string == "sint64")
+        return IMAGE_TYPE_SINT64;
+    else if (type_string == "uint8")
+        return IMAGE_TYPE_UINT8;
+    else if (type_string == "uint16")
+        return IMAGE_TYPE_UINT16;
+    else if (type_string == "uint32")
+        return IMAGE_TYPE_UINT32;
+    else if (type_string == "uint64")
+        return IMAGE_TYPE_UINT64;
+    else if (type_string == "float")
+        return IMAGE_TYPE_FLOAT;
+    else if (type_string == "double")
+        return IMAGE_TYPE_DOUBLE;
+
+    return IMAGE_TYPE_UNKNOWN;
 }
 
 /* ---------------------------------------------------------------- */

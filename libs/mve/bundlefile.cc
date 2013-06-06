@@ -72,12 +72,8 @@ BundleFile::read_bundle (std::string const& filename)
  * list of input images. Some cameras are set to zero, which means the input
  * image was not registered. <cam ID> is the ID w.r.t. the input images,
  * <sift ID> is the ID of the SIFT feature point for that image. In the
- *  Noah bundler, <x> and <y> are floating point positions of the keypoint
+ * Noah bundler, <x> and <y> are floating point positions of the keypoint
  * in the image, given in image-centered coordinate system.
- *
- * The MVS reconstruction (recon_x1.0_synth_0/corr_*) files correspond to
- * REGISTERED cameras, i.e. corr_0 corresponds to the first registered
- * camera and not the first input image.
  */
 void
 BundleFile::read_bundle_intern (std::string const& filename)
