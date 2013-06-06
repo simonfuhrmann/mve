@@ -168,3 +168,22 @@ TEST(MatrixToolsTest, DiagonalMatrixTest)
     Vec3f diag_test = math::matrix_get_diagonal(diag_mat);
     EXPECT_EQ(diag_test, diag_vector2);
 }
+
+TEST(MatrixToolsTest, MatrixIsIdentity)
+{
+    math::Matrix3f mat, mat2;
+    math::matrix_set_identity(mat);
+    EXPECT_TRUE(math::matrix_is_identity(mat));
+
+    mat2 = mat;
+    mat2[0] = 0.0f;
+    EXPECT_FALSE(math::matrix_is_identity(mat2));
+
+    mat2 = mat;
+    mat2[1] = 1.0f;
+    EXPECT_FALSE(math::matrix_is_identity(mat2));
+
+    mat2 = mat;
+    mat2[3] = 1.0f;
+    EXPECT_FALSE(math::matrix_is_identity(mat2));
+}
