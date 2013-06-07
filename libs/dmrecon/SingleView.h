@@ -58,37 +58,31 @@ private:
     /** external camera parameters */
     math::Matrix4f worldToCam;
 
-    /** internal camera parameters */
-    math::Matrix3f proj;
-    math::Matrix3f invproj;
-
     /** feature indices */
     std::vector<std::size_t> featInd;
 
     /** mve view */
     mve::View::Ptr view;
 
-    /** real image */
-    mve::ImageBase::Ptr color_image;
+    /** dimensions of original image for frustum check */
     int width;
     int height;
 
-    /** scaled image for reconstruction */
+    /** ratio between scaled_image and img_pyramid[0].image */
     float scale_factor;
+
     mve::ImageBase::Ptr scaled_image;
-    int scaled_width;
-    int scaled_height;
     math::Matrix3f proj_scaled;
     math::Matrix3f invproj_scaled;
 
-    /** image pyramid */
-    std::vector<mve::ImageBase::Ptr> img_pyramid;
-    std::vector<int> widths;
-    std::vector<int> heights;
+    struct PyramidLevel {
+        mve::ImageBase::Ptr image;
+        math::Matrix3f proj;
+        math::Matrix3f invproj;
+    };
 
-    /** projective matrices for image pyramid */
-    std::vector< math::Matrix3f > projs;
-    std::vector< math::Matrix3f > invprojs;
+    /** the original image in different scales */
+    std::vector< PyramidLevel > img_pyramid;
 };
 
 
@@ -113,7 +107,7 @@ SingleView::getMaxLevel() const
 inline mve::ImageBase::Ptr
 SingleView::getColorImg() const
 {
-    return this->color_image;
+    return this->img_pyramid[0].image;
 }
 
 inline mve::View::Ptr
@@ -128,7 +122,7 @@ SingleView::getPyramidImg(int level) const
     if (level >= int(this->img_pyramid.size())) {
         throw std::invalid_argument("Requested image does not exist.");
     }
-    return this->img_pyramid[level];
+    return this->img_pyramid[level].image;
 }
 
 inline mve::ImageBase::Ptr
@@ -152,7 +146,7 @@ SingleView::createFileName(float scale) const
 inline float
 SingleView::footPrint(math::Vec3f const& point)
 {
-    return (this->worldToCam.mult(point, 1)[2] * this->invproj[0]);
+    return (this->worldToCam.mult(point, 1)[2] * this->img_pyramid[0].invproj[0]);
 }
 
 inline float
@@ -190,11 +184,7 @@ SingleView::worldToScreen(math::Vec3f const& point, int level)
         throw std::invalid_argument("Requested pyramid level does not exist.");
 
     math::Vec3f cp(this->worldToCam.mult(point,1.f));
-    math::Vec3f sp;
-    if (level == 0)
-        sp = this->proj * cp;
-    else
-        sp = this->projs[level] * cp;
+    math::Vec3f sp = this->img_pyramid[level].proj * cp;
 
     math::Vec2f res(sp[0] / sp[2] - 0.5f, sp[1] / sp[2] - 0.5f);
     return res;
