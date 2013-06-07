@@ -55,10 +55,10 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     {
         if (!mve_views[i].get() || !mve_views[i]->is_camera_valid())
             continue;
-        mvs::SingleViewPtr sView(new mvs::SingleView(mve_views[i]));
+        mvs::SingleView::Ptr sView(new mvs::SingleView(mve_views[i]));
         views[i] = sView;
     }
-    SingleViewPtr refV = views[refViewNr];
+    SingleView::Ptr refV = views[refViewNr];
 
     /* Prepare reconstruction */
     refV->loadColorImage(this->settings.imageEmbedding);
@@ -124,7 +124,7 @@ void DMRecon::start()
     }
 
     progress.status = RECON_SAVING;
-    SingleViewPtr refV(views[settings.refViewNr]);
+    SingleView::Ptr refV(views[settings.refViewNr]);
     if (settings.writePlyFile) {
         refV->saveReconAsPly(settings.plyPath, settings.scale);
     }
@@ -183,7 +183,7 @@ void DMRecon::analyzeFeatures()
 {
     progress.status = RECON_FEATURES;
 
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     mve::BundleFile::FeaturePoints const & features = bundle->get_points();
 
@@ -235,7 +235,7 @@ void DMRecon::processFeatures()
 {
     progress.status = RECON_FEATURES;
     if (progress.cancelled)  return;
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
     mve::BundleFile::FeaturePoints const & features = bundle->get_points();
 
     /* select features that should be processed:
@@ -317,7 +317,7 @@ DMRecon::processQueue()
     progress.status = RECON_QUEUE;
     if (progress.cancelled)  return;
 
-    SingleViewPtr refV = this->views[settings.refViewNr];
+    SingleView::Ptr refV = this->views[settings.refViewNr];
 
     std::cout << "Process queue ..." << std::endl;
     log << "Process queue ..." << std::endl;

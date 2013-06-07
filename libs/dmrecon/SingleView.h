@@ -15,14 +15,11 @@
 
 MVS_NAMESPACE_BEGIN
 
-class SingleView;
-typedef util::RefPtr<SingleView> SingleViewPtr;
-typedef std::vector<SingleViewPtr> SingleViewPtrList;
-typedef std::set<SingleViewPtr> SingleViewPtrSet;
-
 class SingleView
 {
 public:
+    typedef util::RefPtr<SingleView> Ptr;
+
     SingleView(mve::View::Ptr _view);
 
     void addFeature(std::size_t idx);

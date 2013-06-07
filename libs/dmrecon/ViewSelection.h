@@ -7,12 +7,11 @@
 
 MVS_NAMESPACE_BEGIN
 
-class ViewSelection;
-typedef util::RefPtr<ViewSelection> ViewSelectionPtr;
-
 class ViewSelection
 {
 public:
+    typedef util::RefPtr<ViewSelection> Ptr;
+
     ViewSelection();
     ViewSelection(Settings const& settings);
 

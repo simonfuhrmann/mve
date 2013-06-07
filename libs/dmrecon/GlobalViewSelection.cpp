@@ -6,7 +6,7 @@
 MVS_NAMESPACE_BEGIN
 
 GlobalViewSelection::GlobalViewSelection(
-    SingleViewPtrList const& views,
+    std::vector<SingleView::Ptr> const& views,
     mve::BundleFile::FeaturePoints const& features,
     Settings const& settings)
     :
@@ -55,8 +55,8 @@ GlobalViewSelection::performVS()
 float
 GlobalViewSelection::benefitFromView(std::size_t i)
 {
-    SingleViewPtr refV = views[settings.refViewNr];
-    SingleViewPtr tmpV = views[i];
+    SingleView::Ptr refV = views[settings.refViewNr];
+    SingleView::Ptr tmpV = views[i];
 
     std::vector<std::size_t> nFeatIDs = tmpV->getFeatureIndices();
 
