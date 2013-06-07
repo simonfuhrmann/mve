@@ -99,7 +99,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     stepSize[v] = 1.f / d;
 
     /* request according undistorted color image */
-    util::RefPtr<mve::ImageBase> img(views[v]->getPyramidImg(mmLevel));
+    mve::ImageBase::Ptr img = views[v]->getPyramidImg(mmLevel);
     int w = img->width();
     int h = img->height();
 
@@ -290,7 +290,7 @@ void
 PatchSampler::computeMasterSamples()
 {
     SingleViewPtr refV = views[settings.refViewNr];
-    util::RefPtr<mve::ImageBase> img(refV->getScaledImg());
+    mve::ImageBase::Ptr img = refV->getScaledImg();
 
     /* draw color samples from image and compute mean color */
     std::size_t count = 0;
