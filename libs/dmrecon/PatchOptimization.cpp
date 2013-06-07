@@ -10,7 +10,7 @@
 MVS_NAMESPACE_BEGIN
 
 PatchOptimization::PatchOptimization(
-    SingleViewPtrList const& _views,
+    std::vector<SingleView::Ptr> const& _views,
     Settings const& _settings,
     int _x,          // Pixel position
     int _y,
@@ -104,7 +104,7 @@ PatchOptimization::computeColorScale()
 float
 PatchOptimization::computeConfidence()
 {
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
     if (!status.converged)
         return 0.f;
 

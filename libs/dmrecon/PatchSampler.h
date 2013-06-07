@@ -11,14 +11,10 @@
 
 MVS_NAMESPACE_BEGIN
 
-class PatchSampler;
-typedef util::RefPtr<PatchSampler> PatchSamplerPtr;
-
 class PatchSampler
 {
 public:
     typedef util::RefPtr<PatchSampler> Ptr;
-    typedef util::RefPtr<PatchSampler const> ConstPtr;
 
 public:
     /** Default constructor */
@@ -26,7 +22,7 @@ public:
 
     /** Constructor */
     PatchSampler(
-        SingleViewPtrList const& _views,
+        std::vector<SingleView::Ptr> const& _views,
         Settings const& _settings,
         int _x,          // pixel position
         int _y,
@@ -35,7 +31,7 @@ public:
         float _dzJ);
 
     /** Smart pointer PatchSampler constructor. */
-    static PatchSampler::Ptr create(SingleViewPtrList const& views,
+    static PatchSampler::Ptr create(std::vector<SingleView::Ptr> const& views,
         Settings const& settings, int x, int _y,
         float _depth, float _dzI, float _dzJ);
 
@@ -86,7 +82,7 @@ public:
 
 
 private:
-    SingleViewPtrList const& views;
+    std::vector<SingleView::Ptr> const& views;
     Settings const& settings;
 
     /** precomputed mean and variance for NCC */
@@ -135,7 +131,7 @@ public:
 };
 
 inline PatchSampler::Ptr
-PatchSampler::create(SingleViewPtrList const& views, Settings const& settings,
+PatchSampler::create(std::vector<SingleView::Ptr> const& views, Settings const& settings,
     int x, int y, float depth, float dzI, float dzJ)
 {
     return PatchSampler::Ptr(new PatchSampler
