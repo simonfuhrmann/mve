@@ -60,6 +60,10 @@ main (int argc, char** argv)
         "turn off color scale");
     args.add_option('i', "image", true,
         "specify image embedding used in reconstruction");
+    args.add_option('\0', "keep-dz", false,
+        "store dz map into view");
+    args.add_option('\0', "keep-conf", false,
+        "store confidence map into view");
     args.add_option('p', "writeply", false,
         "use this option to write the ply file");
     args.add_option('\0', "plydest", true,
@@ -112,6 +116,10 @@ main (int argc, char** argv)
             mySettings.filterWidth = arg->get_arg<unsigned int>();
         else if (arg->opt->lopt == "image")
             mySettings.imageEmbedding = arg->get_arg<std::string>();
+        else if (arg->opt->lopt == "keep-dz")
+            mySettings.keepDzMap = true;
+        else if (arg->opt->lopt == "keep-conf")
+            mySettings.keepConfidenceMap = true;
         else if (arg->opt->lopt == "writeply")
             writeply = true;
         else if (arg->opt->lopt == "plydest")
