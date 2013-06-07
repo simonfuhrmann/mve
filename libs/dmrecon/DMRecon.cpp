@@ -128,7 +128,32 @@ void DMRecon::start()
     if (settings.writePlyFile) {
         refV->saveReconAsPly(settings.plyPath, settings.scale);
     }
-    refV->writeReconImages(settings.scale);
+
+    // Save images to view
+    mve::View::Ptr view = refV->getMVEView();
+
+    std::string name("depth-L");
+    name += util::string::get(settings.scale);
+    view->set_image(name, refV->depthImg);
+
+    if (settings.keepDzMap) {
+        name = "dz-L";
+        name += util::string::get(settings.scale);
+        view->set_image(name, refV->dzImg);
+    }
+
+    if (settings.keepConfidenceMap) {
+        name = "conf-L";
+        name += util::string::get(settings.scale);
+        view->set_image(name, refV->confImg);
+    }
+
+    if (settings.scale != 0) {
+        name = "undist-L";
+        name += util::string::get(settings.scale);
+        view->set_image(name, refV->getScaledImg());
+    }
+
     progress.status = RECON_IDLE;
 
     // Output percentage of filled pixels
