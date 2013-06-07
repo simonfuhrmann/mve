@@ -16,6 +16,8 @@ Settings::Settings()
     , imageEmbedding("undistorted")
     , refViewNr(0)
     , globalVSMax(20)
+    , keepDzMap(false)
+    , keepConfidenceMap(false)
 {
 }
 

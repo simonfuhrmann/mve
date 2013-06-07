@@ -233,25 +233,4 @@ SingleView::saveReconAsPly(std::string const& path, float scale) const
     mve::geom::save_xf_file(xfname, view->get_camera());
 }
 
-void
-SingleView::writeReconImages(float scale)
-{
-    if (depthImg.get() == NULL)
-        throw std::invalid_argument("No reconstruction available.");
-    std::string name("depth-L");
-    name += util::string::get(scale);
-    view->set_image(name, this->depthImg);
-    name = "dz-L";
-    name += util::string::get(scale);
-    view->set_image(name, this->dzImg);
-    name = "conf-L";
-    name += util::string::get(scale);
-    view->set_image(name, this->confImg);
-    if (this->scale_factor != 1.f) {
-        name = "undist-L";
-        name += util::string::get(scale);
-        view->set_image(name, this->scaled_image);
-    }
-}
-
 MVS_NAMESPACE_END

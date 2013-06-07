@@ -35,6 +35,8 @@ private:
     QComboBox mvs_color_image;
     QCheckBox mvs_color_scale;
     QCheckBox mvs_write_ply;
+    QCheckBox mvs_dz_map;
+    QCheckBox mvs_conf_map;
     QCheckBox mvs_auto_save;
 
 private:

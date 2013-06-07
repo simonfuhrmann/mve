@@ -23,6 +23,10 @@ ImageOperationsWidget::ImageOperationsWidget (void)
     this->mvs_color_scale.setChecked(true);
     this->mvs_write_ply.setText("Write PLY after recon");
     this->mvs_write_ply.setChecked(false);
+    this->mvs_dz_map.setText("Keep dz map");
+    this->mvs_dz_map.setChecked(false);
+    this->mvs_conf_map.setText("Keep confidence map");
+    this->mvs_conf_map.setChecked(false);
     this->mvs_auto_save.setText("Save view after recon");
     this->mvs_auto_save.setChecked(false);
     this->mvs_amount_gvs.setValue(20);
@@ -45,6 +49,8 @@ ImageOperationsWidget::ImageOperationsWidget (void)
     mvs_cb_layout->setSpacing(0);
     mvs_cb_layout->addWidget(&this->mvs_color_scale);
     mvs_cb_layout->addWidget(&this->mvs_write_ply);
+    mvs_cb_layout->addWidget(&this->mvs_dz_map);
+    mvs_cb_layout->addWidget(&this->mvs_conf_map);
     mvs_cb_layout->addWidget(&this->mvs_auto_save);
     QVBoxLayout* mvs_but_layout = new QVBoxLayout();
     mvs_but_layout->setSpacing(1);
@@ -269,6 +275,8 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     job->settings.useColorScale = this->mvs_color_scale.isChecked();
     job->settings.scale = float(this->mvs_scale.value());
     job->settings.writePlyFile = this->mvs_write_ply.isChecked();
+    job->settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
+    job->settings.keepDzMap = this->mvs_dz_map.isChecked();
     job->settings.plyPath = scene->get_path();
     job->settings.plyPath += "/recon/";
     job->settings.logPath = scene->get_path();
