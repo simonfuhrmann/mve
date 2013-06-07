@@ -12,9 +12,6 @@
 
 MVS_NAMESPACE_BEGIN
 
-class PatchOptimization;
-typedef util::RefPtr<PatchOptimization> PatchOptimizationPtr;
-
 struct Status
 {
     std::size_t iterationCount;
@@ -26,7 +23,7 @@ class PatchOptimization
 {
 public:
     PatchOptimization(
-        SingleViewPtrList const& _views,
+        std::vector<SingleView::Ptr> const& _views,
         Settings const& _settings,
         int _x,          // Pixel position
         int _y,
@@ -50,7 +47,7 @@ public:
     void optimizeDepthAndNormal();
 
 private:
-    SingleViewPtrList const& views;
+    std::vector<SingleView::Ptr> const& views;
     Settings const& settings;
     // initial values and settings
     const int midx;

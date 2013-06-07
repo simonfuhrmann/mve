@@ -31,7 +31,7 @@ initSRGB2linear()
 /* ------------------------------------------------------------------ */
 
 void
-colAndExactDeriv(util::RefPtr<mve::ImageBase> img, PixelCoords const& imgPos,
+colAndExactDeriv(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
     PixelCoords const& gradDir, Samples& color, Samples& deriv)
 {
     if (srgb2lin.empty()) {
@@ -59,7 +59,7 @@ colAndExactDeriv(util::RefPtr<mve::ImageBase> img, PixelCoords const& imgPos,
         switch (type) {
         case mve::IMAGE_TYPE_UINT8:
         {
-            util::RefPtr<mve::ByteImage> bimg(img);
+            mve::ByteImage::Ptr bimg(img);
             x0 = (1.f-x) * srgb2lin[bimg->at(p0  )] + x * srgb2lin[bimg->at(p0+3)];
             x1 = (1.f-x) * srgb2lin[bimg->at(p0+1)] + x * srgb2lin[bimg->at(p0+4)];
             x2 = (1.f-x) * srgb2lin[bimg->at(p0+2)] + x * srgb2lin[bimg->at(p0+5)];
@@ -70,7 +70,7 @@ colAndExactDeriv(util::RefPtr<mve::ImageBase> img, PixelCoords const& imgPos,
         }
         case mve::IMAGE_TYPE_FLOAT:
         {
-            util::RefPtr<mve::FloatImage> fimg(img);
+            mve::FloatImage::Ptr fimg(img);
             x0 = (1.f-x) * fimg->at(p0  ) + x * fimg->at(p0+3);
             x1 = (1.f-x) * fimg->at(p0+1) + x * fimg->at(p0+4);
             x2 = (1.f-x) * fimg->at(p0+2) + x * fimg->at(p0+5);
@@ -124,7 +124,7 @@ colAndExactDeriv(util::RefPtr<mve::ImageBase> img, PixelCoords const& imgPos,
 
 /* ------------------------------------------------------------------ */
 
-void getXYZColorAtPix(util::RefPtr<mve::ImageBase> img,
+void getXYZColorAtPix(mve::ImageBase::Ptr img,
     std::vector<math::Vec2i> const& imgPos, Samples* color)
 {
     if (srgb2lin.empty()) {
@@ -167,7 +167,7 @@ void getXYZColorAtPix(util::RefPtr<mve::ImageBase> img,
 /* ------------------------------------------------------------------ */
 
 void
-getXYZColorAtPos(util::RefPtr<mve::ImageBase> img, PixelCoords const& imgPos,
+getXYZColorAtPos(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
     Samples* color)
 {
     if (srgb2lin.empty()) {

@@ -8,7 +8,7 @@
 MVS_NAMESPACE_BEGIN
 
 PatchSampler::PatchSampler(
-    SingleViewPtrList const& _views,
+    std::vector<SingleView::Ptr> const& _views,
     Settings const& _settings,
     int _x,          // pixel position
     int _y,
@@ -25,8 +25,8 @@ PatchSampler::PatchSampler(
     dzJ(_dzJ),
     success(views.size(), false)
 {
-    SingleViewPtr refV(views[settings.refViewNr]);
-    util::RefPtr<mve::ImageBase> masterImg(refV->getScaledImg());
+    SingleView::Ptr refV(views[settings.refViewNr]);
+    mve::ImageBase::Ptr masterImg(refV->getScaledImg());
 
     offset = settings.filterWidth / 2;
     nrSamples = sqr(settings.filterWidth);
@@ -64,7 +64,7 @@ void
 PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
 {
     success[v] = false;
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     PixelCoords& imgPos = neighPosSamples[v];
     imgPos.resize(nrSamples);
@@ -99,7 +99,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     stepSize[v] = 1.f / d;
 
     /* request according undistorted color image */
-    util::RefPtr<mve::ImageBase> img(views[v]->getPyramidImg(mmLevel));
+    mve::ImageBase::Ptr img(views[v]->getPyramidImg(mmLevel));
     int w = img->width();
     int h = img->height();
 
@@ -268,7 +268,7 @@ PatchSampler::update(float newDepth, float newDzI, float newDzJ)
 void
 PatchSampler::computePatchPoints()
 {
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     unsigned int count = 0;
     for (int j = topLeft[1]; j <= bottomRight[1]; ++j) {
@@ -289,8 +289,8 @@ PatchSampler::computePatchPoints()
 void
 PatchSampler::computeMasterSamples()
 {
-    SingleViewPtr refV = views[settings.refViewNr];
-    util::RefPtr<mve::ImageBase> img(refV->getScaledImg());
+    SingleView::Ptr refV = views[settings.refViewNr];
+    mve::ImageBase::Ptr img(refV->getScaledImg());
 
     /* draw color samples from image and compute mean color */
     std::size_t count = 0;
@@ -337,7 +337,7 @@ PatchSampler::computeMasterSamples()
 void
 PatchSampler::computeNeighColorSamples(std::size_t v)
 {
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     Samples & color = neighColorSamples[v];
     PixelCoords & imgPos = neighPosSamples[v];
@@ -363,7 +363,7 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
         ratio *= 2.f;
     }
     mmLevel = std::min(views[v]->getMaxLevel(), mmLevel);
-    util::RefPtr<mve::ImageBase> img(views[v]->getPyramidImg(mmLevel));
+    mve::ImageBase::Ptr img(views[v]->getPyramidImg(mmLevel));
     int w = img->width();
     int h = img->height();
 
