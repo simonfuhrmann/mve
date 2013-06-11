@@ -15,14 +15,11 @@
 
 MVS_NAMESPACE_BEGIN
 
-class SingleView;
-typedef util::RefPtr<SingleView> SingleViewPtr;
-typedef std::vector<SingleViewPtr> SingleViewPtrList;
-typedef std::set<SingleViewPtr> SingleViewPtrSet;
-
 class SingleView
 {
 public:
+    typedef util::RefPtr<SingleView> Ptr;
+
     SingleView(mve::View::Ptr _view);
 
     void addFeature(std::size_t idx);
@@ -31,6 +28,7 @@ public:
     mve::ImageBase::Ptr getColorImg() const;
     mve::ImageBase::Ptr getScaledImg() const;
     mve::ImageBase::Ptr getPyramidImg(int level) const;
+    mve::View::Ptr getMVEView() const;
 
     std::string createFileName(float scale) const;
     void createImagePyramid();
@@ -43,7 +41,6 @@ public:
     bool seesFeature(std::size_t idx) const;
     void prepareRecon(float _scale);
     math::Vec2f worldToScreen(math::Vec3f const& point, int level = 0);
-    void writeReconImages(float scale);
 
 public:
     std::size_t viewID;
@@ -114,6 +111,12 @@ inline mve::ImageBase::Ptr
 SingleView::getColorImg() const
 {
     return this->color_image;
+}
+
+inline mve::View::Ptr
+SingleView::getMVEView() const
+{
+    return this->view;
 }
 
 inline mve::ImageBase::Ptr

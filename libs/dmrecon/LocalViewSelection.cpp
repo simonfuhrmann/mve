@@ -8,7 +8,7 @@
 MVS_NAMESPACE_BEGIN
 
 LocalViewSelection::LocalViewSelection(
-    SingleViewPtrList const& views,
+    std::vector<SingleView::Ptr> const& views,
     Settings const& settings,
     IndexSet const& globalViewIDs,
     IndexSet const& propagated,
@@ -51,7 +51,7 @@ LocalViewSelection::performVS()
         success = true;
         return;
     }
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     math::Vec3f p(sampler->getMidWorldPoint());
     // pixel print in reference view
