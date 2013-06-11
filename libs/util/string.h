@@ -131,7 +131,7 @@ inline T
 convert (std::string const& str)
 {
     std::stringstream ss(str);
-    T ret;
+    T ret = T();
     ss >> ret;
     return ret;
 }

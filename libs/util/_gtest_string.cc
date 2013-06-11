@@ -42,6 +42,9 @@ TEST(StringTest, StringConversionTest)
     EXPECT_EQ(10, util::string::convert<int>("10.1234asfd"));
     EXPECT_EQ('1', util::string::convert<char>("10.1234asfd"));
     EXPECT_EQ("1.23asfd", util::string::convert<std::string>("1.23asfd"));
+    EXPECT_EQ(0.0f, util::string::convert<float>(""));
+    EXPECT_EQ(0, util::string::convert<int>(""));
+    EXPECT_EQ('\0', util::string::convert<char>(""));
 }
 
 TEST(StringTest, LeftRightSubstringTest)
