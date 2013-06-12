@@ -1,5 +1,9 @@
 #include <iostream>
 #include <limits>
+#include <QAction>
+#include <QFileDialog>
+#include <QInputDialog>
+#include <QMessageBox>
 
 #include "mve/view.h"
 #include "mve/image.h"

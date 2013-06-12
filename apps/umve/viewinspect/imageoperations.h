@@ -1,7 +1,11 @@
 #ifndef IMAGE_OPERATIONS_HEADER
 #define IMAGE_OPERATIONS_HEADER
 
-#include <QtGui>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QLineEdit>
+#include <QSpinBox>
 
 #include "dmrecon/Progress.h"
 #include "mve/scene.h"

@@ -2,6 +2,12 @@
 #include <sstream>
 #include <iostream>
 
+#include <QCoreApplication>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QMessageBox>
+#include <QProgressDialog>
+
 #include "util/filesystem.h"
 #include "mve/plyfile.h"
 #include "mve/imagefile.h"

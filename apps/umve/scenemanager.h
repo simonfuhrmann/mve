@@ -1,7 +1,7 @@
 #ifndef UMVE_SCENEMANAGER_HEADER
 #define UMVE_SCENEMANAGER_HEADER
 
-#include <QtGui>
+#include <QObject>
 
 #include "mve/scene.h"
 #include "mve/view.h"

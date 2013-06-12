@@ -1,6 +1,8 @@
 #include <iostream> // RM
 #include <stdexcept>
 
+#include <QVBoxLayout>
+
 #include "selectedview.h"
 
 SelectedView::SelectedView (void)

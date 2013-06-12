@@ -1,6 +1,8 @@
 #include <sstream>
 #include <iostream>
 
+#include <QThreadPool>
+
 #include "jobqueue.h"
 
 JobQueue*

@@ -1,6 +1,12 @@
 #include <iostream>
 #include <cstdlib>
 
+#include <QApplication>
+#include <QFileDialog>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QStatusBar>
+
 #include "util/exception.h"
 #include "util/filesystem.h"
 #include "mve/plyfile.h"

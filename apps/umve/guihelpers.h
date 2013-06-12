@@ -1,7 +1,10 @@
 #ifndef GUI_HELPERS_HEADER
 #define GUI_HELPERS_HEADER
 
-#include <QtGui>
+#include <QComboBox>
+#include <QDialog>
+#include <QLayout>
+#include <QPushButton>
 #include "mve/image.h"
 
 #include "selectedview.h"

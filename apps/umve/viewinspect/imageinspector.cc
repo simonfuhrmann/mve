@@ -1,5 +1,8 @@
 #include <iostream>
 
+#include <QFormLayout>
+#include <QVBoxLayout>
+
 #include "mve/imagebase.h"
 #include "mve/image.h"
 

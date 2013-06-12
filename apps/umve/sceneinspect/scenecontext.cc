@@ -1,5 +1,11 @@
 #include <iostream>
 #include <limits>
+#include <QApplication>
+#include <QColorDialog>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QMessageBox>
+#include <QTextEdit>
 
 #include "util/filesystem.h"
 #include "util/timer.h"

@@ -2,7 +2,8 @@
 #define UMVE_MESHLIST_HEADER
 
 #include <vector>
-#include <QtGui>
+#include <QListWidget>
+#include <QMenu>
 
 #include "math/matrix.h"
 #include "mve/trianglemesh.h"

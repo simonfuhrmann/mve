@@ -1,7 +1,13 @@
 #ifndef TONE_MAPPING_HEADER
 #define TONE_MAPPING_HEADER
 
-#include <QtGui>
+#include <QCheckBox>
+#include <QGridLayout>
+#include <QLabel>
+#include <QSignalMapper>
+#include <QSlider>
+#include <QTimer>
+#include <QWidget>
 
 #include "mve/image.h"
 

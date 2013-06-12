@@ -1,8 +1,6 @@
 #ifndef IMAGE_INSPECTOR_HEADER
 #define IMAGE_INSPECTOR_HEADER
 
-#include <QtGui>
-
 #include "mve/image.h"
 
 #include "clickimage.h"

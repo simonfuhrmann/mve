@@ -1,7 +1,11 @@
 #ifndef JOB_QUEUE_HEADER
 #define JOB_QUEUE_HEADER
 
-#include <QtGui>
+#include <QBoxLayout>
+#include <QDockWidget>
+#include <QListWidget>
+#include <QPushButton>
+#include <QTimer>
 #include <vector>
 
 struct JobProgress
