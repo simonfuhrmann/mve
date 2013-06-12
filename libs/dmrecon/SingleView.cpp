@@ -40,10 +40,10 @@ SingleView::SingleView(mve::View::Ptr _view)
 }
 
 void
-SingleView::prepareRecon(float scale)
+SingleView::prepareRecon(int scale)
 {
     // compute scale factor from scale
-    this->scale_factor = 1.f / std::pow(2,scale);
+    this->scale_factor = std::ldexp(1.0, -scale);
     this->createFileName(scale);
     // scale image
     int scaled_width = this->scale_factor * this->width;

@@ -40,7 +40,7 @@ public:
     bool pointInFrustum(math::Vec3f const& wp);
     void saveReconAsPly(std::string const& path, float scale) const;
     bool seesFeature(std::size_t idx) const;
-    void prepareRecon(float _scale);
+    void prepareRecon(int _scale);
     math::Vec2f worldToScreen(math::Vec3f const& point, int level);
     math::Vec2f worldToScreenScaled(math::Vec3f const& point);
 
