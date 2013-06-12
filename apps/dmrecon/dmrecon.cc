@@ -81,10 +81,6 @@ main (int argc, char** argv)
     bool force_recon = false;
 
     mvs::Settings mySettings;
-    mySettings.useColorScale = true;
-    mySettings.globalVSMax = 20;
-    mySettings.scale = 0.f;
-    mySettings.filterWidth = 5;
     std::vector<int> listIDs;
 
     util::ArgResult const * arg;
