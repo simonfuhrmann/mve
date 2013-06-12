@@ -123,7 +123,7 @@ PatchOptimization::computeConfidence()
 
     /* Compute angle between estimated surface normal and view direction
        and weight current score with dot product */
-    math::Vec3f viewDir(refV->viewRay(midx, midy));
+    math::Vec3f viewDir(refV->viewRayScaled(midx, midy));
     math::Vec3f normal(sampler->getPatchNormal());
     float dotP = - normal.dot(viewDir);
     if (dotP < 0.2f) {

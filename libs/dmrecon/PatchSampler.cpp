@@ -52,7 +52,7 @@ PatchSampler::PatchSampler(
     std::size_t count = 0;
     for (int j = topLeft[1]; j <= bottomRight[1]; ++j)
         for (int i = topLeft[0]; i <= bottomRight[0]; ++i)
-            masterViewDirs[count++] = refV->viewRay(i, j);
+            masterViewDirs[count++] = refV->viewRayScaled(i, j);
 
     /* initialize master color samples and 3d patch points */
     success[settings.refViewNr] = true;
@@ -72,7 +72,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     math::Vec3f const& p0 = patchPoints[nrSamples/2];
     /* compute pixel prints and decide on which MipMap-Level to draw
        the samples */
-    float mfp = refV->footPrint(p0);
+    float mfp = refV->footPrintScaled(p0);
     float nfp = views[v]->footPrint(p0);
     if (mfp <= 0.f) {
         std::cerr << "Error in getFastColAndDerivSamples! "
@@ -346,7 +346,7 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
     /* compute pixel prints and decide on which MipMap-Level to draw
        the samples */
     math::Vec3f const & p0 = patchPoints[nrSamples/2];
-    float mfp = refV->footPrint(p0);
+    float mfp = refV->footPrintScaled(p0);
     float nfp = views[v]->footPrint(p0);
     if (mfp <= 0.f) {
         std::cerr << "Error in computeNeighColorSamples! "

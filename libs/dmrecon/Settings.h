@@ -20,7 +20,7 @@ struct Settings
     float minRefineDiff;
     unsigned int maxIterations;
     unsigned int nrReconNeighbors;
-    float scale;
+    int scale;
     bool useColorScale;
     bool writePlyFile;
     std::string imageEmbedding;

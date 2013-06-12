@@ -224,7 +224,6 @@ void DMRecon::globalViewSelection()
     {
         ss << *citID << " ";
         views[*citID]->loadColorImage(this->settings.imageEmbedding);
-        views[*citID]->createImagePyramid();
     }
     ss << std::endl;
     std::cout << ss.str();
@@ -265,7 +264,7 @@ void DMRecon::processFeatures()
         if (!refV->pointInFrustum(featPos)) {
             continue;
         }
-        math::Vec2f pixPosF = refV->worldToScreen(featPos);
+        math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
         int x = round(pixPosF[0]);
         int y = round(pixPosF[1]);
         float initDepth = (featPos - refV->camPos).norm();

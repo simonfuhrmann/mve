@@ -70,7 +70,7 @@ GlobalViewSelection::benefitFromView(std::size_t i)
         if (plx < settings.minParallax)
             score *= sqr(plx / 10.f);
         // Resolution compared to reference view
-        float mfp = refV->footPrint(ftPos);
+        float mfp = refV->footPrintScaled(ftPos);
         float nfp = tmpV->footPrint(ftPos);
         float ratio = mfp / nfp;
         if (ratio > 2.)
