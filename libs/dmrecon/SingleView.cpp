@@ -42,37 +42,21 @@ SingleView::SingleView(mve::View::Ptr _view)
 void
 SingleView::prepareRecon(int scale)
 {
-    // compute scale factor from scale
-    this->scale_factor = std::ldexp(1.0, -scale);
     this->createFileName(scale);
-    // scale image
-    int scaled_width = this->scale_factor * this->width;
-    int scaled_height = this->scale_factor * this->height;
+
+    // get scaled image
+    this->scaled_image = img_pyramid[scale].image;
+    this->proj_scaled = img_pyramid[scale].proj;
+    this->invproj_scaled = img_pyramid[scale].invproj;
+
+    float scale_factor = std::ldexp(1.0, -scale);
+    int scaled_width = scale_factor * this->width;
+    int scaled_height = scale_factor * this->height;
     std::cout << "scaled image size: " << scaled_width
         << " x " << scaled_height << std::endl;
 
-    mve::ImageBase::Ptr color_image = img_pyramid[0].image;
-    mve::ImageType type = color_image->get_type();
-    if (type == mve::IMAGE_TYPE_UINT8) {
-        this->scaled_image = mve::ByteImage::create
-            (scaled_width, scaled_height, 3);
-        mve::image::rescale_gaussian<uint8_t>(color_image,
-            this->scaled_image, 1.f);
-    }
-    else if (type == mve::IMAGE_TYPE_FLOAT) {
-        this->scaled_image = mve::FloatImage::create
-            (scaled_width, scaled_height, 3);
-        mve::image::rescale_gaussian<float>(color_image,
-            this->scaled_image, 1.f);
-    }
-    else
-        throw util::Exception("Invalid image type");
-
-    // compute projection matrix
-    mve::CameraInfo cam(this->view->get_camera());
-    cam.fill_calibration(*this->proj_scaled, scaled_width, scaled_height);
-    cam.fill_inverse_calibration(*this->invproj_scaled, scaled_width,
-        scaled_height);
+    assert(this->scaled_image->width() == scaled_width);
+    assert(this->scaled_image->height() == scaled_height);
 
     // create images for reconstruction
     this->depthImg = mve::FloatImage::create(scaled_width, scaled_height, 1);

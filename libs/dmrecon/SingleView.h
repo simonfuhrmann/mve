@@ -67,9 +67,6 @@ private:
     int width;
     int height;
 
-    /** ratio between scaled_image and img_pyramid[0].image */
-    float scale_factor;
-
     mve::ImageBase::Ptr scaled_image;
     math::Matrix3f proj_scaled;
     math::Matrix3f invproj_scaled;
