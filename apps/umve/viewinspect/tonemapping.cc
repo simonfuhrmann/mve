@@ -1,6 +1,11 @@
 #include <limits>
 #include <iostream>
 #include <cmath>
+#include <QButtonGroup>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPushButton>
+#include <QRadioButton>
 
 #include "util/timer.h"
 #include "util/string.h"

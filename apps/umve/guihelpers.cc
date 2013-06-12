@@ -1,3 +1,9 @@
+#include <QApplication>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QPainter>
+#include <QStyleFactory>
+
 #include "util/filesystem.h"
 
 #include "guihelpers.h"

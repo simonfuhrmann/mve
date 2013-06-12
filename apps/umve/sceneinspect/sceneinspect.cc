@@ -1,4 +1,7 @@
 #include <iostream>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QToolBar>
 
 #include "guihelpers.h"
 #include "scenemanager.h"

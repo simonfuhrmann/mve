@@ -2,6 +2,9 @@
 #define UMVE_SCENECONTEXT_HEADER
 
 #include <string>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QSpinBox>
 
 #include "ogl/opengl.h"
 #include "ogl/context.h"

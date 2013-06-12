@@ -1,4 +1,10 @@
 #include <iostream>
+#include <QFileDialog>
+#include <QHBoxLayout>
+#include <QInputDialog>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QVBoxLayout>
 
 #include "util/filesystem.h"
 #include "util/string.h"

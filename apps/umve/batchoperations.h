@@ -1,7 +1,9 @@
 #ifndef UMVE_BATCHOPERATIONS_HEADER
 #define UMVE_BATCHOPERATIONS_HEADER
 
-#include <QtGui>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QListWidget>
 
 #include "mve/scene.h"
 #include "mve/imagebase.h"

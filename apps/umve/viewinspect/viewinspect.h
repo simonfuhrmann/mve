@@ -2,7 +2,8 @@
 #define VIEW_INSPECT_HEADER
 
 #include <string>
-#include <QtGui>
+#include <QTextEdit>
+#include <QToolBar>
 
 #include "mve/view.h"
 
