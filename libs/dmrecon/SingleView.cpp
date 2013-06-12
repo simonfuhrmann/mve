@@ -40,50 +40,6 @@ SingleView::SingleView(mve::View::Ptr _view)
 }
 
 void
-SingleView::createImagePyramid()
-{
-    /* clear everything except original size */
-    this->img_pyramid.resize(1);
-
-    /* check if color image is present */
-    if (!this->img_pyramid[0].image.get())
-        throw util::Exception("No color image loaded.");
-
-    /* create image pyramid */
-    mve::ImageBase::Ptr img = this->img_pyramid[0].image;
-    mve::ImageType type = img->get_type();
-    int curr_width = img->width();
-    int curr_height = img->height();
-    mve::CameraInfo cam(view->get_camera());
-
-    while (std::min(curr_width, curr_height) >= 30) {
-        // adjust principal point
-        if (curr_width % 2 == 1)
-            cam.ppoint[0] = cam.ppoint[0] * float(curr_width)
-                / float(curr_width + 1);
-        if (curr_height % 2 == 1)
-            cam.ppoint[1] = cam.ppoint[1] * float(curr_height)
-                / float(curr_height + 1);
-        if (type == mve::IMAGE_TYPE_UINT8)
-            img = mve::image::rescale_half_size_gaussian<uint8_t>(img, 1.f);
-        else if (type == mve::IMAGE_TYPE_FLOAT)
-            img = mve::image::rescale_half_size_gaussian<float>(img, 1.f);
-        else
-            throw util::Exception("Invalid image type");
-
-        this->img_pyramid.push_back(PyramidLevel());
-        PyramidLevel & nextLevel = this->img_pyramid.back();
-        nextLevel.image = img;
-
-        // compute new projection matrix
-        curr_width = img->width();
-        curr_height = img->height();
-        cam.fill_calibration(*nextLevel.proj, curr_width, curr_height);
-        cam.fill_inverse_calibration(*nextLevel.invproj, curr_width, curr_height);
-    }
-}
-
-void
 SingleView::prepareRecon(float scale)
 {
     // compute scale factor from scale
@@ -158,40 +114,71 @@ void
 SingleView::loadColorImage(std::string const& name)
 {
     /* load undistorted color image */
-    mve::ImageBase::Ptr color_image = this->view->get_image(name);
-    if (!color_image.get())
+    mve::ImageBase::Ptr img = this->view->get_image(name);
+    if (!img.get())
         throw util::Exception("No color image embedding found: ", name);
-    assert(this->width == color_image->width());
-    assert(this->height == color_image->height());
+    assert(this->width == img->width());
+    assert(this->height == img->height());
 
-    int channels = color_image->channels();
-    mve::ImageType type = color_image->get_type();
+    int channels = img->channels();
+    mve::ImageType type = img->get_type();
 
     switch (type)
     {
         case mve::IMAGE_TYPE_UINT8:
             if (channels == 2 || channels == 4)
-                mve::image::reduce_alpha<uint8_t>(color_image);
-            if (color_image->channels() == 1)
-                color_image = mve::image::expand_grayscale<uint8_t>(color_image);
+                mve::image::reduce_alpha<uint8_t>(img);
+            if (img->channels() == 1)
+                img = mve::image::expand_grayscale<uint8_t>(img);
             break;
 
         case mve::IMAGE_TYPE_FLOAT:
             if (channels == 2 || channels == 4)
-                mve::image::reduce_alpha<float>(color_image);
-            if (color_image->channels() == 1)
-                color_image = mve::image::expand_grayscale<float>(color_image);
+                mve::image::reduce_alpha<float>(img);
+            if (img->channels() == 1)
+                img = mve::image::expand_grayscale<float>(img);
             break;
 
         default:
             throw util::Exception("Invalid image type");
     }
 
-    if (color_image->channels() != 3)
+    if (img->channels() != 3)
         throw std::invalid_argument("Image with invalid number of channels");
 
     img_pyramid.resize(1);
-    img_pyramid[0].image = color_image;
+    img_pyramid[0].image = img;
+
+    /* create image pyramid */
+    int curr_width = img->width();
+    int curr_height = img->height();
+    mve::CameraInfo cam(view->get_camera());
+
+    while (std::min(curr_width, curr_height) >= 30) {
+        // adjust principal point
+        if (curr_width % 2 == 1)
+            cam.ppoint[0] = cam.ppoint[0] * float(curr_width)
+                / float(curr_width + 1);
+        if (curr_height % 2 == 1)
+            cam.ppoint[1] = cam.ppoint[1] * float(curr_height)
+                / float(curr_height + 1);
+        if (type == mve::IMAGE_TYPE_UINT8)
+            img = mve::image::rescale_half_size_gaussian<uint8_t>(img, 1.f);
+        else if (type == mve::IMAGE_TYPE_FLOAT)
+            img = mve::image::rescale_half_size_gaussian<float>(img, 1.f);
+        else
+            throw util::Exception("Invalid image type");
+
+        this->img_pyramid.push_back(PyramidLevel());
+        PyramidLevel & nextLevel = this->img_pyramid.back();
+        nextLevel.image = img;
+
+        // compute new projection matrix
+        curr_width = img->width();
+        curr_height = img->height();
+        cam.fill_calibration(*nextLevel.proj, curr_width, curr_height);
+        cam.fill_inverse_calibration(*nextLevel.invproj, curr_width, curr_height);
+    }
 }
 
 bool

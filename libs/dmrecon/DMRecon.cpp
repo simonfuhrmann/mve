@@ -224,7 +224,6 @@ void DMRecon::globalViewSelection()
     {
         ss << *citID << " ";
         views[*citID]->loadColorImage(this->settings.imageEmbedding);
-        views[*citID]->createImagePyramid();
     }
     ss << std::endl;
     std::cout << ss.str();

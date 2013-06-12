@@ -31,7 +31,6 @@ public:
     mve::View::Ptr getMVEView() const;
 
     std::string createFileName(float scale) const;
-    void createImagePyramid();
     float footPrint(math::Vec3f const& point);
     float footPrintScaled(math::Vec3f const& point);
     math::Vec3f viewRay(int x, int y, int level) const;
