@@ -18,19 +18,21 @@ ImageOperationsWidget::ImageOperationsWidget (void)
 {
     this->selected_view = new SelectedView();
 
+    const mvs::Settings default_settings;
+
     /* Depthmap recon layout. */
     this->mvs_color_scale.setText("Enable Color Scale");
-    this->mvs_color_scale.setChecked(true);
+    this->mvs_color_scale.setChecked(default_settings.useColorScale);
     this->mvs_write_ply.setText("Write PLY after recon");
-    this->mvs_write_ply.setChecked(false);
+    this->mvs_write_ply.setChecked(default_settings.writePlyFile);
     this->mvs_dz_map.setText("Keep dz map");
-    this->mvs_dz_map.setChecked(false);
+    this->mvs_dz_map.setChecked(default_settings.keepDzMap);
     this->mvs_conf_map.setText("Keep confidence map");
-    this->mvs_conf_map.setChecked(false);
+    this->mvs_conf_map.setChecked(default_settings.keepConfidenceMap);
     this->mvs_auto_save.setText("Save view after recon");
     this->mvs_auto_save.setChecked(false);
-    this->mvs_amount_gvs.setValue(20);
-    this->mvs_scale.setValue(0);
+    this->mvs_amount_gvs.setValue(default_settings.globalVSMax);
+    this->mvs_scale.setValue(default_settings.scale);
     this->mvs_scale.setRange(0, 10);
 
     QPushButton* dmrecon_but = new QPushButton
