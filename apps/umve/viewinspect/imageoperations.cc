@@ -273,7 +273,7 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     job->settings.imageEmbedding = this->mvs_color_image.currentText().toStdString();
     job->settings.globalVSMax = this->mvs_amount_gvs.value();
     job->settings.useColorScale = this->mvs_color_scale.isChecked();
-    job->settings.scale = float(this->mvs_scale.value());
+    job->settings.scale = this->mvs_scale.value();
     job->settings.writePlyFile = this->mvs_write_ply.isChecked();
     job->settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
     job->settings.keepDzMap = this->mvs_dz_map.isChecked();
