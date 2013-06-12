@@ -55,7 +55,7 @@ LocalViewSelection::performVS()
 
     math::Vec3f p(sampler->getMidWorldPoint());
     // pixel print in reference view
-    float mfp = refV->footPrint(p);
+    float mfp = refV->footPrintScaled(p);
     math::Vec3f refDir = (p - refV->camPos).normalized();
     std::map<std::size_t, math::Vec3f> viewDir;
     std::map<std::size_t, math::Vec3f> epipolarPlane; // plane normal

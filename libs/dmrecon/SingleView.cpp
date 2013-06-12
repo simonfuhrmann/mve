@@ -148,15 +148,21 @@ SingleView::viewRay(float x, float y, int level) const
         throw std::invalid_argument("Requested pyramid level does not exist");
 
     math::Vec3f ray;
-    if (level == 0) {
-        if (this->scaled_image.get())
-            ray = this->invproj_scaled * math::Vec3f(x+0.5f, y+0.5f, 1.f);
-        else
-            ray = this->invproj * math::Vec3f(x+0.5f, y+0.5f, 1.f);
-    }
-    else {
+    if (level == 0)
+        ray = this->invproj * math::Vec3f(x+0.5f, y+0.5f, 1.f);
+    else
         ray = this->invprojs[level] * math::Vec3f(x+0.5f, y+0.5f, 1.f);
-    }
+    ray.normalize();
+    math::Matrix3f rot(view->get_camera().rot);
+    return rot.transposed() * ray;
+}
+
+math::Vec3f
+SingleView::viewRayScaled(int x, int y) const
+{
+    assert(this->scaled_image.get());
+
+    math::Vec3f ray = this->invproj_scaled * math::Vec3f(x+0.5f, y+0.5f, 1.f);
     ray.normalize();
     math::Matrix3f rot(view->get_camera().rot);
     return rot.transposed() * ray;

@@ -33,14 +33,17 @@ public:
     std::string createFileName(float scale) const;
     void createImagePyramid();
     float footPrint(math::Vec3f const& point);
-    math::Vec3f viewRay(int x, int y, int level = 0) const;
+    float footPrintScaled(math::Vec3f const& point);
+    math::Vec3f viewRay(int x, int y, int level) const;
     math::Vec3f viewRay(float x, float y, int level) const;
+    math::Vec3f viewRayScaled(int x, int y) const;
     void loadColorImage(std::string const& name);
     bool pointInFrustum(math::Vec3f const& wp);
     void saveReconAsPly(std::string const& path, float scale) const;
     bool seesFeature(std::size_t idx) const;
     void prepareRecon(float _scale);
-    math::Vec2f worldToScreen(math::Vec3f const& point, int level = 0);
+    math::Vec2f worldToScreen(math::Vec3f const& point, int level);
+    math::Vec2f worldToScreenScaled(math::Vec3f const& point);
 
 public:
     std::size_t viewID;
@@ -149,10 +152,14 @@ SingleView::createFileName(float scale) const
 inline float
 SingleView::footPrint(math::Vec3f const& point)
 {
-    if (this->scaled_image.get())
-        return (this->worldToCam.mult(point, 1)[2] * this->invproj_scaled[0]);
-    else
-        return (this->worldToCam.mult(point, 1)[2] * this->invproj[0]);
+    return (this->worldToCam.mult(point, 1)[2] * this->invproj[0]);
+}
+
+inline float
+SingleView::footPrintScaled(math::Vec3f const& point)
+{
+    assert(this->scaled_image.get());
+    return (this->worldToCam.mult(point, 1)[2] * this->invproj_scaled[0]);
 }
 
 inline bool
@@ -165,6 +172,18 @@ SingleView::seesFeature(std::size_t idx) const
 }
 
 inline math::Vec2f
+SingleView::worldToScreenScaled(math::Vec3f const& point)
+{
+    assert(this->scaled_image.get());
+
+    math::Vec3f cp(this->worldToCam.mult(point,1.f));
+    math::Vec3f sp = this->proj_scaled * cp;
+
+    math::Vec2f res(sp[0] / sp[2] - 0.5f, sp[1] / sp[2] - 0.5f);
+    return res;
+}
+
+inline math::Vec2f
 SingleView::worldToScreen(math::Vec3f const& point, int level)
 {
     if (level != 0 && level >= int(this->img_pyramid.size()))
@@ -172,12 +191,8 @@ SingleView::worldToScreen(math::Vec3f const& point, int level)
 
     math::Vec3f cp(this->worldToCam.mult(point,1.f));
     math::Vec3f sp;
-    if (level == 0) {
-        if (this->scaled_image.get())
-            sp = this->proj_scaled * cp;
-        else
-            sp = this->proj * cp;
-    }
+    if (level == 0)
+        sp = this->proj * cp;
     else
         sp = this->projs[level] * cp;
 
