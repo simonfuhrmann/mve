@@ -124,8 +124,7 @@ SingleView::getPyramidImg(int level) const
 inline mve::ImageBase::Ptr
 SingleView::getScaledImg() const
 {
-    if (this->scaled_image == NULL)
-        throw std::runtime_error("No scaled image available.");
+    assert(this->scaled_image != NULL);
     return this->scaled_image;
 }
 
