@@ -52,14 +52,10 @@ SingleView::prepareRecon(int scale)
     this->proj_scaled = img_pyramid[scale].proj;
     this->invproj_scaled = img_pyramid[scale].invproj;
 
-    float scale_factor = std::ldexp(1.0, -scale);
-    int scaled_width = scale_factor * this->width;
-    int scaled_height = scale_factor * this->height;
+    int scaled_width = this->scaled_image->width();
+    int scaled_height = this->scaled_image->height();
     std::cout << "scaled image size: " << scaled_width
         << " x " << scaled_height << std::endl;
-
-    assert(this->scaled_image->width() == scaled_width);
-    assert(this->scaled_image->height() == scaled_height);
 
     // create images for reconstruction
     this->depthImg = mve::FloatImage::create(scaled_width, scaled_height, 1);
