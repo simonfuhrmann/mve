@@ -3,6 +3,7 @@
 #include "util/filesystem.h"
 #include "mve/imagefile.h"
 #include "mve/imagetools.h"
+#include "mve/depthmap.h"
 #include "mve/plyfile.h"
 #include "mve/view.h"
 #include "dmrecon/defines.h"
@@ -76,8 +77,7 @@ SingleView::viewRay(float x, float y, int level) const
     if (level != 0 && level >= int(this->img_pyramid.size()))
         throw std::invalid_argument("Requested pyramid level does not exist");
 
-    math::Vec3f ray = this->img_pyramid[level].invproj * math::Vec3f(x+0.5f, y+0.5f, 1.f);
-    ray.normalize();
+    math::Vec3f ray = mve::geom::pixel_3dpos(x, y, 1.f, this->img_pyramid[level].invproj);
     math::Matrix3f rot(view->get_camera().rot);
     return rot.transposed() * ray;
 }
@@ -87,8 +87,7 @@ SingleView::viewRayScaled(int x, int y) const
 {
     assert(this->scaled_image != NULL);
 
-    math::Vec3f ray = this->invproj_scaled * math::Vec3f(x+0.5f, y+0.5f, 1.f);
-    ray.normalize();
+    math::Vec3f ray = mve::geom::pixel_3dpos(x, y, 1.f, this->invproj_scaled);
     math::Matrix3f rot(view->get_camera().rot);
     return rot.transposed() * ray;
 }
