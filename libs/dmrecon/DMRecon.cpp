@@ -27,7 +27,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
 
     /* Check if master image exists */
     if (refViewNr >= mve_views.size() ||
-        (mve_views[refViewNr].get() == NULL) ||
+        (mve_views[refViewNr] == NULL) ||
         (!mve_views[refViewNr]->is_camera_valid()))
     {
         std::cerr<<"ERROR: Invalid master view."<<std::endl;
@@ -53,7 +53,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     views.resize(mve_views.size());
     for (std::size_t i = 0; i < mve_views.size(); ++i)
     {
-        if (!mve_views[i].get() || !mve_views[i]->is_camera_valid())
+        if ((mve_views[i] == NULL) || !mve_views[i]->is_camera_valid())
             continue;
         mvs::SingleView::Ptr sView(new mvs::SingleView(mve_views[i]));
         views[i] = sView;

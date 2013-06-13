@@ -14,7 +14,7 @@ SingleView::SingleView(mve::View::Ptr _view)
     :
     view(_view)
 {
-    if ((view.get() == NULL) || (!view->is_camera_valid()))
+    if ((view == NULL) || (!view->is_camera_valid()))
         throw std::invalid_argument("NULL view");
     viewID = view->get_id();
 
@@ -86,7 +86,7 @@ SingleView::viewRay(float x, float y, int level) const
 math::Vec3f
 SingleView::viewRayScaled(int x, int y) const
 {
-    assert(this->scaled_image.get());
+    assert(this->scaled_image != NULL);
 
     math::Vec3f ray = this->invproj_scaled * math::Vec3f(x+0.5f, y+0.5f, 1.f);
     ray.normalize();
@@ -99,7 +99,7 @@ SingleView::loadColorImage(std::string const& name)
 {
     /* load undistorted color image */
     mve::ImageBase::Ptr img = this->view->get_image(name);
-    if (!img.get())
+    if (img == NULL)
         throw util::Exception("No color image embedding found: ", name);
     assert(this->width == img->width());
     assert(this->height == img->height());

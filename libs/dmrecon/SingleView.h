@@ -124,7 +124,7 @@ SingleView::getPyramidImg(int level) const
 inline mve::ImageBase::Ptr
 SingleView::getScaledImg() const
 {
-    if (!this->scaled_image.get())
+    if (this->scaled_image == NULL)
         throw std::runtime_error("No scaled image available.");
     return this->scaled_image;
 }
@@ -148,7 +148,7 @@ SingleView::footPrint(math::Vec3f const& point)
 inline float
 SingleView::footPrintScaled(math::Vec3f const& point)
 {
-    assert(this->scaled_image.get());
+    assert(this->scaled_image != NULL);
     return (this->worldToCam.mult(point, 1)[2] * this->invproj_scaled[0]);
 }
 
@@ -164,7 +164,7 @@ SingleView::seesFeature(std::size_t idx) const
 inline math::Vec2f
 SingleView::worldToScreenScaled(math::Vec3f const& point)
 {
-    assert(this->scaled_image.get());
+    assert(this->scaled_image != NULL);
 
     math::Vec3f cp(this->worldToCam.mult(point,1.f));
     math::Vec3f sp = this->proj_scaled * cp;
