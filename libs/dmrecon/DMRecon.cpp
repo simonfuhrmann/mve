@@ -111,69 +111,77 @@ DMRecon::~DMRecon()
 
 void DMRecon::start()
 {
-    progress.start_time = std::time(0);
+    try {
+        progress.start_time = std::time(0);
 
-    analyzeFeatures();
-    globalViewSelection();
-    processFeatures();
-    processQueue();
+        analyzeFeatures();
+        globalViewSelection();
+        processFeatures();
+        processQueue();
 
-    if (progress.cancelled) {
-        progress.status = RECON_CANCELLED;
-        return;
-    }
+        if (progress.cancelled) {
+            progress.status = RECON_CANCELLED;
+            return;
+        }
 
-    progress.status = RECON_SAVING;
-    SingleView::Ptr refV(views[settings.refViewNr]);
-    if (settings.writePlyFile) {
-        refV->saveReconAsPly(settings.plyPath, settings.scale);
-    }
+        progress.status = RECON_SAVING;
+        SingleView::Ptr refV(views[settings.refViewNr]);
+        if (settings.writePlyFile) {
+            refV->saveReconAsPly(settings.plyPath, settings.scale);
+        }
 
-    // Save images to view
-    mve::View::Ptr view = refV->getMVEView();
+        // Save images to view
+        mve::View::Ptr view = refV->getMVEView();
 
-    std::string name("depth-L");
-    name += util::string::get(settings.scale);
-    view->set_image(name, refV->depthImg);
-
-    if (settings.keepDzMap) {
-        name = "dz-L";
+        std::string name("depth-L");
         name += util::string::get(settings.scale);
-        view->set_image(name, refV->dzImg);
-    }
+        view->set_image(name, refV->depthImg);
 
-    if (settings.keepConfidenceMap) {
-        name = "conf-L";
-        name += util::string::get(settings.scale);
-        view->set_image(name, refV->confImg);
-    }
+        if (settings.keepDzMap) {
+            name = "dz-L";
+            name += util::string::get(settings.scale);
+            view->set_image(name, refV->dzImg);
+        }
 
-    if (settings.scale != 0) {
-        name = "undist-L";
-        name += util::string::get(settings.scale);
-        view->set_image(name, refV->getScaledImg());
-    }
+        if (settings.keepConfidenceMap) {
+            name = "conf-L";
+            name += util::string::get(settings.scale);
+            view->set_image(name, refV->confImg);
+        }
 
-    progress.status = RECON_IDLE;
+        if (settings.scale != 0) {
+            name = "undist-L";
+            name += util::string::get(settings.scale);
+            view->set_image(name, refV->getScaledImg());
+        }
 
-    // Output percentage of filled pixels
-    {
-        int nrPix = this->width * this->height;
-        float percent = (float) progress.filled / (float) nrPix;
-        std::cout << "Filled " << progress.filled << " pixels, i.e. "
+        progress.status = RECON_IDLE;
+
+        // Output percentage of filled pixels
+        {
+            int nrPix = this->width * this->height;
+            float percent = (float) progress.filled / (float) nrPix;
+            std::cout << "Filled " << progress.filled << " pixels, i.e. "
+                      << util::string::get_fixed(percent * 100.f, 1)
+                      << " %." << std::endl;
+            log << "Filled " << progress.filled << " pixels, i.e. "
                   << util::string::get_fixed(percent * 100.f, 1)
                   << " %." << std::endl;
-        log << "Filled " << progress.filled << " pixels, i.e. "
-              << util::string::get_fixed(percent * 100.f, 1)
-              << " %." << std::endl;
-    }
+        }
 
-    // Output required time to process the image
-    {
-        size_t mvs_time = std::time(0) - progress.start_time;
-        std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
-        log << "MVS took " << mvs_time << " seconds." << std::endl;
+        // Output required time to process the image
+        {
+            size_t mvs_time = std::time(0) - progress.start_time;
+            std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
+            log << "MVS took " << mvs_time << " seconds." << std::endl;
 
+        }
+    } catch (util::Exception e) {
+        std::cout << "Reconstruction failed: " << e << std::endl;
+        log << "Reconstruction failed: " << e << std::endl;
+
+        progress.status = RECON_CANCELLED;
+        return;
     }
 }
 
