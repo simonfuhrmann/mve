@@ -6,7 +6,7 @@
 #include <QFormLayout>
 #include <QFuture>
 #include <QMessageBox>
-#include "qglobal.h"
+#include <QtGlobal>
 #if QT_VERSION >= 0x050000
 #include <QtConcurrent/QtConcurrentRun>
 #else
