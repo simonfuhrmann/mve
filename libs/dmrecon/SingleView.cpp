@@ -42,6 +42,9 @@ SingleView::SingleView(mve::View::Ptr _view)
 void
 SingleView::prepareRecon(int scale)
 {
+    if (scale >= int(img_pyramid.size()))
+        throw util::Exception("No images available at this scale");
+
     this->createFileName(scale);
 
     // get scaled image
