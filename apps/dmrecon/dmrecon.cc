@@ -107,7 +107,7 @@ main (int argc, char** argv)
         else if (arg->opt->lopt == "list-view")
             args.get_ids_from_string(arg->arg, listIDs);
         else if (arg->opt->lopt == "scale")
-            mySettings.scale = arg->get_arg<float>();
+            mySettings.scale = arg->get_arg<int>();
         else if (arg->opt->lopt == "filter-width")
             mySettings.filterWidth = arg->get_arg<unsigned int>();
         else if (arg->opt->lopt == "image")

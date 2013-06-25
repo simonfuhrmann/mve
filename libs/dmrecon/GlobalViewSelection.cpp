@@ -18,7 +18,7 @@ GlobalViewSelection::GlobalViewSelection(
     available.resize(views.size(), true);
     available[settings.refViewNr] = false;
     for (std::size_t i = 0; i < views.size(); ++i)
-        if (!views[i].get())
+        if (views[i] == NULL)
             available[i] = false;
 }
 
@@ -70,7 +70,7 @@ GlobalViewSelection::benefitFromView(std::size_t i)
         if (plx < settings.minParallax)
             score *= sqr(plx / 10.f);
         // Resolution compared to reference view
-        float mfp = refV->footPrint(ftPos);
+        float mfp = refV->footPrintScaled(ftPos);
         float nfp = tmpV->footPrint(ftPos);
         float ratio = mfp / nfp;
         if (ratio > 2.)

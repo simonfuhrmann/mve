@@ -27,7 +27,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
 
     /* Check if master image exists */
     if (refViewNr >= mve_views.size() ||
-        (mve_views[refViewNr].get() == NULL) ||
+        (mve_views[refViewNr] == NULL) ||
         (!mve_views[refViewNr]->is_camera_valid()))
     {
         std::cerr<<"ERROR: Invalid master view."<<std::endl;
@@ -53,7 +53,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     views.resize(mve_views.size());
     for (std::size_t i = 0; i < mve_views.size(); ++i)
     {
-        if (!mve_views[i].get() || !mve_views[i]->is_camera_valid())
+        if ((mve_views[i] == NULL) || !mve_views[i]->is_camera_valid())
             continue;
         mvs::SingleView::Ptr sView(new mvs::SingleView(mve_views[i]));
         views[i] = sView;
@@ -111,69 +111,77 @@ DMRecon::~DMRecon()
 
 void DMRecon::start()
 {
-    progress.start_time = std::time(0);
+    try {
+        progress.start_time = std::time(0);
 
-    analyzeFeatures();
-    globalViewSelection();
-    processFeatures();
-    processQueue();
+        analyzeFeatures();
+        globalViewSelection();
+        processFeatures();
+        processQueue();
 
-    if (progress.cancelled) {
-        progress.status = RECON_CANCELLED;
-        return;
-    }
+        if (progress.cancelled) {
+            progress.status = RECON_CANCELLED;
+            return;
+        }
 
-    progress.status = RECON_SAVING;
-    SingleView::Ptr refV(views[settings.refViewNr]);
-    if (settings.writePlyFile) {
-        refV->saveReconAsPly(settings.plyPath, settings.scale);
-    }
+        progress.status = RECON_SAVING;
+        SingleView::Ptr refV(views[settings.refViewNr]);
+        if (settings.writePlyFile) {
+            refV->saveReconAsPly(settings.plyPath, settings.scale);
+        }
 
-    // Save images to view
-    mve::View::Ptr view = refV->getMVEView();
+        // Save images to view
+        mve::View::Ptr view = refV->getMVEView();
 
-    std::string name("depth-L");
-    name += util::string::get(settings.scale);
-    view->set_image(name, refV->depthImg);
-
-    if (settings.keepDzMap) {
-        name = "dz-L";
+        std::string name("depth-L");
         name += util::string::get(settings.scale);
-        view->set_image(name, refV->dzImg);
-    }
+        view->set_image(name, refV->depthImg);
 
-    if (settings.keepConfidenceMap) {
-        name = "conf-L";
-        name += util::string::get(settings.scale);
-        view->set_image(name, refV->confImg);
-    }
+        if (settings.keepDzMap) {
+            name = "dz-L";
+            name += util::string::get(settings.scale);
+            view->set_image(name, refV->dzImg);
+        }
 
-    if (settings.scale != 0) {
-        name = "undist-L";
-        name += util::string::get(settings.scale);
-        view->set_image(name, refV->getScaledImg());
-    }
+        if (settings.keepConfidenceMap) {
+            name = "conf-L";
+            name += util::string::get(settings.scale);
+            view->set_image(name, refV->confImg);
+        }
 
-    progress.status = RECON_IDLE;
+        if (settings.scale != 0) {
+            name = "undist-L";
+            name += util::string::get(settings.scale);
+            view->set_image(name, refV->getScaledImg());
+        }
 
-    // Output percentage of filled pixels
-    {
-        int nrPix = this->width * this->height;
-        float percent = (float) progress.filled / (float) nrPix;
-        std::cout << "Filled " << progress.filled << " pixels, i.e. "
+        progress.status = RECON_IDLE;
+
+        // Output percentage of filled pixels
+        {
+            int nrPix = this->width * this->height;
+            float percent = (float) progress.filled / (float) nrPix;
+            std::cout << "Filled " << progress.filled << " pixels, i.e. "
+                      << util::string::get_fixed(percent * 100.f, 1)
+                      << " %." << std::endl;
+            log << "Filled " << progress.filled << " pixels, i.e. "
                   << util::string::get_fixed(percent * 100.f, 1)
                   << " %." << std::endl;
-        log << "Filled " << progress.filled << " pixels, i.e. "
-              << util::string::get_fixed(percent * 100.f, 1)
-              << " %." << std::endl;
-    }
+        }
 
-    // Output required time to process the image
-    {
-        size_t mvs_time = std::time(0) - progress.start_time;
-        std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
-        log << "MVS took " << mvs_time << " seconds." << std::endl;
+        // Output required time to process the image
+        {
+            size_t mvs_time = std::time(0) - progress.start_time;
+            std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
+            log << "MVS took " << mvs_time << " seconds." << std::endl;
 
+        }
+    } catch (util::Exception e) {
+        std::cout << "Reconstruction failed: " << e << std::endl;
+        log << "Reconstruction failed: " << e << std::endl;
+
+        progress.status = RECON_CANCELLED;
+        return;
     }
 }
 
@@ -224,7 +232,6 @@ void DMRecon::globalViewSelection()
     {
         ss << *citID << " ";
         views[*citID]->loadColorImage(this->settings.imageEmbedding);
-        views[*citID]->createImagePyramid();
     }
     ss << std::endl;
     std::cout << ss.str();
@@ -265,7 +272,7 @@ void DMRecon::processFeatures()
         if (!refV->pointInFrustum(featPos)) {
             continue;
         }
-        math::Vec2f pixPosF = refV->worldToScreen(featPos);
+        math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
         int x = round(pixPosF[0]);
         int y = round(pixPosF[1]);
         float initDepth = (featPos - refV->camPos).norm();
