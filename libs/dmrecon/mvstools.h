@@ -12,9 +12,6 @@
 
 MVS_NAMESPACE_BEGIN
 
-/** initialize mapping from SRGB to linear color space */
-void initSRGB2linear();
-
 /** interpolate color and derivative at given sample positions */
 void colAndExactDeriv(mve::ImageBase::Ptr img,
     PixelCoords const& imgPos, PixelCoords const& gradDir,
