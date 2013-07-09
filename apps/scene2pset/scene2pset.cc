@@ -107,8 +107,7 @@ main (int argc, char** argv)
     conf.dmname = "depthmap";
 
     /* Scan arguments. */
-    for (util::ArgResult const* arg = args.next_result();
-        arg != 0; arg = args.next_result())
+    while (util::ArgResult const* arg = args.next_result())
     {
         if (arg->opt == 0)
             continue;
@@ -128,10 +127,8 @@ main (int argc, char** argv)
     if (conf.poisson)
         conf.with_normals = true;
 
-
-  /* If requested, use given AABB. */
+    /* If requested, use given AABB. */
     math::Vec3f aabbmin, aabbmax;
-
     if (!conf.aabb.empty())
     {
         util::Tokenizer tok;
@@ -147,30 +144,18 @@ main (int argc, char** argv)
             aabbmin[i] = util::string::convert<float>(tok[i]);
             aabbmax[i] = util::string::convert<float>(tok[i + 3]);
         }
-        std::cout << "Got AABB: (" << aabbmin << ") / ("
+        std::cout << "Using AABB: (" << aabbmin << ") / ("
             << aabbmax << ")" << std::endl;
     }
     std::cout << "Using depthmap: " << conf.dmname << " and color image: "
           << conf.image << std::endl;
 
+    /* Prepare output mesh. */
     mve::TriangleMesh::Ptr pset(mve::TriangleMesh::create());
     mve::TriangleMesh::VertexList& verts(pset->get_vertices());
     mve::TriangleMesh::NormalList& vnorm(pset->get_vertex_normals());
     mve::TriangleMesh::ColorList& vcolor(pset->get_vertex_colors());
 
-#if 0
-    mve::TriangleMesh::Ptr mesh1 = mve::geom::load_ply_mesh("/gris/gris-f/home/sfuhrman/offmodels/stanford/bunny/meshes/depthmap-1.ply");
-    mve::TriangleMesh::Ptr mesh2 = mve::geom::load_ply_mesh("/gris/gris-f/home/sfuhrman/offmodels/stanford/bunny/meshes/depthmap-5.ply");
-    mesh1->ensure_normals();
-    mesh2->ensure_normals();
-
-    verts.insert(verts.end(), mesh1->get_vertices().begin(), mesh1->get_vertices().end());
-    vnorm.insert(vnorm.end(), mesh1->get_vertex_normals().begin(), mesh1->get_vertex_normals().end());
-    verts.insert(verts.end(), mesh2->get_vertices().begin(), mesh2->get_vertices().end());
-    vnorm.insert(vnorm.end(), mesh2->get_vertex_normals().begin(), mesh2->get_vertex_normals().end());
-#endif
-
-#if 1
     /* Load scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
     scene->load_scene(conf.scenedir);
@@ -180,15 +165,16 @@ main (int argc, char** argv)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view = views[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         std::size_t view_id = view->get_id();
-        if (!conf.ids.empty() && std::find(conf.ids.begin(), conf.ids.end(), view_id) == conf.ids.end())
+        if (!conf.ids.empty() && std::find(conf.ids.begin(),
+            conf.ids.end(), view_id) == conf.ids.end())
             continue;
 
         mve::FloatImage::Ptr dm = view->get_float_image(conf.dmname);
-        if (!dm.get())
+        if (dm == NULL)
             continue;
 
         mve::ByteImage::Ptr ci;
@@ -203,55 +189,49 @@ main (int argc, char** argv)
         mve::CameraInfo const& cam = view->get_camera();
         mve::TriangleMesh::Ptr mesh;
         mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
+        if (conf.with_normals)
+            mesh->ensure_normals();
 
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
 
-
         /* Add vertices and optional colors and normals to mesh. */
-
-        /* Fast if no bounding box given */
         if (conf.aabb.empty())
         {
-          verts.insert(verts.end(), mverts.begin(), mverts.end());
-          if (!mvcol.empty())
+            /* Fast if no bounding box is given. */
+            verts.insert(verts.end(), mverts.begin(), mverts.end());
+            if (!mvcol.empty())
                 vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
-          if (conf.with_normals)
-            {
-              mesh->ensure_normals();
-              vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
-            }
+            if (conf.with_normals)
+                vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
         }
         else
         {
-          /* We need to iterate over all points */
-          if (conf.with_normals)
-            {
-              mesh->ensure_normals();
-            }
-          for (unsigned int i =0; i < mverts.size(); i++){
-            math::Vec3f pt = mverts[i];
-            if (pt[0] < aabbmin[0] || pt[0] > aabbmax[0])
-              continue;
-            if (pt[1] < aabbmin[1] || pt[1] > aabbmax[1])
-              continue;
-            if (pt[2] < aabbmin[2] || pt[2] > aabbmax[2])
-              continue;
-
-            verts.push_back(pt);
-            if (!mvcol.empty())
-            {
-              vcolor.push_back(mvcol[i]);
-            }
+            /* Check every point if a bounding box is given.  */
             if (conf.with_normals)
+                mesh->ensure_normals();
+
+            for (std::size_t i = 0; i < mverts.size(); ++i)
             {
-              vnorm.push_back(mnorms[i]);
+                math::Vec3f const& pt = mverts[i];
+                if (pt[0] < aabbmin[0] || pt[0] > aabbmax[0]
+                    || pt[1] < aabbmin[1] || pt[1] > aabbmax[1]
+                    || pt[2] < aabbmin[2] || pt[2] > aabbmax[2])
+                    continue;
+
+                verts.push_back(pt);
+                if (!mvcol.empty())
+                    vcolor.push_back(mvcol[i]);
+                if (conf.with_normals)
+                    vnorm.push_back(mnorms[i]);
             }
-          }
         }
+
+        dm.reset();
+        ci.reset();
+        view->cache_cleanup();
     }
-#endif
 
     std::cout << "Writing final point set..." << std::endl;
     std::cout << "  Points: " << verts.size() << std::endl;
@@ -269,5 +249,5 @@ main (int argc, char** argv)
             true, true, conf.with_normals);
     }
 
-    return 1;
+    return 0;
 }
