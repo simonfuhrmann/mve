@@ -48,7 +48,8 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh,
     std::string const& filename, bool format_binary = true,
     bool write_vcolors = true, bool write_vnormals = false,
     bool write_fcolors = false, bool write_fnormals = false,
-    bool write_confidence = false, unsigned int verts_per_simplex = 3);
+    bool write_confidences = false, bool write_values = false,
+    unsigned int verts_per_simplex = 3);
 
 /**
  * Stores a scanalize-compatible PLY file from a depth map.

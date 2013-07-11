@@ -42,6 +42,7 @@ enum PlyVertexElement
     PLY_V_FLOAT_U,
     PLY_V_FLOAT_V,
     PLY_V_FLOAT_CONF,
+    PLY_V_FLOAT_VALUE,
     PLY_V_FLOAT_IGNORE,
     PLY_V_INT_IGNORE,
     PLY_V_BYTE_IGNORE
@@ -279,6 +280,8 @@ load_ply_mesh (std::string const& filename)
                         v_format.push_back(PLY_V_FLOAT_V);
                     else if (header[2] == "confidence")
                         v_format.push_back(PLY_V_FLOAT_CONF);
+                    else if (header[2] == "value")
+                        v_format.push_back(PLY_V_FLOAT_VALUE);
                     else
                         v_format.push_back(PLY_V_FLOAT_IGNORE);
                 }
@@ -369,7 +372,8 @@ load_ply_mesh (std::string const& filename)
     TriangleMesh::VertexList& vertices = mesh->get_vertices();
     TriangleMesh::FaceList& faces = mesh->get_faces();
     TriangleMesh::ColorList& vcolors = mesh->get_vertex_colors();
-    TriangleMesh::ConfidenceList& vconf = mesh->get_vertex_confidences();
+    TriangleMesh::ConfidenceList& vconfs = mesh->get_vertex_confidences();
+    TriangleMesh::ValueList& vvalues = mesh->get_vertex_values();
     TriangleMesh::TexCoordList& tcoords = mesh->get_vertex_texcoords();
     TriangleMesh::NormalList& vnormals = mesh->get_vertex_normals();
 
@@ -458,7 +462,11 @@ load_ply_mesh (std::string const& filename)
                 break;
 
             case PLY_V_FLOAT_CONF:
-                vconf.push_back(ply_get_value<float>(input, ply_format));
+                vconfs.push_back(ply_get_value<float>(input, ply_format));
+                break;
+
+            case PLY_V_FLOAT_VALUE:
+                vvalues.push_back(ply_get_value<float>(input, ply_format));
                 break;
 
             case PLY_V_FLOAT_IGNORE:
@@ -644,9 +652,11 @@ load_xf_file (std::string const& filename, float* ctw)
 /* ---------------------------------------------------------------- */
 
 void
-save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
-    bool format_binary, bool write_vcolors, bool write_vnormals,
-    bool write_fcolors, bool write_fnormals, bool write_confidence,
+save_ply_mesh (TriangleMesh::ConstPtr mesh,
+    std::string const& filename, bool format_binary,
+    bool write_vcolors, bool write_vnormals,
+    bool write_fcolors, bool write_fnormals,
+    bool write_vconfidences, bool write_vvalues,
     unsigned int verts_per_simplex)
 {
     if (mesh.get() == 0)
@@ -658,6 +668,7 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
     TriangleMesh::ColorList const& vcolors(mesh->get_vertex_colors());
     TriangleMesh::NormalList const& vnormals(mesh->get_vertex_normals());
     TriangleMesh::ConfidenceList const& conf(mesh->get_vertex_confidences());
+    TriangleMesh::ValueList const& vvalues(mesh->get_vertex_values());
     TriangleMesh::FaceList const& faces(mesh->get_faces());
     TriangleMesh::ColorList const& fcolors(mesh->get_face_colors());
     TriangleMesh::NormalList const& fnormals(mesh->get_face_normals());
@@ -668,7 +679,8 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
 
     write_vcolors = (write_vcolors && vcolors.size() == verts.size());
     write_vnormals = (write_vnormals && vnormals.size() == verts.size());
-    write_confidence = (write_confidence && conf.size() == verts.size());
+    write_vconfidences = (write_vconfidences && conf.size() == verts.size());
+    write_vvalues = (write_vvalues && vvalues.size() == verts.size());
     write_fcolors = (write_fcolors && fcolors.size() == face_amount);
     write_fnormals = (write_fnormals && fnormals.size() == face_amount);
     std::string format_str = (format_binary ? "binary_little_endian" : "ascii");
@@ -709,9 +721,14 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
         out << "property uchar diffuse_blue" << std::endl;
     }
 
-    if (write_confidence)
+    if (write_vconfidences)
     {
         out << "property float confidence" << std::endl;
+    }
+
+    if (write_vvalues)
+    {
+        out << "property float value" << std::endl;
     }
 
     if (face_amount)
@@ -750,8 +767,10 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
                 ply_color_convert(*vcolors[i], color);
                 out.write((char const*)color, 3);
             }
-            if (write_confidence)
+            if (write_vconfidences)
                 out.write((char const*)&conf[i], sizeof(float));
+            if (write_vvalues)
+                out.write((char const*)&vvalues[i], sizeof(float));
         }
 
         unsigned char verts_per_simplex_uchar = verts_per_simplex;
@@ -790,9 +809,10 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
                     color = std::min(255.0f, std::max(0.0f, color));
                     out << " " << (int)(color + 0.5f);
                 }
-            if (write_confidence)
+            if (write_vconfidences)
                 out << " " << conf[i];
-
+            if (write_vvalues)
+                out << " " << vvalues[i];
             out << std::endl;
         }
 
