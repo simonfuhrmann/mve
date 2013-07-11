@@ -109,7 +109,7 @@ main (int argc, char** argv)
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
-        if (arg->opt == 0)
+        if (arg->opt == NULL)
             continue;
 
         switch (arg->opt->sopt)
@@ -162,6 +162,7 @@ main (int argc, char** argv)
 
     /* Iterate over views and get points. */
     mve::Scene::ViewList& views(scene->get_views());
+#pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view = views[i];
@@ -181,6 +182,7 @@ main (int argc, char** argv)
         if (!conf.image.empty())
             ci = view->get_byte_image(conf.image);
 
+#pragma omp critical
         std::cout << "Processing view \"" << view->get_name()
             << "\"" << (ci.get() ? " (with colors)" : "")
             << "..." << std::endl;
@@ -200,11 +202,14 @@ main (int argc, char** argv)
         if (conf.aabb.empty())
         {
             /* Fast if no bounding box is given. */
-            verts.insert(verts.end(), mverts.begin(), mverts.end());
-            if (!mvcol.empty())
-                vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
-            if (conf.with_normals)
-                vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
+#pragma omp critical
+            {
+                verts.insert(verts.end(), mverts.begin(), mverts.end());
+                if (!mvcol.empty())
+                    vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
+                if (conf.with_normals)
+                    vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
+            }
         }
         else
         {
@@ -220,11 +225,14 @@ main (int argc, char** argv)
                     || pt[2] < aabbmin[2] || pt[2] > aabbmax[2])
                     continue;
 
-                verts.push_back(pt);
-                if (!mvcol.empty())
-                    vcolor.push_back(mvcol[i]);
-                if (conf.with_normals)
-                    vnorm.push_back(mnorms[i]);
+#pragma omp critical
+                {
+                    verts.push_back(pt);
+                    if (!mvcol.empty())
+                        vcolor.push_back(mvcol[i]);
+                    if (conf.with_normals)
+                        vnorm.push_back(mnorms[i]);
+                }
             }
         }
 
