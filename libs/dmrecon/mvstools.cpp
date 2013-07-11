@@ -7,11 +7,16 @@
 
 MVS_NAMESPACE_BEGIN
 
-namespace {
-
-/** encodes conversion from rgb to srgb as a look-up table,
-    i.e. srgb2lin[i] with i in [0..255] contains the corresponding
-    value in [0..1] in linear space */
+namespace
+{
+    /**
+     * Lookup table that implements the conversion from RGB in [0..255]
+     * to sRGB in [0..1] using the following specification:
+     *
+     * f(x) = (x / 255.0 / 12.92)                 if x <= 0.04045 * 255
+     *        ((x / 255.0 + 0.055) / 1.055)^2.4   otherwise
+     *
+     */
     float const srgb2lin[256] = {
         0.0f, 0.000303526991f, 0.000607053982f, 0.000910580973f,
         0.00121410796f, 0.00151763496f, 0.00182116195f, 0.00212468882f,
@@ -78,16 +83,6 @@ namespace {
         0.938685715f, 0.947306514f, 0.955973327f, 0.964686275f,
         0.973445296f, 0.982250571f, 0.991102099f, 1.0f };
 
-/* ------------------------------------------------------------------
-
-    const std::size_t linThresh = (std::size_t) (0.04045 * 255.);
-    for (std::size_t col = 0; col < 256; ++col)
-        if (col <= linThresh)
-            srgb2lin[col] = ((float) col / 255.) / 12.92;
-        else
-            srgb2lin[col] = pow(((float) col / 255. + 0.055) / 1.055, 2.4);
-
------------------------------------------------------------------- */
 }
 
 void
