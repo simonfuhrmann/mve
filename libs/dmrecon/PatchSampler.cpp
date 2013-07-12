@@ -208,7 +208,7 @@ PatchSampler::getSAD(std::size_t v, math::Vec3f const& cs)
     float sum = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i) {
         for (int c = 0; c < 3; ++c) {
-            sum += fabs(cs[c] * neighColorSamples[v][i][c] -
+            sum += std::abs(cs[c] * neighColorSamples[v][i][c] -
                 masterColorSamples[i][c]);
         }
     }
