@@ -12,6 +12,7 @@
 #include "mve/bundlefile.h"
 #include "mve/image.h"
 #include "dmrecon/defines.h"
+#include "dmrecon/ImagePyramid.h"
 
 MVS_NAMESPACE_BEGIN
 
@@ -20,14 +21,14 @@ class SingleView
 public:
     typedef util::RefPtr<SingleView> Ptr;
 
-    SingleView(mve::View::Ptr _view);
+    SingleView(mve::Scene::Ptr _scene, mve::View::Ptr _view);
+    ~SingleView();
 
     void addFeature(std::size_t idx);
     std::vector<std::size_t> const& getFeatureIndices() const;
-    int getMaxLevel() const;
-    mve::ImageBase::Ptr getColorImg() const;
-    mve::ImageBase::Ptr getScaledImg() const;
-    mve::ImageBase::Ptr getPyramidImg(int level) const;
+    int clampLevel(int level) const;
+    mve::ImageBase::ConstPtr const& getScaledImg() const;
+    mve::ImageBase::ConstPtr const& getPyramidImg(int level) const;
     mve::View::Ptr getMVEView() const;
 
     std::string createFileName(float scale) const;
@@ -36,7 +37,7 @@ public:
     math::Vec3f viewRay(int x, int y, int level) const;
     math::Vec3f viewRay(float x, float y, int level) const;
     math::Vec3f viewRayScaled(int x, int y) const;
-    void loadColorImage(std::string const& name);
+    void loadColorImage(std::string const& name, int minLevel);
     bool pointInFrustum(math::Vec3f const& wp);
     void saveReconAsPly(std::string const& path, float scale) const;
     bool seesFeature(std::size_t idx) const;
@@ -60,25 +61,18 @@ private:
     /** feature indices */
     std::vector<std::size_t> featInd;
 
+    /** mve scene */
+    mve::Scene::Ptr scene;
+
     /** mve view */
     mve::View::Ptr view;
 
-    /** dimensions of original image for frustum check */
-    int width;
-    int height;
-
-    mve::ImageBase::Ptr scaled_image;
-    math::Matrix3f proj_scaled;
-    math::Matrix3f invproj_scaled;
-
-    struct PyramidLevel {
-        mve::ImageBase::Ptr image;
-        math::Matrix3f proj;
-        math::Matrix3f invproj;
-    };
+    bool has_target_level;
 
     /** the original image in different scales */
-    std::vector< PyramidLevel > img_pyramid;
+    ImagePyramid::ConstPtr img_pyramid;
+    ImagePyramidLevel source_level, target_level;
+    int minLevel;
 };
 
 
@@ -95,15 +89,16 @@ SingleView::getFeatureIndices() const
 }
 
 inline int
-SingleView::getMaxLevel() const
+SingleView::clampLevel(int level) const
 {
-    return (this->img_pyramid.size() - 1);
-}
+    if (level < minLevel)
+        return minLevel;
 
-inline mve::ImageBase::Ptr
-SingleView::getColorImg() const
-{
-    return this->img_pyramid[0].image;
+    int maxLevel = this->img_pyramid->size() - 1;
+    if (level > maxLevel)
+        return maxLevel;
+
+    return level;
 }
 
 inline mve::View::Ptr
@@ -112,20 +107,18 @@ SingleView::getMVEView() const
     return this->view;
 }
 
-inline mve::ImageBase::Ptr
+inline mve::ImageBase::ConstPtr const&
 SingleView::getPyramidImg(int level) const
 {
-    if (level >= int(this->img_pyramid.size())) {
-        throw std::invalid_argument("Requested image does not exist.");
-    }
-    return this->img_pyramid[level].image;
+    assert(this->img_pyramid->at(level).image != NULL);
+    return this->img_pyramid->at(level).image;
 }
 
-inline mve::ImageBase::Ptr
+inline mve::ImageBase::ConstPtr const&
 SingleView::getScaledImg() const
 {
-    assert(this->scaled_image != NULL);
-    return this->scaled_image;
+    assert(this->has_target_level);
+    return this->target_level.image;
 }
 
 inline std::string
@@ -141,14 +134,14 @@ SingleView::createFileName(float scale) const
 inline float
 SingleView::footPrint(math::Vec3f const& point)
 {
-    return (this->worldToCam.mult(point, 1)[2] * this->img_pyramid[0].invproj[0]);
+    return (this->worldToCam.mult(point, 1)[2] * this->source_level.invproj[0]);
 }
 
 inline float
 SingleView::footPrintScaled(math::Vec3f const& point)
 {
-    assert(this->scaled_image != NULL);
-    return (this->worldToCam.mult(point, 1)[2] * this->invproj_scaled[0]);
+    assert(this->has_target_level);
+    return (this->worldToCam.mult(point, 1)[2] * this->target_level.invproj[0]);
 }
 
 inline bool
@@ -163,10 +156,10 @@ SingleView::seesFeature(std::size_t idx) const
 inline math::Vec2f
 SingleView::worldToScreenScaled(math::Vec3f const& point)
 {
-    assert(this->scaled_image != NULL);
+    assert(this->has_target_level);
 
     math::Vec3f cp(this->worldToCam.mult(point,1.f));
-    math::Vec3f sp = this->proj_scaled * cp;
+    math::Vec3f sp = this->target_level.proj * cp;
 
     math::Vec2f res(sp[0] / sp[2] - 0.5f, sp[1] / sp[2] - 0.5f);
     return res;
@@ -175,11 +168,8 @@ SingleView::worldToScreenScaled(math::Vec3f const& point)
 inline math::Vec2f
 SingleView::worldToScreen(math::Vec3f const& point, int level)
 {
-    if (level != 0 && level >= int(this->img_pyramid.size()))
-        throw std::invalid_argument("Requested pyramid level does not exist.");
-
     math::Vec3f cp(this->worldToCam.mult(point,1.f));
-    math::Vec3f sp = this->img_pyramid[level].proj * cp;
+    math::Vec3f sp = this->img_pyramid->at(level).proj * cp;
 
     math::Vec2f res(sp[0] / sp[2] - 0.5f, sp[1] / sp[2] - 0.5f);
     return res;

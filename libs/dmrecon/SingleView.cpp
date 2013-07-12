@@ -1,4 +1,5 @@
 #include <cassert>
+#include <limits>
 
 #include "util/filesystem.h"
 #include "mve/imagefile.h"
@@ -11,9 +12,11 @@
 
 MVS_NAMESPACE_BEGIN
 
-SingleView::SingleView(mve::View::Ptr _view)
-    :
-    view(_view)
+SingleView::SingleView(mve::Scene::Ptr _scene, mve::View::Ptr _view)
+    : scene(_scene)
+    , view(_view)
+    , has_target_level(false)
+    , minLevel(std::numeric_limits<int>::max())
 {
     if ((view == NULL) || (!view->is_camera_valid()))
         throw std::invalid_argument("NULL view");
@@ -30,31 +33,25 @@ SingleView::SingleView(mve::View::Ptr _view)
     cam.fill_camera_pos(*this->camPos);
     cam.fill_world_to_cam(*this->worldToCam);
 
-    this->width = proxy->width;
-    this->height = proxy->height;
+    this->source_level = ImagePyramidLevel(cam, proxy->width, proxy->height);
+}
 
-    this->img_pyramid.resize(1);
-
-    // compute projection matrix
-    cam.fill_calibration(*this->img_pyramid[0].proj, width, height);
-    cam.fill_inverse_calibration(*this->img_pyramid[0].invproj, width, height);
+SingleView::~SingleView()
+{
+    source_level.image.reset();
+    target_level.image.reset();
+    img_pyramid.reset();
+    ImagePyramidCache::cleanup();
 }
 
 void
 SingleView::prepareRecon(int scale)
 {
-    if (scale >= int(img_pyramid.size()))
-        throw util::Exception("No images available at this scale");
-
+    this->target_level = (*this->img_pyramid)[scale];
     this->createFileName(scale);
 
-    // get scaled image
-    this->scaled_image = img_pyramid[scale].image;
-    this->proj_scaled = img_pyramid[scale].proj;
-    this->invproj_scaled = img_pyramid[scale].invproj;
-
-    int scaled_width = this->scaled_image->width();
-    int scaled_height = this->scaled_image->height();
+    int scaled_width = this->target_level.width;
+    int scaled_height = this->target_level.height;
     std::cout << "scaled image size: " << scaled_width
         << " x " << scaled_height << std::endl;
 
@@ -63,6 +60,8 @@ SingleView::prepareRecon(int scale)
     this->normalImg = mve::FloatImage::create(scaled_width, scaled_height, 3);
     this->dzImg = mve::FloatImage::create(scaled_width, scaled_height, 2);
     this->confImg = mve::FloatImage::create(scaled_width, scaled_height, 1);
+
+    this->has_target_level = true;
 }
 
 math::Vec3f
@@ -74,10 +73,7 @@ SingleView::viewRay(int x, int y, int level) const
 math::Vec3f
 SingleView::viewRay(float x, float y, int level) const
 {
-    if (level != 0 && level >= int(this->img_pyramid.size()))
-        throw std::invalid_argument("Requested pyramid level does not exist");
-
-    math::Vec3f ray = mve::geom::pixel_3dpos(x, y, 1.f, this->img_pyramid[level].invproj);
+    math::Vec3f ray = mve::geom::pixel_3dpos(x, y, 1.f, this->img_pyramid->at(level).invproj);
     math::Matrix3f rot(view->get_camera().rot);
     return rot.transposed() * ray;
 }
@@ -85,82 +81,18 @@ SingleView::viewRay(float x, float y, int level) const
 math::Vec3f
 SingleView::viewRayScaled(int x, int y) const
 {
-    assert(this->scaled_image != NULL);
+    assert(this->has_target_level);
 
-    math::Vec3f ray = mve::geom::pixel_3dpos(x, y, 1.f, this->invproj_scaled);
+    math::Vec3f ray = mve::geom::pixel_3dpos(x, y, 1.f, this->target_level.invproj);
     math::Matrix3f rot(view->get_camera().rot);
     return rot.transposed() * ray;
 }
 
 void
-SingleView::loadColorImage(std::string const& name)
+SingleView::loadColorImage(std::string const& name, int _minLevel)
 {
-    /* load undistorted color image */
-    mve::ImageBase::Ptr img = this->view->get_image(name);
-    if (img == NULL)
-        throw util::Exception("No color image embedding found: ", name);
-    assert(this->width == img->width());
-    assert(this->height == img->height());
-
-    int channels = img->channels();
-    mve::ImageType type = img->get_type();
-
-    switch (type)
-    {
-        case mve::IMAGE_TYPE_UINT8:
-            if (channels == 2 || channels == 4)
-                mve::image::reduce_alpha<uint8_t>(img);
-            if (img->channels() == 1)
-                img = mve::image::expand_grayscale<uint8_t>(img);
-            break;
-
-        case mve::IMAGE_TYPE_FLOAT:
-            if (channels == 2 || channels == 4)
-                mve::image::reduce_alpha<float>(img);
-            if (img->channels() == 1)
-                img = mve::image::expand_grayscale<float>(img);
-            break;
-
-        default:
-            throw util::Exception("Invalid image type");
-    }
-
-    if (img->channels() != 3)
-        throw std::invalid_argument("Image with invalid number of channels");
-
-    img_pyramid.resize(1);
-    img_pyramid[0].image = img;
-
-    /* create image pyramid */
-    int curr_width = img->width();
-    int curr_height = img->height();
-    mve::CameraInfo cam(view->get_camera());
-
-    while (std::min(curr_width, curr_height) >= 30) {
-        // adjust principal point
-        if (curr_width % 2 == 1)
-            cam.ppoint[0] = cam.ppoint[0] * float(curr_width)
-                / float(curr_width + 1);
-        if (curr_height % 2 == 1)
-            cam.ppoint[1] = cam.ppoint[1] * float(curr_height)
-                / float(curr_height + 1);
-        if (type == mve::IMAGE_TYPE_UINT8)
-            img = mve::image::rescale_half_size_gaussian<uint8_t>(img, 1.f);
-        else if (type == mve::IMAGE_TYPE_FLOAT)
-            img = mve::image::rescale_half_size_gaussian<float>(img, 1.f);
-        else
-            throw util::Exception("Invalid image type");
-
-        this->img_pyramid.push_back(PyramidLevel());
-        PyramidLevel & nextLevel = this->img_pyramid.back();
-        nextLevel.image = img;
-
-        // compute new projection matrix
-        curr_width = img->width();
-        curr_height = img->height();
-        cam.fill_calibration(*nextLevel.proj, curr_width, curr_height);
-        cam.fill_inverse_calibration(*nextLevel.invproj, curr_width, curr_height);
-    }
+    minLevel = _minLevel;
+    img_pyramid = ImagePyramidCache::get(scene, view, name, minLevel);
 }
 
 bool
@@ -170,12 +102,11 @@ SingleView::pointInFrustum(math::Vec3f const & wp)
     // check whether point lies in front of camera
     if (cp[2] <= 0.f)
         return false;
-    math::Vec3f sp(this->img_pyramid[0].proj * cp);
+    math::Vec3f sp(this->source_level.proj * cp);
     float x = sp[0] / sp[2] - 0.5f;
     float y = sp[1] / sp[2] - 0.5f;
-    if (x >= 0 && x <= width-1 && y >= 0 && y <= height-1)
-        return true;
-    return false;
+    return x >= 0 && x <= this->source_level.width-1
+            && y >= 0 && y <= this->source_level.height-1;
 }
 
 void
@@ -193,7 +124,7 @@ SingleView::saveReconAsPly(std::string const& path, float scale) const
 
     std::cout << "Saving ply file as " << plyname << std::endl;
     mve::geom::save_ply_view(plyname, view->get_camera(),
-        this->depthImg, this->confImg, this->scaled_image);
+        this->depthImg, this->confImg, this->target_level.image);
     mve::geom::save_xf_file(xfname, view->get_camera());
 }
 
