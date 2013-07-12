@@ -26,7 +26,7 @@ PatchSampler::PatchSampler(
     success(views.size(), false)
 {
     SingleView::Ptr refV(views[settings.refViewNr]);
-    mve::ImageBase::Ptr masterImg(refV->getScaledImg());
+    mve::ImageBase::ConstPtr masterImg(refV->getScaledImg());
 
     offset = settings.filterWidth / 2;
     nrSamples = sqr(settings.filterWidth);
@@ -87,7 +87,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
         ++mmLevel;
         ratio *= 2.f;
     }
-    mmLevel = std::min(views[v]->getMaxLevel(), mmLevel);
+    mmLevel = views[v]->clampLevel(mmLevel);
 
     /* compute step size for derivative */
     math::Vec3f p1(p0 + masterViewDirs[nrSamples/2]);
@@ -99,7 +99,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     stepSize[v] = 1.f / d;
 
     /* request according undistorted color image */
-    mve::ImageBase::Ptr img(views[v]->getPyramidImg(mmLevel));
+    mve::ImageBase::ConstPtr img(views[v]->getPyramidImg(mmLevel));
     int w = img->width();
     int h = img->height();
 
@@ -121,7 +121,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     /* draw the samples in the image */
     color.resize(nrSamples, math::Vec3f(0.f));
     deriv.resize(nrSamples, math::Vec3f(0.f));
-    colAndExactDeriv(img, imgPos, gradDir, color, deriv);
+    colAndExactDeriv(*img, imgPos, gradDir, color, deriv);
 
     /* normalize the gradient */
     for (std::size_t i = 0; i < nrSamples; ++i)
@@ -290,7 +290,7 @@ void
 PatchSampler::computeMasterSamples()
 {
     SingleView::Ptr refV = views[settings.refViewNr];
-    mve::ImageBase::Ptr img(refV->getScaledImg());
+    mve::ImageBase::ConstPtr img(refV->getScaledImg());
 
     /* draw color samples from image and compute mean color */
     std::size_t count = 0;
@@ -301,7 +301,7 @@ PatchSampler::computeMasterSamples()
             imgPos[count][1] = j;
             ++count;
         }
-    getXYZColorAtPix(img, imgPos, &masterColorSamples);
+    getXYZColorAtPix(*img, imgPos, &masterColorSamples);
 
     masterMeanCol = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i)
@@ -362,8 +362,8 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
         ++mmLevel;
         ratio *= 2.f;
     }
-    mmLevel = std::min(views[v]->getMaxLevel(), mmLevel);
-    mve::ImageBase::Ptr img(views[v]->getPyramidImg(mmLevel));
+    mmLevel = views[v]->clampLevel(mmLevel);
+    mve::ImageBase::ConstPtr img(views[v]->getPyramidImg(mmLevel));
     int w = img->width();
     int h = img->height();
 
@@ -378,7 +378,7 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
             return;
         }
     }
-    getXYZColorAtPos(img, imgPos, &color);
+    getXYZColorAtPos(*img, imgPos, &color);
     success[v] = true;
 }
 
