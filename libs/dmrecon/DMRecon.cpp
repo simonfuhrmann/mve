@@ -55,15 +55,15 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     {
         if ((mve_views[i] == NULL) || !mve_views[i]->is_camera_valid())
             continue;
-        mvs::SingleView::Ptr sView(new mvs::SingleView(mve_views[i]));
+        mvs::SingleView::Ptr sView(new mvs::SingleView(scene, mve_views[i]));
         views[i] = sView;
     }
     SingleView::Ptr refV = views[refViewNr];
 
     /* Prepare reconstruction */
-    refV->loadColorImage(this->settings.imageEmbedding);
+    refV->loadColorImage(this->settings.imageEmbedding, settings.scale);
     refV->prepareRecon(settings.scale);
-    mve::ImageBase::Ptr scaled_img = refV->getScaledImg();
+    mve::ImageBase::ConstPtr scaled_img = refV->getScaledImg();
     this->width = scaled_img->width();
     this->height = scaled_img->height();
 
@@ -152,7 +152,7 @@ void DMRecon::start()
         if (settings.scale != 0) {
             name = "undist-L";
             name += util::string::get(settings.scale);
-            view->set_image(name, refV->getScaledImg());
+            view->set_image(name, refV->getScaledImg()->duplicate());
         }
 
         progress.status = RECON_IDLE;
@@ -231,7 +231,7 @@ void DMRecon::globalViewSelection()
          && !progress.cancelled; ++citID)
     {
         ss << *citID << " ";
-        views[*citID]->loadColorImage(this->settings.imageEmbedding);
+        views[*citID]->loadColorImage(this->settings.imageEmbedding, 0);
     }
     ss << std::endl;
     std::cout << ss.str();

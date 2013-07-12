@@ -86,17 +86,17 @@ namespace
 }
 
 void
-colAndExactDeriv(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
+colAndExactDeriv(mve::ImageBase const& img, PixelCoords const& imgPos,
     PixelCoords const& gradDir, Samples& color, Samples& deriv)
 {
-    std::size_t width = img->width();
-    std::size_t height = img->height();
-    mve::ImageType type = img->get_type();
+    int width = img.width();
+    int height = img.height();
+    mve::ImageType type = img.get_type();
 
     for (std::size_t i = 0; i < imgPos.size(); ++i)
     {
-        std::size_t left = floor(imgPos[i][0]);
-        std::size_t top = floor(imgPos[i][1]);
+        int left = floor(imgPos[i][0]);
+        int top = floor(imgPos[i][1]);
         assert(left < width-1 && top < height-1);
 
         float x = imgPos[i][0] - left;
@@ -111,24 +111,24 @@ colAndExactDeriv(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
         switch (type) {
         case mve::IMAGE_TYPE_UINT8:
         {
-            mve::ByteImage::Ptr bimg(img);
-            x0 = (1.f-x) * srgb2lin[bimg->at(p0  )] + x * srgb2lin[bimg->at(p0+3)];
-            x1 = (1.f-x) * srgb2lin[bimg->at(p0+1)] + x * srgb2lin[bimg->at(p0+4)];
-            x2 = (1.f-x) * srgb2lin[bimg->at(p0+2)] + x * srgb2lin[bimg->at(p0+5)];
-            x3 = (1.f-x) * srgb2lin[bimg->at(p1  )] + x * srgb2lin[bimg->at(p1+3)];
-            x4 = (1.f-x) * srgb2lin[bimg->at(p1+1)] + x * srgb2lin[bimg->at(p1+4)];
-            x5 = (1.f-x) * srgb2lin[bimg->at(p1+2)] + x * srgb2lin[bimg->at(p1+5)];
+            mve::ByteImage const& bimg = dynamic_cast<mve::ByteImage const&>(img);
+            x0 = (1.f-x) * srgb2lin[bimg.at(p0  )] + x * srgb2lin[bimg.at(p0+3)];
+            x1 = (1.f-x) * srgb2lin[bimg.at(p0+1)] + x * srgb2lin[bimg.at(p0+4)];
+            x2 = (1.f-x) * srgb2lin[bimg.at(p0+2)] + x * srgb2lin[bimg.at(p0+5)];
+            x3 = (1.f-x) * srgb2lin[bimg.at(p1  )] + x * srgb2lin[bimg.at(p1+3)];
+            x4 = (1.f-x) * srgb2lin[bimg.at(p1+1)] + x * srgb2lin[bimg.at(p1+4)];
+            x5 = (1.f-x) * srgb2lin[bimg.at(p1+2)] + x * srgb2lin[bimg.at(p1+5)];
             break;
         }
         case mve::IMAGE_TYPE_FLOAT:
         {
-            mve::FloatImage::Ptr fimg(img);
-            x0 = (1.f-x) * fimg->at(p0  ) + x * fimg->at(p0+3);
-            x1 = (1.f-x) * fimg->at(p0+1) + x * fimg->at(p0+4);
-            x2 = (1.f-x) * fimg->at(p0+2) + x * fimg->at(p0+5);
-            x3 = (1.f-x) * fimg->at(p1  ) + x * fimg->at(p1+3);
-            x4 = (1.f-x) * fimg->at(p1+1) + x * fimg->at(p1+4);
-            x5 = (1.f-x) * fimg->at(p1+2) + x * fimg->at(p1+5);
+            mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(img);
+            x0 = (1.f-x) * fimg.at(p0  ) + x * fimg.at(p0+3);
+            x1 = (1.f-x) * fimg.at(p0+1) + x * fimg.at(p0+4);
+            x2 = (1.f-x) * fimg.at(p0+2) + x * fimg.at(p0+5);
+            x3 = (1.f-x) * fimg.at(p1  ) + x * fimg.at(p1+3);
+            x4 = (1.f-x) * fimg.at(p1+1) + x * fimg.at(p1+4);
+            x5 = (1.f-x) * fimg.at(p1+2) + x * fimg.at(p1+5);
             break;
         }
         default:
@@ -144,27 +144,27 @@ colAndExactDeriv(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
         switch (type) {
         case mve::IMAGE_TYPE_UINT8:
         {
-            mve::ByteImage::Ptr bimg(img);
+            mve::ByteImage const& bimg = dynamic_cast<mve::ByteImage const&>(img);
             for (std::size_t c = 0; c < 3; ++c) {
                 deriv[i][c] =
-                    u * (srgb2lin[bimg->at(p0+3)] - srgb2lin[bimg->at(p0)])
-                    + v * (srgb2lin[bimg->at(p1)] - srgb2lin[bimg->at(p0)])
+                    u * (srgb2lin[bimg.at(p0+3)] - srgb2lin[bimg.at(p0)])
+                    + v * (srgb2lin[bimg.at(p1)] - srgb2lin[bimg.at(p0)])
                     + (v * x + u * y) *
-                        (srgb2lin[bimg->at(p0)] - srgb2lin[bimg->at(p0+3)]
-                         - srgb2lin[bimg->at(p1)] + srgb2lin[bimg->at(p1+3)]);
+                        (srgb2lin[bimg.at(p0)] - srgb2lin[bimg.at(p0+3)]
+                         - srgb2lin[bimg.at(p1)] + srgb2lin[bimg.at(p1+3)]);
                 ++p0; ++p1;
             }
             break;
         }
         case mve::IMAGE_TYPE_FLOAT:
         {
-            mve::FloatImage::Ptr fimg(img);
+            mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(img);
             for (std::size_t c = 0; c < 3; ++c) {
                 deriv[i][c] =
-                    u * (fimg->at(p0+3) - fimg->at(p0))
-                    + v * (fimg->at(p1) - fimg->at(p0))
-                    + (v * x + u * y) * (fimg->at(p0) - fimg->at(p0+3)
-                        - fimg->at(p1) + fimg->at(p1+3));
+                    u * (fimg.at(p0+3) - fimg.at(p0))
+                    + v * (fimg.at(p1) - fimg.at(p0))
+                    + (v * x + u * y) * (fimg.at(p0) - fimg.at(p0+3)
+                        - fimg.at(p1) + fimg.at(p1+3));
                 ++p0; ++p1;
             }
             break;
@@ -176,34 +176,34 @@ colAndExactDeriv(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
 
 /* ------------------------------------------------------------------ */
 
-void getXYZColorAtPix(mve::ImageBase::Ptr img,
+void getXYZColorAtPix(mve::ImageBase const& img,
     std::vector<math::Vec2i> const& imgPos, Samples* color)
 {
-    std::size_t width = img->width();
-    mve::ImageType type = img->get_type();
+    int width = img.width();
+    mve::ImageType type = img.get_type();
     Samples::iterator itCol = color->begin();
 
     switch (type) {
     case mve::IMAGE_TYPE_UINT8:
     {
-        mve::ByteImage::Ptr bimg(img);
+        mve::ByteImage const& bimg = dynamic_cast<mve::ByteImage const&>(img);
         for (std::size_t i = 0; i < imgPos.size(); ++i) {
             std::size_t idx = imgPos[i][1] * width + imgPos[i][0];
-            (*itCol)[0] = srgb2lin[bimg->at(idx,0)];
-            (*itCol)[1] = srgb2lin[bimg->at(idx,1)];
-            (*itCol)[2] = srgb2lin[bimg->at(idx,2)];
+            (*itCol)[0] = srgb2lin[bimg.at(idx,0)];
+            (*itCol)[1] = srgb2lin[bimg.at(idx,1)];
+            (*itCol)[2] = srgb2lin[bimg.at(idx,2)];
             ++itCol;
         }
         break;
     }
     case mve::IMAGE_TYPE_FLOAT:
     {
-        mve::FloatImage::Ptr fimg(img);
+        mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(img);
         for (std::size_t i = 0; i < imgPos.size(); ++i) {
             std::size_t idx = imgPos[i][1] * width + imgPos[i][0];
-            (*itCol)[0] = fimg->at(idx,0);
-            (*itCol)[1] = fimg->at(idx,1);
-            (*itCol)[2] = fimg->at(idx,2);
+            (*itCol)[0] = fimg.at(idx,0);
+            (*itCol)[1] = fimg.at(idx,1);
+            (*itCol)[2] = fimg.at(idx,2);
             ++itCol;
         }
         break;
@@ -216,18 +216,18 @@ void getXYZColorAtPix(mve::ImageBase::Ptr img,
 /* ------------------------------------------------------------------ */
 
 void
-getXYZColorAtPos(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
+getXYZColorAtPos(mve::ImageBase const& img, PixelCoords const& imgPos,
     Samples* color)
 {
-    std::size_t width = img->width();
-    std::size_t height = img->height();
-    mve::ImageType type = img->get_type();
+    int width = img.width();
+    int height = img.height();
+    mve::ImageType type = img.get_type();
     PixelCoords::const_iterator citPos;
     Samples::iterator itCol = color->begin();
 
     for (citPos = imgPos.begin(); citPos != imgPos.end(); ++citPos, ++itCol) {
-        size_t i = floor((*citPos)[0]);
-        size_t j = floor((*citPos)[1]);
+        int i = floor((*citPos)[0]);
+        int j = floor((*citPos)[1]);
         assert(i < width-1 && j < height-1);
 
         float u = (*citPos)[0] - i;
@@ -238,24 +238,24 @@ getXYZColorAtPos(mve::ImageBase::Ptr img, PixelCoords const& imgPos,
         switch (type) {
         case mve::IMAGE_TYPE_UINT8:
         {
-            mve::ByteImage::Ptr bimg(img);
-            x0 = (1.f-u) * srgb2lin[bimg->at(p0  )] + u * srgb2lin[bimg->at(p0+3)];
-            x1 = (1.f-u) * srgb2lin[bimg->at(p0+1)] + u * srgb2lin[bimg->at(p0+4)];
-            x2 = (1.f-u) * srgb2lin[bimg->at(p0+2)] + u * srgb2lin[bimg->at(p0+5)];
-            x3 = (1.f-u) * srgb2lin[bimg->at(p1  )] + u * srgb2lin[bimg->at(p1+3)];
-            x4 = (1.f-u) * srgb2lin[bimg->at(p1+1)] + u * srgb2lin[bimg->at(p1+4)];
-            x5 = (1.f-u) * srgb2lin[bimg->at(p1+2)] + u * srgb2lin[bimg->at(p1+5)];
+            mve::ByteImage const& bimg = dynamic_cast<mve::ByteImage const&>(img);
+            x0 = (1.f-u) * srgb2lin[bimg.at(p0  )] + u * srgb2lin[bimg.at(p0+3)];
+            x1 = (1.f-u) * srgb2lin[bimg.at(p0+1)] + u * srgb2lin[bimg.at(p0+4)];
+            x2 = (1.f-u) * srgb2lin[bimg.at(p0+2)] + u * srgb2lin[bimg.at(p0+5)];
+            x3 = (1.f-u) * srgb2lin[bimg.at(p1  )] + u * srgb2lin[bimg.at(p1+3)];
+            x4 = (1.f-u) * srgb2lin[bimg.at(p1+1)] + u * srgb2lin[bimg.at(p1+4)];
+            x5 = (1.f-u) * srgb2lin[bimg.at(p1+2)] + u * srgb2lin[bimg.at(p1+5)];
             break;
         }
         case mve::IMAGE_TYPE_FLOAT:
         {
-            mve::FloatImage::Ptr fimg(img);
-            x0 = (1.f-u) * fimg->at(p0  ) + u * fimg->at(p0+3);
-            x1 = (1.f-u) * fimg->at(p0+1) + u * fimg->at(p0+4);
-            x2 = (1.f-u) * fimg->at(p0+2) + u * fimg->at(p0+5);
-            x3 = (1.f-u) * fimg->at(p1  ) + u * fimg->at(p1+3);
-            x4 = (1.f-u) * fimg->at(p1+1) + u * fimg->at(p1+4);
-            x5 = (1.f-u) * fimg->at(p1+2) + u * fimg->at(p1+5);
+            mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(img);
+            x0 = (1.f-u) * fimg.at(p0  ) + u * fimg.at(p0+3);
+            x1 = (1.f-u) * fimg.at(p0+1) + u * fimg.at(p0+4);
+            x2 = (1.f-u) * fimg.at(p0+2) + u * fimg.at(p0+5);
+            x3 = (1.f-u) * fimg.at(p1  ) + u * fimg.at(p1+3);
+            x4 = (1.f-u) * fimg.at(p1+1) + u * fimg.at(p1+4);
+            x5 = (1.f-u) * fimg.at(p1+2) + u * fimg.at(p1+5);
             break;
         }
         default:
