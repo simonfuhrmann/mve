@@ -98,28 +98,28 @@ LocalViewSelection::performVS()
             }
 
             // parallax w.r.t. reference view
-            float dp = std::min(refDir.dot(viewDir[i]), 1.f);
-            float plx = acos(dp) * 180.f / pi;
+            float dp = math::algo::clamp(refDir.dot(viewDir[i]), -1.f, 1.f);
+            float plx = std::acos(dp) * 180.f / pi;
             score *= parallaxToWeight(plx);
-            assert(score == score);
+            assert(!MATH_ISNAN(score));
 
             for (sel = selected.begin(); sel != selected.end(); ++sel) {
                 // parallax w.r.t. other selected views
-                dp = std::min(viewDir[*sel].dot(viewDir[i]), 1.f);
-                plx = acos(dp) * 180.f / pi;
+                dp = math::algo::clamp(viewDir[*sel].dot(viewDir[i]), -1.f, 1.f);
+                plx = std::acos(dp) * 180.f / pi;
                 score *= parallaxToWeight(plx);
 
                 // epipolar geometry
                 dp = epipolarPlane[i].dot(epipolarPlane[*sel]);
-                dp = std::min(dp, (float) 1.0);
-                float angle = fabs(acos(dp) * 180.f / pi);
+                dp = math::algo::clamp(dp, -1.f, 1.f);
+                float angle = fabs(std::acos(dp) * 180.f / pi);
                 if (angle > 90.f)
                     angle = 180.f - angle;
 
                 angle = std::max(angle, 1.f);
                 if (angle < settings.minParallax)
                     score *= angle / settings.minParallax;
-                assert(score == score);
+                assert(!MATH_ISNAN(score));
             }
             if (score > maxScore) {
                 foundOne = true;
