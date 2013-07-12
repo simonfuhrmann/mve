@@ -172,4 +172,28 @@ VertexInfoList::print_debug (void)
     }
 }
 
+/* ---------------------------------------------------------------- */
+
+bool
+VertexInfoList::is_mesh_edge (std::size_t v1, std::size_t v2)
+{
+    MeshVertexInfo& vinfo = this->at(v1);
+    return std::find(vinfo.verts.begin(), vinfo.verts.end(), v2) != vinfo.verts.end();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+VertexInfoList::get_faces_for_edge (std::size_t v1, std::size_t v2, AdjFaceList& afaces)
+{
+    MeshVertexInfo& vinfo1 = this->at(v1);
+    MeshVertexInfo& vinfo2 = this->at(v2);
+    for (std::size_t i = 0; i < vinfo1.faces.size(); ++i)
+    {
+        std::size_t face = vinfo1.faces.at(i);
+        if(std::find(vinfo2.faces.begin(), vinfo2.faces.end(), face) != vinfo2.faces.end())
+            afaces.push_back(face);
+    }
+}
+
 MVE_NAMESPACE_END

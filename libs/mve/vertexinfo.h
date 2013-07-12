@@ -59,6 +59,7 @@ class VertexInfoList : public std::vector<MeshVertexInfo>
 public:
     typedef util::RefPtr<VertexInfoList> Ptr;
     typedef util::RefPtr<VertexInfoList const> ConstPtr;
+    typedef std::vector<std::size_t> AdjFaceList;
 
 private:
     void order_and_classify (TriangleMesh const& mesh, std::size_t idx);
@@ -81,9 +82,13 @@ public:
     /** Prints debug information to stdout. */
     void print_debug (void);
 
+    /** Checks for the existence of and edge between the given vertices */
+    bool is_mesh_edge (std::size_t v1, std::size_t v2);
+
+    /** Fills the given AdjFaceList with all faces containing the edge */
+    void get_faces_for_edge (std::size_t v1, std::size_t v2, AdjFaceList& afaces);
+
     /* TODO: More helper functions
-     * - is_mesh_edge (v1, v2)
-     * - get_faces_for_edge (v1, v2)
      * - get_mem_usage
      */
 };
