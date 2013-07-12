@@ -112,7 +112,7 @@ LocalViewSelection::performVS()
                 // epipolar geometry
                 dp = epipolarPlane[i].dot(epipolarPlane[*sel]);
                 dp = math::algo::clamp(dp, -1.f, 1.f);
-                float angle = fabs(std::acos(dp) * 180.f / pi);
+                float angle = std::abs(std::acos(dp) * 180.f / pi);
                 if (angle > 90.f)
                     angle = 180.f - angle;
 

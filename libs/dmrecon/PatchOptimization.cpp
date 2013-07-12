@@ -202,11 +202,11 @@ PatchOptimization::doAutoOptimization()
         for (id = neighIDs.begin(); id != neighIDs.end(); ++id, ++count)
         {
             float ncc = sampler->getFastNCC(*id);
-            if (fabsf(ncc - oldNCC[count]) > settings.minRefineDiff)
+            if (std::abs(ncc - oldNCC[count]) > settings.minRefineDiff)
                 converged = false;
             if ((ncc < settings.acceptNCC) ||
                 (status.iterationCount == 14 &&
-                 fabsf(ncc - oldNCC[count]) > settings.minRefineDiff))
+                 std::abs(ncc - oldNCC[count]) > settings.minRefineDiff))
             {
                 toBeReplaced.insert(*id);
                 viewRemoved = true;
