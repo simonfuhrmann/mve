@@ -8,7 +8,7 @@
 
 #include "util/arguments.h"
 #include "util/tokenizer.h"
-
+#include "mve/meshtools.h"
 #include "mve/depthmap.h"
 #include "mve/plyfile.h"
 #include "mve/scene.h"
@@ -22,7 +22,6 @@ struct AppSettings
     std::string image;
     std::string aabb;
     bool with_normals;
-    bool poisson;
     std::vector<std::size_t> ids;
 };
 
@@ -36,43 +35,6 @@ parse_ids (std::string const& id_string, std::vector<std::size_t>& ids)
     t.split(id_string, ',');
     for (std::size_t i = 0; i < t.size(); ++i)
         ids.push_back(util::string::convert<std::size_t>(t[i]));
-}
-
-void
-write_poisson_mesh (mve::TriangleMesh::ConstPtr mesh, std::string const& fname)
-{
-    bool binary = false;
-    if (util::string::right(fname, 6) == ".bnpts")
-        binary = true;
-
-    std::ofstream out(fname.c_str());
-    if (!out.good())
-        throw std::runtime_error(std::strerror(errno));
-
-    mve::TriangleMesh::VertexList const& verts(mesh->get_vertices());
-    mve::TriangleMesh::NormalList const& vnorm(mesh->get_vertex_normals());
-
-    if (verts.size() != vnorm.size())
-        throw std::runtime_error("Poisson mesh without normals");
-
-    for (std::size_t i = 0; i < verts.size(); ++i)
-    {
-        math::Vec3f v(verts[i]);
-        math::Vec3f n(vnorm[i]);
-
-        if (binary)
-        {
-            out.write((char const*)*v, sizeof(float) * 3);
-            out.write((char const*)*n, sizeof(float) * 3);
-        }
-        else
-        {
-            out << v[0] << " " << v[1] << " " << v[2] << " ";
-            out << n[0] << " " << n[1] << " " << n[2] << std::endl;
-        }
-    }
-
-    out.close();
 }
 
 int
@@ -89,8 +51,8 @@ main (int argc, char** argv)
         "Generates a pointset from selected views by projecting "
         "reconstructed depth values to the world coordinate system. "
         "By default, all views are used.");
-    args.add_option('n', "with-normals", false, "Write points with normals");
-    args.add_option('p', "poisson", false, "Write points in Poission format");
+    args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
+    args.add_option('s', "with-scale", false, "Write points with scale information (PLY only)");
     args.add_option('d', "depthmap", true, "Name of depthmap to use [depthmap]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
@@ -114,7 +76,6 @@ main (int argc, char** argv)
 
         switch (arg->opt->sopt)
         {
-            case 'p': conf.poisson = true; break;
             case 'n': conf.with_normals = true; break;
             case 'd': conf.dmname = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
@@ -247,14 +208,16 @@ main (int argc, char** argv)
     std::cout << "  Colors: " << vcolor.size() << std::endl;
 
     /* Write mesh to disc. */
-    if (conf.poisson)
+    if (util::string::right(conf.outmesh, 4) == ".ply")
     {
-        write_poisson_mesh(pset, conf.outmesh);
+        mve::geom::SavePLYOptions opts;
+        opts.write_vertex_normals = conf.with_normals;
+        opts.write_vertex_values = conf.write_scale;
+        mve::geom::save_ply_mesh(pset, conf.outmesh, opts);
     }
     else
     {
-        mve::geom::save_ply_mesh(pset, conf.outmesh,
-            true, true, conf.with_normals);
+        mve::geom::save_mesh(pset, conf.outmesh);
     }
 
     return 0;

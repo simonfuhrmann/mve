@@ -29,13 +29,14 @@ save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename);
  * Simple importer for Kazhdan's .npts ASCII files.
  */
 TriangleMesh::Ptr
-load_npts_mesh (std::string const& filename);
+load_npts_mesh (std::string const& filename, bool format_binary = false);
 
 /**
  * Simple exporter for Kazhdan's .npts ASCII files.
  */
 void
-save_npts_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename);
+save_npts_mesh (TriangleMesh::ConstPtr mesh,
+    std::string const& filename, bool format_binary = false);
 
 /**
  * Transforms the vertices and normals of the mesh using the

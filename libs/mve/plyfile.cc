@@ -652,12 +652,8 @@ load_xf_file (std::string const& filename, float* ctw)
 /* ---------------------------------------------------------------- */
 
 void
-save_ply_mesh (TriangleMesh::ConstPtr mesh,
-    std::string const& filename, bool format_binary,
-    bool write_vcolors, bool write_vnormals,
-    bool write_fcolors, bool write_fnormals,
-    bool write_vconfidences, bool write_vvalues,
-    unsigned int verts_per_simplex)
+save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
+    SavePLYOptions const& options)
 {
     if (mesh.get() == 0)
         throw std::invalid_argument("NULL mesh given");
@@ -673,17 +669,26 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh,
     TriangleMesh::ColorList const& fcolors(mesh->get_face_colors());
     TriangleMesh::NormalList const& fnormals(mesh->get_face_normals());
 
-    if (faces.size() % verts_per_simplex != 0)
+    if (faces.size() % options.verts_per_simplex != 0)
         throw std::invalid_argument("Invalid amount of face indices");
-    std::size_t face_amount = faces.size() / verts_per_simplex;
+    std::size_t face_amount = faces.size() / options.verts_per_simplex;
 
-    write_vcolors = (write_vcolors && vcolors.size() == verts.size());
-    write_vnormals = (write_vnormals && vnormals.size() == verts.size());
-    write_vconfidences = (write_vconfidences && conf.size() == verts.size());
-    write_vvalues = (write_vvalues && vvalues.size() == verts.size());
-    write_fcolors = (write_fcolors && fcolors.size() == face_amount);
-    write_fnormals = (write_fnormals && fnormals.size() == face_amount);
-    std::string format_str = (format_binary ? "binary_little_endian" : "ascii");
+    bool write_vcolors = options.write_vertex_colors;
+    write_vcolors = write_vcolors && mesh->has_vertex_colors();
+    bool write_vnormals = options.write_vertex_normals;
+    write_vnormals = write_vnormals && mesh->has_vertex_normals();
+    bool write_vconfidences = options.write_vertex_confidences;
+    write_vconfidences = write_vconfidences && mesh->has_vertex_confidences();
+    bool write_vvalues = options.write_vertex_values;
+    write_vvalues = write_vvalues && mesh->has_vertex_values();
+    bool write_fcolors = options.write_face_colors;
+    write_fcolors = write_fcolors && fcolors.size() == face_amount;
+    bool write_fnormals = options.write_face_normals;
+    write_fnormals = write_fnormals && fnormals.size() == face_amount;
+
+    std::string format_str = (options.format_binary
+        ? "binary_little_endian"
+        : "ascii");
 
     /* Open output file. */
     std::ofstream out(filename.c_str());
@@ -692,8 +697,10 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh,
 
     std::cout << "Writing PLY file (" << verts.size() << " verts"
         << (write_vcolors ? ", with colors" : "")
-        << (write_vnormals ? ", with normals" : "") << ", "
-        << face_amount << " faces"
+        << (write_vnormals ? ", with normals" : "")
+        << (write_vconfidences ? ", with confidences" : "")
+        << (write_vvalues ? ", with values" : "")
+        << ", " << face_amount << " faces"
         << (write_fcolors ? ", with colors" : "")
         << (write_fnormals ? ", with normals" : "")
         << ")... " << std::flush;
@@ -753,7 +760,7 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh,
 
     out << "end_header" << std::endl;
 
-    if (format_binary)
+    if (options.format_binary)
     {
         /* Output data in BINARY format. */
         for (std::size_t i = 0; i < verts.size(); ++i)
@@ -773,12 +780,12 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh,
                 out.write((char const*)&vvalues[i], sizeof(float));
         }
 
-        unsigned char verts_per_simplex_uchar = verts_per_simplex;
+        unsigned char verts_per_simplex_uchar = options.verts_per_simplex;
         for (std::size_t i = 0; i < face_amount; ++i)
         {
             out.write((char const*)&verts_per_simplex_uchar, 1);
-            out.write((char const*)&faces[i * verts_per_simplex],
-                verts_per_simplex * sizeof(unsigned int));
+            out.write((char const*)&faces[i * options.verts_per_simplex],
+                options.verts_per_simplex * sizeof(unsigned int));
             if (write_fnormals)
                 out.write((char const*)*fnormals[i], 3 * sizeof(float));
             if (write_fcolors)
@@ -818,9 +825,9 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh,
 
         for (std::size_t i = 0; i < face_amount; ++i)
         {
-            out << verts_per_simplex;
-            for (unsigned int j = 0; j < verts_per_simplex; ++j)
-                out << " " << faces[i * verts_per_simplex + j];
+            out << options.verts_per_simplex;
+            for (unsigned int j = 0; j < options.verts_per_simplex; ++j)
+                out << " " << faces[i * options.verts_per_simplex + j];
             if (write_fnormals)
                 for (int j = 0; j < 3; ++j)
                     out << " " << fnormals[i][j];

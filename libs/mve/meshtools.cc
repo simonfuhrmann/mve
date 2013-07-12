@@ -27,7 +27,9 @@ load_mesh (std::string const& filename)
     else if (util::string::right(filename, 4) == ".ply")
         return load_ply_mesh(filename);
     else if (util::string::right(filename, 5) == ".npts")
-        return load_npts_mesh(filename);
+        return load_npts_mesh(filename, false);
+    else if (util::string::right(filename, 6) == ".bnpts")
+        return load_npts_mesh(filename, true);
     else
         throw std::runtime_error("Extension not recognized");
 }
@@ -44,7 +46,9 @@ save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
     else if (util::string::right(filename, 5) == ".pbrt")
         save_pbrt_mesh(mesh, filename);
     else if (util::string::right(filename, 5) == ".npts")
-        save_npts_mesh(mesh, filename);
+        save_npts_mesh(mesh, filename, false);
+    else if (util::string::right(filename, 5) == ".bnpts")
+        save_npts_mesh(mesh, filename, true);
     else
         throw std::runtime_error("Extension not recognized");
 }
@@ -52,7 +56,7 @@ save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
 /* ---------------------------------------------------------------- */
 
 TriangleMesh::Ptr
-load_npts_mesh (std::string const& filename)
+load_npts_mesh (std::string const& filename, bool format_binary)
 {
     /* Precondition checks. */
     if (filename.empty())
@@ -70,12 +74,21 @@ load_npts_mesh (std::string const& filename)
     while (true)
     {
         math::Vec3f v, n;
-        for (int i = 0; i < 3; ++i)
-            input >> v[i];
-        for (int i = 0; i < 3; ++i)
-            input >> n[i];
-        if (input.eof()) // Correct ordering of check/push_back?
+        if (format_binary)
+        {
+            input.read((char*)*v, sizeof(float) * 3);
+            input.read((char*)*n, sizeof(float) * 3);
+        }
+        else
+        {
+            for (int i = 0; i < 3; ++i)
+                input >> v[i];
+            for (int i = 0; i < 3; ++i)
+                input >> n[i];
+        }
+        if (input.eof())
             break;
+
         verts.push_back(v);
         vnorm.push_back(n);
     }
@@ -86,8 +99,11 @@ load_npts_mesh (std::string const& filename)
 /* ---------------------------------------------------------------- */
 
 void
-save_npts_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
+save_npts_mesh (TriangleMesh::ConstPtr mesh,
+    std::string const& filename, bool format_binary)
 {
+    if (mesh == NULL || mesh->get_vertices().empty())
+        throw std::invalid_argument("Input mesh is empty");
     if (filename.empty())
         throw std::invalid_argument("No filename given");
     if (mesh->get_vertex_normals().size() != mesh->get_vertices().size())
@@ -100,9 +116,20 @@ save_npts_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
     TriangleMesh::VertexList const& verts(mesh->get_vertices());
     TriangleMesh::NormalList const& vnorm(mesh->get_vertex_normals());
     for (std::size_t i = 0; i < verts.size(); ++i)
-        out << verts[i][0] << " " << verts[i][1] << " " << verts[i][2] << " "
-            << vnorm[i][0] << " " << vnorm[i][1] << " " << vnorm[i][2]
-            << std::endl;
+    {
+        math::Vec3f const& v(verts[i]);
+        math::Vec3f const& n(vnorm[i]);
+        if (format_binary)
+        {
+            out.write((char const*)*v, sizeof(float) * 3);
+            out.write((char const*)*n, sizeof(float) * 3);
+        }
+        else
+        {
+            out << v[0] << " " << v[1] << " " << v[2] << " "
+                << n[0] << " " << n[1] << " " << n[2] << std::endl;
+        }
+    }
     out.close();
 }
 
