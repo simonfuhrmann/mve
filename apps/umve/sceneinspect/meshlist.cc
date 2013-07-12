@@ -1,4 +1,6 @@
+#include <limits>
 #include <iostream>
+
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QInputDialog>
@@ -81,11 +83,22 @@ QMeshContextMenu::build (void)
     {
         QMenu* menu = this->addMenu(tr("Vertex Confidences"));
         QAction* convert_color = menu->addAction(tr("Map to color"));
-        QAction* delete_vconf = menu->addAction(tr("Delete confidences"));
+        QAction* delete_vconfs = menu->addAction(tr("Delete confidences"));
         this->connect(convert_color, SIGNAL(triggered()),
             this, SLOT(on_colorize_confidences()));
-        this->connect(delete_vconf, SIGNAL(triggered()),
+        this->connect(delete_vconfs, SIGNAL(triggered()),
             this, SLOT(on_delete_vertex_confidences()));
+    }
+
+    if (rep->mesh->has_vertex_values())
+    {
+        QMenu* menu = this->addMenu(tr("Vertex Values"));
+        QAction* convert_color = menu->addAction(tr("Map to color"));
+        QAction* delete_vvalues = menu->addAction(tr("Delete values"));
+        this->connect(convert_color, SIGNAL(triggered()),
+            this, SLOT(on_colorize_values()));
+        this->connect(delete_vvalues, SIGNAL(triggered()),
+            this, SLOT(on_delete_vertex_values()));
     }
 
     if (rep->mesh->has_face_colors())
@@ -229,20 +242,56 @@ QMeshContextMenu::on_delete_vertex_confidences (void)
 /* ---------------------------------------------------------------- */
 
 void
+QMeshContextMenu::on_delete_vertex_values (void)
+{
+    this->rep->mesh->get_vertex_values().clear();
+    this->rep->renderer.reset();
+    emit this->parent->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_colorize_values (void)
+{
+    this->on_colorize_with_attrib(this->rep->mesh->get_vertex_values());
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 QMeshContextMenu::on_colorize_confidences (void)
 {
-    mve::TriangleMesh::ConfidenceList const& vconf
-        = this->rep->mesh->get_vertex_confidences();
+    this->on_colorize_with_attrib(this->rep->mesh->get_vertex_confidences());
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
+{
     mve::TriangleMesh::ColorList& vcolor
         = this->rep->mesh->get_vertex_colors();
-
-    if (vconf.size() != this->rep->mesh->get_vertices().size())
+    if (attrib.size() != this->rep->mesh->get_vertices().size())
         return;
 
+    /* Find min/max value of the attribute. */
+    float fmin = std::numeric_limits<float>::max();
+    float fmax = -std::numeric_limits<float>::max();
+    for (std::size_t i = 0; i < attrib.size(); ++i)
+    {
+        fmin = std::min(fmin, attrib[i]);
+        fmax = std::max(fmax, attrib[i]);
+    }
+
+    /* Assign the min/max value as gray-scale color value. */
     vcolor.clear();
-    vcolor.resize(vconf.size());
-    for (std::size_t i = 0; i < vconf.size(); ++i)
-        vcolor[i] = math::Vec4f(vconf[i], vconf[i], vconf[i], 1.0f);
+    vcolor.resize(attrib.size());
+    for (std::size_t i = 0; i < attrib.size(); ++i)
+    {
+        float value = (attrib[i] - fmin) / (fmax - fmin);
+        vcolor[i] = math::Vec4f(value, value, value, 1.0f);
+    }
 
     this->rep->renderer.reset();
     emit this->parent->signal_redraw();

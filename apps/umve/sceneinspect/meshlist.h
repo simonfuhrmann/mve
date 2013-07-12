@@ -41,6 +41,9 @@ private slots:
     void on_delete_vertex_colors (void);
     void on_delete_vertex_confidences (void);
     void on_colorize_confidences (void);
+    void on_delete_vertex_values (void);
+    void on_colorize_values (void);
+    void on_colorize_with_attrib (std::vector<float> const& attrib);
 
 public:
     QListWidgetItem* item;
