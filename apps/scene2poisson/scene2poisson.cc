@@ -59,7 +59,7 @@ main (int argc, char** argv)
             case 'b': conf.aabb = arg->arg; break;
             case 'd': conf.depth = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
-	    case 'n': imstring = arg->arg; break;
+            case 'n': imstring = arg->arg; break;
             default: throw std::runtime_error("Unknown option");
         }
     }
@@ -103,19 +103,16 @@ main (int argc, char** argv)
     {
         util::Tokenizer tok;
         tok.split(imstring, ',');
-	conf.imnums.resize(tok.size());
+        conf.imnums.resize(tok.size());
         for (size_t i = 0; i < tok.size(); ++i)
-	{
-	    conf.imnums[i] = util::string::convert<int>(tok[i]);
-        }	
+            conf.imnums[i] = util::string::convert<int>(tok[i]);
     }
 
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-
-	if(imstring.size() != 0 &&
-	   std::find(conf.imnums.begin(), conf.imnums.end(), i) == conf.imnums.end())
-	    continue;
+        if(imstring.size() != 0 && std::find(conf.imnums.begin(),
+            conf.imnums.end(), i) == conf.imnums.end())
+            continue;
 
         mve::View::Ptr view = views[i];
         if (!view.get())
@@ -137,7 +134,6 @@ main (int argc, char** argv)
             << "\"" << (ci.get() ? " (with colors)" : "")
             << "..." << std::endl;
 
-#if 1
         /* Triangulate depth map. */
         mve::TriangleMesh::Ptr mesh;
         mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
@@ -166,18 +162,10 @@ main (int argc, char** argv)
 
             oct.insert(p);
         }
-#endif
-
     }
 
     std::cout << "Generating point set from octree..." << std::endl;
     mve::TriangleMesh::Ptr pset(oct.get_pointset(2.0f));
-
-#if 0
-    std::cout << "Saving point set..." << std::endl;
-    mve::geom::save_ply_mesh(pset, "/tmp/points-2.ply",
-        true, true, true, false, false, true);
-#endif
 
     std::cout << "Writing Poisson format output file..." << std::endl;
     std::ofstream out(conf.outmesh.c_str());

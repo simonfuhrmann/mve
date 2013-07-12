@@ -47,12 +47,12 @@ public:
 private:
     mve::Scene::Ptr scene;
     mve::BundleFile::ConstPtr bundle;
-    SingleViewPtrList views;
+    std::vector<SingleView::Ptr> views;
 
     Settings settings;
     std::priority_queue<QueueData> prQueue;
     IndexSet neighViews;
-    std::vector<SingleViewPtr> imgNeighbors;
+    std::vector<SingleView::Ptr> imgNeighbors;
     int width;
     int height;
     Progress progress;

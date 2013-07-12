@@ -2,7 +2,6 @@
 #define UMVE_GUICONTEXT_HEADER
 
 #include <string>
-#include <QtGui>
 
 #include "mve/scene.h"
 #include "mve/view.h"

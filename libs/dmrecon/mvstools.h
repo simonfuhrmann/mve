@@ -12,24 +12,21 @@
 
 MVS_NAMESPACE_BEGIN
 
-/** initialize mapping from SRGB to linear color space */
-void initSRGB2linear();
-
 /** interpolate color and derivative at given sample positions */
-void colAndExactDeriv(util::RefPtr<mve::ImageBase> img,
+void colAndExactDeriv(mve::ImageBase const& img,
     PixelCoords const& imgPos, PixelCoords const& gradDir,
     Samples& color, Samples& deriv);
 
 /** get color at given pixel positions (no interpolation) */
-void getXYZColorAtPix(util::RefPtr<mve::ImageBase> img,
+void getXYZColorAtPix(mve::ImageBase const& img,
     std::vector<math::Vec2i> const& imgPos, Samples* color);
 
 /** interpolate only color at given sample positions */
-void getXYZColorAtPos(util::RefPtr<mve::ImageBase> img,
+void getXYZColorAtPos(mve::ImageBase const& img,
     PixelCoords const& imgPos, Samples* color);
 
 /** Computes the parallax between two views with respect to some 3D point p */
-float parallax(math::Vec3f p, mvs::SingleViewPtr v1, mvs::SingleViewPtr v2);
+float parallax(math::Vec3f p, mvs::SingleView::Ptr v1, mvs::SingleView::Ptr v2);
 
 /** Turns a parallax value (0 <= p <= 180) into a weight according
     to a bilateral Gaussian (see [Furukawa 2010] for details) */
@@ -39,11 +36,11 @@ float parallaxToWeight(float p);
 /* ------------------------- Implementation ----------------------- */
 
 inline float
-parallax(math::Vec3f p, mvs::SingleViewPtr v1, mvs::SingleViewPtr v2)
+parallax(math::Vec3f p, mvs::SingleView::Ptr v1, mvs::SingleView::Ptr v2)
 {
     math::Vec3f dir1 = (p - v1->camPos).normalized();
     math::Vec3f dir2 = (p - v2->camPos).normalized();
-    float dp = std::min(dir1.dot(dir2), 1.f);
+    float dp = std::max(std::min(dir1.dot(dir2), 1.f), -1.f);
     float plx = std::acos(dp) * 180.f / pi;
     return plx;
 }

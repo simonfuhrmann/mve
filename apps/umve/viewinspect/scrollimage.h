@@ -1,8 +1,8 @@
 #ifndef SCROLL_IMAGE_HEADER
 #define SCROLL_IMAGE_HEADER
 
-#include <QtGui>
 #include <stdexcept>
+#include <QScrollArea>
 
 #include "clickimage.h"
 

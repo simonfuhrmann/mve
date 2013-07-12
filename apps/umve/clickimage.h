@@ -1,7 +1,8 @@
 #ifndef CLICK_IMAGE_HEADER
 #define CLICK_IMAGE_HEADER
 
-#include <QtGui>
+#include <QLabel>
+#include <QMouseEvent>
 
 /* Scalable image that features click signals. */
 class ClickImage : public QLabel

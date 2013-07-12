@@ -8,7 +8,7 @@
 
 #include "util/arguments.h"
 #include "util/tokenizer.h"
-
+#include "mve/meshtools.h"
 #include "mve/depthmap.h"
 #include "mve/plyfile.h"
 #include "mve/scene.h"
@@ -22,7 +22,6 @@ struct AppSettings
     std::string image;
     std::string aabb;
     bool with_normals;
-    bool poisson;
     std::vector<std::size_t> ids;
 };
 
@@ -36,43 +35,6 @@ parse_ids (std::string const& id_string, std::vector<std::size_t>& ids)
     t.split(id_string, ',');
     for (std::size_t i = 0; i < t.size(); ++i)
         ids.push_back(util::string::convert<std::size_t>(t[i]));
-}
-
-void
-write_poisson_mesh (mve::TriangleMesh::ConstPtr mesh, std::string const& fname)
-{
-    bool binary = false;
-    if (util::string::right(fname, 6) == ".bnpts")
-        binary = true;
-
-    std::ofstream out(fname.c_str());
-    if (!out.good())
-        throw std::runtime_error(std::strerror(errno));
-
-    mve::TriangleMesh::VertexList const& verts(mesh->get_vertices());
-    mve::TriangleMesh::NormalList const& vnorm(mesh->get_vertex_normals());
-
-    if (verts.size() != vnorm.size())
-        throw std::runtime_error("Poisson mesh without normals");
-
-    for (std::size_t i = 0; i < verts.size(); ++i)
-    {
-        math::Vec3f v(verts[i]);
-        math::Vec3f n(vnorm[i]);
-
-        if (binary)
-        {
-            out.write((char const*)*v, sizeof(float) * 3);
-            out.write((char const*)*n, sizeof(float) * 3);
-        }
-        else
-        {
-            out << v[0] << " " << v[1] << " " << v[2] << " ";
-            out << n[0] << " " << n[1] << " " << n[2] << std::endl;
-        }
-    }
-
-    out.close();
 }
 
 int
@@ -89,8 +51,8 @@ main (int argc, char** argv)
         "Generates a pointset from selected views by projecting "
         "reconstructed depth values to the world coordinate system. "
         "By default, all views are used.");
-    args.add_option('n', "with-normals", false, "Write points with normals");
-    args.add_option('p', "poisson", false, "Write points in Poission format");
+    args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
+    args.add_option('s', "with-scale", false, "Write points with scale information (PLY only)");
     args.add_option('d', "depthmap", true, "Name of depthmap to use [depthmap]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
@@ -107,15 +69,13 @@ main (int argc, char** argv)
     conf.dmname = "depthmap";
 
     /* Scan arguments. */
-    for (util::ArgResult const* arg = args.next_result();
-        arg != 0; arg = args.next_result())
+    while (util::ArgResult const* arg = args.next_result())
     {
-        if (arg->opt == 0)
+        if (arg->opt == NULL)
             continue;
 
         switch (arg->opt->sopt)
         {
-            case 'p': conf.poisson = true; break;
             case 'n': conf.with_normals = true; break;
             case 'd': conf.dmname = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
@@ -128,10 +88,8 @@ main (int argc, char** argv)
     if (conf.poisson)
         conf.with_normals = true;
 
-
-  /* If requested, use given AABB. */
+    /* If requested, use given AABB. */
     math::Vec3f aabbmin, aabbmax;
-
     if (!conf.aabb.empty())
     {
         util::Tokenizer tok;
@@ -147,54 +105,45 @@ main (int argc, char** argv)
             aabbmin[i] = util::string::convert<float>(tok[i]);
             aabbmax[i] = util::string::convert<float>(tok[i + 3]);
         }
-        std::cout << "Got AABB: (" << aabbmin << ") / ("
+        std::cout << "Using AABB: (" << aabbmin << ") / ("
             << aabbmax << ")" << std::endl;
     }
     std::cout << "Using depthmap: " << conf.dmname << " and color image: "
           << conf.image << std::endl;
 
+    /* Prepare output mesh. */
     mve::TriangleMesh::Ptr pset(mve::TriangleMesh::create());
     mve::TriangleMesh::VertexList& verts(pset->get_vertices());
     mve::TriangleMesh::NormalList& vnorm(pset->get_vertex_normals());
     mve::TriangleMesh::ColorList& vcolor(pset->get_vertex_colors());
 
-#if 0
-    mve::TriangleMesh::Ptr mesh1 = mve::geom::load_ply_mesh("/gris/gris-f/home/sfuhrman/offmodels/stanford/bunny/meshes/depthmap-1.ply");
-    mve::TriangleMesh::Ptr mesh2 = mve::geom::load_ply_mesh("/gris/gris-f/home/sfuhrman/offmodels/stanford/bunny/meshes/depthmap-5.ply");
-    mesh1->ensure_normals();
-    mesh2->ensure_normals();
-
-    verts.insert(verts.end(), mesh1->get_vertices().begin(), mesh1->get_vertices().end());
-    vnorm.insert(vnorm.end(), mesh1->get_vertex_normals().begin(), mesh1->get_vertex_normals().end());
-    verts.insert(verts.end(), mesh2->get_vertices().begin(), mesh2->get_vertices().end());
-    vnorm.insert(vnorm.end(), mesh2->get_vertex_normals().begin(), mesh2->get_vertex_normals().end());
-#endif
-
-#if 1
     /* Load scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
     scene->load_scene(conf.scenedir);
 
     /* Iterate over views and get points. */
     mve::Scene::ViewList& views(scene->get_views());
+#pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view = views[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         std::size_t view_id = view->get_id();
-        if (!conf.ids.empty() && std::find(conf.ids.begin(), conf.ids.end(), view_id) == conf.ids.end())
+        if (!conf.ids.empty() && std::find(conf.ids.begin(),
+            conf.ids.end(), view_id) == conf.ids.end())
             continue;
 
         mve::FloatImage::Ptr dm = view->get_float_image(conf.dmname);
-        if (!dm.get())
+        if (dm == NULL)
             continue;
 
         mve::ByteImage::Ptr ci;
         if (!conf.image.empty())
             ci = view->get_byte_image(conf.image);
 
+#pragma omp critical
         std::cout << "Processing view \"" << view->get_name()
             << "\"" << (ci.get() ? " (with colors)" : "")
             << "..." << std::endl;
@@ -203,55 +152,55 @@ main (int argc, char** argv)
         mve::CameraInfo const& cam = view->get_camera();
         mve::TriangleMesh::Ptr mesh;
         mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
+        if (conf.with_normals)
+            mesh->ensure_normals();
 
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
 
-
         /* Add vertices and optional colors and normals to mesh. */
-
-        /* Fast if no bounding box given */
         if (conf.aabb.empty())
         {
-          verts.insert(verts.end(), mverts.begin(), mverts.end());
-          if (!mvcol.empty())
-                vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
-          if (conf.with_normals)
+            /* Fast if no bounding box is given. */
+#pragma omp critical
             {
-              mesh->ensure_normals();
-              vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
+                verts.insert(verts.end(), mverts.begin(), mverts.end());
+                if (!mvcol.empty())
+                    vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
+                if (conf.with_normals)
+                    vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
             }
         }
         else
         {
-          /* We need to iterate over all points */
-          if (conf.with_normals)
-            {
-              mesh->ensure_normals();
-            }
-          for (unsigned int i =0; i < mverts.size(); i++){
-            math::Vec3f pt = mverts[i];
-            if (pt[0] < aabbmin[0] || pt[0] > aabbmax[0])
-              continue;
-            if (pt[1] < aabbmin[1] || pt[1] > aabbmax[1])
-              continue;
-            if (pt[2] < aabbmin[2] || pt[2] > aabbmax[2])
-              continue;
-
-            verts.push_back(pt);
-            if (!mvcol.empty())
-            {
-              vcolor.push_back(mvcol[i]);
-            }
+            /* Check every point if a bounding box is given.  */
             if (conf.with_normals)
+                mesh->ensure_normals();
+
+            for (std::size_t i = 0; i < mverts.size(); ++i)
             {
-              vnorm.push_back(mnorms[i]);
+                math::Vec3f const& pt = mverts[i];
+                if (pt[0] < aabbmin[0] || pt[0] > aabbmax[0]
+                    || pt[1] < aabbmin[1] || pt[1] > aabbmax[1]
+                    || pt[2] < aabbmin[2] || pt[2] > aabbmax[2])
+                    continue;
+
+#pragma omp critical
+                {
+                    verts.push_back(pt);
+                    if (!mvcol.empty())
+                        vcolor.push_back(mvcol[i]);
+                    if (conf.with_normals)
+                        vnorm.push_back(mnorms[i]);
+                }
             }
-          }
         }
+
+        dm.reset();
+        ci.reset();
+        view->cache_cleanup();
     }
-#endif
 
     std::cout << "Writing final point set..." << std::endl;
     std::cout << "  Points: " << verts.size() << std::endl;
@@ -259,15 +208,17 @@ main (int argc, char** argv)
     std::cout << "  Colors: " << vcolor.size() << std::endl;
 
     /* Write mesh to disc. */
-    if (conf.poisson)
+    if (util::string::right(conf.outmesh, 4) == ".ply")
     {
-        write_poisson_mesh(pset, conf.outmesh);
+        mve::geom::SavePLYOptions opts;
+        opts.write_vertex_normals = conf.with_normals;
+        opts.write_vertex_values = conf.write_scale;
+        mve::geom::save_ply_mesh(pset, conf.outmesh, opts);
     }
     else
     {
-        mve::geom::save_ply_mesh(pset, conf.outmesh,
-            true, true, conf.with_normals);
+        mve::geom::save_mesh(pset, conf.outmesh);
     }
 
-    return 1;
+    return 0;
 }

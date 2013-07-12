@@ -8,7 +8,7 @@
 MVS_NAMESPACE_BEGIN
 
 PatchSampler::PatchSampler(
-    SingleViewPtrList const& _views,
+    std::vector<SingleView::Ptr> const& _views,
     Settings const& _settings,
     int _x,          // pixel position
     int _y,
@@ -25,8 +25,8 @@ PatchSampler::PatchSampler(
     dzJ(_dzJ),
     success(views.size(), false)
 {
-    SingleViewPtr refV(views[settings.refViewNr]);
-    util::RefPtr<mve::ImageBase> masterImg(refV->getScaledImg());
+    SingleView::Ptr refV(views[settings.refViewNr]);
+    mve::ImageBase::ConstPtr masterImg(refV->getScaledImg());
 
     offset = settings.filterWidth / 2;
     nrSamples = sqr(settings.filterWidth);
@@ -52,7 +52,7 @@ PatchSampler::PatchSampler(
     std::size_t count = 0;
     for (int j = topLeft[1]; j <= bottomRight[1]; ++j)
         for (int i = topLeft[0]; i <= bottomRight[0]; ++i)
-            masterViewDirs[count++] = refV->viewRay(i, j);
+            masterViewDirs[count++] = refV->viewRayScaled(i, j);
 
     /* initialize master color samples and 3d patch points */
     success[settings.refViewNr] = true;
@@ -64,7 +64,7 @@ void
 PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
 {
     success[v] = false;
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     PixelCoords& imgPos = neighPosSamples[v];
     imgPos.resize(nrSamples);
@@ -72,7 +72,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     math::Vec3f const& p0 = patchPoints[nrSamples/2];
     /* compute pixel prints and decide on which MipMap-Level to draw
        the samples */
-    float mfp = refV->footPrint(p0);
+    float mfp = refV->footPrintScaled(p0);
     float nfp = views[v]->footPrint(p0);
     if (mfp <= 0.f) {
         std::cerr << "Error in getFastColAndDerivSamples! "
@@ -87,7 +87,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
         ++mmLevel;
         ratio *= 2.f;
     }
-    mmLevel = std::min(views[v]->getMaxLevel(), mmLevel);
+    mmLevel = views[v]->clampLevel(mmLevel);
 
     /* compute step size for derivative */
     math::Vec3f p1(p0 + masterViewDirs[nrSamples/2]);
@@ -99,7 +99,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     stepSize[v] = 1.f / d;
 
     /* request according undistorted color image */
-    util::RefPtr<mve::ImageBase> img(views[v]->getPyramidImg(mmLevel));
+    mve::ImageBase::ConstPtr img(views[v]->getPyramidImg(mmLevel));
     int w = img->width();
     int h = img->height();
 
@@ -121,7 +121,7 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     /* draw the samples in the image */
     color.resize(nrSamples, math::Vec3f(0.f));
     deriv.resize(nrSamples, math::Vec3f(0.f));
-    colAndExactDeriv(img, imgPos, gradDir, color, deriv);
+    colAndExactDeriv(*img, imgPos, gradDir, color, deriv);
 
     /* normalize the gradient */
     for (std::size_t i = 0; i < nrSamples; ++i)
@@ -208,7 +208,7 @@ PatchSampler::getSAD(std::size_t v, math::Vec3f const& cs)
     float sum = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i) {
         for (int c = 0; c < 3; ++c) {
-            sum += fabs(cs[c] * neighColorSamples[v][i][c] -
+            sum += std::abs(cs[c] * neighColorSamples[v][i][c] -
                 masterColorSamples[i][c]);
         }
     }
@@ -268,7 +268,7 @@ PatchSampler::update(float newDepth, float newDzI, float newDzJ)
 void
 PatchSampler::computePatchPoints()
 {
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     unsigned int count = 0;
     for (int j = topLeft[1]; j <= bottomRight[1]; ++j) {
@@ -289,8 +289,8 @@ PatchSampler::computePatchPoints()
 void
 PatchSampler::computeMasterSamples()
 {
-    SingleViewPtr refV = views[settings.refViewNr];
-    util::RefPtr<mve::ImageBase> img(refV->getScaledImg());
+    SingleView::Ptr refV = views[settings.refViewNr];
+    mve::ImageBase::ConstPtr img(refV->getScaledImg());
 
     /* draw color samples from image and compute mean color */
     std::size_t count = 0;
@@ -301,7 +301,7 @@ PatchSampler::computeMasterSamples()
             imgPos[count][1] = j;
             ++count;
         }
-    getXYZColorAtPix(img, imgPos, &masterColorSamples);
+    getXYZColorAtPix(*img, imgPos, &masterColorSamples);
 
     masterMeanCol = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i)
@@ -337,7 +337,7 @@ PatchSampler::computeMasterSamples()
 void
 PatchSampler::computeNeighColorSamples(std::size_t v)
 {
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
 
     Samples & color = neighColorSamples[v];
     PixelCoords & imgPos = neighPosSamples[v];
@@ -346,7 +346,7 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
     /* compute pixel prints and decide on which MipMap-Level to draw
        the samples */
     math::Vec3f const & p0 = patchPoints[nrSamples/2];
-    float mfp = refV->footPrint(p0);
+    float mfp = refV->footPrintScaled(p0);
     float nfp = views[v]->footPrint(p0);
     if (mfp <= 0.f) {
         std::cerr << "Error in computeNeighColorSamples! "
@@ -362,8 +362,8 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
         ++mmLevel;
         ratio *= 2.f;
     }
-    mmLevel = std::min(views[v]->getMaxLevel(), mmLevel);
-    util::RefPtr<mve::ImageBase> img(views[v]->getPyramidImg(mmLevel));
+    mmLevel = views[v]->clampLevel(mmLevel);
+    mve::ImageBase::ConstPtr img(views[v]->getPyramidImg(mmLevel));
     int w = img->width();
     int h = img->height();
 
@@ -378,7 +378,7 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
             return;
         }
     }
-    getXYZColorAtPos(img, imgPos, &color);
+    getXYZColorAtPos(*img, imgPos, &color);
     success[v] = true;
 }
 

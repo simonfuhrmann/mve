@@ -3,6 +3,15 @@
 #include "dmrecon/Settings.h"
 
 #include <iostream>
+#include <QFormLayout>
+#include <QFuture>
+#include <QMessageBox>
+#include <QtGlobal>
+#if QT_VERSION >= 0x050000
+#include <QtConcurrent/QtConcurrentRun>
+#else
+#include <QtConcurrentRun>
+#endif
 
 #include "mve/view.h"
 #include "mve/depthmap.h"
@@ -18,15 +27,21 @@ ImageOperationsWidget::ImageOperationsWidget (void)
 {
     this->selected_view = new SelectedView();
 
+    const mvs::Settings default_settings;
+
     /* Depthmap recon layout. */
     this->mvs_color_scale.setText("Enable Color Scale");
-    this->mvs_color_scale.setChecked(true);
+    this->mvs_color_scale.setChecked(default_settings.useColorScale);
     this->mvs_write_ply.setText("Write PLY after recon");
-    this->mvs_write_ply.setChecked(false);
+    this->mvs_write_ply.setChecked(default_settings.writePlyFile);
+    this->mvs_dz_map.setText("Keep dz map");
+    this->mvs_dz_map.setChecked(default_settings.keepDzMap);
+    this->mvs_conf_map.setText("Keep confidence map");
+    this->mvs_conf_map.setChecked(default_settings.keepConfidenceMap);
     this->mvs_auto_save.setText("Save view after recon");
     this->mvs_auto_save.setChecked(false);
-    this->mvs_amount_gvs.setValue(20);
-    this->mvs_scale.setValue(0);
+    this->mvs_amount_gvs.setValue(default_settings.globalVSMax);
+    this->mvs_scale.setValue(default_settings.scale);
     this->mvs_scale.setRange(0, 10);
 
     QPushButton* dmrecon_but = new QPushButton
@@ -45,6 +60,8 @@ ImageOperationsWidget::ImageOperationsWidget (void)
     mvs_cb_layout->setSpacing(0);
     mvs_cb_layout->addWidget(&this->mvs_color_scale);
     mvs_cb_layout->addWidget(&this->mvs_write_ply);
+    mvs_cb_layout->addWidget(&this->mvs_dz_map);
+    mvs_cb_layout->addWidget(&this->mvs_conf_map);
     mvs_cb_layout->addWidget(&this->mvs_auto_save);
     QVBoxLayout* mvs_but_layout = new QVBoxLayout();
     mvs_but_layout->setSpacing(1);
@@ -267,8 +284,10 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     job->settings.imageEmbedding = this->mvs_color_image.currentText().toStdString();
     job->settings.globalVSMax = this->mvs_amount_gvs.value();
     job->settings.useColorScale = this->mvs_color_scale.isChecked();
-    job->settings.scale = float(this->mvs_scale.value());
+    job->settings.scale = this->mvs_scale.value();
     job->settings.writePlyFile = this->mvs_write_ply.isChecked();
+    job->settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
+    job->settings.keepDzMap = this->mvs_dz_map.isChecked();
     job->settings.plyPath = scene->get_path();
     job->settings.plyPath += "/recon/";
     job->settings.logPath = scene->get_path();

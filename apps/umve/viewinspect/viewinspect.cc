@@ -1,10 +1,15 @@
 #include <iostream>
 #include <limits>
+#include <QAction>
+#include <QFileDialog>
+#include <QInputDialog>
+#include <QMessageBox>
 
 #include "mve/view.h"
 #include "mve/image.h"
 #include "mve/plyfile.h"
 #include "mve/imageexif.h"
+#include "mve/imagefile.h"
 
 #include "guihelpers.h"
 #include "scenemanager.h"
@@ -69,15 +74,15 @@ ViewInspect::ViewInspect (QWidget* parent)
 void
 ViewInspect::create_detail_frame (void)
 {
-    this->tfunc = new TransferFunctionWidget();
-    this->inspector = new ImageInspectorWidget();
     this->operations = new ImageOperationsWidget();
+    this->inspector = new ImageInspectorWidget();
+    this->tone_mapping = new ToneMapping();
     this->exif_viewer = new QTextEdit();
     this->exif_viewer->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum);
     this->populate_exif_viewer();
 
-    this->connect(this->tfunc, SIGNAL(function_changed(TransferFunction)),
-        this, SLOT(on_tf_changed(TransferFunction)));
+    this->connect(this->tone_mapping, SIGNAL(tone_mapping_changed()),
+        this, SLOT(on_tone_mapping_changed()));
     this->connect(this->operations, SIGNAL(signal_reload_embeddings()),
         this, SLOT(on_reload_embeddings()));
     this->connect(this->operations, SIGNAL(signal_select_embedding
@@ -87,7 +92,7 @@ ViewInspect::create_detail_frame (void)
     this->image_details->setTabPosition(QTabWidget::East);
     this->image_details->addTab(this->operations, tr("Operations"));
     this->image_details->addTab(this->inspector, tr("Image Inspector"));
-    this->image_details->addTab(this->tfunc, tr("Transfer Function"));
+    this->image_details->addTab(this->tone_mapping, tr("Tone Mapping"));
     this->image_details->addTab(this->exif_viewer, tr("EXIF"));
     this->image_details->hide();
 }
@@ -236,16 +241,36 @@ ViewInspect::load_file (QString filename)
 void
 ViewInspect::load_image_file (QString filename)
 {
-    QImage image(filename);
-    if (image.isNull())
+    std::string fname = filename.toStdString();
+    std::string ext4 = util::string::right(fname, 4);
+    std::string ext5 = util::string::right(fname, 5);
+
+    /* Try to load it as byte image. */
+    mve::ImageBase::Ptr img;
+    try
+    { img = mve::image::load_file(fname); }
+    catch (...) {}
+
+    if (img == NULL && ext4 == ".pfm")
+    {
+        try { img = mve::image::load_pfm_file(fname); }
+        catch (...) {}
+    }
+
+    if (img == NULL && (ext4 == ".tif" || ext5 == ".tiff"))
+    {
+        try { img = mve::image::load_tiff_file(fname); }
+        catch (...) {}
+    }
+
+    if (img == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("Cannot load image %1").arg(filename));
         return;
     }
 
-    this->scroll_image->set_pixmap(QPixmap::fromImage(image));
-    this->action_zoom_fit->setEnabled(true);
+    this->set_image(img);
     this->update_actions();
 }
 
@@ -275,10 +300,7 @@ ViewInspect::load_ply_file (QString filename)
     try
     {
         mve::FloatImage::Ptr img(mve::geom::load_ply_depthmap(filename.toStdString()));
-        this->image = img;
-        this->tfunc->set_color_assignment(img->channels());
-        this->display_image(img);
-        this->inspector->set_image(img);
+        this->set_image(img);
     }
     catch (std::exception& e)
     {
@@ -286,7 +308,6 @@ ViewInspect::load_ply_file (QString filename)
             tr("Cannot load %1:\n%2").arg(filename, e.what()));
         return;
     }
-
 }
 
 /* ---------------------------------------------------------------- */
@@ -318,11 +339,9 @@ ViewInspect::on_scene_selected (mve::Scene::Ptr /*scene*/)
 void
 ViewInspect::set_embedding (std::string const& name)
 {
-    //std::cout << "Loading view embedding \"" << name << "\"" << std::endl;
     if (!this->view.get())
     {
-        QMessageBox::warning(this, tr("Image Viewer"),
-            tr("No view loaded").arg(QString(name.c_str())));
+        QMessageBox::warning(this, tr("Image Viewer"), tr("No view loaded!"));
         return;
     }
 
@@ -336,81 +355,47 @@ ViewInspect::set_embedding (std::string const& name)
     }
 
     this->recent_embedding = name;
-    this->image = img;
-
-    /* Update labels. */
-    std::stringstream ss;
-    ss << img->width() << "x" << img->height() << "x"
-        << img->channels() << " (" << img->get_type_string()
-        << ")";
-
-    this->label_dimension->setText(tr("%1").arg(ss.str().c_str()));
-    this->label_memory->setText(tr("%1 KB").arg(image->get_byte_size() / 1024));
-
-    /* Display image. */
-    switch (img->get_type())
-    {
-        case mve::IMAGE_TYPE_UINT8:
-            this->tfunc->set_color_assignment(0); // Implement?
-            this->tfunc->show_minmax_sliders(false);
-            this->func = this->tfunc->get_function();
-            this->inspector->set_transfer_function(this->func);
-            this->display_image((mve::ByteImage::Ptr)img);
-            break;
-
-        case mve::IMAGE_TYPE_FLOAT:
-        {
-            mve::FloatImage::Ptr fimg(img);
-            /* Set minimum and maximum value. */
-            float min_value = std::numeric_limits<float>::max();
-            float max_value = -std::numeric_limits<float>::max();
-            for (int i = 0; i < fimg->get_value_amount(); ++i)
-            {
-                float value = fimg->at(i);
-                min_value = std::min(min_value, value);
-                max_value = std::max(max_value, value);
-            }
-
-            this->tfunc->set_minmax_range(min_value, max_value);
-            this->tfunc->set_clamp_range(min_value, max_value);
-            this->tfunc->set_color_assignment(fimg->channels());
-            this->tfunc->show_minmax_sliders(true);
-            this->func = this->tfunc->get_function();
-
-            this->inspector->set_transfer_function(this->func);
-            this->display_image(fimg);
-            break;
-        }
-
-        default:
-            QMessageBox::warning(this, tr("Image Viewer"),
-                tr("Unsupported embedding: %1").arg(QString(name.c_str())));
-            break;
-    }
-
-    /* Update image inspector. */
-    this->inspector->set_image(this->image);
+    this->set_image(img);
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-ViewInspect::display_image (mve::ByteImage::Ptr img)
+ViewInspect::set_image (mve::ImageBase::ConstPtr img)
 {
-    std::size_t iw = img->width();
-    std::size_t ih = img->height();
-    std::size_t ic = img->channels();
-    bool is_gray = (ic == 1 || ic == 2);
-    bool has_alpha = (ic == 2 || ic == 4);
+    this->image = img;
+    if (this->image == NULL)
+        return;
+    bool is_byte_image = this->image->get_type() == mve::IMAGE_TYPE_UINT8;
+    this->tone_mapping->setEnabled(!is_byte_image);
 
-    //std::cout << "Populating pixmap..." << std::endl;
+    /* Update dimension and memory labels. */
+    std::stringstream ss;
+    ss << img->width() << "x" << img->height() << "x"
+        << img->channels() << " (" << img->get_type_string() << ")";
+    this->label_dimension->setText(tr("%1").arg(ss.str().c_str()));
+    this->label_memory->setText(tr("%1 KB").arg(img->get_byte_size() / 1024));
+
+    this->tone_mapping->set_image(img);
+    this->on_tone_mapping_changed();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+ViewInspect::display_byte_image (mve::ByteImage::ConstPtr img)
+{
+    int const iw = img->width();
+    int const ih = img->height();
+    int const ic = img->channels();
+    bool const is_gray = (ic == 1 || ic == 2);
+    bool const has_alpha = (ic == 2 || ic == 4);
 
     QImage img_qimage(iw, ih, QImage::Format_ARGB32);
     {
-        QPainter painter(&img_qimage);
         std::size_t inpos = 0;
-        for (std::size_t y = 0; y < ih; ++y)
-            for (std::size_t x = 0; x < iw; ++x)
+        for (int y = 0; y < ih; ++y)
+            for (int x = 0; x < iw; ++x)
             {
                 unsigned char alpha = has_alpha
                     ? img->at(inpos + 1 + !is_gray * 2)
@@ -422,64 +407,6 @@ ViewInspect::display_image (mve::ByteImage::Ptr img)
                     | (img->at(inpos + !is_gray * 2) << 0);
 
                 img_qimage.setPixel(x, y, argb);
-                inpos += ic;
-            }
-    }
-
-    this->scroll_image->set_pixmap(QPixmap::fromImage(img_qimage));
-    this->action_zoom_fit->setEnabled(true);
-    this->update_actions();
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-ViewInspect::display_image (mve::FloatImage::Ptr img)
-{
-    std::size_t iw = img->width();
-    std::size_t ih = img->height();
-    std::size_t ic = img->channels();
-
-    QImage img_qimage(iw, ih, QImage::Format_RGB32);
-    {
-        //QPainter painter(&img_qimage);
-        std::size_t inpos = 0;
-        for (std::size_t y = 0; y < ih; ++y)
-            for (std::size_t x = 0; x < iw; ++x)
-            {
-                float red = img->at(inpos + this->func.red);
-                float green = img->at(inpos + this->func.green);
-                float blue = img->at(inpos + this->func.blue);
-
-                if (this->func.highlight_values >= 0.0f
-                    && red >= 0.0f && red <= this->func.highlight_values
-                    && green >= 0.0f && green <= this->func.highlight_values
-                    && blue >= 0.0f && blue <= this->func.highlight_values)
-                {
-                    red = 0.5f;
-                    green = 0.0f;
-                    blue = 0.5f;
-                }
-                else if (MATH_ISNAN(red) || MATH_ISNAN(green)
-                    || MATH_ISNAN(blue) || MATH_ISINF(red)
-                    || MATH_ISINF(green) || MATH_ISINF(blue))
-                {
-                    red = 1.0f;
-                    green = 1.0f;
-                    blue = 0.0f;
-                }
-                else
-                {
-                    red = this->func.evaluate(red);
-                    green = this->func.evaluate(green);
-                    blue = this->func.evaluate(blue);
-                }
-
-                unsigned int vr = (unsigned int)(red * 255.0f + 0.5f);
-                unsigned int vg = (unsigned int)(green * 255.0f + 0.5f);
-                unsigned int vb = (unsigned int)(blue * 255.0f + 0.5f);
-                unsigned int rgb = vr << 16 | vg << 8 | vb;
-                img_qimage.setPixel(x, y, rgb);
                 inpos += ic;
             }
     }
@@ -678,27 +605,11 @@ ViewInspect::on_reload_embeddings (void)
 /* ---------------------------------------------------------------- */
 
 void
-ViewInspect::on_tf_changed (TransferFunction func)
+ViewInspect::on_tone_mapping_changed (void)
 {
-    this->func = func;
-    this->inspector->set_transfer_function(this->func);
-
-    if (this->image.get() == 0)
-        return;
-
-    if (this->image->get_type() != mve::IMAGE_TYPE_FLOAT)
-        return;
-
-/*
-    std::cout << "Rebuilding image... Transfer function: "
-        << "Zoom: " << func.zoom << ", Gamma: " << func.gamma
-        << ", Clamp: [" << func.clamp_min << "," << func.clamp_max << "]"
-        << ", Channels: " << this->func.red << ", "
-        << this->func.green << ", " << this->func.blue
-        << std::endl;
-*/
-
-    this->display_image((mve::FloatImage::Ptr)this->image);
+    mve::ByteImage::ConstPtr byte_image = this->tone_mapping->render();
+    this->inspector->set_image(byte_image, this->image);
+    this->display_byte_image(byte_image);
 }
 
 /* ---------------------------------------------------------------- */
@@ -875,6 +786,7 @@ ViewInspect::reset (void)
 {
     this->view.reset();
     this->image.reset();
+    this->tone_mapping->reset();
     this->inspector->reset();
     this->scroll_image->get_image()->setPixmap(QPixmap());
     this->embeddings->clear();

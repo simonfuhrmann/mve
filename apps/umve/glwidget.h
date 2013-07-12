@@ -2,8 +2,8 @@
 #define UMVE_GL_WIDGET_HEADER
 
 #include <set>
-#include <QtGui>
 #include <QGLWidget>
+#include <QMouseEvent>
 
 #include "ogl/context.h"
 

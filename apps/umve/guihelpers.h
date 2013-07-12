@@ -1,7 +1,10 @@
 #ifndef GUI_HELPERS_HEADER
 #define GUI_HELPERS_HEADER
 
-#include <QtGui>
+#include <QComboBox>
+#include <QDialog>
+#include <QLayout>
+#include <QPushButton>
 #include "mve/image.h"
 
 #include "selectedview.h"
@@ -47,6 +50,8 @@ class QCollapsible : public QWidget
 private:
     QPushButton* collapse_but;
     QWidget* content;
+    QWidget* content_indent;
+    QWidget* content_wrapper;
 
 private slots:
     void on_toggle_collapse (void);
@@ -55,6 +60,7 @@ public:
     QCollapsible (QString title, QWidget* content);
     void set_collapsed (bool value);
     void set_collapsible (bool value);
+    void set_content_indent (int pixels);
 };
 
 /* ---------------------------------------------------------------- */

@@ -12,7 +12,7 @@ class LocalViewSelection : public ViewSelection
 {
 public:
     LocalViewSelection(
-        SingleViewPtrList const& views,
+        std::vector<SingleView::Ptr> const& views,
         Settings const& settings,
         IndexSet const& globalViews,
         IndexSet const& propagated,
@@ -23,7 +23,7 @@ public:
     bool success;
 
 private:
-    SingleViewPtrList const& views;
+    std::vector<SingleView::Ptr> const& views;
     PatchSampler::Ptr sampler;
 };
 

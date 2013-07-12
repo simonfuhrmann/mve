@@ -1,7 +1,8 @@
 #ifndef UMVE_SCENEOPERATIONS_HEADER
 #define UMVE_SCENEOPERATIONS_HEADER
 
-#include <QtGui>
+#include <QSpinBox>
+#include <QWidget>
 
 #include "mve/scene.h"
 

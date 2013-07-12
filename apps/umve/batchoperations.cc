@@ -2,6 +2,12 @@
 #include <sstream>
 #include <iostream>
 
+#include <QCoreApplication>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QMessageBox>
+#include <QProgressDialog>
+
 #include "util/filesystem.h"
 #include "mve/plyfile.h"
 #include "mve/imagefile.h"
@@ -30,6 +36,31 @@ BatchOperations::BatchOperations (QWidget* parent)
         this, SLOT(on_close_clicked()));
 }
 
+void
+BatchOperations::get_embedding_names (mve::ImageType type,
+    std::vector<std::string>* result)
+{
+    if (!this->scene.get())
+        return;
+
+    typedef std::set<std::string> StringSet;
+    StringSet names;
+
+    mve::Scene::ViewList const& views(this->scene->get_views());
+    for (std::size_t i = 0; i < views.size(); ++i)
+    {
+        if (views[i] == NULL)
+            continue;
+        mve::View::Proxies const& p(views[i]->get_proxies());
+        for (std::size_t j = 0; j < p.size(); ++j)
+            if (type == mve::IMAGE_TYPE_UNKNOWN || type == p[j].get_type())
+                names.insert(p[j].name);
+    }
+
+    std::copy(names.begin(), names.end(), std::back_inserter(*result));
+}
+
+/* ---------------------------------------------------------------- */
 /* ---------------------------------------------------------------- */
 
 BatchDelete::BatchDelete (QWidget* parent)
@@ -60,24 +91,12 @@ BatchDelete::setup_gui (void)
     if (!this->scene.get())
         return;
 
-    typedef std::set<std::string> StringSet;
-    StringSet names;
-
-    mve::Scene::ViewList const& vl(this->scene->get_views());
-    for (std::size_t i = 0; i < vl.size(); ++i)
-    {
-        mve::View::ConstPtr view = vl[i];
-        if (!view.get())
-            continue;
-        mve::View::Proxies const& p(view->get_proxies());
-        for (std::size_t j = 0; j < p.size(); ++j)
-            names.insert(p[j].name);
-    }
-
-    for (StringSet::iterator i = names.begin(); i != names.end(); ++i)
+    std::vector<std::string> names;
+    this->get_embedding_names(mve::IMAGE_TYPE_UNKNOWN, &names);
+    for (std::size_t i = 0; i < names.size(); ++i)
     {
         QListWidgetItem* item = new QListWidgetItem(this->embeddings_list);
-        item->setText((*i).c_str());
+        item->setText(names[i].c_str());
         item->setCheckState(Qt::Unchecked);
     }
 }
@@ -148,9 +167,9 @@ BatchExport::BatchExport (QWidget *parent)
     form->setSpacing(2);
     form->addRow(new QLabel("Type the names of the embeddings "
         "you want to export.\nOnly a name for the depthmap is required. "));
-    form->addRow("Depthmap:", &this->depthmap);
-    form->addRow("Confidence map:", &this->confmap);
-    form->addRow("Color Image:", &this->colorimage);
+    form->addRow("Depthmap:", &this->depthmap_combo);
+    form->addRow("Confidence map:", &this->confmap_combo);
+    form->addRow("Color Image:", &this->colorimage_combo);
     form->addRow("Path (optional): ", dirselect_box);
 
     this->main_box.addLayout(form);
@@ -166,6 +185,24 @@ BatchExport::BatchExport (QWidget *parent)
 void
 BatchExport::setup_gui (void)
 {
+    if (!this->scene.get())
+        return;
+
+    std::vector<std::string> float_names;
+    std::vector<std::string> byte_names;
+    this->get_embedding_names(mve::IMAGE_TYPE_FLOAT, &float_names);
+    this->get_embedding_names(mve::IMAGE_TYPE_UINT8, &byte_names);
+
+    this->depthmap_combo.addItem("");
+    this->confmap_combo.addItem("");
+    this->colorimage_combo.addItem("");
+    for (std::size_t i = 0; i < float_names.size(); ++i)
+    {
+        this->depthmap_combo.addItem(float_names[i].c_str());
+        this->confmap_combo.addItem(float_names[i].c_str());
+    }
+    for (std::size_t i = 0; i < byte_names.size(); ++i)
+        this->colorimage_combo.addItem(byte_names[i].c_str());
 }
 
 /* ---------------------------------------------------------------- */
@@ -182,6 +219,27 @@ BatchExport::on_dirselect (void)
 }
 
 /* ---------------------------------------------------------------- */
+
+void
+export_view_intern (mve::View::Ptr view, std::string const& basename,
+    std::string const& depthmap_name, std::string const& confmap_name,
+    std::string const& colorimage_name)
+{
+    if (view->get_float_image(depthmap_name) == NULL)
+        return;
+
+    try
+    {
+        mve::geom::save_ply_view(view, basename + ".ply",
+            depthmap_name, confmap_name, colorimage_name);
+        mve::geom::save_xf_file(basename + ".xf", view->get_camera());
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "Skipping view " << view->get_name()
+            << ": " << e.what() << std::endl;
+    }
+}
 
 void
 BatchExport::on_export_exec (void)
@@ -216,9 +274,9 @@ BatchExport::on_export_exec (void)
         }
     }
 
-    std::string d_depthmap = this->depthmap.text().toStdString();
-    std::string d_confidence = this->confmap.text().toStdString();
-    std::string d_colorimage = this->colorimage.text().toStdString();
+    std::string dm_name = this->depthmap_combo.currentText().toStdString();
+    std::string cm_name = this->confmap_combo.currentText().toStdString();
+    std::string ci_name = this->colorimage_combo.currentText().toStdString();
 
     /* Prepare views to be exported... */
     mve::Scene::ViewList& views(this->scene->get_views());
@@ -244,23 +302,9 @@ BatchExport::on_export_exec (void)
         if (win->wasCanceled())
             break;
 
-        mve::FloatImage::Ptr dm(view->get_float_image(d_depthmap));
-        if (!dm.get())
-            continue;
-
-        std::string fname = path + "view_" + view->get_name() + "-" + d_depthmap;
-
-        try
-        {
-            mve::geom::save_ply_view(view, fname + ".ply",
-                d_depthmap, d_confidence, d_colorimage);
-            mve::geom::save_xf_file(fname + ".xf", view->get_camera());
-        }
-        catch (std::exception& e)
-        {
-            std::cout << "Skipping view " << view->get_name()
-                << ": " << e.what() << std::endl;
-        }
+        std::stringstream basename;
+        basename << path << "view_" << view->get_name() << "-" << dm_name;
+        export_view_intern(view, basename.str(), dm_name, cm_name, ci_name);
     }
     win->setValue(views.size());
 

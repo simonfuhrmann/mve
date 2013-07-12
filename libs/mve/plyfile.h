@@ -39,16 +39,38 @@ void
 load_xf_file (std::string const& filename, float* ctw);
 
 /**
+ * Options struct for saving PLY files.
+ */
+struct SavePLYOptions
+{
+    SavePLYOptions (void)
+        : format_binary(true)
+        , write_vertex_colors(true)
+        , write_vertex_normals(false)
+        , write_vertex_confidences(false)
+        , write_vertex_values(false)
+        , write_face_colors(false)
+        , write_face_normals(false)
+        , verts_per_simplex(3) {}
+
+    bool format_binary;
+    bool write_vertex_colors;
+    bool write_vertex_normals;
+    bool write_vertex_confidences;
+    bool write_vertex_values;
+    bool write_face_colors;
+    bool write_face_normals;
+    unsigned int verts_per_simplex;
+};
+
+/**
  * Stores a PLY file from a triangle mesh. Colors are written
  * if 'write_colors' is true and colors are given. Vertex normals
  * are written if 'write_normals' is true and normals are given.
  */
 void
-save_ply_mesh (TriangleMesh::ConstPtr mesh,
-    std::string const& filename, bool format_binary = true,
-    bool write_vcolors = true, bool write_vnormals = false,
-    bool write_fcolors = false, bool write_fnormals = false,
-    bool write_confidence = false, unsigned int verts_per_simplex = 3);
+save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
+    SavePLYOptions const& options = SavePLYOptions());
 
 /**
  * Stores a scanalize-compatible PLY file from a depth map.

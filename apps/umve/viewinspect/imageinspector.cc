@@ -1,5 +1,8 @@
 #include <iostream>
 
+#include <QFormLayout>
+#include <QVBoxLayout>
+
 #include "mve/imagebase.h"
 #include "mve/image.h"
 
@@ -48,9 +51,14 @@ ImageInspectorWidget::ImageInspectorWidget (void)
 /* ---------------------------------------------------------------- */
 
 void
-ImageInspectorWidget::set_image (mve::ImageBase::ConstPtr image)
+ImageInspectorWidget::set_image (mve::ByteImage::ConstPtr byte_image,
+    mve::ImageBase::ConstPtr orig_image)
 {
-    this->image = image;
+    this->byte_image = byte_image;
+    this->orig_image = orig_image;
+    if (this->byte_image->width() != this->orig_image->width()
+        || this->byte_image->height() != this->orig_image->height())
+        std::cerr << "Warning: images don't match!" << std::endl;
 
     int mag_x = this->inspect_x;
     int mag_y = this->inspect_y;
@@ -65,15 +73,13 @@ ImageInspectorWidget::set_image (mve::ImageBase::ConstPtr image)
 void
 ImageInspectorWidget::magnify (int x, int y)
 {
-    if (this->image.get() == 0)
+    if (this->byte_image == NULL || this->orig_image == NULL)
         return;
 
-    std::size_t iw = this->image->width();
-    std::size_t ih = this->image->height();
-
-    x = std::max(0, std::min((int)(iw - 1), x));
-    y = std::max(0, std::min((int)(ih - 1), y));
-
+    int const iw = this->byte_image->width();
+    int const ih = this->byte_image->height();
+    x = std::max(0, std::min(iw - 1, x));
+    y = std::max(0, std::min(ih - 1, y));
     this->inspect_x = x;
     this->inspect_y = y;
 
@@ -98,36 +104,27 @@ ImageInspectorWidget::magnify (int x, int y)
 QImage
 ImageInspectorWidget::get_magnified (int x, int y, int size, int scale)
 {
-    std::size_t iw = this->image->width();
-    std::size_t ih = this->image->height();
-
     QImage img(size * scale, size * scale, QImage::Format_RGB32);
     img.fill(0xff00ff);
-    //std::cout << "Image has size " << (size * scale)
-    //    << " Pixel " << x << "x" << y << ", size " << size
-    //    << ", scale " << scale << std::endl;
 
-    int left = x - size / 2;
-    int right = x + size / 2;
-    int top = y - size / 2;
-    int bottom = y + size / 2;
+    int const iw = this->byte_image->width();
+    int const ih = this->byte_image->height();
+    int const left = x - size / 2;
+    int const right = x + size / 2;
+    int const top = y - size / 2;
+    int const bottom = y + size / 2;
 
-    int safe_left = std::max(0, left);
-    int safe_right = std::min((int)(iw - 1), right);
-    int safe_top = std::max(0, top);
-    int safe_bottom = std::min((int)(ih - 1), bottom);
+    int const safe_left = std::max(0, left);
+    int const safe_right = std::min((int)(iw - 1), right);
+    int const safe_top = std::max(0, top);
+    int const safe_bottom = std::min((int)(ih - 1), bottom);
 
     for (int iy = safe_top; iy <= safe_bottom; ++iy)
         for (int ix = safe_left; ix <= safe_right; ++ix)
         {
             int rx = ix - left;
             int ry = iy - top;
-            /*
-            std::cout << "Reading pixel at " << rx << " " << ry
-                << " to region (" << rx * scale << ", " << ry * scale
-                << ") -> (" << (rx + 1) * scale << ", " << (ry + 1) * scale
-                << ")" << std::endl;
-            */
+
             unsigned int color = this->get_image_color(ix, iy);
             for (int iiy = ry * scale; iiy < (ry + 1) * scale; ++iiy)
                 for (int iix = rx * scale; iix < (rx + 1) * scale; ++iix)
@@ -142,77 +139,10 @@ ImageInspectorWidget::get_magnified (int x, int y, int size, int scale)
 unsigned int
 ImageInspectorWidget::get_image_color (int x, int y)
 {
-    std::size_t ic = this->image->channels();
-
-    unsigned int color;
-    switch (this->image->get_type())
-    {
-        case mve::IMAGE_TYPE_UINT8:
-        {
-            mve::ByteImage::ConstPtr img
-                = (mve::ByteImage::ConstPtr)this->image;
-            unsigned int red, green, blue;
-            if (ic >= 3)
-            {
-                red = img->at(x, y, 0);
-                green = img->at(x, y, 1);
-                blue = img->at(x, y, 2);
-            }
-            else
-            {
-                red = green = blue = img->at(x, y, 0);
-            }
-
-            color = red << 16 | green << 8 | blue;
-            break;
-        }
-
-        case mve::IMAGE_TYPE_FLOAT:
-        {
-            mve::FloatImage::ConstPtr img
-                = (mve::FloatImage::ConstPtr)this->image;
-
-            float red = img->at(x, y, this->func.red);
-            float green = img->at(x, y, this->func.green);
-            float blue = img->at(x, y, this->func.blue);
-
-            if (this->func.highlight_values >= 0.0f
-                && red >= 0.0f && red <= this->func.highlight_values
-                && green >= 0.0f && green <= this->func.highlight_values
-                && blue >= 0.0f && blue <= this->func.highlight_values)
-            {
-                red = 0.5f;
-                green = 0.0f;
-                blue = 0.5f;
-            }
-            else if (MATH_ISNAN(red) || MATH_ISNAN(green)
-                || MATH_ISNAN(blue) || MATH_ISINF(red)
-                || MATH_ISINF(green) || MATH_ISINF(blue))
-            {
-                red = 1.0f;
-                green = 1.0f;
-                blue = 0.0f;
-            }
-            else
-            {
-                red = this->func.evaluate(red);
-                green = this->func.evaluate(green);
-                blue = this->func.evaluate(blue);
-            }
-
-            unsigned int vr = (unsigned int)(red * 255.0f + 0.5f);
-            unsigned int vg = (unsigned int)(green * 255.0f + 0.5f);
-            unsigned int vb = (unsigned int)(blue * 255.0f + 0.5f);
-            color = vr << 16 | vg << 8 | vb;
-            break;
-        }
-
-        default:
-            color = ((x % 2) ^ (y % 2)) ? 0xff0000 : 0x00ff00;
-            break;
-    }
-
-    return color;
+    unsigned int red = this->byte_image->at(x, y, 0);
+    unsigned int green = this->byte_image->at(x, y, 1);
+    unsigned int blue = this->byte_image->at(x, y, 2);
+    return red << 16 | green << 8 | blue;
 }
 
 /* ---------------------------------------------------------------- */
@@ -220,16 +150,16 @@ ImageInspectorWidget::get_image_color (int x, int y)
 void
 ImageInspectorWidget::update_value_label (int x, int y)
 {
-    std::size_t iw = this->image->width();
-    std::size_t ic = this->image->channels();
-    std::size_t off = y * iw * ic + x * ic;
+    int const iw = this->orig_image->width();
+    int const ic = this->orig_image->channels();
+    int const off = y * iw * ic + x * ic;
 
     QString value_str;
     QString tooltip_str;
-    if (this->image->get_type() == mve::IMAGE_TYPE_FLOAT)
+    if (this->orig_image->get_type() == mve::IMAGE_TYPE_FLOAT)
     {
-        mve::FloatImage::ConstPtr img(this->image);
-        for (std::size_t i = 0; i < ic; ++i)
+        mve::FloatImage::ConstPtr img(this->orig_image);
+        for (int i = 0; i < ic; ++i)
         {
             if (ic <= 4 || i < 3)
                 value_str += tr(" %1").arg(img->at(off + i), 0, 'f', 3);
@@ -239,10 +169,10 @@ ImageInspectorWidget::update_value_label (int x, int y)
                 tooltip_str += tr(" %1").arg(img->at(off + i), 0, 'f', 3);
         }
     }
-    else if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
+    else if (this->orig_image->get_type() == mve::IMAGE_TYPE_UINT8)
     {
-        mve::ByteImage::ConstPtr img(this->image);
-        for (std::size_t i = 0; i < ic; ++i)
+        mve::ByteImage::ConstPtr img(this->orig_image);
+        for (int i = 0; i < ic; ++i)
         {
             if (ic <= 4 || i < 3)
                 value_str += tr(" %1").arg((int)img->at(off + i));
@@ -252,7 +182,11 @@ ImageInspectorWidget::update_value_label (int x, int y)
                 tooltip_str += tr(" %1").arg((int)img->at(off + i));
         }
     }
-
+    else
+    {
+        value_str = "unsupported";
+        tooltip_str = "Unsupported image type!";
+    }
     this->label_values->setText(value_str);
     this->label_values->setToolTip(tooltip_str);
 }
@@ -312,14 +246,15 @@ void
 ImageInspectorWidget::image_click (int x, int y,
     QMouseEvent* ev, int scale, int size)
 {
-    if (this->inspect_x < 0 || this->inspect_y < 0 || this->image.get() == 0)
+    if (this->inspect_x < 0 || this->inspect_y < 0)
+        return;
+    if (this->byte_image == NULL || this->orig_image == NULL)
         return;
 
     //std::cout << "Click at " << x << "," << y << std::endl;
 
-    int off_x = (x / scale) - size / 2;
-    int off_y = (y / scale) - size / 2;
-
+    int const off_x = (x / scale) - size / 2;
+    int const off_y = (y / scale) - size / 2;
     if (ev->buttons() & Qt::RightButton)
     {
         this->magnify(this->inspect_x + off_x, this->inspect_y + off_y);

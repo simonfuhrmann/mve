@@ -10,7 +10,7 @@
 MVS_NAMESPACE_BEGIN
 
 PatchOptimization::PatchOptimization(
-    SingleViewPtrList const& _views,
+    std::vector<SingleView::Ptr> const& _views,
     Settings const& _settings,
     int _x,          // Pixel position
     int _y,
@@ -104,7 +104,7 @@ PatchOptimization::computeColorScale()
 float
 PatchOptimization::computeConfidence()
 {
-    SingleViewPtr refV = views[settings.refViewNr];
+    SingleView::Ptr refV = views[settings.refViewNr];
     if (!status.converged)
         return 0.f;
 
@@ -123,7 +123,7 @@ PatchOptimization::computeConfidence()
 
     /* Compute angle between estimated surface normal and view direction
        and weight current score with dot product */
-    math::Vec3f viewDir(refV->viewRay(midx, midy));
+    math::Vec3f viewDir(refV->viewRayScaled(midx, midy));
     math::Vec3f normal(sampler->getPatchNormal());
     float dotP = - normal.dot(viewDir);
     if (dotP < 0.2f) {
@@ -202,11 +202,11 @@ PatchOptimization::doAutoOptimization()
         for (id = neighIDs.begin(); id != neighIDs.end(); ++id, ++count)
         {
             float ncc = sampler->getFastNCC(*id);
-            if (fabsf(ncc - oldNCC[count]) > settings.minRefineDiff)
+            if (std::abs(ncc - oldNCC[count]) > settings.minRefineDiff)
                 converged = false;
             if ((ncc < settings.acceptNCC) ||
                 (status.iterationCount == 14 &&
-                 fabsf(ncc - oldNCC[count]) > settings.minRefineDiff))
+                 std::abs(ncc - oldNCC[count]) > settings.minRefineDiff))
             {
                 toBeReplaced.insert(*id);
                 viewRemoved = true;

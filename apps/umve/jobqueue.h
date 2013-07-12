@@ -1,11 +1,16 @@
 #ifndef JOB_QUEUE_HEADER
 #define JOB_QUEUE_HEADER
 
-#include <QtGui>
+#include <QBoxLayout>
+#include <QDockWidget>
+#include <QListWidget>
+#include <QPushButton>
+#include <QTimer>
 #include <vector>
 
 struct JobProgress
 {
+    virtual ~JobProgress (void) {}
     virtual char const* get_name (void) = 0;
     virtual char const* get_message (void) = 0;
     virtual bool is_completed (void) = 0;

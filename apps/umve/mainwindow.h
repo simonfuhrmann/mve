@@ -1,8 +1,10 @@
 #ifndef UMVE_MAIN_WINDOW_HEADER
 #define UMVE_MAIN_WINDOW_HEADER
 
+#include "ogl/opengl.h"
+
 #include <string>
-#include <QtGui>
+#include <QMainWindow>
 
 #include "mve/view.h"
 

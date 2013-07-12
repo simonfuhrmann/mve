@@ -6,7 +6,7 @@
 MVS_NAMESPACE_BEGIN
 
 GlobalViewSelection::GlobalViewSelection(
-    SingleViewPtrList const& views,
+    std::vector<SingleView::Ptr> const& views,
     mve::BundleFile::FeaturePoints const& features,
     Settings const& settings)
     :
@@ -18,7 +18,7 @@ GlobalViewSelection::GlobalViewSelection(
     available.resize(views.size(), true);
     available[settings.refViewNr] = false;
     for (std::size_t i = 0; i < views.size(); ++i)
-        if (!views[i].get())
+        if (views[i] == NULL)
             available[i] = false;
 }
 
@@ -55,8 +55,8 @@ GlobalViewSelection::performVS()
 float
 GlobalViewSelection::benefitFromView(std::size_t i)
 {
-    SingleViewPtr refV = views[settings.refViewNr];
-    SingleViewPtr tmpV = views[i];
+    SingleView::Ptr refV = views[settings.refViewNr];
+    SingleView::Ptr tmpV = views[i];
 
     std::vector<std::size_t> nFeatIDs = tmpV->getFeatureIndices();
 
@@ -70,7 +70,7 @@ GlobalViewSelection::benefitFromView(std::size_t i)
         if (plx < settings.minParallax)
             score *= sqr(plx / 10.f);
         // Resolution compared to reference view
-        float mfp = refV->footPrint(ftPos);
+        float mfp = refV->footPrintScaled(ftPos);
         float nfp = tmpV->footPrint(ftPos);
         float ratio = mfp / nfp;
         if (ratio > 2.)

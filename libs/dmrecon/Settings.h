@@ -20,7 +20,7 @@ struct Settings
     float minRefineDiff;
     unsigned int maxIterations;
     unsigned int nrReconNeighbors;
-    float scale;
+    int scale;
     bool useColorScale;
     bool writePlyFile;
     std::string imageEmbedding;
@@ -28,6 +28,9 @@ struct Settings
     std::size_t refViewNr;
     unsigned int globalVSMax;
     std::string logPath;
+
+    bool keepDzMap;
+    bool keepConfidenceMap;
 };
 
 MVS_NAMESPACE_END

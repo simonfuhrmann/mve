@@ -46,6 +46,7 @@ CameraSequence::parse (std::string const& fname)
 #endif
 
     this->seq.clear();
+    this->upvec = math::Vec3f(0.0f, 0.0f, 1.0f);
 
     /* Parse tokens. */
     CameraSpline active_sequence;
@@ -88,7 +89,7 @@ CameraSequence::parse (std::string const& fname)
             continue;
         }
 
-        if (ftok[i] == "lookat" || ftok[i] == "camera")
+        if (ftok[i] == "lookat" || ftok[i] == "camera" || ftok[i] == "upvec")
         {
             math::Vec3f vec;
             vec[0] = util::string::convert<float>(ftok[i+1]);
@@ -98,6 +99,8 @@ CameraSequence::parse (std::string const& fname)
                 active_sequence.lookat.push_back(vec);
             else if (ftok[i] == "camera")
                 active_sequence.camera.push_back(vec);
+            else if (ftok[i] == "upvec")
+                this->upvec = vec;
             i += 3;
             continue;
         }
@@ -209,7 +212,7 @@ CameraSequence::next_frame (void)
         this->campos = spline.cs.evaluate(t);
     if (!spline.lookat.empty())
         this->lookat = spline.ls.evaluate(t);
-    this->upvec = math::Vec3f(0.0f, 0.0f, 1.0f);
+    //this->upvec = math::Vec3f(0.0f, 0.0f, 1.0f);
 
     std::cout << "Sequence \"" << this->seq[cur_seq].name << "\""
         << ", frame " << this->frame << ", time " << this->time

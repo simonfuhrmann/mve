@@ -66,9 +66,13 @@ main (int argc, char** argv)
 
     try
     {
-        using util::string::right;
-        if (conf.compute_normals && right(conf.outfile, 4) == ".ply")
-            mve::geom::save_ply_mesh(mesh, conf.outfile, true, true, true);
+        if (conf.compute_normals
+            && util::string::right(conf.outfile, 4) == ".ply")
+        {
+            mve::geom::SavePLYOptions opts;
+            opts.write_vertex_normals = true;
+            mve::geom::save_ply_mesh(mesh, conf.outfile, opts);
+        }
         else
             mve::geom::save_mesh(mesh, conf.outfile);
     }

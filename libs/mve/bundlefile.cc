@@ -39,10 +39,10 @@ BundleFile::read_bundle (std::string const& filename)
  *
  * "drews 1.0"
  * <num_cameras> <num_points>
- * <cam 1 line 1> // Focal length, Radial distortion: f r1 r2
- * <cam 1 line 2> // Rotation matrix row 1: a11 a12 a13
- * <cam 1 line 3> // Rotation matrix row 2: a21 a22 a23
- * <cam 1 line 4> // Rotation matrix row 3: a31 a32 a33
+ * <cam 1 line 1> // Focal length, Radial distortion: f rd1 rd2
+ * <cam 1 line 2> // Rotation matrix row 1: r11 r12 r13
+ * <cam 1 line 3> // Rotation matrix row 2: r21 r22 r23
+ * <cam 1 line 4> // Rotation matrix row 3: r31 r32 r33
  * <cam 1 line 5> // Translation vector: t1 t2 t3
  * ...
  * <point 1 position (float)> // x y z
@@ -56,9 +56,9 @@ BundleFile::read_bundle (std::string const& filename)
  * "# Bundle file v0.3"
  * <num_cameras> <num_points>
  * <cam 1 line 1> // Focal length, Radial distortion: f k1 k2
- * <cam 1 line 2> // Rotation matrix row 1: a11 a12 a13
- * <cam 1 line 3> // Rotation matrix row 2: a21 a22 a23
- * <cam 1 line 4> // Rotation matrix row 3: a31 a32 a33
+ * <cam 1 line 2> // Rotation matrix row 1: r11 r12 r13
+ * <cam 1 line 3> // Rotation matrix row 2: r21 r22 r23
+ * <cam 1 line 4> // Rotation matrix row 3: r31 r32 r33
  * <cam 1 line 5> // Translation vector: t1 t2 t3
  * ...
  * <point 1 position (float)> // x y z
@@ -72,12 +72,8 @@ BundleFile::read_bundle (std::string const& filename)
  * list of input images. Some cameras are set to zero, which means the input
  * image was not registered. <cam ID> is the ID w.r.t. the input images,
  * <sift ID> is the ID of the SIFT feature point for that image. In the
- *  Noah bundler, <x> and <y> are floating point positions of the keypoint
+ * Noah bundler, <x> and <y> are floating point positions of the keypoint
  * in the image, given in image-centered coordinate system.
- *
- * The MVS reconstruction (recon_x1.0_synth_0/corr_*) files correspond to
- * REGISTERED cameras, i.e. corr_0 corresponds to the first registered
- * camera and not the first input image.
  */
 void
 BundleFile::read_bundle_intern (std::string const& filename)

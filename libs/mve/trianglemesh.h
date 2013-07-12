@@ -16,7 +16,8 @@ MVE_NAMESPACE_BEGIN
 
 /**
  * Base class for meshes. This class essentially contains the vertex data
- * and vertex associated data, namely colors and confidences.
+ * and vertex associated data, namely colors, confidences and the generic
+ * attribute values.
  */
 class MeshBase
 {
@@ -28,6 +29,7 @@ public:
     typedef std::vector<math::Vec3f> VertexList;
     typedef std::vector<math::Vec4f> ColorList;
     typedef std::vector<float> ConfidenceList;
+    typedef std::vector<float> ValueList;
 
 public:
     virtual ~MeshBase (void);
@@ -47,10 +49,17 @@ public:
     /** Returns the vertex confidences. */
     ConfidenceList& get_vertex_confidences (void);
 
+    /** Returns the vertex values (generic attribute). */
+    ValueList const& get_vertex_values (void) const;
+    /** Returns the vertex values (generic attribute). */
+    ValueList& get_vertex_values (void);
+
     /** Returns true if colors and vertex amount are equal. */
     bool has_vertex_colors (void) const;
     /** Returns true if confidence amount and vertex amount are equal. */
     bool has_vertex_confidences (void) const;
+    /** Returns true if value amount and vertex amount are equal. */
+    bool has_vertex_values (void) const;
 
     /** Clears all mesh data. */
     virtual void clear (void);
@@ -62,6 +71,7 @@ protected:
     VertexList vertices;
     ColorList vertex_colors;
     ConfidenceList vertex_confidences;
+    ValueList vertex_values;
 };
 
 /* ---------------------------------------------------------------- */
@@ -201,6 +211,18 @@ MeshBase::get_vertex_confidences (void)
     return this->vertex_confidences;
 }
 
+inline MeshBase::ValueList const&
+MeshBase::get_vertex_values (void) const
+{
+    return this->vertex_values;
+}
+
+inline MeshBase::ValueList&
+MeshBase::get_vertex_values (void)
+{
+    return this->vertex_values;
+}
+
 inline void
 MeshBase::clear (void)
 {
@@ -212,13 +234,22 @@ MeshBase::clear (void)
 inline bool
 MeshBase::has_vertex_colors (void) const
 {
-    return this->vertex_colors.size() == this->vertices.size();
+    return !this->vertices.empty()
+        && this->vertex_colors.size() == this->vertices.size();
 }
 
 inline bool
 MeshBase::has_vertex_confidences (void) const
 {
-    return this->vertex_confidences.size() == this->vertices.size();
+    return !this->vertices.empty()
+        && this->vertex_confidences.size() == this->vertices.size();
+}
+
+inline bool
+MeshBase::has_vertex_values (void) const
+{
+    return !this->vertices.empty()
+        && this->vertex_values.size() == this->vertices.size();
 }
 
 /* ---------------------------------------------------------------- */
@@ -325,19 +356,22 @@ TriangleMesh::clear (void)
 inline bool
 TriangleMesh::has_vertex_normals (void) const
 {
-    return this->vertex_normals.size() == this->vertices.size();
+    return !this->vertices.empty()
+        && this->vertex_normals.size() == this->vertices.size();
 }
 
 inline bool
 TriangleMesh::has_face_normals (void) const
 {
-    return this->faces.size() == this->face_normals.size() * 3;
+    return !this->faces.empty()
+        && this->faces.size() == this->face_normals.size() * 3;
 }
 
 inline bool
 TriangleMesh::has_face_colors (void) const
 {
-    return this->faces.size() == this->face_colors.size() * 3;
+    return !this->faces.empty()
+        && this->faces.size() == this->face_colors.size() * 3;
 }
 
 MVE_NAMESPACE_END

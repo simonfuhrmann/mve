@@ -1,3 +1,5 @@
+#include <QLineEdit>
+
 #include "util/string.h"
 
 #include "guihelpers.h"

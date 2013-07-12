@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "ogl/opengl.h"
+
 #include <QApplication>
 
 #include "util/filesystem.h"

@@ -120,31 +120,43 @@ public:
  */
 class FileLock
 {
-private:
-    std::string lockfile;
-    std::string reason;
+public:
+    enum Status
+    {
+        /** The lock has been created successfully. */
+        LOCK_CREATED,
+        /** The lock has NOT been created because a lock already exists. */
+        LOCK_EXISTS,
+        /** The lock has NOT been created because an existing lock persisted. */
+        LOCK_PERSISTENT,
+        /** The lock has NOT been created because of file system issues. */
+        LOCK_CREATE_ERROR
+    };
 
 public:
-    /** Does nothing. */
     FileLock (void);
-    /** Acquires a lock for the given filename. */
+
+    /**
+     * Acquires a lock for the given filename. If the lock already exists,
+     * the operation is re-attempted using default values. If the lock
+     * cannot be created an exception is thrown.
+     */
     FileLock (std::string const& filename);
+
     /** Removes the lock if it exists. */
     ~FileLock (void);
 
     /**
-     * Tries to acquire a lock for the given filename.
-     * If locking fails, the method returns false and specifies a reason.
+     * Tries to acquire a lock for the given filename and returns a status.
      */
-    bool acquire (std::string const& filename);
+    Status acquire (std::string const& filename);
 
     /**
      * Tries to acquire a lock for the given filename.
      * If a lock exists, the operation is re-attempted 'retry' times
      * with 'sleep' milli seconds delay between the attempts.
-     * If locking fails, the method returns false and specifies a reason.
      */
-    bool acquire_retry (std::string const& filename,
+    Status acquire_retry (std::string const& filename,
         int retries = 50, int sleep = 100);
 
     /**
@@ -153,10 +165,9 @@ public:
     bool is_locked (std::string const& filename);
 
     /**
-     * Waits until a lock for given filename is released.
-     * If the given filename is not locked, the method returns immediately.
-     * If the lock is not released within the specified bounds, the method
-     * returns false and specifies a reason.
+     * Waits until a lock for given filename is released. If filename is
+     * not locked, the method returns true immediately. If the lock is not
+     * released within the specified bounds, the method returns false.
      */
     bool wait_lock (std::string const& filename,
         int retries = 50, int sleep = 100);
@@ -171,6 +182,10 @@ public:
      * If locking failes, this returns the reason for failure.
      */
     std::string const& get_reason (void) const;
+
+private:
+    std::string lockfile;
+    std::string reason;
 };
 
 /*
@@ -203,12 +218,6 @@ Directory::Directory (std::string const& path)
 inline
 FileLock::FileLock (void)
 {
-}
-
-inline
-FileLock::FileLock (std::string const& filename)
-{
-    this->acquire(filename);
 }
 
 inline

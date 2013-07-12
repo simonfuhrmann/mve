@@ -1,9 +1,12 @@
 #ifndef UMVE_BATCHOPERATIONS_HEADER
 #define UMVE_BATCHOPERATIONS_HEADER
 
-#include <QtGui>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QListWidget>
 
 #include "mve/scene.h"
+#include "mve/imagebase.h"
 
 #include "guihelpers.h"
 
@@ -22,6 +25,8 @@ protected:
 
 protected:
     virtual void setup_gui (void) = 0;
+    void get_embedding_names (mve::ImageType type,
+        std::vector<std::string>* result);
 
 private slots:
     void on_close_clicked (void);
@@ -63,9 +68,9 @@ class BatchExport : public BatchOperations
     Q_OBJECT
 
 private:
-    QLineEdit depthmap;
-    QLineEdit confmap;
-    QLineEdit colorimage;
+    QComboBox depthmap_combo;
+    QComboBox confmap_combo;
+    QComboBox colorimage_combo;
     QLineEdit exportpath;
 
 private:

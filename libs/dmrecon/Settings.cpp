@@ -10,12 +10,14 @@ Settings::Settings()
     , minRefineDiff(0.001f)
     , maxIterations(20)
     , nrReconNeighbors(4)
-    , scale(1.f)
+    , scale(0)
     , useColorScale(true)
     , writePlyFile(false)
     , imageEmbedding("undistorted")
     , refViewNr(0)
     , globalVSMax(20)
+    , keepDzMap(false)
+    , keepConfidenceMap(false)
 {
 }
 

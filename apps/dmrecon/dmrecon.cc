@@ -60,6 +60,10 @@ main (int argc, char** argv)
         "turn off color scale");
     args.add_option('i', "image", true,
         "specify image embedding used in reconstruction");
+    args.add_option('\0', "keep-dz", false,
+        "store dz map into view");
+    args.add_option('\0', "keep-conf", false,
+        "store confidence map into view");
     args.add_option('p', "writeply", false,
         "use this option to write the ply file");
     args.add_option('\0', "plydest", true,
@@ -77,10 +81,6 @@ main (int argc, char** argv)
     bool force_recon = false;
 
     mvs::Settings mySettings;
-    mySettings.useColorScale = true;
-    mySettings.globalVSMax = 20;
-    mySettings.scale = 0.f;
-    mySettings.filterWidth = 5;
     std::vector<int> listIDs;
 
     util::ArgResult const * arg;
@@ -107,11 +107,15 @@ main (int argc, char** argv)
         else if (arg->opt->lopt == "list-view")
             args.get_ids_from_string(arg->arg, listIDs);
         else if (arg->opt->lopt == "scale")
-            mySettings.scale = arg->get_arg<float>();
+            mySettings.scale = arg->get_arg<int>();
         else if (arg->opt->lopt == "filter-width")
             mySettings.filterWidth = arg->get_arg<unsigned int>();
         else if (arg->opt->lopt == "image")
             mySettings.imageEmbedding = arg->get_arg<std::string>();
+        else if (arg->opt->lopt == "keep-dz")
+            mySettings.keepDzMap = true;
+        else if (arg->opt->lopt == "keep-conf")
+            mySettings.keepConfidenceMap = true;
         else if (arg->opt->lopt == "writeply")
             writeply = true;
         else if (arg->opt->lopt == "plydest")

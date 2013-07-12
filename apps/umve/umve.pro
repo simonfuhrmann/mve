@@ -1,4 +1,4 @@
-CONFIG += qt opengl debug
+CONFIG += qt opengl release
 QT += opengl
 
 SOURCES += [^_]*.cc viewinspect/*.cc sceneinspect/*.cc

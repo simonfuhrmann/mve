@@ -23,7 +23,6 @@ This README file covers some basic information regarding MVE.
     * Building MVE / UMVE
     * Running MVE / UMVE
     * Installing MVE / UMVE
-    * Licensing
     * Hacking / Contributing to MVE
 
 
@@ -36,13 +35,13 @@ Building is a two step process:
 the base path or in the "libs/" directory. Note that the "ogl" library is
 required for UMVE, but most applications do not require that library. (In
 fact, as of now, only UMVE requires this library.) Building this library
-will fail on systems without OpenGL, but this is fine as long as only
-applications not requiring "ogl" are built afterwards.
+will fail on systems without OpenGL, and this is fine as long as "ogl" is
+not required.
 
 2. Building the applications. Applications need to be build manually by
 typing "make" in the corresponding directory of the application. For
-some applications, "qmake" is used as build system. In these cases, such as
-for UMVE, type "qmake" followed by "make" to build the application.
+some applications (like UMVE), "qmake" is used as build system. In these
+cases type "qmake" followed by "make" to build the application.
 
 Requirements to compile and run MVE / UVME are:
 
@@ -61,8 +60,8 @@ To conclude, building and executing under Linux and OSX is as easy as:
     # qmake && make -j8
     # ./umve
 
-Building under MS Windows may work as well. However, documenting this
-process is currently out of scope of this document.
+Consult the users guide in the MVE wiki for further information:
+https://github.com/simonfuhrmann/mve/wiki/The-MVE-Users-Guide
 
 
 Running MVE / UMVE
@@ -89,40 +88,32 @@ but does not yet cover all of its functionality.
 Installing MVE / UMVE
 ======================================================================
 
-Currently, there is not automated install procedure.
+Currently, there is no install procedure.
 
-MVE as well as UMVE is not dependent on any external files except for the
-UMVE shader. As such, you can easily install UMVE by copying the compiled
-binary file to any directory in your $PATH, or linking to it. Make sure
-that the "shader" directory is located just next to the binary.
-
-
-Licensing
-======================================================================
-
-Please see the COPYING.txt file for licensing information.
+MVE does not depend on any external files. UMVE only requires access to
+the shaders, and expects these files in the "shader" directory located
+next to the binary. Thus, it is easy to install UMVE by copying the binary
+and the shader directory anywhere you want.
 
 
 Hacking MVE
 ======================================================================
 
-Just a few notes on developing MVE itself.
+A few notes on developing MVE itself.
 
-HACKING. Developing library functionality is done by adding a new app to
-the "apps/" directory (copy and edit a Makefile!), or in the "_test.cc"
-file in one of the library directories ("make test" to build it). Due to
-Makefile rules, files that start with an underscore ("_") are not build and
-linked into the library.
+HACKING. Developing library functionality is done by adding code and the
+corresponding unit tests. Sometimes it is difficult to test a feature and
+a "_test.cc" file in one of the library can be used ("make test" to build
+it). Due to Makefile rules, files that start with an underscore ("_") are
+ignored when building the libraries.
 
-TESTING. Unit tests are performed with googletest; it can be obtained from:
-http://code.google.com/p/googletest/
-In order to build and execute MVE unit tests, export GTEST_PATH to the path
-of your local googletest copy, then: 1. cd $GTEST_PATH/make, 2. make,
-3. rename "gtest_main.a" to "libgtest_main.a", 4. "make gtest" in MVE.
+TESTING. Unit tests are performed with GoogleTest, which can be obtained
+from http://code.google.com/p/googletest/. More information is available
+here: https://github.com/simonfuhrmann/mve/wiki/The-MVE-Developers-Guide
 
 CONTRIBUTING. You are welcome to send in contributions to MVE that add new
-functionality or fix bugs. Note that only contributions that meet the quality
-standards of the libraries are likely to go into the official code base.
-All contributions will be published under the same license as MVE (see
-COPYING.txt for further details), and contributed code is up to future
-changes in licensing or licensing to third parties on an individual basis.
+functionality or fix bugs. By submitting code to MVE, you consent that all
+contributions will be published under the same license as MVE (see
+COPYING.txt for details), and all contributed code is up to future changes in
+licensing or licensing to third parties on an individual basis. If you want
+to license the code for commercial purposes, please get in contact with us.

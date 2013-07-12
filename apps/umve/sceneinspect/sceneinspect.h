@@ -1,11 +1,10 @@
 #ifndef UMVE_SCENE_INSPECT_HEADER
 #define UMVE_SCENE_INSPECT_HEADER
 
-#include <vector>
-
 #include "ogl/opengl.h"
 
-#include <QtGui>
+#include <vector>
+
 #include <QGLWidget>
 
 #include "mve/scene.h"

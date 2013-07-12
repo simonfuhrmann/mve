@@ -291,12 +291,12 @@ vector_clean (std::vector<T>& vec, std::vector<bool> const& dlist)
 template <typename T>
 inline void
 kernel_region (T const& cx, T const& cy, T const& ks,
-    T const& width, T const& height, T& x1, T& x2, T& y1, T& y2)
+    T const& width, T const& height, T* x1, T* x2, T* y1, T* y2)
 {
-    x1 = (cx > ks ? cx - ks : T(0));
-    x2 = (cx + ks > width - T(1) ? width - T(1) : cx + ks);
-    y1 = (cy > ks ? cy - ks : T(0));
-    y2 = (cy + ks > height - T(1) ? height - T(1) : cy + ks);
+    *x1 = (cx > ks ? cx - ks : T(0));
+    *x2 = (cx + ks > width - T(1) ? width - T(1) : cx + ks);
+    *y1 = (cy > ks ? cy - ks : T(0));
+    *y2 = (cy + ks > height - T(1) ? height - T(1) : cy + ks);
 }
 
 /**

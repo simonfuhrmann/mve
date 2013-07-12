@@ -1,7 +1,8 @@
 #ifndef UMVE_SELECTEDVIEW_HEADER
 #define UMVE_SELECTEDVIEW_HEADER
 
-#include <QtGui>
+#include <QComboBox>
+#include <QLabel>
 
 #include "mve/view.h"
 
