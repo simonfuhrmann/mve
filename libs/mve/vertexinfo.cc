@@ -189,8 +189,7 @@ VertexInfoList::get_faces_for_edge (std::size_t v1, std::size_t v2,
 {
     MeshVertexInfo::FaceRefList const& faces1 = this->at(v1).faces;
     MeshVertexInfo::FaceRefList const& faces2 = this->at(v2).faces;
-    std::set<std::size_t> faces2_set;
-    faces2_set = std::set<std::size_t>(faces2.begin(), faces2.end());
+    std::set<std::size_t> faces2_set(faces2.begin(), faces2.end());
     for (std::size_t i = 0; i < faces1.size(); ++i)
     {
         if (faces2_set.find(faces1[i]) != faces2_set.end())
