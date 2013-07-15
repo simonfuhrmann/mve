@@ -81,9 +81,14 @@ public:
     /** Prints debug information to stdout. */
     void print_debug (void);
 
+    /** Checks for the existence of and edge between the given vertices. */
+    bool is_mesh_edge (std::size_t v1, std::size_t v2);
+
+    /** Fills the given vector with all faces containing the edge. */
+    void get_faces_for_edge (std::size_t v1, std::size_t v2,
+        std::vector<std::size_t>* afaces);
+
     /* TODO: More helper functions
-     * - is_mesh_edge (v1, v2)
-     * - get_faces_for_edge (v1, v2)
      * - get_mem_usage
      */
 };
