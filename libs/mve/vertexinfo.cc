@@ -177,22 +177,24 @@ VertexInfoList::print_debug (void)
 bool
 VertexInfoList::is_mesh_edge (std::size_t v1, std::size_t v2)
 {
-    MeshVertexInfo& vinfo = this->at(v1);
-    return std::find(vinfo.verts.begin(), vinfo.verts.end(), v2) != vinfo.verts.end();
+    MeshVertexInfo::VertexRefList const& verts = this->at(v1).verts;
+    return std::find(verts.begin(), verts.end(), v2) != verts.end();
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-VertexInfoList::get_faces_for_edge (std::size_t v1, std::size_t v2, AdjFaceList& afaces)
+VertexInfoList::get_faces_for_edge (std::size_t v1, std::size_t v2,
+    std::vector<std::size_t>* afaces)
 {
-    MeshVertexInfo& vinfo1 = this->at(v1);
-    MeshVertexInfo& vinfo2 = this->at(v2);
-    for (std::size_t i = 0; i < vinfo1.faces.size(); ++i)
+    MeshVertexInfo::FaceRefList const& faces1 = this->at(v1).faces;
+    MeshVertexInfo::FaceRefList const& faces2 = this->at(v2).faces;
+    std::set<std::size_t> faces2_set;
+    faces2_set = std::set<std::size_t>(faces2.begin(), faces2.end());
+    for (std::size_t i = 0; i < faces1.size(); ++i)
     {
-        std::size_t face = vinfo1.faces.at(i);
-        if(std::find(vinfo2.faces.begin(), vinfo2.faces.end(), face) != vinfo2.faces.end())
-            afaces.push_back(face);
+        if (faces2_set.find(faces1[i]) != faces2_set.end())
+            afaces->push_back(faces1[i]);
     }
 }
 
