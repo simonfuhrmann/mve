@@ -44,6 +44,8 @@ public:
     Progress& getProgress();
     void start();            // according to settings
 
+    std::size_t getRefViewNr() const;
+
 private:
     mve::Scene::Ptr scene;
     mve::BundleFile::ConstPtr bundle;
@@ -76,6 +78,12 @@ inline Progress&
 DMRecon::getProgress()
 {
     return progress;
+}
+
+inline std::size_t
+DMRecon::getRefViewNr() const
+{
+    return settings.refViewNr;
 }
 
 MVS_NAMESPACE_END
