@@ -31,6 +31,8 @@ struct Settings
 
     bool keepDzMap;
     bool keepConfidenceMap;
+
+    bool quiet;
 };
 
 MVS_NAMESPACE_END

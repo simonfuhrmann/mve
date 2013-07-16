@@ -67,6 +67,10 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     this->width = scaled_img->width();
     this->height = scaled_img->height();
 
+    if (!settings.quiet)
+        std::cout << "scaled image size: " << this->width << " x "
+                  << this->height << std::endl;
+
     /* Create log file and write out some general MVS information */
     if (!settings.logPath.empty()) {
         // Create directory if necessary
@@ -79,12 +83,13 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
                 if (!util::fs::dir_exists(logfn.c_str()))
                     throw std::runtime_error("Error creating directory: " + logfn);
 
-        // Build log file name and open file
+        /* Build log file name and open file */
         std::string name(refV->createFileName(settings.scale));
         name += ".log";
         logfn += name;
-        std::cout << "Creating log file at " << logfn
-                  << std::endl;
+        if (!settings.quiet)
+            std::cout << "Creating log file at " << logfn
+                      << std::endl;
         log.open(logfn.c_str());
         if (!log.good())
             throw std::runtime_error("Cannot open log file");
@@ -127,6 +132,8 @@ void DMRecon::start()
         progress.status = RECON_SAVING;
         SingleView::Ptr refV(views[settings.refViewNr]);
         if (settings.writePlyFile) {
+            if (!settings.quiet)
+                std::cout << "Saving ply file as " << settings.plyPath << "/" << refV->createFileName(settings.scale) << ".ply" << std::endl;
             refV->saveReconAsPly(settings.plyPath, settings.scale);
         }
 
@@ -157,27 +164,30 @@ void DMRecon::start()
 
         progress.status = RECON_IDLE;
 
-        // Output percentage of filled pixels
+        /* Output percentage of filled pixels */
         {
             int nrPix = this->width * this->height;
             float percent = (float) progress.filled / (float) nrPix;
-            std::cout << "Filled " << progress.filled << " pixels, i.e. "
-                      << util::string::get_fixed(percent * 100.f, 1)
-                      << " %." << std::endl;
+            if (!settings.quiet)
+                std::cout << "Filled " << progress.filled << " pixels, i.e. "
+                          << util::string::get_fixed(percent * 100.f, 1)
+                          << " %." << std::endl;
             log << "Filled " << progress.filled << " pixels, i.e. "
                   << util::string::get_fixed(percent * 100.f, 1)
                   << " %." << std::endl;
         }
 
-        // Output required time to process the image
+        /* Output required time to process the image */
         {
             size_t mvs_time = std::time(0) - progress.start_time;
-            std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
+            if (!settings.quiet)
+                std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
             log << "MVS took " << mvs_time << " seconds." << std::endl;
 
         }
     } catch (util::Exception e) {
-        std::cout << "Reconstruction failed: " << e << std::endl;
+        if (!settings.quiet)
+            std::cout << "Reconstruction failed: " << e << std::endl;
         log << "Reconstruction failed: " << e << std::endl;
 
         progress.status = RECON_CANCELLED;
@@ -234,7 +244,8 @@ void DMRecon::globalViewSelection()
         views[*citID]->loadColorImage(this->settings.imageEmbedding, 0);
     }
     ss << std::endl;
-    std::cout << ss.str();
+    if (!settings.quiet)
+        std::cout << ss.str();
     log << ss.str();
 }
 
@@ -247,8 +258,9 @@ void DMRecon::processFeatures()
 
     /* select features that should be processed:
        take features only from master view for the moment */
-    std::cout<<"Started to process "<<features.size()<<" features."<<std::endl;
-    log<<"Started to process "<<features.size()<<" features."<<std::endl;
+    if (!settings.quiet)
+        std::cout << "Started to process " << features.size() << " features." << std::endl;
+    log << "Started to process " << features.size() << " features." << std::endl;
     size_t success = 0, processed = 0;
 
     for (size_t i = 0; i < features.size() && !progress.cancelled; ++i)
@@ -312,8 +324,9 @@ void DMRecon::processFeatures()
             prQueue.push(tmpData);
         }
     }
-    std::cout << "Processed " << processed << " features, from which "
-              << success << " succeeded optimization." << std::endl;
+    if (!settings.quiet)
+        std::cout << "Processed " << processed << " features, from which "
+                  << success << " succeeded optimization." << std::endl;
     log << "Processed " << processed << " features, from which "
           << success << " succeeded optimization." << std::endl;
 }
@@ -326,14 +339,16 @@ DMRecon::processQueue()
 
     SingleView::Ptr refV = this->views[settings.refViewNr];
 
-    std::cout << "Process queue ..." << std::endl;
+    if (!settings.quiet)
+        std::cout << "Process queue ..." << std::endl;
     log << "Process queue ..." << std::endl;
     size_t count = 0, lastStatus = 1;
     progress.queueSize = prQueue.size();
-    std::cout << "Count: " << std::setw(8) << count
-              << "  filled: " << std::setw(8) << progress.filled
-              << "  Queue: " << std::setw(8) << progress.queueSize
-              << std::endl;
+    if (!settings.quiet)
+        std::cout << "Count: " << std::setw(8) << count
+                  << "  filled: " << std::setw(8) << progress.filled
+                  << "  Queue: " << std::setw(8) << progress.queueSize
+                  << std::endl;
     log << "Count: " << std::setw(8) << count
           << "  filled: " << std::setw(8) << progress.filled
           << "  Queue: " << std::setw(8) << progress.queueSize
@@ -345,10 +360,11 @@ DMRecon::processQueue()
         progress.queueSize = prQueue.size();
         if ((progress.filled % 1000 == 0) && (progress.filled != lastStatus))
         {
-            std::cout << "Count: " << std::setw(8) << count
-                      << "  filled: " << std::setw(8) << progress.filled
-                      << "  Queue: " << std::setw(8) << progress.queueSize
-                      << std::endl;
+            if (!settings.quiet)
+                std::cout << "Count: " << std::setw(8) << count
+                          << "  filled: " << std::setw(8) << progress.filled
+                          << "  Queue: " << std::setw(8) << progress.queueSize
+                          << std::endl;
             log << "Count: " << std::setw(8) << count
                   << "  filled: " << std::setw(8) << progress.filled
                   << "  Queue: " << std::setw(8) << progress.queueSize
