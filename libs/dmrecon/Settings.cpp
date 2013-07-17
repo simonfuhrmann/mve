@@ -18,6 +18,7 @@ Settings::Settings()
     , globalVSMax(20)
     , keepDzMap(false)
     , keepConfidenceMap(false)
+    , quiet(false)
 {
 }
 

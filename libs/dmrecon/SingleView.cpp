@@ -52,8 +52,6 @@ SingleView::prepareRecon(int scale)
 
     int scaled_width = this->target_level.width;
     int scaled_height = this->target_level.height;
-    std::cout << "scaled image size: " << scaled_width
-        << " x " << scaled_height << std::endl;
 
     // create images for reconstruction
     this->depthImg = mve::FloatImage::create(scaled_width, scaled_height, 1);
@@ -122,7 +120,6 @@ SingleView::saveReconAsPly(std::string const& path, float scale) const
     std::string plyname(path + "/" + name + ".ply");
     std::string xfname(path + "/" + name + ".xf");
 
-    std::cout << "Saving ply file as " << plyname << std::endl;
     mve::geom::save_ply_view(plyname, view->get_camera(),
         this->depthImg, this->confImg, this->target_level.image);
     mve::geom::save_xf_file(xfname, view->get_camera());
