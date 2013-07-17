@@ -10,6 +10,7 @@
 #include "mve/plyfile.h"
 #include "mve/imageexif.h"
 #include "mve/imagefile.h"
+#include "mve/imagetools.h"
 
 #include "guihelpers.h"
 #include "scenemanager.h"
@@ -259,7 +260,7 @@ ViewInspect::load_image_file (QString filename)
 
     if (img == NULL && (ext4 == ".tif" || ext5 == ".tiff"))
     {
-        try { img = mve::image::load_tiff_file(fname); }
+        try { img = mve::image::load_tiff_16_file(fname); }
         catch (...) {}
     }
 

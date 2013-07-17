@@ -182,6 +182,19 @@ ImageInspectorWidget::update_value_label (int x, int y)
                 tooltip_str += tr(" %1").arg((int)img->at(off + i));
         }
     }
+    else if (this->orig_image->get_type() == mve::IMAGE_TYPE_UINT16)
+    {
+        mve::RawImage::ConstPtr img(this->orig_image);
+        for (int i = 0; i < ic; ++i)
+        {
+            if (ic <= 4 || i < 3)
+                value_str += tr(" %1").arg((int)img->at(off + i));
+            if (ic > 4 && i == 3)
+                value_str += tr(" ...");
+            if (ic > 4)
+                tooltip_str += tr(" %1").arg((int)img->at(off + i));
+        }
+    }
     else
     {
         value_str = "unsupported";

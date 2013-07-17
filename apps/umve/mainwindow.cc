@@ -103,13 +103,16 @@ MainWindow::load_file (const std::string& filename)
 {
     try
     {
-        if (util::string::right(filename, 4) == ".off"
-            || util::string::right(filename, 4) == ".ply")
+        std::string ext4 = util::string::right(filename, 4);
+        std::string ext5 = util::string::right(filename, 5);
+        if (ext4 == ".off" || ext4 == ".ply")
         {
             this->tab_sceneinspect->load_file(filename);
             this->tabs->setCurrentIndex(1);
         }
-        else if (util::string::right(filename, 4) == ".mve")
+        else if (ext4 == ".mve" || ext4 == ".tif" || ext5 == ".tiff"
+            || ext4 == ".pfm" || ext4 == ".png"
+            || ext4 == ".jpg" || ext5 == ".jpeg")
         {
             this->tab_viewinspect->load_file(filename.c_str());
             this->tabs->setCurrentIndex(0);
