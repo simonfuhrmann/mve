@@ -115,7 +115,7 @@ save_xf_file (std::string const& filename, CameraInfo const& camera);
  * world matrix (16 float entries).
  */
 void
-save_xf_file (std::string const& filename, float* ctw);
+save_xf_file (std::string const& filename, float const* ctw);
 
 MVE_GEOM_NAMESPACE_END
 MVE_NAMESPACE_END

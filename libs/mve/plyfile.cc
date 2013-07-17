@@ -1046,7 +1046,7 @@ save_xf_file (std::string const& filename, CameraInfo const& camera)
 /* ---------------------------------------------------------------- */
 
 void
-save_xf_file (std::string const& filename, float* ctw)
+save_xf_file (std::string const& filename, float const* ctw)
 {
     std::cout << "Writing XF file " << filename << "..." << std::endl;
 
