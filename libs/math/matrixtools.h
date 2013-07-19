@@ -62,7 +62,7 @@ matrix_invert_trans (Matrix<T,4,4> const& mat);
  */
 template <typename T, int N>
 Matrix<T,N,N>&
-matrix_set_identity (Matrix<T,N,N>& mat);
+matrix_set_identity (Matrix<T,N,N>* mat);
 
 /**
  * Sets the given square matrix of dimension 'n' to the identity matrix.
@@ -208,12 +208,12 @@ matrix_invert_trans (Matrix<T,4,4> const& mat)
 
 template <typename T, int N>
 Matrix<T,N,N>&
-matrix_set_identity (Matrix<T,N,N>& mat)
+matrix_set_identity (Matrix<T,N,N>* mat)
 {
-    mat.fill(T(0));
+    mat->fill(T(0));
     for (int i = 0; i < N * N; i += N + 1)
-        mat[i] = T(1);
-    return mat;
+        (*mat)[i] = T(1);
+    return *mat;
 }
 
 template <typename T>
