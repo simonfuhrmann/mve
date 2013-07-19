@@ -71,6 +71,14 @@ QMeshContextMenu::build (void)
         }
     }
 
+    if (rep->mesh->has_vertex_normals())
+    {
+        QMenu* menu = this->addMenu(tr("Vertex Normals"));
+        QAction* delete_vnormals = menu->addAction(tr("Delete normals"));
+        this->connect(delete_vnormals, SIGNAL(triggered()),
+            this, SLOT(on_delete_vertex_normals()));
+    }
+
     if (rep->mesh->has_vertex_colors())
     {
         QMenu* menu = this->addMenu(tr("Vertex Colors"));
@@ -222,6 +230,16 @@ QMeshContextMenu::on_rename_mesh (void)
 /* ---------------------------------------------------------------- */
 
 void
+QMeshContextMenu::on_delete_vertex_normals (void)
+{
+    this->rep->mesh->get_vertex_normals().clear();
+    this->rep->renderer.reset();
+    emit this->parent->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 QMeshContextMenu::on_delete_vertex_colors (void)
 {
     this->rep->mesh->get_vertex_colors().clear();
@@ -290,7 +308,7 @@ QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
     for (std::size_t i = 0; i < attrib.size(); ++i)
     {
         float value = (attrib[i] - fmin) / (fmax - fmin);
-        vcolor[i] = math::Vec4f(value, value, value, 1.0f);
+        vcolor[i] = math::Vec4f(1.0f, 1.0f - value, 1.0f - value, 1.0f);
     }
 
     this->rep->renderer.reset();
