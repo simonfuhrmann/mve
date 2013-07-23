@@ -80,7 +80,7 @@ FancyProgressPrinter::eraseRecon(mvs::DMRecon const *ptr)
 {
     util::MutexLock lock(this->mutex);
     this->runningRecons.erase(ptr);
-    this->viewStatus[ptr->getRefViewNr()] = STATUS_IN_PROGRESS;
+    this->viewStatus[ptr->getRefViewNr()] = STATUS_DONE;
 }
 
 inline void
