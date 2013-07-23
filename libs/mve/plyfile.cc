@@ -546,7 +546,10 @@ load_ply_mesh (std::string const& filename)
                     else if (!input.eof())
                     {
                         std::cout << "PLY Loader: Ignoring face with "
-                                << n_verts << " vertices!" << std::endl;
+                            << static_cast<int>(n_verts)
+                            << " vertices!" << std::endl;
+                        for (int vid = 0; vid < n_verts; ++vid)
+                            ply_get_value<unsigned int>(input, ply_format);
                     }
                     break;
                 }
