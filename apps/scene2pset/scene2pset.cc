@@ -13,6 +13,7 @@
 #include "mve/plyfile.h"
 #include "mve/scene.h"
 #include "mve/view.h"
+#include "mve/vertexinfo.h"
 
 struct AppSettings
 {
@@ -22,6 +23,7 @@ struct AppSettings
     std::string image;
     std::string aabb;
     bool with_normals;
+    bool with_scale;
     std::vector<std::size_t> ids;
 };
 
@@ -64,9 +66,10 @@ main (int argc, char** argv)
     AppSettings conf;
     conf.scenedir = args.get_nth_nonopt(0);
     conf.outmesh = args.get_nth_nonopt(1);
-    conf.with_normals = false;
-    conf.poisson = false;
     conf.dmname = "depthmap";
+    conf.image = "undistorted";
+    conf.with_normals = false;
+    conf.with_scale = false;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
@@ -77,6 +80,7 @@ main (int argc, char** argv)
         switch (arg->opt->sopt)
         {
             case 'n': conf.with_normals = true; break;
+            case 's': conf.with_scale = true; break;
             case 'd': conf.dmname = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
             case 'v': parse_ids(arg->arg, conf.ids); break;
@@ -85,8 +89,12 @@ main (int argc, char** argv)
         }
     }
 
-    if (conf.poisson)
+    if (util::string::right(conf.outmesh, 5) == ".npts"
+        || util::string::right(conf.outmesh, 6) == ".bnpts")
+    {
         conf.with_normals = true;
+        conf.with_scale = false;
+    }
 
     /* If requested, use given AABB. */
     math::Vec3f aabbmin, aabbmax;
@@ -116,6 +124,7 @@ main (int argc, char** argv)
     mve::TriangleMesh::VertexList& verts(pset->get_vertices());
     mve::TriangleMesh::NormalList& vnorm(pset->get_vertex_normals());
     mve::TriangleMesh::ColorList& vcolor(pset->get_vertex_colors());
+    mve::TriangleMesh::ValueList& vvalues(pset->get_vertex_values());
 
     /* Load scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
@@ -159,6 +168,22 @@ main (int argc, char** argv)
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
 
+        /* If scale is requested, compute it. */
+        std::vector<float> mvscale;
+        if (conf.with_scale)
+        {
+            mvscale.resize(mverts.size(), 0.0f);
+            mve::VertexInfoList::Ptr vinfo = mve::VertexInfoList::create(mesh);
+            for (std::size_t j = 0; j < vinfo->size(); ++j)
+            {
+                mve::MeshVertexInfo const& vinf = vinfo->at(j);
+                for (std::size_t k = 0; k < vinf.verts.size(); ++k)
+                    mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
+                mvscale[j] /= static_cast<float>(vinf.verts.size());
+                mvscale[j] *= 5.0f;  /* MVS patch size is usually 5x5. */
+            }
+        }
+
         /* Add vertices and optional colors and normals to mesh. */
         if (conf.aabb.empty())
         {
@@ -170,6 +195,8 @@ main (int argc, char** argv)
                     vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
                 if (conf.with_normals)
                     vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
+                if (conf.with_scale)
+                    vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
             }
         }
         else
@@ -193,6 +220,8 @@ main (int argc, char** argv)
                         vcolor.push_back(mvcol[i]);
                     if (conf.with_normals)
                         vnorm.push_back(mnorms[i]);
+                    if (conf.with_scale)
+                        vvalues.push_back(mvscale[i]);
                 }
             }
         }
@@ -212,7 +241,7 @@ main (int argc, char** argv)
     {
         mve::geom::SavePLYOptions opts;
         opts.write_vertex_normals = conf.with_normals;
-        opts.write_vertex_values = conf.write_scale;
+        opts.write_vertex_values = conf.with_scale;
         mve::geom::save_ply_mesh(pset, conf.outmesh, opts);
     }
     else
