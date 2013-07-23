@@ -110,6 +110,13 @@ template <typename T, int N>
 Matrix<T,N,N>
 matrix_inverse (Matrix<T,N,N> const& mat, T const& det);
 
+/**
+ * Computes the 3x3 rotation matrix from axis and angle notation.
+ */
+template <typename T>
+Matrix<T,3,3>
+matrix_rotation_from_axis_angle (Vector<T,3> const& axis, T const& angle);
+
 MATH_NAMESPACE_END
 
 /* ------------------------ Implementation ------------------------ */
@@ -411,6 +418,34 @@ matrix_inverse (Matrix<T,4,4> const& m)
 
     T det = m[0] * ret[0] + m[1] * ret[4] + m[2] * ret[8] + m[3] * ret[12];
     return ret / det;
+}
+
+template <typename T>
+Matrix<T,3,3>
+matrix_rotation_from_axis_angle (Vector<T,3> const& axis, T const& angle)
+{
+    /*
+     * http://en.wikipedia.org/wiki/Rotation_matrix
+     *     #Rotation_matrix_from_axis_and_angle
+     */
+    T const ca = std::cos(angle);
+    T const sa = std::sin(angle);
+    T const omca = T(1) - ca;
+
+    math::Matrix<T, 3, 3> rot;
+    rot[0] = ca + MATH_POW2(axis[0]) * omca;
+    rot[1] = axis[0] * axis[1] * omca - axis[2] * sa;
+    rot[2] = axis[0] * axis[2] * omca + axis[1] * sa;
+
+    rot[3] = axis[1] * axis[0] * omca + axis[2] * sa;
+    rot[4] = ca + MATH_POW2(axis[1]) * omca;
+    rot[5] = axis[1] * axis[2] * omca - axis[0] * sa;
+
+    rot[6] = axis[2] * axis[0] * omca - axis[1] * sa;
+    rot[7] = axis[2] * axis[1] * omca + axis[0] * sa;
+    rot[8] = ca + MATH_POW2(axis[2]) * omca;
+
+    return rot;
 }
 
 MATH_NAMESPACE_END
