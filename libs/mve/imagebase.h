@@ -6,8 +6,8 @@
 #ifndef MVE_IMAGE_BASE_HEADER
 #define MVE_IMAGE_BASE_HEADER
 
+#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <vector>
-#include <stdint.h>
 
 #include "util/string.h"
 #include "util/refptr.h"
