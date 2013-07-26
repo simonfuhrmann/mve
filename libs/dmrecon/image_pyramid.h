@@ -1,5 +1,5 @@
-#ifndef DMRECON_IMAGEPYRAMID_H
-#define DMRECON_IMAGEPYRAMID_H
+#ifndef DMRECON_IMAGE_PYRAMID_H
+#define DMRECON_IMAGE_PYRAMID_H
 
 #include <vector>
 #include <map>

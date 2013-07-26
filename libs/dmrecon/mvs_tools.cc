@@ -3,7 +3,7 @@
 
 #include "mve/imagetools.h"
 #include "mve/imagefile.h"
-#include "dmrecon/mvstools.h"
+#include "dmrecon/mvs_tools.h"
 
 MVS_NAMESPACE_BEGIN
 

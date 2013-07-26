@@ -4,8 +4,8 @@
 #include "math/matrix.h"
 #include "math/matrixtools.h"
 #include "math/vector.h"
-#include "dmrecon/PatchOptimization.h"
-#include "dmrecon/Settings.h"
+#include "dmrecon/patch_optimization.h"
+#include "dmrecon/settings.h"
 
 MVS_NAMESPACE_BEGIN
 

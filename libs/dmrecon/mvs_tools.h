@@ -1,5 +1,5 @@
-#ifndef DMRECON_MVSTOOLS_H
-#define DMRECON_MVSTOOLS_H
+#ifndef DMRECON_MVS_TOOLS_H
+#define DMRECON_MVS_TOOLS_H
 
 #include <iostream>
 
@@ -8,7 +8,7 @@
 #include "mve/image.h"
 #include "util/refptr.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/SingleView.h"
+#include "dmrecon/single_view.h"
 
 MVS_NAMESPACE_BEGIN
 

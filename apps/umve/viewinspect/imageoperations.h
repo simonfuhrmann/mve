@@ -7,7 +7,7 @@
 #include <QLineEdit>
 #include <QSpinBox>
 
-#include "dmrecon/Progress.h"
+#include "dmrecon/progress.h"
 #include "mve/scene.h"
 #include "mve/view.h"
 

@@ -1,14 +1,14 @@
-#ifndef DMRECON_PATCHOPTIMIZATION_H
-#define DMRECON_PATCHOPTIMIZATION_H
+#ifndef DMRECON_PATCH_OPTIMIZATION_H
+#define DMRECON_PATCH_OPTIMIZATION_H
 
 #include <iostream>
 
 #include "math/vector.h"
 #include "util/refptr.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/PatchSampler.h"
-#include "dmrecon/SingleView.h"
-#include "dmrecon/LocalViewSelection.h"
+#include "dmrecon/patch_sampler.h"
+#include "dmrecon/single_view.h"
+#include "dmrecon/local_view_selection.h"
 
 MVS_NAMESPACE_BEGIN
 

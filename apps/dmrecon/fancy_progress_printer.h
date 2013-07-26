@@ -2,7 +2,7 @@
 #define DMRECON_FANCY_PROGRESS_PRINTER_H
 
 #include "util/thread.h"
-#include "dmrecon/DMRecon.h"
+#include "dmrecon/dmrecon.h"
 
 #include <set>
 #include <string>
@@ -80,7 +80,7 @@ FancyProgressPrinter::eraseRecon(mvs::DMRecon const *ptr)
 {
     util::MutexLock lock(this->mutex);
     this->runningRecons.erase(ptr);
-    this->viewStatus[ptr->getRefViewNr()] = STATUS_IN_PROGRESS;
+    this->viewStatus[ptr->getRefViewNr()] = STATUS_DONE;
 }
 
 inline void

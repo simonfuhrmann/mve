@@ -3,8 +3,8 @@
 #include <cstdlib>
 #include <csignal>
 
-#include "dmrecon/Settings.h"
-#include "dmrecon/DMRecon.h"
+#include "dmrecon/settings.h"
+#include "dmrecon/dmrecon.h"
 #include "mve/scene.h"
 #include "mve/view.h"
 #include "util/arguments.h"

@@ -3,7 +3,7 @@
 #include <fstream>
 #include <cstdlib>
 
-#include "dmrecon/SingleView.h"
+#include "dmrecon/single_view.h"
 #include "math/vector.h"
 #include "mve/camera.h"
 #include "mve/depthmap.h"

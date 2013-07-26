@@ -1,4 +1,4 @@
-#include "dmrecon/ImagePyramid.h"
+#include "dmrecon/image_pyramid.h"
 
 #include "mve/imagetools.h"
 
