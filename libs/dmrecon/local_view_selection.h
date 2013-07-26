@@ -1,10 +1,10 @@
-#ifndef DMRECON_LOCALVIEWSELECTION_H
-#define DMRECON_LOCALVIEWSELECTION_H
+#ifndef DMRECON_LOCAL_VIEW_SELECTION_H
+#define DMRECON_LOCAL_VIEW_SELECTION_H
 
 #include "util/refptr.h"
-#include "dmrecon/ViewSelection.h"
-#include "dmrecon/PatchSampler.h"
-#include "dmrecon/SingleView.h"
+#include "dmrecon/view_selection.h"
+#include "dmrecon/patch_sampler.h"
+#include "dmrecon/single_view.h"
 
 MVS_NAMESPACE_BEGIN
 

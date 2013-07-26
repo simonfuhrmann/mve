@@ -1,4 +1,4 @@
-#include "dmrecon/Settings.h"
+#include "dmrecon/settings.h"
 
 MVS_NAMESPACE_BEGIN
 

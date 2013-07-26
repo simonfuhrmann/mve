@@ -8,7 +8,7 @@
 #include "mve/plyfile.h"
 #include "mve/view.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/SingleView.h"
+#include "dmrecon/single_view.h"
 
 MVS_NAMESPACE_BEGIN
 

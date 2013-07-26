@@ -2,7 +2,7 @@
 #define DMRECON_FANCY_PROGRESS_PRINTER_H
 
 #include "util/thread.h"
-#include "dmrecon/DMRecon.h"
+#include "dmrecon/dmrecon.h"
 
 #include <set>
 #include <string>

@@ -1,11 +1,11 @@
-#ifndef DMRECON_GLOBALVIEWSELECTION_H
-#define DMRECON_GLOBALVIEWSELECTION_H
+#ifndef DMRECON_GLOBAL_VIEW_SELECTION_H
+#define DMRECON_GLOBAL_VIEW_SELECTION_H
 
 #include <map>
 
 #include "mve/bundlefile.h"
-#include "dmrecon/SingleView.h"
-#include "dmrecon/ViewSelection.h"
+#include "dmrecon/single_view.h"
+#include "dmrecon/view_selection.h"
 
 MVS_NAMESPACE_BEGIN
 

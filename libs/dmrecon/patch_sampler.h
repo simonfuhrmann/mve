@@ -1,13 +1,13 @@
-#ifndef DMRECON_PATCHSAMPLER_H
-#define DMRECON_PATCHSAMPLER_H
+#ifndef DMRECON_PATCH_SAMPLER_H
+#define DMRECON_PATCH_SAMPLER_H
 
 #include <map>
 
 #include "math/vector.h"
 #include "util/refptr.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/Settings.h"
-#include "dmrecon/SingleView.h"
+#include "dmrecon/settings.h"
+#include "dmrecon/single_view.h"
 
 MVS_NAMESPACE_BEGIN
 

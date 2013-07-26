@@ -10,9 +10,9 @@
 #include "mve/imagetools.h"
 #include "util/filesystem.h"
 #include "util/string.h"
-#include "dmrecon/Settings.h"
-#include "dmrecon/DMRecon.h"
-#include "dmrecon/GlobalViewSelection.h"
+#include "dmrecon/settings.h"
+#include "dmrecon/dmrecon.h"
+#include "dmrecon/global_view_selection.h"
 
 MVS_NAMESPACE_BEGIN
 
