@@ -1,6 +1,6 @@
 // Keep on top because of Eigen
-#include "dmrecon/DMRecon.h"
-#include "dmrecon/Settings.h"
+#include "dmrecon/dmrecon.h"
+#include "dmrecon/settings.h"
 
 #include <iostream>
 #include <QFormLayout>

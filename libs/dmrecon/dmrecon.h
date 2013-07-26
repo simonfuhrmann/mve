@@ -10,9 +10,9 @@
 #include "mve/image.h"
 #include "mve/scene.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/PatchOptimization.h"
-#include "dmrecon/SingleView.h"
-#include "dmrecon/Progress.h"
+#include "dmrecon/patch_optimization.h"
+#include "dmrecon/single_view.h"
+#include "dmrecon/progress.h"
 
 MVS_NAMESPACE_BEGIN
 

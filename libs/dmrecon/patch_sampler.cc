@@ -2,8 +2,8 @@
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/mvstools.h"
-#include "dmrecon/PatchSampler.h"
+#include "dmrecon/mvs_tools.h"
+#include "dmrecon/patch_sampler.h"
 
 MVS_NAMESPACE_BEGIN
 
