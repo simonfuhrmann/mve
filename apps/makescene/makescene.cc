@@ -350,6 +350,15 @@ import_bundle_nvm (AppSettings const& conf)
         return;
     }
 
+    std::size_t last_slash_pos = conf.input_dir.find_last_of('/');
+    std::string nvm_path;
+    if (last_slash_pos == std::string::npos) {
+        nvm_path = util::fs::get_cwd_string();
+    }
+    else {
+        nvm_path = conf.input_dir.substr(0, last_slash_pos);
+    }
+
     std::cout << "Start parsing NVM file..." << std::endl;
 
     /* Check NVM file signature. */
@@ -381,7 +390,9 @@ import_bundle_nvm (AppSettings const& conf)
     for (int i = 0; i < num_views; ++i)
     {
         NVMView view;
-        in >> view.filename;
+        std::string view_file;
+        in >> view_file;
+        view.filename = nvm_path + "/" + view_file;
         in >> view.focal_length;
         for (int j = 0; j < 4; ++j)
             in >> view.quaternion[j];
@@ -488,14 +499,25 @@ import_bundle_nvm (AppSettings const& conf)
 
     /* Create and write views. */
     std::cout << "Writing MVE files..." << std::endl;
+    bool error = false;
 #pragma omp parallel for schedule(dynamic, 1)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
+        if (error)
+            continue;
         mve::View::Ptr view = mve::View::create();
         view->set_id(i);
         view->set_name(util::string::get_filled(i, 4, '0'));
-
-        mve::ByteImage::Ptr image = mve::image::load_file(views[i].filename);
+        mve::ByteImage::Ptr image;
+        try {
+            image = mve::image::load_file(views[i].filename);
+        }
+        catch (util::Exception const& e) {
+            std::cerr << "Could not load image " << views[i].filename
+                << std::endl;
+            error = true;
+            continue;
+        }
         int const maxdim = std::max(image->width(), image->height());
         view->add_image("original", image);
         view->add_image("thumbnail", create_thumbnail(image));
