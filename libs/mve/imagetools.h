@@ -987,7 +987,7 @@ crop (typename Image<T>::ConstPtr image, int width, int height,
     for (int y = std::max(0, -top); y < std::min(height, ih - top); ++y)
     {
         int lookup_y = top + y;
-        if (lookup_y >= iw)
+        if (lookup_y >= ih)
             break;
         T* out_ptr = &out->at(left < 0 ? -left : 0, y, 0);
         T const* in_ptr = &image->at(left > 0 ? left : 0, lookup_y, 0);

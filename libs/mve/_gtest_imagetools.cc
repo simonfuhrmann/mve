@@ -187,6 +187,17 @@ TEST(ImageToolsTest, ImageCropOutside2)
             EXPECT_EQ(127, img->at(i));
 }
 
+TEST(ImageToolsTest, CropImagePortrait)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(1, 2, 1);
+    unsigned char white = 255;
+    unsigned char black = 0;
+    img->at(0, 0, 0) = black;
+    img->at(0, 1, 0) = white;
+    mve::ByteImage::Ptr cropped = mve::image::crop(img, 1, 1, 0, 1, &black);
+    EXPECT_EQ(white, cropped->at(0));
+}
+
 TEST(ImageToolsTest, CropImageOverlap1)
 {
     mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
