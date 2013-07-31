@@ -37,7 +37,7 @@ CamTrackball::consume_event (MouseEvent const& event)
         }
         else if (event.button == MOUSE_BUTTON_RIGHT)
         {
-            math::Vec3f center = get_center(event.x, event.y);
+            math::Vec3f center = this->get_center(event.x, event.y);
             if (center != math::Vec3f(0.0f))
                 this->tb_center = center;
         }

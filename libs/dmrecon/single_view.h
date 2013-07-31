@@ -1,5 +1,5 @@
-#ifndef DMRECON_SINGLEVIEW_H
-#define DMRECON_SINGLEVIEW_H
+#ifndef DMRECON_SINGLE_VIEW_H
+#define DMRECON_SINGLE_VIEW_H
 
 #include <cassert>
 #include <set>
@@ -12,7 +12,7 @@
 #include "mve/bundlefile.h"
 #include "mve/image.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/ImagePyramid.h"
+#include "dmrecon/image_pyramid.h"
 
 MVS_NAMESPACE_BEGIN
 

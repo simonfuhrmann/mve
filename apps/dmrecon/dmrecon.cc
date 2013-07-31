@@ -3,13 +3,24 @@
 #include <cstdlib>
 #include <csignal>
 
-#include "dmrecon/Settings.h"
-#include "dmrecon/DMRecon.h"
+#include "dmrecon/settings.h"
+#include "dmrecon/dmrecon.h"
 #include "mve/scene.h"
 #include "mve/view.h"
 #include "util/arguments.h"
 #include "util/system.h"
 #include "util/tokenizer.h"
+
+#include "fancy_progress_printer.h"
+
+enum ProgressStyle
+{
+    PROGRESS_SILENT,
+    PROGRESS_SIMPLE,
+    PROGRESS_FANCY
+};
+
+FancyProgressPrinter fancyProgressPrinter;
 
 void
 reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
@@ -23,13 +34,17 @@ reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
             /* Start MVS reconstruction */
             settings.scale = float(s);
             mvs::DMRecon recon(scene, settings);
+            fancyProgressPrinter.insertRecon(&recon);
             recon.start();
+            fancyProgressPrinter.eraseRecon(&recon);
         }
     }
     else
     {
         mvs::DMRecon recon(scene, settings);
+        fancyProgressPrinter.insertRecon(&recon);
         recon.start();
+        fancyProgressPrinter.eraseRecon(&recon);
     }
 }
 
@@ -70,6 +85,8 @@ main (int argc, char** argv)
         "path suffix appended to scene dir to write ply files");
     args.add_option('\0', "logdest", true,
         "path suffix appended to scene dir to write log files");
+    args.add_option('\0', "progress", true,
+        "progress output style: 'silent', 'simple' or 'fancy'");
     args.add_option('\0', "force", false, "Re-reconstruct existing depthmaps");
     args.parse(argc, argv);
 
@@ -79,6 +96,13 @@ main (int argc, char** argv)
     std::string logDest("/log");
     int master_id = -1;
     bool force_recon = false;
+    ProgressStyle progress_style;
+
+#ifdef _WIN32
+    progress_style = PROGRESS_SIMPLE;
+#else
+    progress_style = PROGRESS_FANCY;
+#endif
 
     mvs::Settings mySettings;
     std::vector<int> listIDs;
@@ -124,10 +148,25 @@ main (int argc, char** argv)
             logDest = arg->arg;
         else if (arg->opt->lopt == "force")
             force_recon = true;
+        else if (arg->opt->lopt == "progress")
+        {
+            if (arg->arg == "silent")
+                progress_style = PROGRESS_SILENT;
+            else if (arg->arg == "simple")
+                progress_style = PROGRESS_SIMPLE;
+            else if (arg->arg == "fancy")
+                progress_style = PROGRESS_FANCY;
+            else
+                std::cout << "WARNING: unrecognized progress style" << std::endl;
+        }
         else {
             std::cout << "WARNING: unrecognized option" << std::endl;
         }
     }
+
+    /* don't show progress twice */
+    if (progress_style != PROGRESS_SIMPLE)
+        mySettings.quiet = true;
 
     /* Load MVE scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
@@ -151,9 +190,16 @@ main (int argc, char** argv)
     mySettings.logPath += logDest;
     mySettings.logPath += "/";
 
+    fancyProgressPrinter.setBasePath(basePath);
+    fancyProgressPrinter.setNumViews(scene->get_views().size());
+
+    if (progress_style == PROGRESS_FANCY)
+        fancyProgressPrinter.pt_create();
+
     if (master_id >= 0) {
         std::cout << "Reconstructing view with ID " << master_id << std::endl;
         mySettings.refViewNr = (std::size_t)master_id;
+        fancyProgressPrinter.addRefView(master_id);
         reconstruct(scene, mySettings);
     }
     else
@@ -169,6 +215,7 @@ main (int argc, char** argv)
         else {
             std::cout << "Reconstructing views from list..." << std::endl;
         }
+        fancyProgressPrinter.addRefViews(listIDs);
 
 #pragma omp parallel for schedule(dynamic, 1)
         for (std::size_t i = 0; i < listIDs.size(); ++i)
@@ -194,6 +241,12 @@ main (int argc, char** argv)
                 //scene->cache_cleanup();
             }
         }
+    }
+
+    if (progress_style == PROGRESS_FANCY)
+    {
+        fancyProgressPrinter.stop();
+        fancyProgressPrinter.pt_join();
     }
 
     /* Save scene */

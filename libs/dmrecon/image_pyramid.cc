@@ -1,4 +1,4 @@
-#include "dmrecon/ImagePyramid.h"
+#include "dmrecon/image_pyramid.h"
 
 #include "mve/imagetools.h"
 
@@ -119,7 +119,6 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
     /* initialize on first access */
     if (ImagePyramidCache::cachedScene == NULL)
     {
-        std::cout << "initializing for scene " << &*scene << std::endl;
         ImagePyramidCache::cachedScene = scene;
         ImagePyramidCache::cachedEmbedding = embeddingName;
     }

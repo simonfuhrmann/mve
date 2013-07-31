@@ -402,7 +402,7 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
     switch (this->image->get_type())
     {
         case mve::IMAGE_TYPE_FLOAT:
-            mve::image::find_min_max_value(img,
+            mve::image::find_min_max_value(this->image,
                 &this->image_vmin, &this->image_vmax);
             this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
             break;
@@ -410,6 +410,13 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
         case mve::IMAGE_TYPE_UINT8:
             // This takes too long!
             //this->setup_histogram(mve::ByteImage::ConstPtr(this->image));
+            break;
+
+        case mve::IMAGE_TYPE_UINT16:
+            this->image = mve::image::type_to_type_image<uint16_t, float>(img);
+            mve::image::find_min_max_value(this->image,
+                &this->image_vmin, &this->image_vmax);
+            this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
             break;
 
         default:
@@ -520,7 +527,7 @@ ToneMapping::render (void)
 
     if (this->image->get_type() != mve::IMAGE_TYPE_FLOAT)
     {
-        std::cerr << "Warning: Unspported image type!" << std::endl;
+        std::cerr << "Warning: Unsupported image type!" << std::endl;
         return ret;
     }
 

@@ -10,9 +10,9 @@
 #include "mve/image.h"
 #include "mve/scene.h"
 #include "dmrecon/defines.h"
-#include "dmrecon/PatchOptimization.h"
-#include "dmrecon/SingleView.h"
-#include "dmrecon/Progress.h"
+#include "dmrecon/patch_optimization.h"
+#include "dmrecon/single_view.h"
+#include "dmrecon/progress.h"
 
 MVS_NAMESPACE_BEGIN
 
@@ -43,6 +43,8 @@ public:
     Progress const& getProgress() const;
     Progress& getProgress();
     void start();            // according to settings
+
+    std::size_t getRefViewNr() const;
 
 private:
     mve::Scene::Ptr scene;
@@ -76,6 +78,12 @@ inline Progress&
 DMRecon::getProgress()
 {
     return progress;
+}
+
+inline std::size_t
+DMRecon::getRefViewNr() const
+{
+    return settings.refViewNr;
 }
 
 MVS_NAMESPACE_END

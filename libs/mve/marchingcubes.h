@@ -33,6 +33,19 @@ MVE_GEOM_NAMESPACE_BEGIN
  *
  * The first call to next() must initialize the accessor.
  * next() must return false if there is no next element, true otherwise.
+ *
+ * The ordering of the voxels and the edges of a cube are given in the
+ * following. The ordering of the edges is not important for using the
+ * algorithm, but the voxels need to be provided in the right order.
+ *
+ *      4------5        +-- 4--+        +------+
+ *     /|     /|       7|     5|       /|     /|        y
+ *    7-+----6 |      +-+ 6--+ |      +-+----+ |        |
+ *    | |    | |      | |    | |      | 8    | 9        |
+ *    | 0----+-1      | +--0-+-+      | +----+-+        +------ x
+ *    |/     |/       |3     |1      11/    10/        /
+ *    3------2        +--2---+        +------+        z
+ *   Vertex Order    Edge Order 1    Edge Order 2
  */
 template <typename T>
 TriangleMesh::Ptr

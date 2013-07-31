@@ -1,4 +1,4 @@
-#include "dmrecon/Settings.h"
+#include "dmrecon/settings.h"
 
 MVS_NAMESPACE_BEGIN
 
@@ -18,6 +18,7 @@ Settings::Settings()
     , globalVSMax(20)
     , keepDzMap(false)
     , keepConfidenceMap(false)
+    , quiet(false)
 {
 }
 

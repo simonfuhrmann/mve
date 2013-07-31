@@ -1,6 +1,6 @@
 // Keep on top because of Eigen
-#include "dmrecon/DMRecon.h"
-#include "dmrecon/Settings.h"
+#include "dmrecon/dmrecon.h"
+#include "dmrecon/settings.h"
 
 #include <iostream>
 #include <QFormLayout>
@@ -292,6 +292,7 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     job->settings.plyPath += "/recon/";
     job->settings.logPath = scene->get_path();
     job->settings.logPath += "/log/";
+    job->settings.quiet = true;
 
     /* Launch and register job. */
     job->future = QtConcurrent::run(this,

@@ -6,7 +6,7 @@
 #ifndef UTIL_STRING_HEADER
 #define UTIL_STRING_HEADER
 
-#include <stdint.h>
+#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <sstream>
 #include <string>
 #include <iomanip>

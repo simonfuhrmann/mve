@@ -340,6 +340,18 @@ get_rot_from_quaternion(double const* values)
     return rot;
 }
 
+std::string
+get_relative_path_component (std::string const& full_path)
+{
+    std::size_t pos = full_path.find_last_of('/');
+    if (pos == std::string::npos)
+        return "./";
+    else if (pos == 0)
+        return "/.";
+    else
+        return full_path.substr(0, pos);
+}
+
 void
 import_bundle_nvm (AppSettings const& conf)
 {
@@ -350,9 +362,8 @@ import_bundle_nvm (AppSettings const& conf)
         return;
     }
 
-    std::cout << "Start parsing NVM file..." << std::endl;
-
     /* Check NVM file signature. */
+    std::cout << "Start parsing NVM file..." << std::endl;
     std::string signature;
     in >> signature;
     if (signature != "NVM_V3")
@@ -377,6 +388,7 @@ import_bundle_nvm (AppSettings const& conf)
     std::cout << "Number of views: " << num_views << std::endl;
 
     /* Read views. */
+    std::string nvm_path = get_relative_path_component(conf.input_dir);
     std::vector<NVMView> views;
     for (int i = 0; i < num_views; ++i)
     {
@@ -388,6 +400,17 @@ import_bundle_nvm (AppSettings const& conf)
         for (int j = 0; j < 3; ++j)
             in >> view.camera_center[j];
         in >> view.radial_distortion;
+        if (in.eof())
+        {
+            std::cerr << "Error: Premature end of NVM file." << std::endl;
+            in.close();
+            return;
+        }
+
+        /* If the filename is not absolute, make relative to NVM. */
+        if (view.filename[0] != '/')
+            view.filename = nvm_path + "/" + view.filename;
+
         views.push_back(view);
 
         int temp;
@@ -495,7 +518,15 @@ import_bundle_nvm (AppSettings const& conf)
         view->set_id(i);
         view->set_name(util::string::get_filled(i, 4, '0'));
 
-        mve::ByteImage::Ptr image = mve::image::load_file(views[i].filename);
+        mve::ByteImage::Ptr image;
+        try
+        { image = mve::image::load_file(views[i].filename); }
+        catch (...)
+        {
+            std::cout << "Error loading: " << views[i].filename << std::endl;
+            continue;
+        }
+
         int const maxdim = std::max(image->width(), image->height());
         view->add_image("original", image);
         view->add_image("thumbnail", create_thumbnail(image));

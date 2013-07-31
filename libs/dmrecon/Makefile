@@ -1,7 +1,7 @@
 include ../../Makefile.inc
 
-SOURCES := $(wildcard [^_]*.cpp)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cpp,.o,$(file)))
+SOURCES := $(wildcard [^_]*.cc)
+OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 LIBRARY := libdmrecon.a
 
 EXT_INCL := -I..
@@ -11,7 +11,7 @@ libmve: ${OBJECTS}
 	ar rcs ${LIBRARY} ${OBJECTS}
 	chmod a+x ${LIBRARY}
 
-%.o: %.cpp
+%.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
 
 depend:
