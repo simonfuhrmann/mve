@@ -117,7 +117,7 @@ SceneOverview::add_view_to_layout (std::size_t id, mve::View::Ptr view)
     /* Create the item image. */
     mve::ByteImage::ConstPtr thumb(view->get_byte_image("thumbnail"));
     QPixmap button_pixmap;
-    if (thumb.get() == 0)
+    if (thumb == NULL)
     {
         button_pixmap.load(":/images/icon_broken.svg");
     }

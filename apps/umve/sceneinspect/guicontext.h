@@ -71,7 +71,7 @@ GuiContext::set_gl_widget (GLWidget* glwidget)
 inline char const*
 GuiContext::get_gui_name (void) const
 {
-    return 0;
+    return NULL;
 }
 
 inline void

@@ -688,7 +688,7 @@ SceneContext::set_scene (mve::Scene::Ptr scene)
 void
 SceneContext::on_dm_triangulate (void)
 {
-    if (this->view == 0)
+    if (this->view == NULL)
         return;
 
     float dd_factor = this->dm_depth_disc.value();

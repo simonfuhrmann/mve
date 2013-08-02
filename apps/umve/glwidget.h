@@ -35,7 +35,7 @@ public:
     static void debug_event (ogl::KeyboardEvent const& event);
 
 public:
-    GLWidget(QWidget *parent = 0);
+    GLWidget(QWidget *parent = NULL);
     ~GLWidget();
 
     void set_context (ogl::Context* context);

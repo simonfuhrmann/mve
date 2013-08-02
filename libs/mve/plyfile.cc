@@ -658,7 +658,7 @@ void
 save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
     SavePLYOptions const& options)
 {
-    if (mesh.get() == 0)
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");

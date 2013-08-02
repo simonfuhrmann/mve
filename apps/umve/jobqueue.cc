@@ -17,7 +17,7 @@ JobQueue::get (void)
 JobQueue::JobQueue (void)
 {
     this->jobs_list = new QListWidget();
-    this->dock = 0;
+    this->dock = NULL;
     //QThreadPool::globalInstance()->setMaxThreadCount(2);
 
     /* Header of the list. */

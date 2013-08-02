@@ -32,7 +32,7 @@ private slots:
     void on_close_clicked (void);
 
 public:
-    BatchOperations (QWidget* parent = 0);
+    BatchOperations (QWidget* parent = NULL);
     void set_scene (mve::Scene::Ptr scene);
 };
 
@@ -55,7 +55,7 @@ private slots:
     void on_batchdel_exec (void);
 
 public:
-    BatchDelete (QWidget* parent = 0);
+    BatchDelete (QWidget* parent = NULL);
 };
 
 /* ---------------------------------------------------------------- */
@@ -81,7 +81,7 @@ private slots:
     void on_dirselect (void);
 
 public:
-    BatchExport (QWidget* parent = 0);
+    BatchExport (QWidget* parent = NULL);
 };
 
 /* ---------------------------------------------------------------- */
@@ -109,7 +109,7 @@ private slots:
     void on_import_images (void);
 
 public:
-    BatchImportImages (QWidget* parent = 0);
+    BatchImportImages (QWidget* parent = NULL);
 };
 
 /* ---------------------------------------------------------------- */

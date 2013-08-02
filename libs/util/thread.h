@@ -250,7 +250,7 @@ Thread::pt_create (void)
 //Thread::pt_create (pthread_attr_t const* p = 0)
 {
     this->cleanup = true;
-    pthread_create(&this->handle, 0, Thread::stub, (void*)this);
+    pthread_create(&this->handle, NULL, Thread::stub, (void*)this);
     //pthread_create(&this->handle, p, Thread::stub, (void*)this);
 }
 
@@ -264,7 +264,7 @@ inline void
 Thread::pt_join (void)
 {
     this->cleanup = false;
-    pthread_join(this->handle, 0);
+    pthread_join(this->handle, NULL);
 }
 
 #endif /* OS check */
@@ -280,7 +280,7 @@ Thread::pt_join (void)
 inline
 Mutex::Mutex (void)
 {
-    pthread_mutex_init(&this->mutex, 0);
+    pthread_mutex_init(&this->mutex, NULL);
 }
 
 inline
@@ -450,7 +450,7 @@ ReadWriteLock::operator= (ReadWriteLock const& /*rhs*/)
 inline
 ReadWriteLock::ReadWriteLock (void)
 {
-    pthread_rwlock_init(&this->rwlock, 0);
+    pthread_rwlock_init(&this->rwlock, NULL);
 }
 
 inline

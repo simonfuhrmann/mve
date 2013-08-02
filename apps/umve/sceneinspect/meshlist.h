@@ -92,7 +92,7 @@ private:
     MeshRep* mesh_by_name (std::string const& name);
 
 public:
-    QMeshList (QWidget* parent = 0);
+    QMeshList (QWidget* parent = NULL);
     ~QMeshList (void);
 
     void load_mesh (std::string const& filename);

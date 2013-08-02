@@ -38,9 +38,9 @@ main (int argc, char** argv)
     conf.compute_normals = false;
 
     for (util::ArgResult const* arg = args.next_result();
-        arg != 0; arg = args.next_result())
+        arg != NULL; arg = args.next_result())
     {
-        if (arg->opt == 0)
+        if (arg->opt == NULL)
             continue;
 
         switch (arg->opt->sopt)

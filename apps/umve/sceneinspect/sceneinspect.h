@@ -45,7 +45,7 @@ private slots:
     void on_view_selected (mve::View::Ptr view);
 
 public:
-    SceneInspect (QWidget* parent = 0);
+    SceneInspect (QWidget* parent = NULL);
 
     /* Loads a mesh from file and adds to mesh list. */
     void load_file (std::string const& filename);

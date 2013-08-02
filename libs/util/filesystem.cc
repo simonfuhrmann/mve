@@ -173,10 +173,10 @@ get_default_home_path(void)
   uid_t user_id = ::geteuid();
   struct passwd* user_info = ::getpwuid(user_id);
 
-  if (user_info == 0 || user_info->pw_dir == 0)
+  if (user_info == NULL || user_info->pw_dir == NULL)
   {
     std::cout << "Warning: Couldn't determine home directory!" << std::endl;
-    return 0;
+    return NULL;
   }
 
   std::strncpy(home_path, user_info->pw_dir, PATH_MAX);
@@ -403,7 +403,7 @@ Directory::scan (std::string const& path)
     this->clear();
 
     DIR *dp = ::opendir(path.c_str());
-    if (dp == 0)
+    if (dp == NULL)
         throw Exception("Cannot open directory: ", std::strerror(errno));
 
     struct dirent *ep;

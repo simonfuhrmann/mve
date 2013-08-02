@@ -50,7 +50,7 @@ public:
 inline
 OctreeNode::OctreeNode (void)
 {
-    std::fill(this->children, this->children + 8, (OctreeNode*)0);
+    std::fill(this->children, this->children + 8, static_cast<OctreeNode*>(NULL));
     this->pos = this->normal = this->color = math::Vec3f(0.0f);
     this->weight = 0.0f;
 }
@@ -65,7 +65,7 @@ OctreeNode::~OctreeNode (void)
 inline
 Octree::Octree (void)
 {
-    this->root = 0;
+    this->root = NULL;
 }
 
 inline

@@ -6,7 +6,7 @@
 
 GLWidget::GLWidget (QWidget *parent)
     : QGLWidget(parent)
-    , context(0)
+    , context(NULL)
     , gl_width(0)
     , gl_height(0)
     , cx_init(false)

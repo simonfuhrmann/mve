@@ -366,7 +366,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     }
 
     /* Provide the vertex ID mapping if requested. */
-    if (vids != 0)
+    if (vids != NULL)
         std::swap(vidx, *vids);
 
     return mesh;
@@ -391,7 +391,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     mve::TriangleMesh::Ptr mesh;
     mesh = mve::geom::depthmap_triangulate(dm, invproj, dd_factor, &vids);
 
-    if (ci.get() == 0)
+    if (ci == NULL)
         return mesh;
 
     /* Use vertex index mapping to color the mesh. */

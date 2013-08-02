@@ -88,7 +88,7 @@ save_png_file (ByteImage::Ptr image, std::string const& filename);
  * May throw util::FileException and util::Exception.
  */
 ByteImage::Ptr
-load_jpg_file (std::string const& filename, std::string* exif = 0);
+load_jpg_file (std::string const& filename, std::string* exif = NULL);
 
 /**
  * Saves image data to a JPG file. Supports 1 and 3 channel images.

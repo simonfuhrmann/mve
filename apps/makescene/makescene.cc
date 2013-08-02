@@ -1042,7 +1042,7 @@ main (int argc, char** argv)
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
-        i != 0; i = args.next_option())
+        i != NULL; i = args.next_option())
     {
         switch (i->opt->sopt)
         {

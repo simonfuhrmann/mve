@@ -157,11 +157,11 @@ load_png_file (std::string const& filename)
         throw util::Exception("PNG signature did not match");
     }
 
-    png_structp png = 0;
-    png_infop png_info = 0;
+    png_structp png = NULL;
+    png_infop png_info = NULL;
 
     /* Initialize PNG structures. */
-    png = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
+    png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
         //(png_voidp)user_error_ptr, user_error_fn, user_warning_fn);
     if (!png)
     {
@@ -172,7 +172,7 @@ load_png_file (std::string const& filename)
     png_info = png_create_info_struct(png);
     if (!png_info)
     {
-        png_destroy_read_struct(&png, 0, 0);
+        png_destroy_read_struct(&png, NULL, NULL);
         std::fclose(fp);
         throw util::Exception("Out of memory");
     }
@@ -188,7 +188,7 @@ load_png_file (std::string const& filename)
     int bit_depth = png_get_bit_depth(png, png_info);
     if (bit_depth > 8)
     {
-        png_destroy_read_struct(&png, &png_info, 0);
+        png_destroy_read_struct(&png, &png_info, NULL);
         std::fclose(fp);
         throw util::Exception("PNG with more than 8 bit");
     }
@@ -223,7 +223,7 @@ load_png_file (std::string const& filename)
     png_read_image(png, &row_pointers[0]);
 
     /* Clean up. */
-    png_destroy_read_struct(&png, &png_info, 0);
+    png_destroy_read_struct(&png, &png_info, NULL);
     std::fclose(fp);
 
     return image;
@@ -244,7 +244,7 @@ save_png_file (ByteImage::Ptr image, std::string const& filename)
     //png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
     //    (png_voidp)user_error_ptr, user_error_fn, user_warning_fn);
     png_structp png_ptr = png_create_write_struct
-        (PNG_LIBPNG_VER_STRING, 0, 0, 0);
+        (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
     if (!png_ptr)
     {
@@ -480,7 +480,7 @@ tiff_error_handler (char const* /*module*/, char const* fmt, va_list ap)
 ByteImage::Ptr
 load_tiff_file (std::string const& filename)
 {
-    TIFFSetWarningHandler(0);
+    TIFFSetWarningHandler(NULL);
     TIFFSetErrorHandler(tiff_error_handler);
 
     TIFF* tif = TIFFOpen(filename.c_str(), "r");
@@ -591,7 +591,7 @@ load_tiff_16_file (std::string const& filename)
     if (sizeof(uint16_t) != 2)
         throw util::Exception("Need 16bit data type for TIFF image.");
 
-    TIFFSetWarningHandler(0);
+    TIFFSetWarningHandler(NULL);
     TIFFSetErrorHandler(tiff_error_handler);
 
     TIFF* tif = TIFFOpen(filename.c_str(), "r");

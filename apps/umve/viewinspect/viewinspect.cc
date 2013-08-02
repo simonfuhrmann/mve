@@ -215,7 +215,7 @@ ViewInspect::show_details (bool show)
 void
 ViewInspect::update_actions (void)
 {
-    bool active = this->scroll_image->get_pixmap() != 0;
+    bool active = this->scroll_image->get_pixmap() != NULL;
     bool fit = this->action_zoom_fit->isChecked();
     this->action_zoom_fit->setEnabled(active);
     this->action_zoom_in->setEnabled(active && !fit);
@@ -348,7 +348,7 @@ ViewInspect::set_embedding (std::string const& name)
 
     /* Request the embedding. */
     mve::ImageBase::Ptr img(this->view->get_image(name));
-    if (img.get() == 0)
+    if (img == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("Embedding not available: %1").arg(QString(name.c_str())));

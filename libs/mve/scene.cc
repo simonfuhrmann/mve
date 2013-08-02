@@ -200,7 +200,7 @@ Scene::init_views (void)
     {
         std::size_t id = temp_list[i]->get_id();
 
-        if (this->views[id].get() != 0)
+        if (this->views[id] != NULL)
         {
             std::cout << "Warning loading MVE file "
                 << this->views[id]->get_filename() << std::endl

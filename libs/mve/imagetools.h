@@ -1656,7 +1656,7 @@ create_thumbnail (typename Image<T>::ConstPtr image,
     typename mve::Image<T>::Ptr thumb = mve::image::rescale<T>(image,
         mve::image::RESCALE_LINEAR, rescale_width, rescale_height);
     thumb = mve::image::crop<T>(thumb, thumb_width, thumb_height,
-        crop_left, crop_top, 0);
+        crop_left, crop_top, NULL);
 
     return thumb;
 }

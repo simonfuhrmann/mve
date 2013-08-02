@@ -509,7 +509,7 @@ View::direct_write (MVEFileProxy& p)
     if (p.byte_size == 0 || p.file_pos == 0)
         throw util::Exception("Proxy not properly initialized");
 
-    if (p.image.get() == 0 || p.image->get_byte_size() != p.byte_size)
+    if (p.image == NULL || p.image->get_byte_size() != p.byte_size)
         throw util::Exception("Cannot directly write to view");
 
     std::fstream out(this->filename.c_str(),
@@ -622,7 +622,7 @@ View::get_proxy (std::string const& name) const
     for (std::size_t i = 0; i < this->proxies.size(); ++i)
         if (this->proxies[i].name == name)
             return &this->proxies[i];
-    return 0;
+    return NULL;
 }
 
 /* ---------------------------------------------------------------- */
@@ -633,7 +633,7 @@ View::get_proxy_intern (std::string const& name)
     for (std::size_t i = 0; i < this->proxies.size(); ++i)
         if (this->proxies[i].name == name)
             return &this->proxies[i];
-    return 0;
+    return NULL;
 }
 
 /* ---------------------------------------------------------------- */
@@ -642,7 +642,7 @@ ImageBase::Ptr
 View::get_embedding (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == 0)
+    if (p == NULL)
         return ImageBase::Ptr();
     this->ensure_embedding(*p);
     return p->image;
@@ -688,12 +688,12 @@ View::count_image_embeddings (void) const
 void
 View::set_image (std::string const& name, ImageBase::Ptr image)
 {
-    if (image.get() == 0)
+    if (image == NULL)
         throw std::invalid_argument("NULL image passed");
 
     /* If there is no such proxy, add a new one. */
     MVEFileProxy* p = this->get_proxy_intern(name);
-    if (p == 0)
+    if (p == NULL)
     {
         this->add_image(name, image);
         return;
@@ -714,7 +714,7 @@ View::set_image (std::string const& name, ImageBase::Ptr image)
 void
 View::add_image (std::string const& name, ImageBase::Ptr image)
 {
-    if (image.get() == 0)
+    if (image == NULL)
         throw std::invalid_argument("NULL image passed");
 
     if (this->has_embedding(name))
@@ -735,7 +735,7 @@ ImageBase::Ptr
 View::get_image (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == 0 || !p->is_image)
+    if (p == NULL || !p->is_image)
         return ImageBase::Ptr();
     this->ensure_embedding(*p);
     return p->image;
@@ -747,7 +747,7 @@ FloatImage::Ptr
 View::get_float_image (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == 0 || !p->is_image || !p->is_type(util::string::for_type<float>()))
+    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<float>()))
         return FloatImage::Ptr();
     this->ensure_embedding(*p);
     return p->image;
@@ -759,7 +759,7 @@ DoubleImage::Ptr
 View::get_double_image (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == 0 || !p->is_image || !p->is_type(util::string::for_type<double>()))
+    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<double>()))
         return DoubleImage::Ptr();
     this->ensure_embedding(*p);
     return p->image;
@@ -771,7 +771,7 @@ ByteImage::Ptr
 View::get_byte_image (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == 0 || !p->is_image || !p->is_type(util::string::for_type<uint8_t>()))
+    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<uint8_t>()))
         return ByteImage::Ptr();
     this->ensure_embedding(*p);
     return p->image;
@@ -783,7 +783,7 @@ IntImage::Ptr
 View::get_int_image (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == 0 || !p->is_image || !p->is_type(util::string::for_type<int>()))
+    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<int>()))
         return IntImage::Ptr();
     this->ensure_embedding(*p);
     return p->image;
@@ -796,7 +796,7 @@ View::set_data (std::string const& name, ByteImage::Ptr data)
 {
     // Heads up: Almost duplicated code in this::set_image
 
-    if (data.get() == 0)
+    if (data == NULL)
         throw std::invalid_argument("NULL image passed");
 
     if (data->height() != 1 || data->channels() != 1)
@@ -804,7 +804,7 @@ View::set_data (std::string const& name, ByteImage::Ptr data)
 
     /* If there is no such proxy, add a new one. */
     MVEFileProxy* p = this->get_proxy_intern(name);
-    if (p == 0)
+    if (p == NULL)
     {
         this->add_data(name, data);
         return;
@@ -827,7 +827,7 @@ View::add_data (std::string const& name, ByteImage::Ptr data)
 {
     // Heads up: Almost duplicated code in this::add_image
 
-    if (data.get() == 0)
+    if (data == NULL)
         throw std::invalid_argument("NULL image passed");
 
     if (data->height() != 1 || data->channels() != 1)
@@ -853,7 +853,7 @@ View::get_data (std::string const& name)
     // Heads up: Almost duplicated code in this::get_image
 
     MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == 0 || p->is_image)
+    if (p == NULL || p->is_image)
         return ByteImage::Ptr();
     this->ensure_embedding(*p);
     return p->image;

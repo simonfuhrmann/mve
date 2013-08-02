@@ -362,7 +362,7 @@ MainWindow::on_reload_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene.get() == 0 || scene->get_path().empty())
+    if (scene == NULL || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error reloading scene!",
             "There is nothing to reload, rookie.");
@@ -383,7 +383,7 @@ MainWindow::on_save_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene.get() == 0 || scene->get_path().empty())
+    if (scene == NULL || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error saving scene!",
             "There is nothing to save, rookie.");

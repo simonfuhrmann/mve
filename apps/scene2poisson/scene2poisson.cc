@@ -52,7 +52,7 @@ main (int argc, char** argv)
     std::string imstring;
     /* Scan arguments. */
     for (util::ArgResult const* arg = args.next_option();
-        arg != 0; arg = args.next_option())
+        arg != NULL; arg = args.next_option())
     {
         switch (arg->opt->sopt)
         {

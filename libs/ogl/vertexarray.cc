@@ -35,7 +35,7 @@ VertexArray::assign_attrib (BoundVBO const& bound_vbo)
 
     vbo->bind();
     glVertexAttribPointer(location, vbo->get_values_per_vertex(),
-        vbo->get_data_type(), GL_TRUE, 0, 0);
+        vbo->get_data_type(), GL_TRUE, 0, NULL);
     glEnableVertexAttribArray(location);
 }
 
@@ -68,7 +68,7 @@ VertexArray::draw (void)
     {
         this->index_vbo->bind();
         glDrawElements(this->primitive, this->index_vbo->get_element_amount(),
-            GL_UNSIGNED_INT, 0);
+            GL_UNSIGNED_INT, NULL);
     }
     else
     {
