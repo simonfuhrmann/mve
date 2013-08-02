@@ -268,7 +268,7 @@ MainWindow::perform_close_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (!scene.get())
+    if (scene == NULL)
         return true;
 
     if (!this->jobqueue->is_empty())
@@ -434,7 +434,7 @@ MainWindow::on_update_memory (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
     std::size_t mem = 0;
-    if (scene.get())
+    if (scene != NULL)
         mem = scene->get_total_mem_usage();
 
     std::string memstr = util::string::get_size_string(mem);
@@ -447,7 +447,7 @@ void
 MainWindow::on_import_images (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -469,7 +469,7 @@ void
 MainWindow::on_recon_export (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -488,7 +488,7 @@ void
 MainWindow::on_batch_delete (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -507,7 +507,7 @@ void
 MainWindow::on_cache_cleanup (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
         return;
 
     scene->cache_cleanup();

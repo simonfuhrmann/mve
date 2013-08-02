@@ -40,7 +40,7 @@ void
 BatchOperations::get_embedding_names (mve::ImageType type,
     std::vector<std::string>* result)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         return;
 
     typedef std::set<std::string> StringSet;
@@ -88,7 +88,7 @@ BatchDelete::setup_gui (void)
 {
     this->embeddings_list->clear();
 
-    if (!this->scene.get())
+    if (this->scene == NULL)
         return;
 
     std::vector<std::string> names;
@@ -122,7 +122,7 @@ BatchDelete::on_batchdel_exec (void)
     for (std::size_t i = 0; i < vl.size(); ++i)
     {
         mve::View::Ptr view = vl[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         for (StringSet::iterator j = names.begin(); j != names.end(); ++j)
@@ -185,7 +185,7 @@ BatchExport::BatchExport (QWidget *parent)
 void
 BatchExport::setup_gui (void)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         return;
 
     std::vector<std::string> float_names;
@@ -291,7 +291,7 @@ BatchExport::on_export_exec (void)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view(views[i]);
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         std::stringstream ss;
@@ -404,7 +404,7 @@ BatchImportImages::on_import_images (void)
 
         try
         {
-            if (image.get() == NULL)
+            if (image == NULL)
                 image = mve::image::load_file(filename);
         }
         catch (std::exception& e)

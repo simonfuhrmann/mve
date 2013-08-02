@@ -107,7 +107,7 @@ depthmap_cleanup (FloatImage::ConstPtr dm, std::size_t thres)
 void
 depthmap_confidence_clean (FloatImage::Ptr dm, FloatImage::ConstPtr cm)
 {
-    if (!dm.get() || !cm.get())
+    if (dm == NULL || cm == NULL)
         throw std::invalid_argument("NULL depth or confidence map");
 
     if (dm->width() != cm->width() || dm->height() != cm->height())
@@ -137,7 +137,7 @@ FloatImage::Ptr
 depthmap_bilateral_filter (FloatImage::ConstPtr dm,
     math::Matrix3f const& invproj, float gc_sigma, float pc_factor)
 {
-    if (!dm.get())
+    if (dm == NULL)
         throw std::invalid_argument("NULL image given");
 
     if (gc_sigma <= 0.0f || pc_factor <= 0.0f)
@@ -265,7 +265,7 @@ TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     float dd_factor, mve::Image<unsigned int>* vids)
 {
-    if (!dm.get())
+    if (dm == NULL)
         throw std::invalid_argument("NULL depthmap given");
 
     std::size_t w = dm->width();
@@ -377,13 +377,13 @@ TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     math::Matrix3f const& invproj, float dd_factor)
 {
-    if (!dm.get())
+    if (dm == NULL)
         throw std::invalid_argument("NULL depthmap given");
 
     int w = dm->width();
     int h = dm->height();
 
-    if (ci.get() && (ci->width() != w || ci->height() != h))
+    if (ci != NULL && (ci->width() != w || ci->height() != h))
         throw std::invalid_argument("Color image dimension mismatch");
 
     /* Triangulate depth map. */
@@ -427,7 +427,7 @@ TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     CameraInfo const& cam, float dd_factor)
 {
-    if (!dm.get())
+    if (dm == NULL)
         throw std::invalid_argument("NULL depthmap given");
     if (cam.flen == 0.0f)
         throw std::invalid_argument("Invalid camera given");
@@ -468,7 +468,7 @@ dm_is_depth_disc (math::Vec3f const& v1,
 void
 rangegrid_triangulate (Image<unsigned int> const& grid, TriangleMesh::Ptr mesh)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     int w = grid.width();
@@ -545,7 +545,7 @@ rangegrid_triangulate (Image<unsigned int> const& grid, TriangleMesh::Ptr mesh)
 void
 depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     if (iterations < 0)
@@ -600,7 +600,7 @@ depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
 void
 depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     if (iterations < 0)

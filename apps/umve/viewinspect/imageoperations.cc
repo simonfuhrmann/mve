@@ -163,7 +163,7 @@ ImageOperationsWidget::exec_bilateral (void)
     }
 
     mve::FloatImage::Ptr img = view->get_float_image(src_img);
-    if (!img.get())
+    if (img == NULL)
     {
         std::cout << "Cannot request image: " << src_img << std::endl;
         return;
@@ -265,7 +265,7 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
         return;
     }
 
-    if (!view.get() || !view->is_camera_valid())
+    if (!view->is_camera_valid())
     {
         std::cout << "Invalid view selected" << std::endl;
         QMessageBox::warning(this, tr("MVS reconstruct"),
@@ -417,7 +417,7 @@ ImageOperationsWidget::exec_dmclean (void)
     }
 
     mve::FloatImage::Ptr img = view->get_float_image(src_img);
-    if (!img.get())
+    if (img == NULL)
     {
         std::cout << "Cannot request image: " << src_img << std::endl;
         return;

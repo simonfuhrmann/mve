@@ -220,15 +220,15 @@ mve::ImageBase::Ptr
 load_any_image (std::string const& fname, std::string* exif)
 {
     mve::ByteImage::Ptr img_8 = load_8bit_image(fname, exif);
-    if (img_8.get())
+    if (img_8 != NULL)
         return img_8;
 
     mve::RawImage::Ptr img_16 = load_16bit_image(fname);
-    if (img_16.get())
+    if (img_16 != NULL)
         return img_16;
 
     mve::FloatImage::Ptr img_float = load_float_image(fname);
-    if (img_float.get())
+    if (img_float != NULL)
         return img_float;
 
     std::cerr << "Skipping file " << util::fs::get_file_component(fname)
@@ -829,17 +829,17 @@ import_bundle (AppSettings const& conf)
         }
 
         /* Add images to view. */
-        if (thumb.get())
+        if (thumb != NULL)
             view->add_image("thumbnail", thumb);
 
-        if (undist.get())
+        if (undist != NULL)
             view->add_image("undistorted", undist);
-        else if (cam.flen != 0.0f && !undist.get())
+        else if (cam.flen != 0.0f && undist == NULL)
             std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
-        if (original.get())
+        if (original != NULL)
             view->add_image("original", original);
-        else if (conf.import_orig && !original.get())
+        else if (conf.import_orig && original == NULL)
             std::cerr << "Warning: Original image missing!" << std::endl;
 
         /* Add EXIF data to view if available. */
@@ -858,7 +858,7 @@ import_bundle (AppSettings const& conf)
 
         if (cam.flen != 0)
             valid_cnt += 1;
-        if (undist.get())
+        if (undist != NULL)
             undist_imported += 1;
     }
 
@@ -954,7 +954,7 @@ import_images (AppSettings const& conf)
         std::string exif;
         mve::ByteImage::Ptr image = load_any_image
             (dir[i].get_absolute_name(), &exif);
-        if (!image.get())
+        if (image == NULL)
             continue;
 
         /* Generate view name. */
@@ -973,7 +973,7 @@ import_images (AppSettings const& conf)
 
         /* Add thumbnail for byte images. */
         mve::ByteImage::Ptr thumb = create_thumbnail(image);
-        if (thumb.get())
+        if (thumb != NULL)
             view->add_image("thumbnail", thumb);
 
         /* Add EXIF data to view if available. */

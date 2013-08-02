@@ -156,7 +156,7 @@ struct foreach_hmatrix_mult
 void
 mesh_transform (mve::TriangleMesh::Ptr mesh, math::Matrix3f const& rot)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
@@ -174,7 +174,7 @@ mesh_transform (mve::TriangleMesh::Ptr mesh, math::Matrix3f const& rot)
 void
 mesh_transform (TriangleMesh::Ptr mesh, math::Matrix4f const& trans)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
@@ -193,7 +193,7 @@ mesh_transform (TriangleMesh::Ptr mesh, math::Matrix4f const& trans)
 void
 mesh_scale_and_center (TriangleMesh::Ptr mesh, bool scale, bool center)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     TriangleMesh::VertexList& verts(mesh->get_vertices());
@@ -240,7 +240,7 @@ mesh_scale_and_center (TriangleMesh::Ptr mesh, bool scale, bool center)
 void
 mesh_invert_faces (TriangleMesh::Ptr mesh)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     TriangleMesh::FaceList& faces(mesh->get_faces());
@@ -256,7 +256,7 @@ void
 mesh_find_aabb (TriangleMesh::ConstPtr mesh,
     math::Vec3f& aabb_min, math::Vec3f& aabb_max)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     TriangleMesh::VertexList const& verts(mesh->get_vertices());
@@ -280,7 +280,7 @@ mesh_find_aabb (TriangleMesh::ConstPtr mesh,
 std::size_t
 mesh_delete_unreferenced (TriangleMesh::Ptr mesh)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
     /* Create vertex info and some short hands. */

@@ -154,7 +154,7 @@ main (int argc, char** argv)
 
 #pragma omp critical
         std::cout << "Processing view \"" << view->get_name()
-            << "\"" << (ci.get() ? " (with colors)" : "")
+            << "\"" << (ci != NULL ? " (with colors)" : "")
             << "..." << std::endl;
 
         /* Triangulate depth map. */

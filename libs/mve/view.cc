@@ -20,7 +20,7 @@ bool
 MVEFileProxy::check_direct_write (void) const
 {
     /* Image needs to be cached. */
-    if (!this->image.get())
+    if (this->image == NULL)
         return false;
 
     /* Proxy needs to be bound to a file. */
@@ -45,7 +45,7 @@ MVEFileProxy::check_direct_write (void) const
 ImageType
 MVEFileProxy::get_type (void) const
 {
-    if (this->image.get())
+    if (this->image != NULL)
         return this->image->get_type();
     return ImageBase::get_type_for_string(this->datatype);
 }
@@ -55,7 +55,7 @@ MVEFileProxy::get_type (void) const
 bool
 MVEFileProxy::is_type (std::string const& typestr) const
 {
-    return (image.get() && image->get_type_string() == typestr)
+    return (image != NULL && image->get_type_string() == typestr)
         || this->datatype == typestr;
 }
 
@@ -609,7 +609,7 @@ View::ensure_embedding (MVEFileProxy& proxy)
     //    this->reload_mve_file(true);
 
     util::AtomicMutex<int> lock(this->mutex);
-    if (!proxy.image.get())
+    if (proxy.image == NULL)
         this->load_embedding(proxy);
     lock.release();
 }
@@ -900,7 +900,7 @@ View::get_byte_size (void) const
     for (std::size_t i = 0; i < this->proxies.size(); ++i)
     {
         MVEFileProxy const& p(this->proxies[i]);
-        if (p.image.get())
+        if (p.image != NULL)
             ret += p.image->get_byte_size();
     }
     return ret;
@@ -939,7 +939,7 @@ View::print_debug (void) const
         std::cout << "Proxy " << i << ": " << p->name << std::endl;
         std::cout << "  is image: " << p->is_image
             << ", is dirty: " << p->is_dirty
-            << ", is cached: " << (bool)p->image.get()
+            << ", is cached: " << (p->image != NULL)
             << std::endl;;
 
         if (p->is_image)
@@ -949,7 +949,7 @@ View::print_debug (void) const
         else
             std::cout << "  data dimensions: " << p->width << std::endl;
 
-        if (p->image.get())
+        if (p->image != NULL)
         {
             ImageBase::Ptr img = p->image;
             std::cout << "  CACHED DATA: Type "

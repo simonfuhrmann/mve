@@ -234,7 +234,7 @@ load_png_file (std::string const& filename)
 void
 save_png_file (ByteImage::Ptr image, std::string const& filename)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     FILE *fp = std::fopen(filename.c_str(), "wb");
@@ -412,7 +412,7 @@ load_jpg_file (std::string const& filename, std::string* exif)
 void
 save_jpg_file (ByteImage::Ptr image, std::string const& filename, int quality)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     if (image->channels() != 1 && image->channels() != 3)
@@ -556,7 +556,7 @@ load_tiff_file (std::string const& filename)
 void
 save_tiff_file (ByteImage::ConstPtr image, std::string const& filename)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     TIFF* tif = TIFFOpen(filename.c_str(), "w");
@@ -636,7 +636,7 @@ load_tiff_16_file (std::string const& filename)
 void
 save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     TIFF* tif = TIFFOpen(filename.c_str(), "w");
@@ -876,7 +876,7 @@ load_ppm_file (std::string const& filename)
 void
 save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     std::string magic_number;

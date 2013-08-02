@@ -34,7 +34,7 @@ Scene::save_scene (void)
 void
 Scene::save_bundle (void)
 {
-    if (!this->bundle.get() || !this->bundle_dirty)
+    if (this->bundle == NULL || !this->bundle_dirty)
         return;
     this->bundle->write_bundle(this->basedir + "/" + "synth_0.out");
     this->bundle_dirty = false;
@@ -64,7 +64,7 @@ Scene::rewrite_all_views (void)
     for (std::size_t i = 0; i < this->views.size(); ++i)
     {
         View::Ptr const& view = this->views[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         std::cout << "Rewriting view ID " << view->get_id() << std::endl;
@@ -147,7 +147,7 @@ Scene::get_view_mem_usage (void)
 std::size_t
 Scene::get_bundle_mem_usage (void)
 {
-    return (this->bundle.get() ? this->bundle->get_byte_size() : 0);
+    return (this->bundle != NULL ? this->bundle->get_byte_size() : 0);
 }
 
 /* ---------------------------------------------------------------- */
@@ -223,7 +223,7 @@ Scene::init_views (void)
 BundleFile::ConstPtr
 Scene::get_bundle (void)
 {
-    if (!this->bundle.get())
+    if (this->bundle == NULL)
     {
         BundleFile::Ptr b = BundleFile::create();
         b->read_bundle(this->basedir + "/" MVE_SCENE_BUNDLE_FILE);

@@ -318,7 +318,7 @@ ViewInspect::on_view_selected (mve::View::Ptr view)
 {
     this->reset();
     this->view = view;
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     this->load_recent_embedding();
@@ -340,7 +340,7 @@ ViewInspect::on_scene_selected (mve::Scene::Ptr /*scene*/)
 void
 ViewInspect::set_embedding (std::string const& name)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"), tr("No view loaded!"));
         return;
@@ -441,7 +441,7 @@ void
 ViewInspect::populate_embeddings (void)
 {
     this->embeddings->clear();
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     std::vector<std::string> vec;
@@ -470,11 +470,11 @@ ViewInspect::populate_exif_viewer (void)
 {
     this->exif_viewer->setHtml("<i>No EXIF data available</i>");
 
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     mve::ByteImage::Ptr exif = this->view->get_data("exif");
-    if (!exif.get())
+    if (exif == NULL)
         return;
 
     mve::image::ExifInfo info;
@@ -547,7 +547,7 @@ ViewInspect::on_open (void)
 void
 ViewInspect::on_view_reload (void)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     QMessageBox::StandardButton answer = QMessageBox::question(this,
@@ -618,7 +618,7 @@ ViewInspect::on_tone_mapping_changed (void)
 void
 ViewInspect::on_ply_export (void)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
     {
         QMessageBox::information(this, tr("Export PLY"),
             tr("No view assigned!"));
@@ -690,7 +690,7 @@ ViewInspect::on_image_export (void)
 void
 ViewInspect::on_copy_embedding (void)
 {
-    if (!this->image.get() || !this->view.get())
+    if (this->image == NULL || this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("No embedding selected!"));
@@ -736,7 +736,7 @@ ViewInspect::on_copy_embedding (void)
 void
 ViewInspect::on_del_embedding (void)
 {
-    if (!this->image.get() || !this->view.get())
+    if (this->image == NULL || this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("No embedding selected!"));
@@ -761,7 +761,7 @@ ViewInspect::on_del_embedding (void)
 void
 ViewInspect::on_save_view (void)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("No view selected!"));
