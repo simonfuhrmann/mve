@@ -839,7 +839,7 @@ import_bundle (AppSettings const& conf)
 
         if (original.get())
             view->add_image("original", original);
-        else if (conf.import_orig && undist.get())
+        else if (conf.import_orig && !original.get())
             std::cerr << "Warning: Original image missing!" << std::endl;
 
         /* Add EXIF data to view if available. */
