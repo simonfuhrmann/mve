@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 
 #include "util/alignedmemory.h"
 #include "mve/image.h"
@@ -104,14 +105,17 @@ public:
 protected:
     ImagePair select_initial_pair (void);
     int select_next_view (void);
-    void compute_sift_descriptors (int view_id);
+    void compute_sift_descriptors (std::size_t view_id);
     void two_view_pose (ImagePair* image_pair);
-    void triangulate_pair (ImagePair const& image_pair);
+    void triangulate_initial_pair (ImagePair const& image_pair);
+    void save_tracks_to_mesh (std::string const& filename);
 
 private:
     Options options;
     std::vector<Viewport> viewports;
-
+    std::set<std::size_t> remaining;
+    std::vector<Feature2D> features;
+    std::vector<Feature3D> tracks;
 };
 
 /* ---------------------------------------------------------------- */
