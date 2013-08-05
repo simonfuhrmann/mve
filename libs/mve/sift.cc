@@ -245,8 +245,8 @@ Sift::extrema_detection (void)
 std::size_t
 Sift::extrema_detection (mve::FloatImage::ConstPtr s[3], int oi, int si)
 {
-    std::size_t const w = s[1]->width();
-    std::size_t const h = s[1]->height();
+    int const w = s[1]->width();
+    int const h = s[1]->height();
 
     /* Offsets for the 9-neighborhood w.r.t. center pixel. */
     int noff[9] = { -1 - w, 0 - w, 1 - w, -1, 0, 1, -1 + w, 0 + w, 1 + w };
@@ -257,8 +257,8 @@ Sift::extrema_detection (mve::FloatImage::ConstPtr s[3], int oi, int si)
      */
     std::size_t detected = 0;
     std::size_t off = w;
-    for (std::size_t y = 1; y < h - 1; ++y, off += w)
-        for (std::size_t x = 1; x < w - 1; ++x)
+    for (int y = 1; y < h - 1; ++y, off += w)
+        for (int x = 1; x < w - 1; ++x)
         {
             std::size_t idx = off + x;
 
@@ -475,7 +475,7 @@ Sift::descriptor_generation (void)
      * never decreased again, which is enforced during the algorithm.
      */
     int octave_index = this->min_octave - 1;
-    SiftOctave* octave = 0;
+    SiftOctave* octave = NULL;
 
     /* Walk over all keypoints and compute descriptors. */
     for (std::size_t i = 0; i < this->keypoints.size(); ++i)

@@ -9,7 +9,7 @@ OGL_NAMESPACE_BEGIN
 
 CamTrackball::CamTrackball (void)
 {
-    this->cam = 0;
+    this->cam = NULL;
     this->tb_radius = 1.0f;
     this->tb_center = math::Vec3f(0.0f);
     this->tb_tocam = math::Vec3f(0.0f, 0.0f, 1.0f);

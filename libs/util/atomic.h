@@ -183,7 +183,7 @@ AtomicMutex<T>::release (void)
     if (!this->lock)
         return;
     this->lock->mutex_down();
-    this->lock = 0;
+    this->lock = NULL;
 }
 
 UTIL_NAMESPACE_END

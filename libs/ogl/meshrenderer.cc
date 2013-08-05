@@ -6,7 +6,7 @@ OGL_NAMESPACE_BEGIN
 void
 MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("Got NULL mesh");
 
     /* Clean previous content. */

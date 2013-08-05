@@ -23,7 +23,7 @@ Octree::insert (Point const& p)
         return;
     }
 
-    if (this->root == 0)
+    if (this->root == NULL)
         this->root = new OctreeNode();
 
     /* "Footprint" of the root node... */
@@ -43,7 +43,7 @@ Octree::insert (Point const& p)
         bool oct_z = p.pos[2] > node_center[2];
         int octant = ((int)oct_z << 2) + ((int)oct_y << 1) + (int)oct_x;
 
-        if (node->children[octant] == 0)
+        if (node->children[octant] == NULL)
             node->children[octant] = new OctreeNode();
         node = node->children[octant];
         node_hs /= 2.0f;
@@ -81,7 +81,7 @@ Octree::get_pointset (float thres) const
     {
         OctreeNode* node = nodes.top();
         nodes.pop();
-        if (node == 0)
+        if (node == NULL)
             continue;
 
         bool leaf = true;
