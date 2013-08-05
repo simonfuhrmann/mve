@@ -124,11 +124,13 @@ public:
     /** Returns the face colors. */
     ColorList& get_face_colors (void);
 
-    /** Returns true if vertex normals and vertex amount are equal. */
+    /** Returns true if vertex normal amount equals vertex amount. */
     bool has_vertex_normals (void) const;
-    /** Returns true if face normals and face amount are equal. */
+    /** Returns true if texture coordinate amount equals vertex amount. */
+    bool has_vertex_texcoords (void) const;
+    /** Returns true if face normal amount equals face amount. */
     bool has_face_normals (void) const;
-    /** Returns true if face colors and face amount are equal. */
+    /** Returns true if face color amount equals face amount. */
     bool has_face_colors (void) const;
 
     /** Recalculates normals if normal amount is inconsistent. */
@@ -358,6 +360,13 @@ TriangleMesh::has_vertex_normals (void) const
 {
     return !this->vertices.empty()
         && this->vertex_normals.size() == this->vertices.size();
+}
+
+inline bool
+TriangleMesh::has_vertex_texcoords (void) const
+{
+    return !this->vertices.empty()
+        && this->vertex_texcoords.size() == this->vertices.size();
 }
 
 inline bool

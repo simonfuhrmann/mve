@@ -167,10 +167,16 @@ TriangleMesh::ensure_normals (bool face, bool vertex)
 void
 TriangleMesh::delete_vertices (DeleteList const& dlist)
 {
-    if (this->vertex_normals.size() == this->vertices.size())
+    if (this->has_vertex_normals())
         math::algo::vector_clean(this->vertex_normals, dlist);
-    if (this->vertex_colors.size() == this->vertices.size())
+    if (this->has_vertex_colors())
         math::algo::vector_clean(this->vertex_colors, dlist);
+    if (this->has_vertex_confidences())
+        math::algo::vector_clean(this->vertex_confidences, dlist);
+    if (this->has_vertex_values())
+        math::algo::vector_clean(this->vertex_values, dlist);
+    if (this->has_vertex_texcoords())
+        math::algo::vector_clean(this->vertex_texcoords, dlist);
     math::algo::vector_clean(this->vertices, dlist);
 }
 
@@ -184,7 +190,6 @@ TriangleMesh::get_byte_size (void) const
     std::size_t s_vnorm = this->vertex_normals.capacity() * sizeof(math::Vec3f);
     std::size_t s_fnorm = this->face_normals.capacity() * sizeof(math::Vec3f);
     std::size_t s_color = this->vertex_colors.capacity() * sizeof(math::Vec3f);
-
     return s_verts + s_faces + s_vnorm + s_fnorm + s_color;
 }
 
