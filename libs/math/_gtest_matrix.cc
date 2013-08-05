@@ -172,7 +172,7 @@ TEST(MatrixToolsTest, DiagonalMatrixTest)
 TEST(MatrixToolsTest, MatrixIsIdentity)
 {
     math::Matrix3f mat, mat2;
-    math::matrix_set_identity(mat);
+    math::matrix_set_identity(&mat);
     EXPECT_TRUE(math::matrix_is_identity(mat));
 
     mat2 = mat;

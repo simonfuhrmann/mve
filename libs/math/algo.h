@@ -332,14 +332,18 @@ max (T const& a, T const& b, T const& c)
     return std::max(a, std::max(b, c));
 }
 
-/** Takes base to the integral power of 'power'. */
+/** Takes base to the integer power of 'exp'. */
 template <typename T>
 T
 fastpow (T const& base, unsigned int exp)
 {
-    T ret(1);
-    for (unsigned int i = 0; i < exp; ++i)
-        ret *= base;
+    T ret = (exp == 0 ? T(1) : base);
+    unsigned int const exp2 = exp / 2;
+    unsigned int i = 1;
+    for (; i <= exp2; i = i * 2)
+        ret = ret * ret;
+    for (; i < exp; ++i)
+        ret = ret * base;
     return ret;
 }
 
