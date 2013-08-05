@@ -339,11 +339,11 @@ SceneContext::paint_impl (void)
     for (std::size_t i = 0; i < ml.size(); ++i)
     {
         MeshRep& mr(ml[i]);
-        if (!mr.active || !mr.mesh.get())
+        if (!mr.active || mr.mesh == NULL)
             continue;
 
         /* If the renderer is not yet created, do it now! */
-        if (!mr.renderer.get())
+        if (mr.renderer == NULL)
         {
             mr.renderer = ogl::MeshRenderer::create(mr.mesh);
             if (mr.mesh->get_faces().empty())
@@ -373,7 +373,7 @@ SceneContext::paint_impl (void)
         }
 
         /* If we have a valid renderer, draw it. */
-        if (mr.renderer.get())
+        if (mr.renderer != NULL)
         {
             mr.renderer->set_shader(mesh_shader);
             glPolygonOffset(1.0f, -1.0f);
@@ -400,11 +400,11 @@ SceneContext::paint_impl (void)
     if (this->draw_sfmpoints_cb.isChecked())
     {
         /* Try to create renderer. */
-        if (!this->sfm_renderer.get())
+        if (this->sfm_renderer == NULL)
             this->create_sfm_renderer();
 
         /* Try to render. */
-        if (this->sfm_renderer.get())
+        if (this->sfm_renderer != NULL)
         {
             this->wireframe_shader->bind();
             this->wireframe_shader->send_uniform("ccolor", math::Vec4f(0.0f));
@@ -420,14 +420,14 @@ SceneContext::paint_impl (void)
     if (this->draw_camfrusta_cb.isChecked())
     {
         /* Try to create renderer. */
-        if (!this->frusta_renderer.get())
+        if (this->frusta_renderer == NULL)
         {
             float size = (float)this->draw_frusta_size.value() / 100.0f;
             this->create_frusta_renderer(size);
         }
 
         /* Try to render. */
-        if (this->frusta_renderer.get())
+        if (this->frusta_renderer != NULL)
         {
             this->wireframe_shader->bind();
             this->wireframe_shader->send_uniform("ccolor", math::Vec4f(0.0f));
@@ -441,10 +441,10 @@ SceneContext::paint_impl (void)
     /* Draw current frusta. */
     if (this->draw_curfrustum_cb.isChecked())
     {
-        if (!this->current_frustum_renderer.get())
+        if (this->current_frustum_renderer == NULL)
             this->create_current_frustum_renderer();
 
-        if (this->current_frustum_renderer.get())
+        if (this->current_frustum_renderer != NULL)
         {
             this->wireframe_shader->bind();
             this->wireframe_shader->send_uniform("ccolor", math::Vec4f(0.0f));
@@ -453,7 +453,7 @@ SceneContext::paint_impl (void)
     }
 
     /* Draw UI. */
-    if (this->gui_renderer.get())
+    if (this->gui_renderer != NULL)
     {
         this->update_ui();
         //glDepthFunc(GL_ALWAYS);
@@ -475,11 +475,11 @@ SceneContext::paint_impl (void)
 void
 SceneContext::reload_shaders (void)
 {
-    if (this->surface_shader.get())
+    if (this->surface_shader != NULL)
         this->surface_shader->reload_all();
-    if (this->wireframe_shader.get())
+    if (this->wireframe_shader != NULL)
         this->wireframe_shader->reload_all();
-    if (this->texture_shader.get())
+    if (this->texture_shader != NULL)
         this->texture_shader->reload_all();
 }
 
@@ -527,7 +527,7 @@ SceneContext::load_file (std::string const& filename)
 void
 SceneContext::create_frusta_renderer (float size)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         return;
 
     /* Color at camera center (start) and at the four corners (end). */
@@ -638,7 +638,7 @@ SceneContext::create_current_frustum_renderer (void)
 void
 SceneContext::create_sfm_renderer (void)
 {
-    if  (!this->scene.get())
+    if  (this->scene == NULL)
         return;
 
     try
@@ -688,7 +688,7 @@ SceneContext::set_scene (mve::Scene::Ptr scene)
 void
 SceneContext::on_dm_triangulate (void)
 {
-    if (this->view == 0)
+    if (this->view == NULL)
         return;
 
     float dd_factor = this->dm_depth_disc.value();
@@ -696,7 +696,7 @@ SceneContext::on_dm_triangulate (void)
     std::string colorimage = this->dm_colorimage.currentText().toStdString();
 
     mve::View::Ptr view(this->view->get_view());
-    if (!view.get())
+    if (view == NULL)
     {
         this->print_error("Error triangulating", "No view available");
         return;
@@ -704,7 +704,7 @@ SceneContext::on_dm_triangulate (void)
 
     /* Fetch depthmap and color image. */
     mve::FloatImage::Ptr dm(view->get_float_image(embedding));
-    if (!dm.get())
+    if (dm == NULL)
     {
         this->print_error("Error triangulating",
             "Depthmap not available: " + embedding);
@@ -940,7 +940,7 @@ SceneContext::on_offscreen_rephoto (void)
 void
 SceneContext::on_offscreen_rephoto (mve::View::Ptr view)
 {
-    if (view.get() == NULL)
+    if (view == NULL)
     {
         this->print_error("Error", "No view selected!");
         return;
@@ -1076,7 +1076,7 @@ SceneContext::on_offscreen_rephoto_all (void)
     for (size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view = views[i];
-        if (view.get() == NULL)
+        if (view == NULL)
             continue;
         if (!view->has_embedding(source_embedding_name))
             continue;
@@ -1373,7 +1373,7 @@ SceneContext::keyboard_event (ogl::KeyboardEvent const& event)
 void
 SceneContext::screen_debug (float left, float right, float top, float bottom)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         return;
 
     /* Create a text representation of cameras and points in the region. */
@@ -1415,7 +1415,7 @@ SceneContext::screen_debug (float left, float right, float top, float bottom)
     mve::BundleFile::ConstPtr bundle;
     try { bundle = this->scene->get_bundle(); }
     catch (std::exception& e){ }
-    if (bundle.get())
+    if (bundle != NULL)
     {
         bool found_points = false;
         ss << "<h2>Selected Bundle Points</h2>";
@@ -1440,7 +1440,7 @@ SceneContext::screen_debug (float left, float right, float top, float bottom)
             for (std::size_t j = 0; j < points[i].refs.size(); ++j)
             {
                 mve::View::ConstPtr ref = views[points[i].refs[j].img_id];
-                if (!ref.get())
+                if (ref == NULL)
                     continue;
                 ss << "&nbsp;&nbsp;View ID ";
                 ss << ref->get_id() << ", " << ref->get_name();

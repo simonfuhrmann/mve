@@ -254,13 +254,13 @@ ImageBase::get_byte_size (void) const
 inline char const*
 ImageBase::get_byte_pointer (void) const
 {
-    return 0;
+    return NULL;
 }
 
 inline char*
 ImageBase::get_byte_pointer (void)
 {
-    return 0;
+    return NULL;
 }
 
 inline ImageType

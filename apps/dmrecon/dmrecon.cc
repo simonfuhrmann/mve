@@ -110,7 +110,7 @@ main (int argc, char** argv)
     util::ArgResult const * arg;
     while ((arg = args.next_result()))
     {
-        if (arg->opt == 0)
+        if (arg->opt == NULL)
         {
             basePath = arg->arg;
             continue;

@@ -1003,7 +1003,7 @@ template <typename T>
 typename Image<T>::Ptr
 blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
 {
-    if (!in.get())
+    if (in == NULL)
         throw std::invalid_argument("NULL image given");
 
     /* Small sigmas result in literally no change. */
@@ -1087,7 +1087,7 @@ template <typename T>
 typename Image<T>::Ptr
 blur_boxfilter (typename Image<T>::ConstPtr in, int ks)
 {
-    if (!in.get())
+    if (in == NULL)
         throw std::invalid_argument("NULL image given");
 
     int w(in->width());
@@ -1180,7 +1180,7 @@ template <typename T>
 typename Image<T>::Ptr
 rotate (typename Image<T>::ConstPtr image, RotateType type)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     int iw = image->width();
@@ -1221,7 +1221,7 @@ template <typename T>
 typename Image<T>::Ptr
 rotate (typename Image<T>::ConstPtr image, float angle, T const* fill_color)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     int const w = image->width();
@@ -1256,7 +1256,7 @@ flip (typename Image<T>::Ptr image, FlipType type)
 {
     if (type == FLIP_NONE)
         return;
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     bool const fh = type & FLIP_HORIZONTAL;
@@ -1324,7 +1324,7 @@ template <typename T>
 typename Image<T>::Ptr
 desaturate (typename Image<T>::ConstPtr img, DesaturateType type)
 {
-    if (!img.get())
+    if (img == NULL)
         throw std::invalid_argument("NULL image given");
 
     int ic = img->channels();
@@ -1372,7 +1372,7 @@ template <typename T>
 typename Image<T>::Ptr
 expand_grayscale (typename Image<T>::ConstPtr image)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     int const ic = image->channels();
@@ -1468,7 +1468,7 @@ subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
     int const ih = i1->height();
     int const ic = i1->channels();
 
-    if (!i1.get() || !i2.get())
+    if (i1 == NULL || i2 == NULL)
         throw std::invalid_argument("NULL image given");
 
     if (iw != i2->width() || ih != i2->height() || ic != i2->channels())
@@ -1494,7 +1494,7 @@ difference (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
     int const ih = i1->height();
     int const ic = i1->channels();
 
-    if (!i1.get() || !i2.get())
+    if (i1 == NULL || i2 == NULL)
         throw std::invalid_argument("NULL image given");
 
     if (iw != i2->width() || ih != i2->height() || ic != i2->channels())
@@ -1568,7 +1568,7 @@ template <typename IN, typename OUT>
 typename Image<OUT>::Ptr
 integral_image (typename Image<IN>::ConstPtr image)
 {
-    if (!image.get())
+    if (image == NULL)
         throw std::invalid_argument("NULL image given");
 
     int const width = image->width();
@@ -1656,7 +1656,7 @@ create_thumbnail (typename Image<T>::ConstPtr image,
     typename mve::Image<T>::Ptr thumb = mve::image::rescale<T>(image,
         mve::image::RESCALE_LINEAR, rescale_width, rescale_height);
     thumb = mve::image::crop<T>(thumb, thumb_width, thumb_height,
-        crop_left, crop_top, 0);
+        crop_left, crop_top, NULL);
 
     return thumb;
 }
@@ -1705,7 +1705,7 @@ typename Image<T>::Ptr
 image_undistort_bundler (typename Image<T>::ConstPtr img,
     double focal_length, double k0, double k1)
 {
-    if (!img.get())
+    if (img == NULL)
         throw std::invalid_argument("NULL image given");
 
     if (k0 == 0.0 && k1 == 0.0)
@@ -1749,7 +1749,7 @@ typename Image<T>::Ptr
 image_undistort_vsfm (typename Image<T>::ConstPtr img,
     double focal_length, double k1)
 {
-    if (!img.get())
+    if (img == NULL)
         throw std::invalid_argument("NULL image given");
 
     if (k1 == 0.0)

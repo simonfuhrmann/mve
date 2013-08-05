@@ -163,8 +163,8 @@ RefPtrCounter::use_count (void) const
 template <class T>
 inline
 RefPtr<T>::RefPtr (void)
-    : ptr(0)
-    , counter(0)
+    : ptr(NULL)
+    , counter(NULL)
 {
 }
 
@@ -172,7 +172,7 @@ template <class T>
 inline
 RefPtr<T>::RefPtr (T* p) : ptr(p)
 {
-    counter = (p == 0) ? 0 : new RefPtrCounter();
+    counter = (p == NULL) ? NULL : new RefPtrCounter();
 }
 
 template <class T>
@@ -189,7 +189,7 @@ template <class Y>
 inline
 RefPtr<T>::RefPtr (Y* p) : ptr(static_cast<T*>(p))
 {
-    counter = (p == 0) ? 0 : new RefPtrCounter();
+    counter = (p == NULL) ? NULL : new RefPtrCounter();
 }
 
 template <class T>
@@ -214,15 +214,15 @@ inline void
 RefPtr<T>::reset (void)
 {
     decrement();
-    ptr = 0;
-    counter = 0;
+    ptr = NULL;
+    counter = NULL;
 }
 
 template <class T>
 inline int
 RefPtr<T>::use_count (void) const
 {
-    return ptr == 0 ? 0 : counter->use_count();
+    return (ptr == NULL) ? 0 : counter->use_count();
 }
 
 template <class T>
@@ -244,7 +244,7 @@ template <class T>
 /*inline*/ void
 RefPtr<T>::increment (void)
 {
-    if (ptr == 0)
+    if (ptr == NULL)
         return;
     counter->increment();
 }
@@ -253,7 +253,7 @@ template <class T>
 /*inline*/ void
 RefPtr<T>::decrement (void)
 {
-    if (ptr == 0)
+    if (ptr == NULL)
         return;
     if (counter->decrement() == 0)
     {
@@ -297,7 +297,7 @@ RefPtr<T>::operator= (T* rhs)
         return *this;
     decrement();
     ptr = rhs;
-    counter = (ptr == 0) ? 0 : new RefPtrCounter();
+    counter = (ptr == NULL) ? NULL : new RefPtrCounter();
     return *this;
 }
 
@@ -324,7 +324,7 @@ RefPtr<T>::operator= (Y* rhs)
         return *this;
     decrement();
     ptr = static_cast<T*>(rhs);
-    counter = (ptr == 0) ? 0 : new RefPtrCounter();
+    counter = (ptr == NULL) ? NULL : new RefPtrCounter();
     return *this;
 }
 

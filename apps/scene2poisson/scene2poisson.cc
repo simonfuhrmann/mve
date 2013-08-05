@@ -52,7 +52,7 @@ main (int argc, char** argv)
     std::string imstring;
     /* Scan arguments. */
     for (util::ArgResult const* arg = args.next_option();
-        arg != 0; arg = args.next_option())
+        arg != NULL; arg = args.next_option())
     {
         switch (arg->opt->sopt)
         {
@@ -115,7 +115,7 @@ main (int argc, char** argv)
             continue;
 
         mve::View::Ptr view = views[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         mve::CameraInfo const& cam = view->get_camera();
@@ -123,7 +123,7 @@ main (int argc, char** argv)
             continue;
 
         mve::FloatImage::Ptr dm = view->get_float_image(conf.depth);
-        if (!dm.get())
+        if (dm == NULL)
             continue;
 
         mve::ByteImage::Ptr ci;
@@ -131,7 +131,7 @@ main (int argc, char** argv)
             ci = view->get_byte_image(conf.image);
 
         std::cout << "Processing view \"" << view->get_name()
-            << "\"" << (ci.get() ? " (with colors)" : "")
+            << "\"" << (ci != NULL ? " (with colors)" : "")
             << "..." << std::endl;
 
         /* Triangulate depth map. */

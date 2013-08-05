@@ -31,7 +31,7 @@ class MutexLock
     { if (this->m) this->m->unlock(); }
 
     void unlock (void)
-    { this->m->unlock(); this->m = 0; }
+    { this->m->unlock(); this->m = NULL; }
 };
 
 /* ---------------------------------------------------------------- */
@@ -52,7 +52,7 @@ class ReadLock
     { if (this->rwl) this->rwl->unlock(); }
 
     void unlock (void)
-    { this->rwl->unlock(); this->rwl = 0; }
+    { this->rwl->unlock(); this->rwl = NULL; }
 };
 
 /* ---------------------------------------------------------------- */
@@ -73,7 +73,7 @@ class WriteLock
     { if (this->rwl) this->rwl->unlock(); }
 
     void unlock (void)
-    { this->rwl->unlock(); this->rwl = 0; }
+    { this->rwl->unlock(); this->rwl = NULL; }
 };
 
 UTIL_NAMESPACE_END

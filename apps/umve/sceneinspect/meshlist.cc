@@ -19,8 +19,8 @@
 QMeshContextMenu::QMeshContextMenu (QMeshList* parent)
 {
     this->parent = parent;
-    this->rep = 0;
-    this->item = 0;
+    this->rep = NULL;
+    this->item = NULL;
 }
 
 /* ---------------------------------------------------------------- */
@@ -215,7 +215,7 @@ QMeshContextMenu::on_rename_mesh (void)
     /* Check if there is a mesh by that new name. That is not allowed! */
     std::string new_name = q_new_name.toStdString();
     MeshRep* old_mesh = this->parent->mesh_by_name(new_name);
-    if (old_mesh != 0)
+    if (old_mesh != NULL)
     {
         QMessageBox::critical(this->parent, "Error renaming mesh",
             "A mesh by that name does already exist!");
@@ -479,7 +479,7 @@ QMeshList::mesh_by_name (std::string const& name)
     for (std::size_t i = 0; i < this->meshes.size(); ++i)
         if (this->meshes[i].name == name)
             return &this->meshes[i];
-    return 0;
+    return NULL;
 }
 
 /* ---------------------------------------------------------------- */

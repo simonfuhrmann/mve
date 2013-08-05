@@ -117,7 +117,7 @@ DMRecon::~DMRecon()
 void DMRecon::start()
 {
     try {
-        progress.start_time = std::time(0);
+        progress.start_time = std::time(NULL);
 
         analyzeFeatures();
         globalViewSelection();
@@ -179,7 +179,7 @@ void DMRecon::start()
 
         /* Output required time to process the image */
         {
-            size_t mvs_time = std::time(0) - progress.start_time;
+            size_t mvs_time = std::time(NULL) - progress.start_time;
             if (!settings.quiet)
                 std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
             log << "MVS took " << mvs_time << " seconds." << std::endl;

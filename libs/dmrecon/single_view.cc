@@ -22,11 +22,11 @@ SingleView::SingleView(mve::Scene::Ptr _scene, mve::View::Ptr _view)
         throw std::invalid_argument("NULL view");
     viewID = view->get_id();
 
-    mve::MVEFileProxy const* proxy = 0;
+    mve::MVEFileProxy const* proxy = NULL;
     proxy = view->get_proxy("tonemapped");
-    if (proxy == 0)
+    if (proxy == NULL)
         proxy = view->get_proxy("undistorted");
-    if (proxy == 0)
+    if (proxy == NULL)
         throw std::invalid_argument("No color image found");
 
     mve::CameraInfo cam(view->get_camera());

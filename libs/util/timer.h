@@ -93,7 +93,7 @@ WallTimer::reset (void)
     // FIXME: ::GetTickCount has poor precision (~10 - 16ms)
     this->start = ::GetTickCount();
 #else
-    ::gettimeofday(&this->start, 0);
+    ::gettimeofday(&this->start, NULL);
 #endif
 }
 
@@ -104,7 +104,7 @@ WallTimer::get_elapsed (void) const
     return ::GetTickCount() - start;
 #else
     struct timeval cur_time;
-    ::gettimeofday(&cur_time, 0);
+    ::gettimeofday(&cur_time, NULL);
     std::size_t ret = (cur_time.tv_sec - start.tv_sec) * 1000;
     std::size_t cur_ms = cur_time.tv_usec / 1000;
     std::size_t start_ms = start.tv_usec / 1000;

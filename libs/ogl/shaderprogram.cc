@@ -75,7 +75,7 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& filename)
     {
         char const* data[1];
         data[0] = code.c_str();
-        glShaderSource(shader_id, 1, data, 0);
+        glShaderSource(shader_id, 1, data, NULL);
         code.clear();
     }
 
@@ -126,7 +126,7 @@ ShaderProgram::print_shader_log (GLuint shader_id)
     GLint log_size = this->get_shader_property(shader_id, GL_INFO_LOG_LENGTH);
     std::vector<char> log;
     log.resize(log_size + 1, '\0');
-    glGetShaderInfoLog(shader_id, log_size + 1, 0, &log[0]);
+    glGetShaderInfoLog(shader_id, log_size + 1, NULL, &log[0]);
     std::cout.write(&log[0], log_size);
 }
 

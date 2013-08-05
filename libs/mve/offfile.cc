@@ -149,7 +149,7 @@ load_off_mesh (std::string const& filename)
 void
 save_off_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
 {
-    if (!mesh.get())
+    if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");

@@ -40,7 +40,7 @@ main (int argc, char** argv)
 
     /* Check if master image exists */
     if (masterImgNr > views.size() ||
-        (mview.get() == NULL) ||
+        (mview == NULL) ||
         (!mview->is_camera_valid()))
     {
         std::cerr<<"ERROR: Master view is invalid."<<std::endl;

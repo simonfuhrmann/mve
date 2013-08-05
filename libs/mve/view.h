@@ -412,7 +412,7 @@ View::clear (void)
 inline bool
 View::has_embedding (std::string const& name) const
 {
-    return this->get_proxy(name) != 0;
+    return this->get_proxy(name) != NULL;
 }
 
 inline std::size_t
@@ -425,7 +425,7 @@ inline bool
 View::mark_as_dirty (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    return p != 0 && (p->is_dirty = true);
+    return p != NULL && (p->is_dirty = true);
 }
 
 inline void
