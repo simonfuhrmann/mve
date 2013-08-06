@@ -42,7 +42,7 @@ namespace
 
     void
     ensureImages(ImagePyramid& levels, mve::View::Ptr view,
-               std::string embeddingName, int minLevel)
+        std::string embeddingName, int minLevel)
     {
         if (levels[minLevel].image != NULL)
             return;
@@ -112,7 +112,7 @@ namespace
 
 ImagePyramid::ConstPtr
 ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
-                     std::string embeddingName, int minLevel)
+    std::string embeddingName, int minLevel)
 {
     util::MutexLock lock(ImagePyramidCache::metadataMutex);
 
@@ -128,6 +128,7 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
     if (scene != ImagePyramidCache::cachedScene
         || embeddingName != ImagePyramidCache::cachedEmbedding)
     {
+        /* create own pyramid because shared pyramid is incompatible. */
         pyramid = buildPyramid(view, embeddingName);
     }
     else

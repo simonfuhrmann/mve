@@ -29,14 +29,17 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     if (refViewNr >= mve_views.size() ||
         (mve_views[refViewNr] == NULL) ||
         (!mve_views[refViewNr]->is_camera_valid()))
-    {
-        std::cerr<<"ERROR: Invalid master view."<<std::endl;
         throw std::invalid_argument("Invalid master view");
-    }
 
     /* Check for meaningful scale factor */
     if (settings.scale < 0.f)
-        throw std::invalid_argument("Invalid scale factor.");
+        throw std::invalid_argument("Invalid scale factor");
+
+    /* Check if image embedding is set. */
+    if (settings.imageEmbedding.empty())
+        throw std::invalid_argument("Invalid image embedding");
+
+    // TODO: Implement more sanity checks on the settings!
 
     /* Fetch bundle file. */
     try
