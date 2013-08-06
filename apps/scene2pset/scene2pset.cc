@@ -24,6 +24,7 @@ struct AppSettings
     std::string aabb;
     bool with_normals;
     bool with_scale;
+    bool with_conf;
     std::vector<std::size_t> ids;
 };
 
@@ -55,6 +56,7 @@ main (int argc, char** argv)
         "By default, all views are used.");
     args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
     args.add_option('s', "with-scale", false, "Write points with scale information (PLY only)");
+    args.add_option('c', "with-conf", false, "Writes points with confidences (PLY only)");
     args.add_option('d', "depthmap", true, "Name of depthmap to use [depthmap]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
@@ -70,6 +72,7 @@ main (int argc, char** argv)
     conf.image = "undistorted";
     conf.with_normals = false;
     conf.with_scale = false;
+    conf.with_conf = false;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
@@ -81,6 +84,7 @@ main (int argc, char** argv)
         {
             case 'n': conf.with_normals = true; break;
             case 's': conf.with_scale = true; break;
+            case 'c': conf.with_conf = true; break;
             case 'd': conf.dmname = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
             case 'v': parse_ids(arg->arg, conf.ids); break;
@@ -94,6 +98,7 @@ main (int argc, char** argv)
     {
         conf.with_normals = true;
         conf.with_scale = false;
+        conf.with_conf = false;
     }
 
     /* If requested, use given AABB. */
@@ -125,6 +130,7 @@ main (int argc, char** argv)
     mve::TriangleMesh::NormalList& vnorm(pset->get_vertex_normals());
     mve::TriangleMesh::ColorList& vcolor(pset->get_vertex_colors());
     mve::TriangleMesh::ValueList& vvalues(pset->get_vertex_values());
+    mve::TriangleMesh::ConfidenceList& vconfs(pset->get_vertex_confidences());
 
     /* Load scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
@@ -163,10 +169,13 @@ main (int argc, char** argv)
         mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
         if (conf.with_normals)
             mesh->ensure_normals();
+        if (conf.with_conf)
+            mve::geom::depthmap_mesh_confidences(mesh, 4);
 
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
+        mve::TriangleMesh::ConfidenceList const& mconfs(mesh->get_vertex_confidences());
 
         /* If scale is requested, compute it. */
         std::vector<float> mvscale;
@@ -180,7 +189,7 @@ main (int argc, char** argv)
                 for (std::size_t k = 0; k < vinf.verts.size(); ++k)
                     mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
                 mvscale[j] /= static_cast<float>(vinf.verts.size());
-                mvscale[j] *= 5.0f;  /* MVS patch size is usually 5x5. */
+                mvscale[j] *= 2.5f;  /* MVS patch size is usually 5x5. */
             }
         }
 
@@ -197,6 +206,8 @@ main (int argc, char** argv)
                     vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
                 if (conf.with_scale)
                     vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
+                if (conf.with_conf)
+                    vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
             }
         }
         else
@@ -222,6 +233,8 @@ main (int argc, char** argv)
                         vnorm.push_back(mnorms[i]);
                     if (conf.with_scale)
                         vvalues.push_back(mvscale[i]);
+                    if (conf.with_conf)
+                        vconfs.push_back(mconfs[i]);
                 }
             }
         }
@@ -242,6 +255,7 @@ main (int argc, char** argv)
         mve::geom::SavePLYOptions opts;
         opts.write_vertex_normals = conf.with_normals;
         opts.write_vertex_values = conf.with_scale;
+        opts.write_vertex_confidences = conf.with_conf;
         mve::geom::save_ply_mesh(pset, conf.outmesh, opts);
     }
     else
