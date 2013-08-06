@@ -554,21 +554,20 @@ depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
     if (iterations == 0)
         return;
 
-    TriangleMesh::ConfidenceList& c(mesh->get_vertex_confidences());
+    TriangleMesh::ConfidenceList& confs(mesh->get_vertex_confidences());
     TriangleMesh::VertexList const& verts(mesh->get_vertices());
-    c.clear();
-    c.resize(verts.size(), 1.0f);
+    confs.clear();
+    confs.resize(verts.size(), 1.0f);
 
     /* Find boundary vertices and remember them. */
-    typedef std::set<std::size_t> VIndexMap;
-    VIndexMap vidx;
-    VertexInfoList::Ptr vinfo(VertexInfoList::create(mesh));
+    std::vector<std::size_t> vidx;
+    VertexInfoList vinfo(mesh);
 
-    for (std::size_t i = 0; i < vinfo->size(); ++i)
+    for (std::size_t i = 0; i < vinfo.size(); ++i)
     {
-        MeshVertexInfo const& info(vinfo->at(i));
+        MeshVertexInfo const& info(vinfo[i]);
         if (info.vclass == VERTEX_CLASS_BORDER)
-            vidx.insert(i);
+            vidx.push_back(i);
     }
 
     /* Iteratively expand the current region and update confidences. */
@@ -576,21 +575,21 @@ depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
     {
         /* Calculate confidence for that iteration. */
         float conf = (float)current / (float)iterations;
-        conf = math::algo::fastpow(conf, 3);
+        //conf = math::algo::fastpow(conf, 3);
 
         /* Assign current confidence to all vertices. */
-        for (VIndexMap::iterator i = vidx.begin(); i != vidx.end(); ++i)
-            c[*i] = conf;
+        for (std::size_t i = 0; i < vidx.size(); ++i)
+            confs[vidx[i]] = conf;
 
         /* Replace vertex list with adjacent vertices. */
-        VIndexMap cvidx;
+        std::vector<std::size_t> cvidx;
         std::swap(vidx, cvidx);
-        for (VIndexMap::iterator i = cvidx.begin(); i != cvidx.end(); ++i)
+        for (std::size_t i = 0; i < cvidx.size(); ++i)
         {
-            MeshVertexInfo info = vinfo->at(*i);
+            MeshVertexInfo info = vinfo[cvidx[i]];
             for (std::size_t j = 0; j < info.verts.size(); ++j)
-                if (c[info.verts[j]] == 1.0f)
-                    vidx.insert(info.verts[j]);
+                if (confs[info.verts[j]] == 1.0f)
+                    vidx.push_back(info.verts[j]);
         }
     }
 }
