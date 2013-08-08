@@ -13,10 +13,7 @@ Scene::load_scene (std::string const& base_path)
 {
     if (base_path.empty())
         throw util::Exception("Invalid file name given");
-
     this->basedir = base_path;
-
-    /* Load scene. */
     this->init_views();
 }
 
@@ -45,15 +42,11 @@ Scene::save_bundle (void)
 void
 Scene::save_views (void)
 {
+    std::cout << "Saving views to MVE files..." << std::flush;
     for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i].get() && this->views[i]->is_dirty())
-        {
-            View::Ptr const& view = this->views[i];
-            std::cout << "Saving view ID " << view->get_id() << std::endl;
-            view->save_mve_file();
-        }
-
-    std::cout << "Done saving views." << std::endl;
+        if (this->views[i] != NULL && this->views[i]->is_dirty())
+            this->views[i]->save_mve_file();
+    std::cout << " done." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
@@ -61,17 +54,11 @@ Scene::save_views (void)
 void
 Scene::rewrite_all_views (void)
 {
+    std::cout << "Rewriting views to MVE files..." << std::flush;
     for (std::size_t i = 0; i < this->views.size(); ++i)
-    {
-        View::Ptr const& view = this->views[i];
-        if (view == NULL)
-            continue;
-
-        std::cout << "Rewriting view ID " << view->get_id() << std::endl;
-        view->save_mve_file(true);
-    }
-
-    std::cout << "Done rewriting views." << std::endl;
+        if (this->views[i] != NULL)
+            this->views[i]->save_mve_file(true);
+    std::cout << " done." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
@@ -83,11 +70,8 @@ Scene::is_dirty (void) const
         return true;
 
     for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i].get() && this->views[i]->is_dirty())
-        {
-            std::cout << "View " << i << " is dirty." << std::endl;
+        if (this->views[i] != NULL && this->views[i]->is_dirty())
             return true;
-        }
 
     return false;
 }
@@ -102,11 +86,13 @@ Scene::cache_cleanup (void)
 
     std::size_t released = 0;
     std::size_t affected_views = 0;
+    std::size_t total_views = 0;
     for (std::size_t i = 0; i < this->views.size(); ++i)
     {
         if (!this->views[i].get())
             continue;
 
+        total_views += 1;
         std::size_t num = this->views[i]->cache_cleanup();
         if (num)
         {
@@ -116,7 +102,7 @@ Scene::cache_cleanup (void)
     }
 
     std::cout << "Cleanup: Released " << released << " embeddings in "
-        << affected_views << " of " << views.size() << " views." << std::endl;
+        << affected_views << " of " << total_views << " views." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
