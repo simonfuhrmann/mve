@@ -220,7 +220,7 @@ main (int argc, char** argv)
                 << std::endl;
                 continue;
             }
-            if (!views[id].get() || !views[id]->is_camera_valid())
+            if (views[id] == NULL || !views[id]->is_camera_valid())
                 continue;
             if (!force_recon && views[id]->has_embedding(embedding_name))
                 continue;

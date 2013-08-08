@@ -98,7 +98,7 @@ SceneOperations::on_scene_selected (mve::Scene::Ptr scene)
     this->hilight_cam.setMinimum(0);
     this->run_steps.setMinimum(1);
 
-    if (this->scene.get()){
+    if (this->scene != NULL) {
         this->hilight_cam.setMaximum(this->scene->get_bundle()->get_num_cameras());
         this->run_steps.setMaximum(this->scene->get_bundle()->get_num_cameras());
     }
@@ -121,7 +121,7 @@ SceneOperations::on_update_scene (void)
 void
 SceneOperations::on_init_bundler (void)
 {
-    if(!this->scene.get())
+    if (this->scene == NULL)
         return;
     this->bundler.set_scene(this->scene);
     this->bundler.initialize(false, false);
