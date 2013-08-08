@@ -1,6 +1,7 @@
 #include "dmrecon/image_pyramid.h"
 
 #include "mve/imagetools.h"
+#include <cassert>
 
 MVS_NAMESPACE_BEGIN
 
@@ -16,6 +17,8 @@ namespace
 
         mve::MVEFileProxy const* proxy = view->get_proxy(embeddingName);
         mve::CameraInfo cam = view->get_camera();
+
+        assert(proxy != NULL);
 
         int curr_width = proxy->width;
         int curr_height = proxy->height;

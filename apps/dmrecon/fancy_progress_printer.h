@@ -7,6 +7,29 @@
 #include <set>
 #include <string>
 
+class FancyProgressPrinter;
+
+class ProgressHandle
+{
+public:
+    ProgressHandle(FancyProgressPrinter &progress_printer_,
+                   mvs::Settings const &settings_);
+    ~ProgressHandle();
+
+    void setRecon(mvs::DMRecon const& recon_);
+
+    void setDone()
+    {
+        this->done = true;
+    }
+
+private:
+    FancyProgressPrinter & progress_printer;
+    mvs::Settings const &settings;
+    mvs::DMRecon const *recon;
+    bool done;
+};
+
 class FancyProgressPrinter : public util::Thread
 {
 public:
@@ -18,15 +41,16 @@ public:
 
     void addRefView(int viewID);
 
-    void insertRecon(mvs::DMRecon const *ptr);
-    void eraseRecon(mvs::DMRecon const *ptr);
-
     virtual void* run();
     void stop();
 
 private:
     enum ViewStatus {
-        STATUS_IGNORED, STATUS_QUEUED, STATUS_IN_PROGRESS, STATUS_DONE
+        STATUS_IGNORED,
+        STATUS_QUEUED,
+        STATUS_IN_PROGRESS,
+        STATUS_DONE,
+        STATUS_FAILED
     };
 
     util::Mutex mutex;
@@ -35,6 +59,15 @@ private:
 
     std::vector<ViewStatus> viewStatus;
     std::set<mvs::DMRecon const *> runningRecons;
+
+    void setStatus(int refViewNr, ViewStatus status) {
+        viewStatus[refViewNr] = status;
+    }
+
+    void insertRecon(mvs::DMRecon const *ptr);
+    void eraseRecon(mvs::DMRecon const *ptr);
+
+    friend class ProgressHandle;
 };
 
 inline void
@@ -72,7 +105,6 @@ FancyProgressPrinter::insertRecon(mvs::DMRecon const *ptr)
 {
     util::MutexLock lock(mutex);
     runningRecons.insert(ptr);
-    this->viewStatus[ptr->getRefViewNr()] = STATUS_IN_PROGRESS;
 }
 
 inline void
@@ -80,7 +112,6 @@ FancyProgressPrinter::eraseRecon(mvs::DMRecon const *ptr)
 {
     util::MutexLock lock(this->mutex);
     this->runningRecons.erase(ptr);
-    this->viewStatus[ptr->getRefViewNr()] = STATUS_DONE;
 }
 
 inline void
@@ -90,5 +121,35 @@ FancyProgressPrinter::stop()
     this->isRunning = false;
 }
 
+inline
+ProgressHandle::ProgressHandle(FancyProgressPrinter &progress_printer_,
+                               const mvs::Settings &settings_)
+    : progress_printer(progress_printer_), settings(settings_), done(false)
+{
+    this->progress_printer.setStatus(this->settings.refViewNr,
+        FancyProgressPrinter::STATUS_IN_PROGRESS);
+}
+
+inline
+void ProgressHandle::setRecon(const mvs::DMRecon &recon_)
+{
+    this->recon = &recon_;
+    this->progress_printer.insertRecon(this->recon);
+}
+
+
+inline
+ProgressHandle::~ProgressHandle()
+{
+    if (done)
+        this->progress_printer.setStatus(settings.refViewNr,
+            FancyProgressPrinter::STATUS_DONE);
+    else
+        this->progress_printer.setStatus(settings.refViewNr,
+            FancyProgressPrinter::STATUS_FAILED);
+
+    if (recon != NULL)
+        this->progress_printer.eraseRecon(recon);
+}
 
 #endif

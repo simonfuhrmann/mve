@@ -25,27 +25,14 @@ FancyProgressPrinter fancyProgressPrinter;
 void
 reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
 {
-    if (settings.scale == -1.f)
-    {
-        for (unsigned int s = 0; s <= 4; ++s)
-        {
-            std::cout << "Reconstructing at scale " << s << std::endl;
-
-            /* Start MVS reconstruction */
-            settings.scale = float(s);
-            mvs::DMRecon recon(scene, settings);
-            fancyProgressPrinter.insertRecon(&recon);
-            recon.start();
-            fancyProgressPrinter.eraseRecon(&recon);
-        }
-    }
-    else
-    {
-        mvs::DMRecon recon(scene, settings);
-        fancyProgressPrinter.insertRecon(&recon);
-        recon.start();
-        fancyProgressPrinter.eraseRecon(&recon);
-    }
+    /* Note: destructor of ProgressHandle sets status to failed
+       if setDone() is not called (this happens when an exception
+       is thrown in mvs::DMRecon) */
+    ProgressHandle handle(fancyProgressPrinter, settings);
+    mvs::DMRecon recon(scene, settings);
+    handle.setRecon(recon);
+    recon.start();
+    handle.setDone();
 }
 
 int
@@ -200,7 +187,14 @@ main (int argc, char** argv)
         std::cout << "Reconstructing view with ID " << master_id << std::endl;
         mySettings.refViewNr = (std::size_t)master_id;
         fancyProgressPrinter.addRefView(master_id);
-        reconstruct(scene, mySettings);
+        try
+        {
+            reconstruct(scene, mySettings);
+        }
+        catch (std::exception &err)
+        {
+            std::cerr << err.what() << std::endl;
+        }
     }
     else
     {
@@ -233,12 +227,14 @@ main (int argc, char** argv)
 
             mvs::Settings settings(mySettings);
             settings.refViewNr = id;
-            reconstruct(scene, settings);
-
-#pragma omp critical
+            try
             {
+                reconstruct(scene, settings);
                 views[id]->save_mve_file();
-                //scene->cache_cleanup();
+            }
+            catch (std::exception &err)
+            {
+                std::cerr << err.what() << std::endl;
             }
         }
     }
