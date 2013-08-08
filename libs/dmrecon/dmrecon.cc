@@ -23,13 +23,10 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     settings(_settings)
 {
     mve::Scene::ViewList const& mve_views(scene->get_views());
-    std::size_t refViewNr = settings.refViewNr;
 
     /* Check if master image exists */
-    if (refViewNr >= mve_views.size() ||
-        (mve_views[refViewNr] == NULL) ||
-        (!mve_views[refViewNr]->is_camera_valid()))
-        throw std::invalid_argument("Invalid master view");
+    if (settings.refViewNr >= mve_views.size())
+        throw std::invalid_argument("Master view index out of bounds");
 
     /* Check for meaningful scale factor */
     if (settings.scale < 0.f)
@@ -56,12 +53,16 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     views.resize(mve_views.size());
     for (std::size_t i = 0; i < mve_views.size(); ++i)
     {
-        if ((mve_views[i] == NULL) || !mve_views[i]->is_camera_valid())
+        if (mve_views[i] == NULL || !mve_views[i]->is_camera_valid() ||
+            mve_views[i]->get_proxy(this->settings.imageEmbedding) == NULL)
             continue;
         mvs::SingleView::Ptr sView(new mvs::SingleView(scene, mve_views[i]));
         views[i] = sView;
     }
-    SingleView::Ptr refV = views[refViewNr];
+
+    SingleView::Ptr refV = views[settings.refViewNr];
+    if (refV == NULL)
+        throw std::invalid_argument("Embedding missing in master view");
 
     /* Prepare reconstruction */
     refV->loadColorImage(this->settings.imageEmbedding, settings.scale);
