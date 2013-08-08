@@ -859,7 +859,7 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     /* Some error and inconsistency checking. */
     if (depth_map == NULL)
         throw std::invalid_argument("NULL depth map given");
-    //if (!confidence_map.get())
+    //if (confidence_map == NULL)
     //    throw std::invalid_argument("NULL confidence map given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");

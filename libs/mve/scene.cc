@@ -89,7 +89,7 @@ Scene::cache_cleanup (void)
     std::size_t total_views = 0;
     for (std::size_t i = 0; i < this->views.size(); ++i)
     {
-        if (!this->views[i].get())
+        if (this->views[i] == NULL)
             continue;
 
         total_views += 1;
@@ -123,7 +123,7 @@ Scene::get_view_mem_usage (void)
 {
     std::size_t ret = 0;
     for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i].get())
+        if (this->views[i] != NULL)
             ret += this->views[i]->get_byte_size();
     return ret;
 }

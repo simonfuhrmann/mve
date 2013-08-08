@@ -421,7 +421,7 @@ BatchImportImages::on_import_images (void)
         {
             for (; last_reused_id < views.size(); ++last_reused_id)
             {
-                if (views[last_reused_id].get() == NULL)
+                if (views[last_reused_id] == NULL)
                 {
                     view_id = last_reused_id;
                     break;

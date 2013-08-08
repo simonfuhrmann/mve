@@ -51,7 +51,7 @@ int main (int argc, char** argv)
     mve::View::Ptr view = mve::View::create("/gris/scratch/home/sfuhrman/q3scene_mve/views/view_0000.mve");
     mve::FloatImage::Ptr dm = view->get_float_image("depthmap");
     mve::ByteImage::Ptr ci = view->get_byte_image("undistorted");
-    if (!dm.get())
+    if (dm == NULL)
     {
         std::cout << "No such embedding!" << std::endl;
         return 1;
