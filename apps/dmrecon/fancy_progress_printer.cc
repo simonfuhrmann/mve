@@ -22,6 +22,8 @@ FancyProgressPrinter::run()
     this->isRunning = true;
     while (this->isRunning)
     {
+        util::system::sleep_sec(1.0f);
+
         {
             util::MutexLock lock(this->mutex);
 
@@ -40,10 +42,13 @@ FancyProgressPrinter::run()
                     std::cout << ANSI_STYLE_WHITE << '.';
                     break;
                 case STATUS_IN_PROGRESS:
-                    std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_YELLOW << '?';
+                    std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_YELLOW << '@';
                     break;
                 case STATUS_DONE:
                     std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_GREEN << '!';
+                    break;
+                case STATUS_FAILED:
+                    std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_RED << '!';
                     break;
                 }
 
@@ -61,8 +66,6 @@ FancyProgressPrinter::run()
                           << " of " << (p.filled + p.queueSize) << '\n';
             }
         }
-
-        util::system::sleep_sec(1.0f);
     }
 
     return NULL;

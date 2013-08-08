@@ -231,6 +231,10 @@ struct JobDMRecon : public JobProgress
     }
     void cancel_job (void)
     {
+        /* don't cancel twice */
+        if (this->progress == NULL)
+            return;
+
         this->progress->cancelled = true;
         std::cout << "Should cancel job \"" << name << "\"" << std::endl;
         std::cout << "  Running: " << this->future.isRunning() << std::endl
@@ -260,6 +264,12 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
         return;
     }
 
+    if (view == NULL)
+    {
+        std::cout << "No view set!" << std::endl;
+        return;
+    }
+
     mvs::Settings mvs_settings;
     mvs_settings.refViewNr = view->get_id();
     mvs_settings.imageEmbedding = this->mvs_color_image.currentText().toStdString();
@@ -279,12 +289,6 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     {
         QMessageBox::warning(this, tr("MVS reconstruct"),
             tr("No color image embedding name has been entered!"));
-        return;
-    }
-
-    if (view == NULL)
-    {
-        std::cout << "No view set!" << std::endl;
         return;
     }
 
