@@ -25,27 +25,10 @@ FancyProgressPrinter fancyProgressPrinter;
 void
 reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
 {
-    if (settings.scale == -1.f)
-    {
-        for (unsigned int s = 0; s <= 4; ++s)
-        {
-            std::cout << "Reconstructing at scale " << s << std::endl;
-
-            /* Start MVS reconstruction */
-            settings.scale = float(s);
-            mvs::DMRecon recon(scene, settings);
-            fancyProgressPrinter.insertRecon(&recon);
-            recon.start();
-            fancyProgressPrinter.eraseRecon(&recon);
-        }
-    }
-    else
-    {
-        mvs::DMRecon recon(scene, settings);
-        fancyProgressPrinter.insertRecon(&recon);
-        recon.start();
-        fancyProgressPrinter.eraseRecon(&recon);
-    }
+    mvs::DMRecon recon(scene, settings);
+    fancyProgressPrinter.insertRecon(&recon);
+    recon.start();
+    fancyProgressPrinter.eraseRecon(&recon);
 }
 
 int
