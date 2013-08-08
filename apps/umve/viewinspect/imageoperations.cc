@@ -259,6 +259,29 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
         std::cout << "No scene set!" << std::endl;
         return;
     }
+
+    mvs::Settings mvs_settings;
+    mvs_settings.refViewNr = view->get_id();
+    mvs_settings.imageEmbedding = this->mvs_color_image.currentText().toStdString();
+    mvs_settings.globalVSMax = this->mvs_amount_gvs.value();
+    mvs_settings.useColorScale = this->mvs_color_scale.isChecked();
+    mvs_settings.scale = this->mvs_scale.value();
+    mvs_settings.writePlyFile = this->mvs_write_ply.isChecked();
+    mvs_settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
+    mvs_settings.keepDzMap = this->mvs_dz_map.isChecked();
+    mvs_settings.plyPath = scene->get_path();
+    mvs_settings.plyPath += "/recon/";
+    mvs_settings.logPath = scene->get_path();
+    mvs_settings.logPath += "/log/";
+    mvs_settings.quiet = true;
+
+    if (mvs_settings.imageEmbedding.empty())
+    {
+        QMessageBox::warning(this, tr("MVS reconstruct"),
+            tr("No color image embedding name has been entered!"));
+        return;
+    }
+
     if (view == NULL)
     {
         std::cout << "No view set!" << std::endl;
@@ -267,7 +290,6 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
 
     if (!view->is_camera_valid())
     {
-        std::cout << "Invalid view selected" << std::endl;
         QMessageBox::warning(this, tr("MVS reconstruct"),
             tr("View invalid or master view has invalid camera!"));
         return;
@@ -279,20 +301,7 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     job->scene = scene;
     job->view = view;
     job->auto_save = this->mvs_auto_save.isChecked();
-
-    job->settings.refViewNr = view->get_id();
-    job->settings.imageEmbedding = this->mvs_color_image.currentText().toStdString();
-    job->settings.globalVSMax = this->mvs_amount_gvs.value();
-    job->settings.useColorScale = this->mvs_color_scale.isChecked();
-    job->settings.scale = this->mvs_scale.value();
-    job->settings.writePlyFile = this->mvs_write_ply.isChecked();
-    job->settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
-    job->settings.keepDzMap = this->mvs_dz_map.isChecked();
-    job->settings.plyPath = scene->get_path();
-    job->settings.plyPath += "/recon/";
-    job->settings.logPath = scene->get_path();
-    job->settings.logPath += "/log/";
-    job->settings.quiet = true;
+    job->settings = mvs_settings;
 
     /* Launch and register job. */
     job->future = QtConcurrent::run(this,
@@ -357,7 +366,15 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
     if (scene == NULL)
     {
-        std::cout << "No scene set!" << std::endl;
+        QMessageBox::warning(this, tr("MVS reconstruct"),
+            tr("No scene is loaded!"));
+        return;
+    }
+
+    if (this->mvs_color_image.currentText().size() == 0)
+    {
+        QMessageBox::warning(this, tr("MVS reconstruct"),
+            tr("No color image embedding name has been entered!"));
         return;
     }
 
