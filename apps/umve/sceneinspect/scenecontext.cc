@@ -542,7 +542,7 @@ SceneContext::create_frusta_renderer (float size)
     mve::Scene::ViewList const& views(this->scene->get_views());
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-        if (!views[i].get())
+        if (views[i].get() == NULL)
             continue;
 
         mve::CameraInfo const& cam = views[i]->get_camera();
@@ -609,7 +609,7 @@ SceneContext::create_frusta_renderer (float size)
 void
 SceneContext::create_current_frustum_renderer (void)
 {
-    if (!this->view->get_view().get())
+    if (this->view->get_view() == NULL)
         return;
 
     mve::TriangleMesh::Ptr mesh(mve::TriangleMesh::create());
@@ -776,7 +776,7 @@ SceneContext::print_html (std::string const& title, std::string const& message)
 void
 SceneContext::select_colorimage (QString name)
 {
-    if (!this->view || !this->view->get_view().get())
+    if (this->view == NULL || this->view->get_view() == NULL)
         return;
 
     std::string const depth_str("depth-");
@@ -1386,7 +1386,7 @@ SceneContext::screen_debug (float left, float right, float top, float bottom)
         mve::Scene::ViewList const& views(this->scene->get_views());
         for (std::size_t i = 0; i < views.size(); ++i)
         {
-            if (!views[i].get() || !views[i]->is_camera_valid())
+            if (views[i] == NULL || !views[i]->is_camera_valid())
                 continue;
 
             math::Vec4f campos(1.0f);

@@ -400,7 +400,7 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     mve::Scene::ViewList& views(scene->get_views());
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-        if (!views[i].get() || !views[i]->is_camera_valid())
+        if (views[i] == NULL || !views[i]->is_camera_valid())
             continue;
         if (views[i]->has_embedding(dmname))
             continue;
