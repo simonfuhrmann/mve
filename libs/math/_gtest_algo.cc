@@ -162,15 +162,4 @@ TEST(AlgoTest, FastPowTest)
     EXPECT_EQ(256, math::algo::fastpow(2, 8));
     EXPECT_EQ(512, math::algo::fastpow(2, 9));
     EXPECT_EQ(1024, math::algo::fastpow(2, 10));
-
-    EXPECT_EQ(1, math::algo::fastpow_po2(2, 0));
-    EXPECT_EQ(2, math::algo::fastpow_po2(2, 1));
-    EXPECT_EQ(4, math::algo::fastpow_po2(2, 2));
-    EXPECT_EQ(16, math::algo::fastpow_po2(2, 4));
-    EXPECT_EQ(256, math::algo::fastpow_po2(2, 8));
-    EXPECT_EQ(65536, math::algo::fastpow_po2(2, 16));
-
-    /* Non-power of two degrades to the previous power of two. */
-    EXPECT_EQ(16, math::algo::fastpow_po2(2, 7));
-    EXPECT_EQ(4, math::algo::fastpow_po2(2, 3));
 }

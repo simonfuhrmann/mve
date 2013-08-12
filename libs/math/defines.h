@@ -24,7 +24,7 @@ MATH_NAMESPACE_END
 
 /*
  * Some constants. Note that M_xx is not available everywhere.
- * These constants are computed with the calculator at
+ * These constants are computed with the high precision calculator at
  * http://keisan.casio.com/calculator set to 38 digits.
  */
 #define MATH_PI         3.14159265358979323846264338327950288   // pi
@@ -53,7 +53,8 @@ MATH_NAMESPACE_END
 
 /* Fast power macros. */
 #define MATH_POW2(x) ((x) * (x))
-#define MATH_POW3(x) ((x) * (x) * (x))
+#define MATH_POW3(x) (MATH_POW2(x) * (x))
+#define MATH_POW4(x) (MATH_POW2(MATH_POW2(x)))
 
 /* Angle conversions macros, DEG <-> RAD. */
 #define MATH_RAD2DEG(x) (x * (180.0 / MATH_PI))
