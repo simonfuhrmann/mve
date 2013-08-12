@@ -7,14 +7,14 @@ LIBRARY := libdmrecon.a
 EXT_INCL := -I..
 EXT_LIBS := -L../util -L../mve -lmve -lutil -lpng -ljpeg -ltiff
 
-libmve: ${OBJECTS}
-	ar rcs ${LIBRARY} ${OBJECTS}
-	chmod a+x ${LIBRARY}
+${LIBRARY}: ${OBJECTS}
+	ar rcs $@ $^
+	chmod a+x $^
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
 
-depend:
+Makefile.dep: ${SOURCES}
 	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
 
 clean: FORCE
