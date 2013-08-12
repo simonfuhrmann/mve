@@ -447,6 +447,8 @@ Sift::descriptor_generation (void)
 {
     if (this->octaves.empty())
         throw std::runtime_error("Octaves not available!");
+    if (this->keypoints.empty())
+        return;
 
     this->descriptors.clear();
     this->descriptors.reserve(this->keypoints.size() * 3 / 2);
@@ -454,11 +456,12 @@ Sift::descriptor_generation (void)
     /*
      * Keep a buffer of S+3 gradient and orientation images for the current
      * octave. Once the octave is changed, these images are recomputed.
-     * To ensure efficiency, the octave index must always increase,
-     * never decreased again, which is enforced during the algorithm.
+     * To ensure efficiency, the octave index must always increase, never
+     * decrease, which is enforced during the algorithm.
      */
-    int octave_index = this->options.min_octave - 1;
-    Octave* octave = 0;
+    int octave_index = this->keypoints[0].octave;
+    Octave* octave = &this->octaves[octave_index - this->options.min_octave];
+    this->generate_grad_ori_images(octave);
 
     /* Walk over all keypoints and compute descriptors. */
     for (std::size_t i = 0; i < this->keypoints.size(); ++i)
@@ -466,18 +469,22 @@ Sift::descriptor_generation (void)
         Keypoint const& kp(this->keypoints[i]);
 
         /* Generate new gradient and orientation images if octave changed. */
-        if (kp.octave < octave_index)
-            throw std::runtime_error("Decreasing octave index!");
         if (kp.octave > octave_index)
         {
-            octave_index = kp.octave;
+            /* Clear old octave gradient and orientation images. */
             if (octave)
             {
                 octave->grad.clear();
                 octave->ori.clear();
             }
+            /* Setup new octave gradient and orientation images. */
+            octave_index = kp.octave;
             octave = &this->octaves[octave_index - this->options.min_octave];
             this->generate_grad_ori_images(octave);
+        }
+        else if (kp.octave < octave_index)
+        {
+            throw std::runtime_error("Decreasing octave index!");
         }
 
         /* Orientation assignment. This returns multiple orientations. */

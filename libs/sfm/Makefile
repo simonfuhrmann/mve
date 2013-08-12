@@ -35,7 +35,7 @@ depend:
 	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
 
 clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
+	${RM} ${OBJECTS} ${GTEST_OBJS} ${LIBRARY} ${TESTBIN} _gtest
 
 FORCE:
 
