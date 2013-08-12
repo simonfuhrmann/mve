@@ -7,14 +7,14 @@ LIBRARY := libogl.a
 EXT_INCL := -I..
 EXT_LIBS := -L../util -L. -lutil
 
-libmve: ${OBJECTS}
-	ar rcs ${LIBRARY} ${OBJECTS}
-	chmod a+x ${LIBRARY}
+${LIBRARY}: ${OBJECTS}
+	ar rcs $@ $^
+	chmod a+x $@
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
 
-depend:
+Makefile.dep: ${SOURCES}
 	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
 
 clean: FORCE

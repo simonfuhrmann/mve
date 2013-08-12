@@ -8,36 +8,22 @@ EXTLIBS := ../../extern
 OPENMP := -fopenmp
 
 EXT_INCL := -I${LIBDIR} -I${EXTLIBS}
-EXT_LIBS := -L${LIBDIR}/util -L${LIBDIR}/dmrecon -L${LIBDIR}/mve -ldmrecon -lmve -lutil -lpng -ljpeg -ltiff
+EXT_LIBS := -lpng -ljpeg -ltiff
 
-all: libdmrecon ${OBJECTS}
-	${CXX} -o ${BINARY} ${OBJECTS} ${EXT_LIBS} ${OPENMP}
+${BINARY}: ${OBJECTS} ${LIBDIR}/dmrecon/libdmrecon.a ${LIBDIR}/mve/libmve.a ${LIBDIR}/util/libutil.a
+	${CXX} -o $@ $^ ${EXT_LIBS} ${OPENMP}
 
-libsyndmr:
-	${MAKE} -j${CORES} -C ../../libs/syndmr
+# TODO: find a nicer way to handle this
+${LIBDIR}/dmrecon/libdmrecon.a: FORCE
+	${MAKE} -C ${LIBDIR}/dmrecon
 
-libdmrecon:
-	${MAKE} -j${CORES} -C ../../libs/dmrecon
-
-libclean:
-	${MAKE} -C ../../libs/dmrecon clean
-
-libs:
-	${MAKE} -C ../../libs
-
-dmsr: FORCE
-	${CXX} -o dmsr _dmsr.cc ${EXT_INCL} -L${LIBDIR}/util -L${LIBDIR}/dmrecon -L${LIBDIR}/mve -ldmrecon -lmve -lutil -lpng -ljpeg -ltiff
-
-merge: FORCE
-	${CXX} -o merge _merge.cc ${EXT_INCL} ${EXT_LIBS}
-
-saveImages: FORCE
-	${CXX} -o saveImages _saveImages.cc ${EXT_INCL} ${EXT_LIBS}
+merge: _merge.cc
+	${CXX} -o $@ $^ ${EXT_INCL} ${EXT_LIBS}
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL} ${OPENMP} -Wno-long-long
 
-depend:
+Makefile.dep: ${SOURCES}
 	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
 
 clean: FORCE

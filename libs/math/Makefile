@@ -12,13 +12,13 @@ GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
 GTEST_INCL := -I${GTEST_PATH}/include
 GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main
 
-libmath: ${OBJECTS}
+${LIBRARY}: ${OBJECTS}
 	# This is commented out because there are no .cc files
-	#ar rcs ${LIBRARY} ${OBJECTS}
-	#chmod a+x ${LIBRARY}
+	#ar rcs $@ $^
+	#chmod a+x $@
 
 gtest: ${GTEST_OBJS} ${OBJECTS}
-	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
+	${CXX} -o $@ $^ ${GTEST_LIBS} ${EXT_LIBS}
 
 _gtest_%.o: _gtest_%.cc
 	${CXX} -c -o $@ $< ${GTEST_INCL} ${EXT_INCL}
@@ -26,7 +26,7 @@ _gtest_%.o: _gtest_%.cc
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
 
-depend:
+Makefile.dep: ${SOURCES}
 	# This is commented out because there are no .cc files
 	#${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
 
