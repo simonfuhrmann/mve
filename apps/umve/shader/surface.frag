@@ -30,16 +30,18 @@ void main(void)
         albedo = ocolor;
 
     /* Enable backface culling. */
-    if (!gl_FrontFacing)
-        albedo = albedo * 0.2;
+    //if (!gl_FrontFacing)
+    //    albedo = albedo * 0.2;
 
-    //gl_FragDepth = gl_FragCoord.z;
+    gl_FragDepth = gl_FragCoord.z;
     if (lighting == 1)
     {
         /* Compute shading from normal and lights. */
         vec4 normal = viewmat * vec4(onormal, 0);
-        vec4 light_vector = vec4(normalize(-light1), 0);
-        float light_factor = abs(dot(normal, light_vector));
+        vec4 light_vector = vec4(normalize(light1), 0);
+        float light_factor = dot(normal, light_vector);
+        if (light_factor < 0.0)
+            light_factor = -light_factor / 2.0;
         gl_FragColor = albedo * light_factor;
     }
     else
