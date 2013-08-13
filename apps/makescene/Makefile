@@ -7,15 +7,15 @@ LIBDIR := ../../libs
 OPENMP := -fopenmp
 
 EXT_INCL := -I${LIBDIR}
-EXT_LIBS := -L${LIBDIR}/util -L${LIBDIR}/mve -lmve -lutil -lpng -ljpeg -ltiff
+EXT_LIBS := -lpng -ljpeg -ltiff
 
-all: ${OBJECTS}
-	${CXX} -o ${BINARY} ${OBJECTS} ${EXT_LIBS} ${OPENMP}
+${BINARY}: ${OBJECTS} ${LIBDIR}/mve/libmve.a ${LIBDIR}/util/libutil.a
+	${CXX} -o $@ $^ ${EXT_LIBS} ${OPENMP}
 
 %.o: %.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL} ${OPENMP}
 
-depend:
+Makefile.dep: ${SOURCES}
 	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
 
 clean: FORCE

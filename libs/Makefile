@@ -11,10 +11,3 @@ clean:
 	${MAKE} -C mve clean
 	${MAKE} -C dmrecon clean
 	${MAKE} -C ogl clean
-
-depend:
-	${MAKE} -C util depend
-	${MAKE} -C mve depend
-	${MAKE} -C dmrecon depend
-	${MAKE} -C ogl depend
-
