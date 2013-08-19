@@ -338,6 +338,9 @@ View::save_mve_file_as (std::string const& filename)
     if (lock_status != util::fs::FileLock::LOCK_CREATED)
         throw util::Exception("Cannot acquire lock: ", lock.get_reason());
 
+    /* Keep references to image data to prevent cleanup while saving. */
+    std::vector<ImageBase::Ptr> data_refs(this->proxies.size());
+
     /*
      * Cache all embeddings before opening output file. This is important
      * to prevent troubles when the new, given filename refers to the same
@@ -346,7 +349,8 @@ View::save_mve_file_as (std::string const& filename)
     for (std::size_t i = 0; i < this->proxies.size(); ++i)
     {
         MVEFileProxy& p(this->proxies[i]);
-        this->ensure_embedding(p); // TODO: Use function that does not merge
+        // TODO: Use function that does not merge
+        data_refs[i] = this->get_image_for_proxy(p);
         p.width = p.image->width();
         p.height = p.image->height();
         p.channels = p.image->channels();
@@ -415,6 +419,7 @@ View::save_mve_file_as (std::string const& filename)
     this->needs_rebuild = false;
 
     /* Because all embeddings are now cached, we release some memory. */
+    data_refs.clear();
     this->cache_cleanup();
 
     //std::cout << "Done saving file as '"
@@ -550,9 +555,17 @@ View::rename_file (std::string const& new_name)
 
 /* ---------------------------------------------------------------- */
 
-void
-View::load_embedding (MVEFileProxy& p)
+ImageBase::Ptr
+View::get_image_for_proxy (MVEFileProxy& p)
 {
+    util::AtomicMutex<int> lock(this->loading_mutex);
+
+    //if (sync_file)
+    //    this->reload_mve_file(true);
+
+    if (p.image != NULL)
+        return p.image;
+
     if (this->filename.empty() || p.byte_size == 0 || p.file_pos == 0)
         throw util::Exception("Proxy not properly initialized");
 
@@ -600,20 +613,8 @@ View::load_embedding (MVEFileProxy& p)
     }
     //mvefile.get(); // Discard final newline
     mvefile.close();
-}
 
-/* ---------------------------------------------------------------- */
-
-void
-View::ensure_embedding (MVEFileProxy& proxy)
-{
-    //if (sync_file)
-    //    this->reload_mve_file(true);
-
-    util::AtomicMutex<int> lock(this->mutex);
-    if (proxy.image == NULL)
-        this->load_embedding(proxy);
-    lock.release();
+    return p.image;
 }
 
 /* ---------------------------------------------------------------- */
@@ -646,8 +647,7 @@ View::get_embedding (std::string const& name)
     MVEFileProxy* p(this->get_proxy_intern(name));
     if (p == NULL)
         return ImageBase::Ptr();
-    this->ensure_embedding(*p);
-    return p->image;
+    return this->get_image_for_proxy(*p);
 }
 
 /* ---------------------------------------------------------------- */
@@ -739,8 +739,7 @@ View::get_image (std::string const& name)
     MVEFileProxy* p(this->get_proxy_intern(name));
     if (p == NULL || !p->is_image)
         return ImageBase::Ptr();
-    this->ensure_embedding(*p);
-    return p->image;
+    return this->get_image_for_proxy(*p);
 }
 
 /* ---------------------------------------------------------------- */
@@ -751,8 +750,7 @@ View::get_float_image (std::string const& name)
     MVEFileProxy* p(this->get_proxy_intern(name));
     if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<float>()))
         return FloatImage::Ptr();
-    this->ensure_embedding(*p);
-    return p->image;
+    return this->get_image_for_proxy(*p);
 }
 
 /* ---------------------------------------------------------------- */
@@ -763,8 +761,7 @@ View::get_double_image (std::string const& name)
     MVEFileProxy* p(this->get_proxy_intern(name));
     if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<double>()))
         return DoubleImage::Ptr();
-    this->ensure_embedding(*p);
-    return p->image;
+    return this->get_image_for_proxy(*p);
 }
 
 /* ---------------------------------------------------------------- */
@@ -775,8 +772,7 @@ View::get_byte_image (std::string const& name)
     MVEFileProxy* p(this->get_proxy_intern(name));
     if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<uint8_t>()))
         return ByteImage::Ptr();
-    this->ensure_embedding(*p);
-    return p->image;
+    return this->get_image_for_proxy(*p);
 }
 
 /* ---------------------------------------------------------------- */
@@ -787,8 +783,7 @@ View::get_int_image (std::string const& name)
     MVEFileProxy* p(this->get_proxy_intern(name));
     if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<int>()))
         return IntImage::Ptr();
-    this->ensure_embedding(*p);
-    return p->image;
+    return this->get_image_for_proxy(*p);
 }
 
 /* ---------------------------------------------------------------- */
@@ -857,8 +852,7 @@ View::get_data (std::string const& name)
     MVEFileProxy* p(this->get_proxy_intern(name));
     if (p == NULL || p->is_image)
         return ByteImage::Ptr();
-    this->ensure_embedding(*p);
-    return p->image;
+    return this->get_image_for_proxy(*p);
 }
 
 /* ---------------------------------------------------------------- */

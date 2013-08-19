@@ -109,13 +109,12 @@ private:
     CameraInfo camera; ///< Per-view camera information
     Proxies proxies; ///< Proxies for all embeddings
     bool needs_rebuild; ///< Disables direct-writing when saving
-    util::Atomic<int> mutex; ///< Mutex to guard file access
+    util::Atomic<int> loading_mutex; ///< Mutex to guard file access
 
 private:
     void parse_header_line (std::string const& header_line);
     void direct_write (MVEFileProxy& proxy);
-    void load_embedding (MVEFileProxy& proxy); // NOT Thread safe!
-    void ensure_embedding (MVEFileProxy& proxy); // Thread safe wrapper.
+    ImageBase::Ptr get_image_for_proxy (MVEFileProxy& proxy);
     MVEFileProxy* get_proxy_intern (std::string const& name);
     void update_camera (void);
 
@@ -329,14 +328,14 @@ MVEFileMeta::MVEFileMeta (void)
 inline
 View::View (void)
     : needs_rebuild(false)
-    , mutex(0)
+    , loading_mutex(0)
 {
 }
 
 inline
 View::View (std::string const& fname)
     : needs_rebuild(false)
-    , mutex(0)
+    , loading_mutex(0)
 {
     this->load_mve_file(fname);
 }
