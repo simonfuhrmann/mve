@@ -12,6 +12,11 @@
 #ifndef OGL_OPEN_GL_HEADER
 #define OGL_OPEN_GL_HEADER
 
-#include <GL/glew.h>
+#ifdef OGL_USE_OSMESA
+#  define GL_GLEXT_PROTOTYPES
+#  include <GL/osmesa.h>
+#else
+#  include <GL/glew.h>
+#endif
 
 #endif /* OGL_OPEN_GL_HEADER */
