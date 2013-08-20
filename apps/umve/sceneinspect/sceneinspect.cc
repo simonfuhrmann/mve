@@ -107,12 +107,14 @@ SceneInspect::create_actions (void)
 void
 SceneInspect::on_open_mesh (void)
 {
-    QString filename = QFileDialog::getOpenFileName(this,
-        tr("Open File"), QDir::currentPath());
-    if (filename.isEmpty())
-        return;
+    QStringList filenames = QFileDialog::getOpenFileNames(this,
+        tr("Open Mesh"), QDir::currentPath());
 
-    this->load_file(filename.toStdString());
+    for (QStringList::iterator it = filenames.begin();
+         it != filenames.end(); ++it)
+    {
+        this->load_file(it->toStdString());
+    }
 }
 
 /* ---------------------------------------------------------------- */
