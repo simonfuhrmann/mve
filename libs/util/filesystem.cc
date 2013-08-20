@@ -299,7 +299,6 @@ get_binary_path (void)
 
 /* ---------------------------------------------------------------- */
 // FIXME windows path separator ("\") compatible version?
-// FIXME handle relative paths
 
 std::string
 get_path_component (std::string const& path)
@@ -310,16 +309,22 @@ get_path_component (std::string const& path)
     std::size_t pos1 = path.find_first_of('/');
     std::size_t pos2 = path.find_last_of('/');
 
-    if (pos1 == std::string::npos)
-        return get_cwd_string();
-    else if (pos1 == pos2 && pos1 == 0)
-        return std::string("/");
-    else if (pos1 == pos2 && pos1 != 0)
-        return get_cwd_string() + "/" + path.substr(0, pos1);
-    else if (pos1 == 0 && pos2 > 0)
-        return path.substr(0, pos2);
-
-    throw std::runtime_error("Unhandled path case");
+    if (pos1 == 0)
+    {
+        /* Path is absolute. */
+        if (pos2 == 0)
+            return std::string("/");
+        else
+            return path.substr(0, pos2);
+    }
+    else
+    {
+        /* Path is relative. */
+        if (pos2 == std::string::npos)
+            return get_cwd_string();
+        else
+            return get_cwd_string() + "/" + path.substr(0, pos2);
+    }
 }
 
 /* ---------------------------------------------------------------- */
