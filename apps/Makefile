@@ -3,10 +3,12 @@ all:
 	@echo "For apps requiring qmake: Run 'qmake', then 'make'."
 
 clean:
-	$(MAKE) -C bundle2ply clean
-	$(MAKE) -C dmrecon clean
-	$(MAKE) -C makescene clean
-	$(MAKE) -C meshconvert clean
-	$(MAKE) -C mveshell clean
-	$(MAKE) -C scene2poisson clean
-	$(MAKE) -C scene2pset clean
+	$(MAKE) -C bundle2ply $@
+	$(MAKE) -C dmrecon $@
+	$(MAKE) -C makescene $@
+	$(MAKE) -C meshconvert $@
+	$(MAKE) -C mveshell $@
+	$(MAKE) -C scene2poisson $@
+	$(MAKE) -C scene2pset $@
+
+.PHONY: all clean

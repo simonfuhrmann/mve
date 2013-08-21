@@ -5,7 +5,6 @@ OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 LIBRARY := libogl.a
 
 EXT_INCL := -I..
-EXT_LIBS := -L../util -L. -lutil
 
 ${LIBRARY}: ${OBJECTS}
 	ar rcs $@ $^
@@ -15,11 +14,11 @@ ${LIBRARY}: ${OBJECTS}
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
 
 Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
+	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
 
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
+clean:
+	${RM} ${OBJECTS} ${LIBRARY} Makefile.dep
 
-FORCE:
+.PHONY: clean
 
 -include Makefile.dep

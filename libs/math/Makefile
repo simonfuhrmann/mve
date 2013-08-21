@@ -28,11 +28,11 @@ _gtest_%.o: _gtest_%.cc
 
 Makefile.dep: ${SOURCES}
 	# This is commented out because there are no .cc files
-	#${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
+	#${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
 
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
+clean:
+	${RM} ${LIBRARY} ${OBJECTS} gtest ${GTEST_OBJS} Makefile.dep
 
-FORCE:
+.PHONY: clean
 
 -include Makefile.dep

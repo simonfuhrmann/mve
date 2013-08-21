@@ -14,8 +14,10 @@ ${BINARY}: ${OBJECTS} ${LIBDIR}/dmrecon/libdmrecon.a ${LIBDIR}/mve/libmve.a ${LI
 	${CXX} -o $@ $^ ${EXT_LIBS} ${OPENMP}
 
 # TODO: find a nicer way to handle this
-${LIBDIR}/dmrecon/libdmrecon.a: FORCE
+${LIBDIR}/dmrecon/libdmrecon.a:
 	${MAKE} -C ${LIBDIR}/dmrecon
+
+.PHONY: ${LIBDIR}/dmrecon/libdmrecon.a
 
 merge: _merge.cc
 	${CXX} -o $@ $^ ${EXT_INCL} ${EXT_LIBS}
@@ -24,11 +26,11 @@ merge: _merge.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL} ${OPENMP} -Wno-long-long
 
 Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
+	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
 
-clean: FORCE
-	${RM} ${OBJECTS} ${BINARY} merge
+clean:
+	${RM} ${OBJECTS} ${BINARY} merge Makefile.dep
 
-FORCE:
+.PHONY: clean
 
 -include Makefile.dep
