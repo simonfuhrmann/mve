@@ -1,6 +1,7 @@
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
+#include <list>
 #include <limits>
 #include <fstream>
 #include <cerrno>
@@ -186,6 +187,131 @@ mesh_transform (TriangleMesh::Ptr mesh, math::Matrix4f const& trans)
     std::for_each(verts.begin(), verts.end(), vfunc);
     std::for_each(fnorm.begin(), fnorm.end(), nfunc);
     std::for_each(vnorm.begin(), vnorm.end(), nfunc);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+mesh_merge (TriangleMesh::ConstPtr mesh1, TriangleMesh::Ptr mesh2)
+{
+    mve::TriangleMesh::VertexList const& verts1 = mesh1->get_vertices();
+    mve::TriangleMesh::VertexList& verts2 = mesh2->get_vertices();
+    mve::TriangleMesh::ColorList const& color1 = mesh1->get_vertex_colors();
+    mve::TriangleMesh::ColorList& color2 = mesh2->get_vertex_colors();
+    mve::TriangleMesh::ConfidenceList const& confs1 = mesh1->get_vertex_confidences();
+    mve::TriangleMesh::ConfidenceList& confs2 = mesh2->get_vertex_confidences();
+    mve::TriangleMesh::ValueList const& values1 = mesh1->get_vertex_values();
+    mve::TriangleMesh::ValueList& values2 = mesh2->get_vertex_values();
+    mve::TriangleMesh::NormalList const& vnorm1 = mesh1->get_vertex_normals();
+    mve::TriangleMesh::NormalList& vnorm2 = mesh2->get_vertex_normals();
+    mve::TriangleMesh::TexCoordList const& vtex1 = mesh1->get_vertex_texcoords();
+    mve::TriangleMesh::TexCoordList& vtex2 = mesh2->get_vertex_texcoords();
+    mve::TriangleMesh::NormalList const& fnorm1 = mesh1->get_face_normals();
+    mve::TriangleMesh::NormalList& fnorm2 = mesh2->get_face_normals();
+    mve::TriangleMesh::FaceList const& faces1 = mesh1->get_faces();
+    mve::TriangleMesh::FaceList& faces2 = mesh2->get_faces();
+
+    verts2.reserve(verts1.size() + verts2.size());
+    color2.reserve(color1.size() + color2.size());
+    confs2.reserve(confs1.size() + confs2.size());
+    values2.reserve(values1.size() + values2.size());
+    vnorm2.reserve(vnorm1.size() + vnorm2.size());
+    vtex2.reserve(vtex1.size() + vtex2.size());
+    fnorm2.reserve(fnorm1.size() + fnorm2.size());
+    faces2.reserve(faces1.size() + faces2.size());
+
+    std::size_t const offset = verts2.size();
+    verts2.insert(verts2.end(), verts1.begin(), verts1.end());
+    color2.insert(color2.end(), color1.begin(), color1.end());
+    confs2.insert(confs2.end(), confs1.begin(), confs1.end());
+    values2.insert(values2.end(), values1.begin(), values1.end());
+    vnorm2.insert(vnorm2.end(), vnorm1.begin(), vnorm1.end());
+    vtex2.insert(vtex2.end(), vtex1.begin(), vtex1.end());
+    fnorm2.insert(fnorm2.end(), fnorm1.begin(), fnorm1.end());
+
+    for (std::size_t i = 0; i < faces1.size(); ++i)
+        faces2.push_back(faces1[i] + offset);
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::TriangleMesh::Ptr
+mesh_components (TriangleMesh::ConstPtr mesh, std::size_t vertex_threshold)
+{
+    TriangleMesh::FaceList const& faces = mesh->get_faces();
+    TriangleMesh::VertexList const& verts = mesh->get_vertices();
+    VertexInfoList vinfos(mesh);
+
+    std::vector<int> component_per_vertex(verts.size(), -1);
+    std::size_t current_component = 0;
+    for (std::size_t i = 0; i < verts.size(); ++i)
+    {
+        /* Start with a vertex that has no component yet. */
+        if (component_per_vertex[i] >= 0)
+            continue;
+
+        /* Starting from this face, collect faces and assign component ID. */
+        std::list<std::size_t> queue;
+        queue.push_back(i);
+        while (!queue.empty())
+        {
+            std::size_t vid = queue.back();
+            queue.pop_back();
+
+            /* Skip vertices with a componenet already assigned. */
+            if (component_per_vertex[vid] >= 0)
+                continue;
+            component_per_vertex[vid] = current_component;
+
+            /* Add all adjecent vertices to queue. */
+            MeshVertexInfo::VertexRefList const& adj_verts = vinfos[vid].verts;
+            queue.insert(queue.begin(), adj_verts.begin(), adj_verts.end());
+        }
+        current_component += 1;
+    }
+    vinfos.clear();
+
+    std::vector<std::size_t> components_size(current_component, 0);
+    for (std::size_t i = 0; i < component_per_vertex.size(); ++i)
+        components_size[component_per_vertex[i]] += 1;
+
+    TriangleMesh::DeleteList delete_list(verts.size(), false);
+    for (std::size_t i = 0; i < component_per_vertex.size(); ++i)
+        if (components_size[component_per_vertex[i]] <= vertex_threshold)
+            delete_list[i] = true;
+
+    /* Create output mesh, delete vertices, fix face indices. */
+    TriangleMesh::Ptr out_mesh = mesh->duplicate();
+    {
+        TriangleMesh::FaceList& out_faces = out_mesh->get_faces();
+        TriangleMesh::VertexList const& out_verts = out_mesh->get_vertices();
+
+        /* Fill delete list and shift list. */
+        std::size_t deleted = 0;
+        std::vector<std::size_t> idxshift;
+        idxshift.resize(out_verts.size());
+        for (std::size_t i = 0; i < out_verts.size(); ++i)
+        {
+            idxshift[i] = deleted;
+            if (delete_list[i] == true)
+                deleted += 1;
+        }
+
+        /* Create output triangles, fixing indices. */
+        out_faces.clear();
+        for (std::size_t i = 0; i < faces.size(); i += 3)
+        {
+            if (delete_list[faces[i + 0]]
+                || delete_list[faces[i + 1]]
+                || delete_list[faces[i + 2]])
+                continue;
+            for (std::size_t j = 0; j < 3; ++j)
+                out_faces.push_back(faces[i + j] - idxshift[faces[i + j]]);
+        }
+    }
+    /* Delete vertices. */
+    out_mesh->delete_vertices(delete_list);
+    return out_mesh;
 }
 
 /* ---------------------------------------------------------------- */

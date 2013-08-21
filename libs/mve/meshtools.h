@@ -54,6 +54,24 @@ void
 mesh_transform (TriangleMesh::Ptr mesh, math::Matrix4f const& trans);
 
 /**
+ * Merges the first given mesh with the second one, modifying the second one.
+ * All vertex and face attributes are copied, faces itself are copied and
+ * indices are offsetted accordingly. Note that this method will FAIL
+ * if, for example, one mesh with a certain property is merged with a mesh
+ * without that property (e.g. vertex color).
+ */
+void
+mesh_merge (TriangleMesh::ConstPtr mesh1, TriangleMesh::Ptr mesh2);
+
+/**
+ * Discards isolated components with a vertex count below a threshold.
+ * For example, passing 0 does nothing. Passing 1 deletes isolated vertices.
+ * Passing 3 deletes isolated faces, and so on.
+ */
+mve::TriangleMesh::Ptr
+mesh_components (TriangleMesh::ConstPtr mesh, std::size_t vertex_threshold);
+
+/**
  * Scales the mesh such that it fits into a cube with length 1
  * and centers the mesh in the coordinate origin.
  */
