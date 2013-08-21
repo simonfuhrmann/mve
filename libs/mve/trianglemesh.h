@@ -99,6 +99,8 @@ public:
     static Ptr create (void);
     static Ptr create (TriangleMesh::ConstPtr other);
 
+    Ptr duplicate (void) const;
+
     /** Returns the vertex normals. */
     NormalList const& get_vertex_normals (void) const;
     /** Returns the vertex normals. */
@@ -255,6 +257,12 @@ MeshBase::has_vertex_values (void) const
 }
 
 /* ---------------------------------------------------------------- */
+
+inline TriangleMesh::Ptr
+TriangleMesh::duplicate (void) const
+{
+    return Ptr(new TriangleMesh(*this));
+}
 
 inline
 TriangleMesh::TriangleMesh (void)
