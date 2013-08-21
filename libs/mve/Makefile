@@ -5,7 +5,7 @@ OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 LIBRARY := libmve.a
 
 EXT_INCL := -I..
-EXT_LIBS := -L. -L../util -lmve -lutil -lpng -ljpeg -ltiff
+EXT_LIBS := -lpng -ljpeg -ltiff
 
 TEST_SRC := _test_image.cc
 TEST_BIN := _test
@@ -19,10 +19,10 @@ ${LIBRARY}: ${OBJECTS}
 	ar rcs $@ $^
 	chmod a+x $@
 
-${TEST_BIN}: ${LIBRARY} FORCE
-	${CXX} -o $@ ${TEST_SRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
+${TEST_BIN}: ${TEST_SRC} ${LIBRARY} ../util/libutil.a
+	${CXX} -o $@ $^ ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
 
-_gtest: ${GTEST_OBJS} ${OBJECTS}
+_gtest: ${GTEST_OBJS} ${LIBRARY} ../util/libutil.a
 	${CXX} -o $@ $^ ${GTEST_LIBS} ${EXT_LIBS}
 
 _gtest_%.o: _gtest_%.cc
@@ -32,11 +32,11 @@ _gtest_%.o: _gtest_%.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
 
 Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
+	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
 
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
+clean:
+	${RM} ${OBJECTS} ${LIBRARY} ${TEST_BIN} _gtest ${GTEST_OBJS} Makefile.dep
 
-FORCE:
+.PHONY: clean
 
 -include Makefile.dep

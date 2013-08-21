@@ -16,7 +16,7 @@ ${LIBRARY}: ${OBJECTS}
 	ar rcs $@ $^
 	chmod a+x $@
 
-_gtest: ${GTEST_OBJS} ${OBJECTS}
+_gtest: ${GTEST_OBJS} ${LIBRARY}
 	${CXX} -o $@ $^ ${GTEST_LIBS} ${EXT_LIBS}
 
 _gtest_%.o: _gtest_%.cc
@@ -26,11 +26,11 @@ _gtest_%.o: _gtest_%.cc
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
 
 Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
+	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
 
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
+clean:
+	${RM} ${OBJECTS} ${LIBRARY} _gtest ${GTEST_OBJS} Makefile.dep
 
-FORCE:
+.PHONY: clean
 
 -include Makefile.dep
