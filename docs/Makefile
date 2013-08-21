@@ -1,7 +1,7 @@
-doxygen: FORCE
+doxygen:
 	doxygen doxygen/Doxyfile
 
 clean:
 	rm -rf doxygen/html/
 
-FORCE:
+.PHONY: clean doxygen

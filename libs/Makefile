@@ -7,7 +7,9 @@ all:
 	${MAKE} -j${CORES} -C ogl 
 
 clean:
-	${MAKE} -C util clean
-	${MAKE} -C mve clean
-	${MAKE} -C dmrecon clean
-	${MAKE} -C ogl clean
+	${MAKE} -C util $@
+	${MAKE} -C mve $@
+	${MAKE} -C dmrecon $@
+	${MAKE} -C ogl $@
+
+.PHONY: all clean

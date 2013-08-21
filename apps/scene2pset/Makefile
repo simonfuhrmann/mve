@@ -16,11 +16,11 @@ ${BINARY}: ${OBJECTS} ${LIBDIR}/mve/libmve.a ${LIBDIR}/util/libutil.a
 	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL} ${OPENMP}
 
 Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
+	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
 
-clean: FORCE
-	${RM} ${OBJECTS} ${BINARY} ${TESTBIN}
+clean:
+	${RM} ${OBJECTS} ${BINARY} ${TESTBIN} Makefile.dep
 
-FORCE:
+.PHONY: clean
 
 -include Makefile.dep
