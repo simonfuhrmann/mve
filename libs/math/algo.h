@@ -372,6 +372,18 @@ from_gray_code (int gc)
     return ret;
 }
 
+template <typename T>
+inline void
+sort_values (T* a, T* b, T* c)
+{
+    if (*b < *a)
+        std::swap(*a, *b);
+    if (*c < *b)
+        std::swap(*b, *c);
+    if (*b < *a)
+        std::swap(*b, *a);
+}
+
 /* ------------------------ for-each functors --------------------- */
 
 /** for-each functor: multiplies operand with constant factor. */

@@ -163,3 +163,32 @@ TEST(AlgoTest, FastPowTest)
     EXPECT_EQ(512, math::algo::fastpow(2, 9));
     EXPECT_EQ(1024, math::algo::fastpow(2, 10));
 }
+
+TEST(AlgoTest, SortValues)
+{
+    int a, b, c;
+
+    a = 1; b = 2; c = 3;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 1; b = 3; c = 2;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 2; b = 1; c = 3;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 2; b = 3; c = 1;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 3; b = 1; c = 2;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 3; b = 2; c = 1;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+}
