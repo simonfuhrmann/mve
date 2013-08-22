@@ -26,8 +26,8 @@ main (int argc, char** argv)
     args.set_description(
         "Converts the mesh given by IN_MESH to the output file OUT_MESH. "
         "The format of the input and output mesh are detected by extension. "
-        "Supported file formats are .off, .ply (Stanford), .npts (PoissonSR) "
-        "and .pbrt.");
+        "Supported file formats are .off, .ply (Stanford), .npts or .bnpts "
+        "(Poisson Surface Reconstruction) and .pbrt.");
     args.add_option('n', "normals", false, "Compute vertex normals");
     args.parse(argc, argv);
 

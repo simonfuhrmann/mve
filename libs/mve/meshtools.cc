@@ -48,7 +48,7 @@ save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
         save_pbrt_mesh(mesh, filename);
     else if (util::string::right(filename, 5) == ".npts")
         save_npts_mesh(mesh, filename, false);
-    else if (util::string::right(filename, 5) == ".bnpts")
+    else if (util::string::right(filename, 6) == ".bnpts")
         save_npts_mesh(mesh, filename, true);
     else
         throw std::runtime_error("Extension not recognized");
