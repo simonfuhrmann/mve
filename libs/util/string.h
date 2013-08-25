@@ -55,7 +55,7 @@ void clip_whitespaces (std::string* str);
 std::string clipped_whitespaces (std::string const& str);
 
 /** Clips newlines from the end of the string, in-place. */
-void clip_newlines (std::string& str);
+void clip_newlines (std::string* str);
 
 /** Clips newlines from the end of the string. */
 std::string clipped_newlines (std::string const& str);
