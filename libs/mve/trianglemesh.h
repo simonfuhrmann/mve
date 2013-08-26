@@ -151,6 +151,12 @@ public:
      */
     void delete_vertices (DeleteList const& dlist);
 
+    /**
+     * Deletes all invalid triangles, i.e. those where all three vertices
+     * reference the sample vertex ID.
+     */
+    void delete_invalid_triangles (void);
+
     /** Returns the memory consumption in bytes. */
     std::size_t get_byte_size (void) const;
 
