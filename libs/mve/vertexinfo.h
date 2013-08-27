@@ -60,8 +60,6 @@ public:
     typedef util::RefPtr<VertexInfoList> Ptr;
     typedef util::RefPtr<VertexInfoList const> ConstPtr;
 
-private:
-    void order_and_classify (TriangleMesh const& mesh, std::size_t idx);
 
 public:
     /* Creates an uninitialized vertex info list. */
@@ -77,6 +75,14 @@ public:
 
     /** Calculates vertex info for the given mesh. */
     void calculate (TriangleMesh::ConstPtr mesh);
+
+    /**
+     * Orders and classifies adjacent vertices and faces.
+     * This is usually done by calculate() but can be called after modifying
+     * the mesh data structure. The list of adjacent vertices and faces is
+     * expected to be complete.
+     */
+    void order_and_classify (TriangleMesh const& mesh, std::size_t idx);
 
     /** Prints debug information to stdout. */
     void print_debug (void);

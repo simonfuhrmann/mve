@@ -182,6 +182,15 @@ TriangleMesh::delete_vertices (DeleteList const& dlist)
 
 /* ---------------------------------------------------------------- */
 
+void
+TriangleMesh::delete_invalid_triangles (void)
+{
+    //std::size_t read_pos = this->faces.size() - 3;
+    // TODO
+}
+
+/* ---------------------------------------------------------------- */
+
 std::size_t
 TriangleMesh::get_byte_size (void) const
 {
