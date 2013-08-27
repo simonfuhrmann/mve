@@ -182,11 +182,38 @@ TriangleMesh::delete_vertices (DeleteList const& dlist)
 
 /* ---------------------------------------------------------------- */
 
+namespace
+{
+    bool
+    is_valid_triangle (TriangleMesh::VertexID const* ids)
+    {
+        return ids[0] != ids[1] || ids[0] != ids[2];
+    }
+}
+
 void
 TriangleMesh::delete_invalid_triangles (void)
 {
-    //std::size_t read_pos = this->faces.size() - 3;
-    // TODO
+    /* Valid and invalid iterator. */
+    std::size_t ii = 0;
+    std::size_t vi = this->faces.size();
+    while (vi > ii)
+    {
+        /* Search the next invalid face. */
+        while (ii < this->faces.size() && is_valid_triangle(&this->faces[ii]))
+            ii += 3;
+        /* Search the last valid face. */
+        vi -= 3;
+        while (vi > ii && !is_valid_triangle(&this->faces[vi]))
+            vi -= 3;
+        if (ii >= vi)
+            break;
+        /* Swap valid and invalid face. */
+        std::swap(this->faces[vi + 0], this->faces[ii + 0]);
+        std::swap(this->faces[vi + 1], this->faces[ii + 1]);
+        std::swap(this->faces[vi + 2], this->faces[ii + 2]);
+    }
+    this->faces.resize(ii);
 }
 
 /* ---------------------------------------------------------------- */
