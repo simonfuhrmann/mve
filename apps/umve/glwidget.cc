@@ -170,9 +170,6 @@ GLWidget::keyReleaseEvent (QKeyEvent* event)
     ogl::KeyboardEvent e;
     e.type = ogl::KEYBOARD_EVENT_RELEASE;
     e.keycode = event->key();
-    // FIXME: HACK
-    if (e.keycode == -1)
-        e.keycode = 0x01000020; // KEY_SHIFT
     this->context->keyboard_event(e);
     this->repaint();
 }
