@@ -53,13 +53,6 @@ VertexInfoList::order_and_classify (TriangleMesh const& mesh,
     MeshVertexInfo& vinfo(this->at(idx));
     MeshVertexInfo::FaceRefList& adj(vinfo.faces);
 
-    /* Detect unreferenced vertices. */
-    if (adj.empty())
-    {
-        vinfo.vclass = VERTEX_CLASS_UNREF;
-        return;
-    }
-
     /* Build list of FaceRep objects to sort faces. */
     FaceRepList flist;
     for (std::size_t i = 0; i < adj.size(); ++i)
@@ -72,6 +65,14 @@ VertexInfoList::order_and_classify (TriangleMesh const& mesh,
                     faces[foff + (j + 1) % 3], faces[foff + (j + 2) % 3]));
                 break;
             }
+    }
+
+    /* Detect unreferenced vertices. */
+    if (flist.empty())
+    {
+        vinfo.vclass = VERTEX_CLASS_UNREF;
+        vinfo.verts.clear();
+        return;
     }
 
     /* Sort faces by chaining adjacent faces in sflist. */
