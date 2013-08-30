@@ -21,6 +21,7 @@ struct AppSettings
     std::string outmesh;
     std::string dmname;
     std::string image;
+    std::string mask;
     std::string aabb;
     bool with_normals;
     bool with_scale;
@@ -59,6 +60,7 @@ main (int argc, char** argv)
     args.add_option('c', "with-conf", false, "Writes points with confidences (PLY only)");
     args.add_option('d', "depthmap", true, "Name of depthmap to use [depthmap]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
+    args.add_option('m', "mask", true, "Name of mask/silhouette image to clip 3D points []");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
 
@@ -87,6 +89,7 @@ main (int argc, char** argv)
             case 'c': conf.with_conf = true; break;
             case 'd': conf.dmname = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
+            case 'm': conf.mask = arg->arg; break;
             case 'v': parse_ids(arg->arg, conf.ids); break;
             case 'b': conf.aabb = arg->arg; break;
             default: throw std::runtime_error("Unknown option");
@@ -242,6 +245,66 @@ main (int argc, char** argv)
         dm.reset();
         ci.reset();
         view->cache_cleanup();
+    }
+
+    /* If a mask is given, clip vertices with the masks in all images. */
+    std::vector<bool> delete_list(verts.size(), false);
+    if (!conf.mask.empty())
+    {
+        std::cout << "Filtering points using silhouette masks..." << std::endl;
+        std::size_t num_filtered = 0;
+
+        for (std::size_t i = 0; i < views.size(); ++i)
+        {
+            mve::View::Ptr view = views[i];
+            if (view == NULL || view->get_camera().flen == 0.0f)
+                continue;
+            mve::ByteImage::Ptr mask = view->get_byte_image(conf.mask);
+            if (mask == NULL)
+            {
+                std::cout << "Mask not found for image \""
+                    << view->get_name() << "\", skipping." << std::endl;
+                continue;
+            }
+            if (mask->channels() != 1)
+            {
+                std::cout << "Expected 1-channel mask for image \""
+                    << view->get_name() << "\", skipping." << std::endl;
+                continue;
+            }
+
+            std::cout << "Processing mask for \""
+                << view->get_name() << "\"..." << std::endl;
+            mve::CameraInfo cam = view->get_camera();
+            math::Matrix4f wtc;
+            cam.fill_world_to_cam(*wtc);
+            math::Matrix3f calib;
+            cam.fill_calibration(*calib, mask->width(), mask->height());
+
+            /* Iterate every point and check with mask. */
+            for (std::size_t j = 0; j < verts.size(); ++j)
+            {
+                if (delete_list[j])
+                    continue;
+                math::Vec3f p = calib * wtc.mult(verts[j], 1.0f);
+                p[0] = p[0] / p[2];
+                p[1] = p[1] / p[2];
+                if (p[0] < 0.0f || p[1] < 0.0f
+                    || p[0] >= mask->width() || p[1] >= mask->height())
+                    continue;
+                int const ix = static_cast<int>(p[0]);
+                int const iy = static_cast<int>(p[1]);
+                if (mask->at(ix, iy, 0) == 0)
+                {
+                    delete_list[j] = true;
+                    num_filtered += 1;
+                }
+            }
+            view->cache_cleanup();
+        }
+        pset->delete_vertices(delete_list);
+        std::cout << "Filtered a total of " << num_filtered
+            << " points." << std::endl;
     }
 
     std::cout << "Writing final point set..." << std::endl;
