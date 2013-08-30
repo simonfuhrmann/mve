@@ -21,11 +21,11 @@ class SceneInspect : public QWidget
 private:
     GLWidget* glw;
     QTabWidget* scene_details;
-
     QAction* action_open_mesh;
     QAction* action_reload_shaders;
     QAction* action_show_details;
     QAction* action_save_screenshot;
+    QString last_mesh_dir;
 
     std::vector<GuiContext*> contexts;
     SceneOperations* scene_operations;

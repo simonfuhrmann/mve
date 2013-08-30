@@ -533,8 +533,13 @@ ViewInspect::on_fit_to_window (void)
 void
 ViewInspect::on_open (void)
 {
-    QString filename = QFileDialog::getOpenFileName(this,
-        tr("Open File"), QDir::currentPath());
+    QFileDialog dialog(this, tr("Open File"), last_image_dir);
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    if (!dialog.exec())
+        return;
+
+    last_image_dir = dialog.directory().path();
+    QString filename = dialog.selectedFiles()[0];
 
     if (filename.isEmpty())
         return;
