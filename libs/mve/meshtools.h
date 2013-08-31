@@ -65,11 +65,11 @@ mesh_merge (TriangleMesh::ConstPtr mesh1, TriangleMesh::Ptr mesh2);
 
 /**
  * Discards isolated components with a vertex count below a threshold.
- * For example, passing 0 does nothing. Passing 1 deletes isolated vertices.
+ * Passing 0 does nothing. Passing 1 or 2 deletes isolated vertices.
  * Passing 3 deletes isolated faces, and so on.
  */
-mve::TriangleMesh::Ptr
-mesh_components (TriangleMesh::ConstPtr mesh, std::size_t vertex_threshold);
+void
+mesh_components (TriangleMesh::Ptr mesh, std::size_t vertex_threshold);
 
 /**
  * Scales the mesh such that it fits into a cube with length 1

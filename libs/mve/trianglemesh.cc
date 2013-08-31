@@ -167,6 +167,9 @@ TriangleMesh::ensure_normals (bool face, bool vertex)
 void
 TriangleMesh::delete_vertices (DeleteList const& dlist)
 {
+    if (dlist.size() != this->vertices.size())
+        throw std::invalid_argument("Delete list does not match vertex list");
+
     if (this->has_vertex_normals())
         math::algo::vector_clean(this->vertex_normals, dlist);
     if (this->has_vertex_colors())
@@ -182,6 +185,46 @@ TriangleMesh::delete_vertices (DeleteList const& dlist)
 
 /* ---------------------------------------------------------------- */
 
+void
+TriangleMesh::delete_vertices_fix_faces (DeleteList const& dlist)
+{
+    if (dlist.size() != this->vertices.size())
+        throw std::invalid_argument("Delete list does not match vertex list");
+
+    /* Each vertex is shifted to the left. This list tracks the distance. */
+    std::vector<std::size_t> idxshift(this->vertices.size(), 0);
+    std::size_t num_deleted = 0;
+    for (std::size_t i = 0; i < this->vertices.size(); ++i)
+    {
+        idxshift[i] = num_deleted;
+        if (dlist[i] == true)
+            num_deleted += 1;
+    }
+
+    /* Invalidate faces referencing deleted vertices and fix vertex IDs. */
+    for (std::size_t i = 0; i < this->faces.size(); i += 3)
+    {
+        if (dlist[faces[i + 0]] || dlist[faces[i + 1]] || dlist[faces[i + 2]])
+        {
+            faces[i + 0] = 0;
+            faces[i + 1] = 0;
+            faces[i + 2] = 0;
+        }
+        else
+        {
+            faces[i + 0] -= idxshift[faces[i + 0]];
+            faces[i + 1] -= idxshift[faces[i + 1]];
+            faces[i + 2] -= idxshift[faces[i + 2]];
+        }
+    }
+
+    /* Compact vertex and attribute vectors, remove invalid faces. */
+    this->delete_vertices(dlist);
+    this->delete_invalid_faces();
+}
+
+/* ---------------------------------------------------------------- */
+
 namespace
 {
     bool
@@ -192,7 +235,7 @@ namespace
 }
 
 void
-TriangleMesh::delete_invalid_triangles (void)
+TriangleMesh::delete_invalid_faces (void)
 {
     /* Valid and invalid iterator. */
     std::size_t ii = 0;

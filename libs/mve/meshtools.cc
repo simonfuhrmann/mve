@@ -190,6 +190,7 @@ mesh_transform (TriangleMesh::Ptr mesh, math::Matrix4f const& trans)
 }
 
 /* ---------------------------------------------------------------- */
+// FIXME: Find a way to abstract from the mesh attributes.
 
 void
 mesh_merge (TriangleMesh::ConstPtr mesh1, TriangleMesh::Ptr mesh2)
@@ -235,16 +236,14 @@ mesh_merge (TriangleMesh::ConstPtr mesh1, TriangleMesh::Ptr mesh2)
 
 /* ---------------------------------------------------------------- */
 
-mve::TriangleMesh::Ptr
-mesh_components (TriangleMesh::ConstPtr mesh, std::size_t vertex_threshold)
+void
+mesh_components (TriangleMesh::Ptr mesh, std::size_t vertex_threshold)
 {
-    TriangleMesh::FaceList const& faces = mesh->get_faces();
     TriangleMesh::VertexList const& verts = mesh->get_vertices();
     VertexInfoList vinfos(mesh);
-
-    std::vector<int> component_per_vertex(verts.size(), -1);
-    std::size_t current_component = 0;
-    for (std::size_t i = 0; i < verts.size(); ++i)
+    std::vector<int> component_per_vertex(vinfos.size(), -1);
+    int current_component = 0;
+    for (std::size_t i = 0; i < vinfos.size(); ++i)
     {
         /* Start with a vertex that has no component yet. */
         if (component_per_vertex[i] >= 0)
@@ -255,63 +254,35 @@ mesh_components (TriangleMesh::ConstPtr mesh, std::size_t vertex_threshold)
         queue.push_back(i);
         while (!queue.empty())
         {
-            std::size_t vid = queue.back();
-            queue.pop_back();
+            std::size_t vid = queue.front();
+            queue.pop_front();
 
             /* Skip vertices with a componenet already assigned. */
             if (component_per_vertex[vid] >= 0)
                 continue;
             component_per_vertex[vid] = current_component;
 
-            /* Add all adjecent vertices to queue. */
+            /* Add all adjacent vertices to queue. */
             MeshVertexInfo::VertexRefList const& adj_verts = vinfos[vid].verts;
-            queue.insert(queue.begin(), adj_verts.begin(), adj_verts.end());
+            queue.insert(queue.end(), adj_verts.begin(), adj_verts.end());
         }
         current_component += 1;
     }
     vinfos.clear();
 
+    /* Create a list of components and count vertices per component. */
     std::vector<std::size_t> components_size(current_component, 0);
     for (std::size_t i = 0; i < component_per_vertex.size(); ++i)
         components_size[component_per_vertex[i]] += 1;
 
+    /* Mark vertices to be deleted if part of a small component. */
     TriangleMesh::DeleteList delete_list(verts.size(), false);
     for (std::size_t i = 0; i < component_per_vertex.size(); ++i)
         if (components_size[component_per_vertex[i]] <= vertex_threshold)
             delete_list[i] = true;
 
-    /* Create output mesh, delete vertices, fix face indices. */
-    TriangleMesh::Ptr out_mesh = mesh->duplicate();
-    {
-        TriangleMesh::FaceList& out_faces = out_mesh->get_faces();
-        TriangleMesh::VertexList const& out_verts = out_mesh->get_vertices();
-
-        /* Fill delete list and shift list. */
-        std::size_t deleted = 0;
-        std::vector<std::size_t> idxshift;
-        idxshift.resize(out_verts.size());
-        for (std::size_t i = 0; i < out_verts.size(); ++i)
-        {
-            idxshift[i] = deleted;
-            if (delete_list[i] == true)
-                deleted += 1;
-        }
-
-        /* Create output triangles, fixing indices. */
-        out_faces.clear();
-        for (std::size_t i = 0; i < faces.size(); i += 3)
-        {
-            if (delete_list[faces[i + 0]]
-                || delete_list[faces[i + 1]]
-                || delete_list[faces[i + 2]])
-                continue;
-            for (std::size_t j = 0; j < 3; ++j)
-                out_faces.push_back(faces[i + j] - idxshift[faces[i + j]]);
-        }
-    }
-    /* Delete vertices. */
-    out_mesh->delete_vertices(delete_list);
-    return out_mesh;
+    /* Delete vertices and faces indexing deleted vertices. */
+    mesh->delete_vertices_fix_faces(delete_list);
 }
 
 /* ---------------------------------------------------------------- */
@@ -409,40 +380,20 @@ mesh_delete_unreferenced (TriangleMesh::Ptr mesh)
     if (mesh == NULL)
         throw std::invalid_argument("NULL mesh given");
 
-    /* Create vertex info and some short hands. */
-    VertexInfoList::Ptr vinfo(VertexInfoList::create(mesh));
-    TriangleMesh::VertexList const& verts(mesh->get_vertices());
-    TriangleMesh::FaceList& faces(mesh->get_faces());
-
-    /* Each vertex is shifted to the left. This list tracks the distance. */
-    std::vector<std::size_t> idxshift;
-    idxshift.resize(verts.size());
-
-    /* The delete list tracks which vertices are to be deleted. */
-    TriangleMesh::DeleteList dlist;
-    dlist.resize(verts.size(), false);
-
-    /* Fill delete list and shift list. */
-    std::size_t deleted = 0;
-    for (std::size_t i = 0; i < verts.size(); ++i)
+    VertexInfoList vinfos(mesh);
+    TriangleMesh::DeleteList dlist(vinfos.size(), false);
+    std::size_t num_deleted = 0;
+    for (std::size_t i = 0; i < vinfos.size(); ++i)
     {
-        idxshift[i] = deleted;
-
-        if (vinfo->at(i).vclass == VERTEX_CLASS_UNREF)
+        if (vinfos[i].vclass == VERTEX_CLASS_UNREF)
         {
             dlist[i] = true;
-            deleted += 1;
+            num_deleted += 1;
         }
     }
 
-    /* Repair face list. */
-    for (std::size_t i = 0; i < faces.size(); ++i)
-        faces[i] -= idxshift[faces[i]];
-
-    /* Delete vertices. */
-    mesh->delete_vertices(dlist);
-
-    return deleted;
+    mesh->delete_vertices_fix_faces(dlist);
+    return num_deleted;
 }
 
 MVE_GEOM_NAMESPACE_END

@@ -151,11 +151,17 @@ public:
      */
     void delete_vertices (DeleteList const& dlist);
 
+    /*
+     * Deletes marked vertices and related attributes, deletes faces
+     * referencing marked vertices and fixes face indices.
+     */
+    void delete_vertices_fix_faces (DeleteList const& dlist);
+
     /**
      * Deletes all invalid triangles, i.e. those where all three vertices
      * reference the sample vertex ID.
      */
-    void delete_invalid_triangles (void);
+    void delete_invalid_faces (void);
 
     /** Returns the memory consumption in bytes. */
     std::size_t get_byte_size (void) const;

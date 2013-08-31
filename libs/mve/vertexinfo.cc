@@ -1,6 +1,5 @@
-#include <iostream>
-#include <list>
 #include <algorithm>
+#include <list>
 #include <set>
 
 #include "mve/vertexinfo.h"
@@ -125,15 +124,16 @@ VertexInfoList::order_and_classify (TriangleMesh const& mesh,
     vinfo.verts.clear();
     switch (vinfo.vclass)
     {
-    case VERTEX_CLASS_SIMPLE:
-    case VERTEX_CLASS_BORDER:
-        for (FaceRepList::iterator i = sflist.begin(); i != sflist.end(); ++i)
-            vinfo.verts.push_back(i->first);
-        if (vinfo.vclass == VERTEX_CLASS_BORDER)
-            vinfo.verts.push_back(sflist.back().second);
-        break;
+        case VERTEX_CLASS_SIMPLE:
+        case VERTEX_CLASS_BORDER:
+            for (FaceRepList::const_iterator i = sflist.begin();
+                i != sflist.end(); ++i)
+                vinfo.verts.push_back(i->first);
+            if (vinfo.vclass == VERTEX_CLASS_BORDER)
+                vinfo.verts.push_back(sflist.back().second);
+            break;
 
-    case VERTEX_CLASS_COMPLEX:
+        case VERTEX_CLASS_COMPLEX:
         {
             std::set<std::size_t> vset;
             for (FaceRepList::iterator i = sflist.begin();
@@ -145,31 +145,10 @@ VertexInfoList::order_and_classify (TriangleMesh const& mesh,
             vinfo.verts.insert(vinfo.verts.begin(), vset.begin(), vset.end());
             break;
         }
-    case VERTEX_CLASS_UNREF:
-    default:
-        break;
-    }
-}
 
-/* ---------------------------------------------------------------- */
-
-void
-VertexInfoList::print_debug (void)
-{
-    for (std::size_t i = 0; i < this->size(); ++i)
-    {
-        MeshVertexInfo& vinfo = this->at(i);
-        std::cout << "Stats for vertex " << i << ", class "
-            << vinfo.vclass << std::endl;
-        std::cout << "  Faces: ";
-        for (std::size_t i = 0; i < vinfo.faces.size(); ++i)
-            std::cout << vinfo.faces[i] << " ";
-        std::cout << std::endl;
-
-        std::cout << "  Vertices: ";
-        for (std::size_t i = 0; i < vinfo.verts.size(); ++i)
-            std::cout << vinfo.verts[i] << " ";
-        std::cout << std::endl;
+        case VERTEX_CLASS_UNREF:
+        default:
+            break;
     }
 }
 

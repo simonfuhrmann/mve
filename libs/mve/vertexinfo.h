@@ -6,6 +6,7 @@
 #ifndef MVE_VERTEX_INFO_HEADER
 #define MVE_VERTEX_INFO_HEADER
 
+#include <algorithm>
 #include <vector>
 
 #include "util/refptr.h"
@@ -44,6 +45,11 @@ struct MeshVertexInfo
     MeshVertexClass vclass;
     VertexRefList verts;
     FaceRefList faces;
+
+    void remove_adjacent_face (std::size_t face_id);
+    void remove_adjacent_vertex (std::size_t vertex_id);
+    void replace_adjacent_face (std::size_t old_value, std::size_t new_value);
+    void replace_adjacent_vertex (std::size_t old_value, std::size_t new_value);
 };
 
 /* ---------------------------------------------------------------- */
@@ -79,13 +85,10 @@ public:
     /**
      * Orders and classifies adjacent vertices and faces.
      * This is usually done by calculate() but can be called after modifying
-     * the mesh data structure. The list of adjacent vertices and faces is
-     * expected to be complete.
+     * the mesh data structure. The list of adjacent faces is expected
+     * to be complete.
      */
     void order_and_classify (TriangleMesh const& mesh, std::size_t idx);
-
-    /** Prints debug information to stdout. */
-    void print_debug (void);
 
     /** Checks for the existence of and edge between the given vertices. */
     bool is_mesh_edge (std::size_t v1, std::size_t v2);
@@ -100,6 +103,34 @@ public:
 };
 
 /* ------------------------- Implementation ----------------------- */
+
+inline void
+MeshVertexInfo::remove_adjacent_face (std::size_t face_id)
+{
+    this->faces.erase(std::remove(this->faces.begin(), this->faces.end(),
+        face_id), this->faces.end());
+}
+
+inline void
+MeshVertexInfo::remove_adjacent_vertex (std::size_t vertex_id)
+{
+    this->verts.erase(std::remove(this->verts.begin(), this->verts.end(),
+        vertex_id), this->verts.end());
+}
+
+inline void
+MeshVertexInfo::replace_adjacent_face (std::size_t old_value,
+    std::size_t new_value)
+{
+    std::replace(this->faces.begin(), this->faces.end(), old_value, new_value);
+}
+
+inline void
+MeshVertexInfo::replace_adjacent_vertex (std::size_t old_value,
+    std::size_t new_value)
+{
+    std::replace(this->verts.begin(), this->verts.end(), old_value, new_value);
+}
 
 inline
 VertexInfoList::VertexInfoList (void)
