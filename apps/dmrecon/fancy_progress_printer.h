@@ -30,22 +30,26 @@ private:
     bool done;
 };
 
+/* -------------------------------------------------------------- */
+
 class FancyProgressPrinter : public util::Thread
 {
+    friend class ProgressHandle;
+
 public:
     void setBasePath(std::string _basePath);
     void setNumViews(int _numViews);
 
     template<class T>
     void addRefViews(T const& views);
-
     void addRefView(int viewID);
 
     virtual void* run();
     void stop();
 
 private:
-    enum ViewStatus {
+    enum ViewStatus
+    {
         STATUS_IGNORED,
         STATUS_QUEUED,
         STATUS_IN_PROGRESS,
@@ -53,22 +57,21 @@ private:
         STATUS_FAILED
     };
 
+private:
+    void setStatus(int refViewNr, ViewStatus status);
+    void insertRecon(mvs::DMRecon const *ptr);
+    void eraseRecon(mvs::DMRecon const *ptr);
+
+private:
     util::Mutex mutex;
     std::string basePath;
     bool isRunning;
 
     std::vector<ViewStatus> viewStatus;
     std::set<mvs::DMRecon const *> runningRecons;
-
-    void setStatus(int refViewNr, ViewStatus status) {
-        viewStatus.at(refViewNr) = status;
-    }
-
-    void insertRecon(mvs::DMRecon const *ptr);
-    void eraseRecon(mvs::DMRecon const *ptr);
-
-    friend class ProgressHandle;
 };
+
+/* -------------------------------------------------------------- */
 
 inline void
 FancyProgressPrinter::setBasePath(std::string _basePath)
@@ -98,7 +101,7 @@ FancyProgressPrinter::addRefViews(T const& views)
     util::MutexLock lock(this->mutex);
     for (typename T::const_iterator it = views.begin(); it != views.end(); ++it)
     {
-        if (*it < this->viewStatus.size())
+        if (static_cast<std::size_t>(*it) < this->viewStatus.size())
             this->viewStatus[*it] = STATUS_QUEUED;
     }
 }
@@ -124,6 +127,12 @@ FancyProgressPrinter::stop()
     this->isRunning = false;
 }
 
+inline void
+FancyProgressPrinter::setStatus (int refViewNr, ViewStatus status)
+{
+    viewStatus.at(refViewNr) = status;
+}
+
 inline
 ProgressHandle::ProgressHandle(FancyProgressPrinter &progress_printer_,
                                const mvs::Settings &settings_)
@@ -139,7 +148,6 @@ void ProgressHandle::setRecon(const mvs::DMRecon &recon_)
     this->recon = &recon_;
     this->progress_printer.insertRecon(this->recon);
 }
-
 
 inline
 ProgressHandle::~ProgressHandle()

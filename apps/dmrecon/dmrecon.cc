@@ -183,7 +183,8 @@ main (int argc, char** argv)
     if (progress_style == PROGRESS_FANCY)
         fancyProgressPrinter.pt_create();
 
-    if (master_id >= 0) {
+    if (master_id >= 0)
+    {
         std::cout << "Reconstructing view with ID " << master_id << std::endl;
         mySettings.refViewNr = (std::size_t)master_id;
         fancyProgressPrinter.addRefView(master_id);
@@ -201,12 +202,14 @@ main (int argc, char** argv)
         mve::Scene::ViewList& views(scene->get_views());
         std::string embedding_name = "depth-L" +
             util::string::get(mySettings.scale);
-        if (listIDs.empty()) {
+        if (listIDs.empty())
+        {
             for(std::size_t i = 0; i < views.size(); ++i)
                 listIDs.push_back(i);
             std::cout << "Reconstructing all views..." << std::endl;
         }
-        else {
+        else
+        {
             std::cout << "Reconstructing views from list..." << std::endl;
         }
         fancyProgressPrinter.addRefViews(listIDs);
