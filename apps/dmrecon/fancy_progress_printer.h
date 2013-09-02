@@ -61,7 +61,7 @@ private:
     std::set<mvs::DMRecon const *> runningRecons;
 
     void setStatus(int refViewNr, ViewStatus status) {
-        viewStatus[refViewNr] = status;
+        viewStatus.at(refViewNr) = status;
     }
 
     void insertRecon(mvs::DMRecon const *ptr);
@@ -88,7 +88,7 @@ inline void
 FancyProgressPrinter::addRefView(int viewID)
 {
     util::MutexLock lock(this->mutex);
-    this->viewStatus[viewID] = STATUS_QUEUED;
+    this->viewStatus.at(viewID) = STATUS_QUEUED;
 }
 
 template<class T>
@@ -97,7 +97,10 @@ FancyProgressPrinter::addRefViews(T const& views)
 {
     util::MutexLock lock(this->mutex);
     for (typename T::const_iterator it = views.begin(); it != views.end(); ++it)
-        this->viewStatus[*it] = STATUS_QUEUED;
+    {
+        if (*it < this->viewStatus.size())
+            this->viewStatus[*it] = STATUS_QUEUED;
+    }
 }
 
 inline void
