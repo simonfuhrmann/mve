@@ -244,8 +244,11 @@ ToneMappingHistogram::get_mapping_range (float* map_min, float* map_max)
 /* ---------------------------------------------------------------- */
 
 ToneMapping::ToneMapping (void)
+    : ignore_zeros(false)
 {
     this->histogram = new ToneMappingHistogram();
+    this->ignore_zeros_checkbox = new QCheckBox("Ignore zeros");
+    this->ignore_zeros_checkbox->setChecked(false);
     this->gamma_label = new QLabel("1.00");
     this->gamma_slider = new QSlider();
     this->gamma_slider->setRange(-20, 20);
@@ -277,6 +280,8 @@ ToneMapping::ToneMapping (void)
     main_layout->setSpacing(0);
     main_layout->addWidget(this->histogram);
     main_layout->addSpacing(10);
+    main_layout->addWidget(this->ignore_zeros_checkbox);
+    main_layout->addSpacing(10);
     main_layout->addLayout(gamma_box);
     main_layout->addWidget(this->gamma_slider);
     main_layout->addSpacing(10);
@@ -287,6 +292,8 @@ ToneMapping::ToneMapping (void)
     main_layout->addStretch(1);
     this->setLayout(main_layout);
 
+    this->connect(this->ignore_zeros_checkbox, SIGNAL(toggled(bool)),
+        this, SLOT(on_ignore_zeroes_changed()));
     this->connect(this->gamma_slider, SIGNAL(valueChanged(int)),
         this, SLOT(on_gamma_value_changed()));
     this->connect(this->highlight_slider, SIGNAL(valueChanged(int)),
@@ -310,6 +317,15 @@ ToneMapping::reset (void)
     this->image_vmax = 0.0f;
     std::fill(this->channel_assignment, this->channel_assignment + 3, 0);
     // TODO: Clear/disable widgets?
+}
+
+void
+ToneMapping::on_ignore_zeroes_changed (void)
+{
+    this->ignore_zeros = this->ignore_zeros_checkbox->isChecked();
+    this->find_min_max();
+    this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
+    emit this->tone_mapping_changed();
 }
 
 void
@@ -397,6 +413,38 @@ ToneMapping::setup_histogram (mve::ByteImage::ConstPtr img)
 }
 
 void
+ToneMapping::find_min_max ()
+{
+    if (this->image->get_type() != mve::IMAGE_TYPE_FLOAT)
+        throw std::invalid_argument("Only float images are supported.");
+
+    mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(*this->image);
+
+    if (this->ignore_zeros)
+    {
+        float min = std::numeric_limits<float>::max();
+        float max = -std::numeric_limits<float>::max();
+
+        for (float const *p = fimg.begin(); p != fimg.end(); ++p)
+        {
+            float v = *p;
+            if (v == 0.0f)
+                continue;
+            min = std::min(min, v);
+            max = std::max(max, v);
+        }
+
+        this->image_vmin = min;
+        this->image_vmax = max;
+    }
+    else
+    {
+        mve::image::find_min_max_value(this->image,
+            &this->image_vmin, &this->image_vmax);
+    }
+}
+
+void
 ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 {
     this->image = img;
@@ -405,8 +453,7 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
     switch (this->image->get_type())
     {
         case mve::IMAGE_TYPE_FLOAT:
-            mve::image::find_min_max_value(this->image,
-                &this->image_vmin, &this->image_vmax);
+            this->find_min_max();
             this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
             break;
 
@@ -417,8 +464,7 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 
         case mve::IMAGE_TYPE_UINT16:
             this->image = mve::image::type_to_type_image<uint16_t, float>(img);
-            mve::image::find_min_max_value(this->image,
-                &this->image_vmin, &this->image_vmax);
+            this->find_min_max();
             this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
             break;
 
