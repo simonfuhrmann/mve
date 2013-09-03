@@ -60,14 +60,14 @@ ToneMappingHistogram::mouseMoveEvent (QMouseEvent* event)
     /* Handle changes to the mapping area. */
     if (this->move_left_handle)
     {
-        this->mapped_left = std::max(0.0f, std::min(this->mapped_right - 0.1f,
+        this->mapped_left = std::max(0.0f, std::min(this->mapped_right - 0.05f,
             static_cast<float>(mouse_x - x_start) / (x_end - x_start)));
         this->update();
         this->timer.start(250);
     }
     if (this->move_right_handle)
     {
-        this->mapped_right = std::max(this->mapped_left + 0.1f, std::min(1.0f,
+        this->mapped_right = std::max(this->mapped_left + 0.05f, std::min(1.0f,
             static_cast<float>(mouse_x - x_start) / (x_end - x_start)));
         this->update();
         this->timer.start(250);
