@@ -362,17 +362,20 @@ ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
 {
     util::WallTimer timer;
     std::cout << "Computing histogram..." << std::flush;
-    float const vmin = std::max(0.000001f, this->image_vmin);
-    float const vmax = std::max(0.000001f, this->image_vmax);
-    float const log_vmin = std::log10(vmin);
-    float const log_vmax = std::log10(vmax);
     int const num_bins = this->histogram->preferred_num_bins();
     std::vector<int> bins(num_bins, 0);
-    for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
+    float const image_range = this->image_vmax - this->image_vmin;
+    /* Only build a histogram if the image is not constant. */
+    if (this->image_vmax != this->image_vmin)
     {
-        float value = std::log10(std::max(0.000001f, *ptr));
-        int bin = (value - log_vmin) / (log_vmax - log_vmin) * (num_bins - 1);
-        bins[bin]++;
+        for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
+        {
+            if (*ptr < this->image_vmin || *ptr > this->image_vmax)
+                continue;
+            float normalized = (*ptr - this->image_vmin) / image_range;
+            int bin = std::log10(1.0f + 9.0f * normalized) * (num_bins - 1);
+            bins[bin] += 1;
+        }
     }
     this->histogram->set_bins(bins);
     std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
@@ -533,12 +536,15 @@ ToneMapping::render (void)
 
     float const gamma_exp = this->gamma_from_slider();
     float const highlight = this->highlight_from_slider();
+    float const image_range = this->image_vmax - this->image_vmin;
+
     float map_min, map_max;
     this->histogram->get_mapping_range(&map_min, &map_max);
-    float log_vmin = std::log10(std::max(0.000001f, this->image_vmin));
-    float log_vmax = std::log10(std::max(0.000001f, this->image_vmax));
-    map_min = std::pow(10.0f, log_vmin + map_min * (log_vmax - log_vmin));
-    map_max = std::pow(10.0f, log_vmin + map_max * (log_vmax - log_vmin));
+    float linear_min = (std::pow(10.0f, map_min) - 1.0f) / 9.0f;
+    float linear_max = (std::pow(10.0f, map_max) - 1.0f) / 9.0f;
+    float min_value = this->image_vmin + linear_min * image_range;
+    float max_value = this->image_vmax + linear_max * image_range;
+
     mve::FloatImage::ConstPtr fimg = this->image;
     uint8_t* out_ptr = ret->begin();
     for (float const* px = fimg->begin();
@@ -555,7 +561,7 @@ ToneMapping::render (void)
             all_below_highlight = all_below_highlight
                 && value <= highlight && value >= 0.0f;
 
-            value = (value - map_min) / (map_max - map_min);
+            value = (value - min_value) / (max_value - min_value);
             value = std::max(0.0f, std::min(1.0f, value));
             if (gamma_exp != 1.0f)
                 value = std::pow(value, gamma_exp);
