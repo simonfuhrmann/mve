@@ -589,7 +589,7 @@ ToneMapping::render (void)
     float linear_min = (std::pow(10.0f, map_min) - 1.0f) / 9.0f;
     float linear_max = (std::pow(10.0f, map_max) - 1.0f) / 9.0f;
     float min_value = this->image_vmin + linear_min * image_range;
-    float max_value = this->image_vmax + linear_max * image_range;
+    float max_value = this->image_vmin + linear_max * image_range;
 
     mve::FloatImage::ConstPtr fimg = this->image;
     uint8_t* out_ptr = ret->begin();
