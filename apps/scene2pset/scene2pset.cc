@@ -26,6 +26,8 @@ struct AppSettings
     bool with_normals;
     bool with_scale;
     bool with_conf;
+    bool poisson_normals;
+    float min_valid_fraction;
     std::vector<std::size_t> ids;
 };
 
@@ -41,6 +43,16 @@ parse_ids (std::string const& id_string, std::vector<std::size_t>& ids)
         ids.push_back(util::string::convert<std::size_t>(t[i]));
 }
 
+void
+poisson_scale_normals (mve::TriangleMesh::ConfidenceList const& confs,
+    mve::TriangleMesh::NormalList* normals)
+{
+    if (confs.empty() || confs.size() != normals->size())
+        throw std::invalid_argument("Invalid confidences or normals");
+    for (std::size_t i = 0; i < confs.size(); ++i)
+        normals->at(i) *= confs[i];
+}
+
 int
 main (int argc, char** argv)
 {
@@ -52,29 +64,31 @@ main (int argc, char** argv)
     args.set_helptext_indent(25);
     args.set_usage("Usage: scene2pset [ OPTS ] SCENE_DIR MESH_OUT");
     args.set_description(
-        "Generates a pointset from selected views by projecting "
-        "reconstructed depth values to the world coordinate system. "
-        "By default, all views are used.");
+        "Generates a pointset from the scene by projecting reconstructed "
+        "depth values in the world coordinate system.");
     args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
     args.add_option('s', "with-scale", false, "Write points with scale information (PLY only)");
     args.add_option('c', "with-conf", false, "Writes points with confidences (PLY only)");
-    args.add_option('d', "depthmap", true, "Name of depthmap to use [depthmap]");
+    args.add_option('d', "depthmap", true, "Name of depthmap to use [depth-L0]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
     args.add_option('m', "mask", true, "Name of mask/silhouette image to clip 3D points []");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
-
+    args.add_option('f', "min-fraction", true, "Minimum fraction of valid depth values [0.0]");
+    args.add_option('p', "poisson-normals", false, "Scale normals according to confidence");
     args.parse(argc, argv);
 
     /* Init default settings. */
     AppSettings conf;
     conf.scenedir = args.get_nth_nonopt(0);
     conf.outmesh = args.get_nth_nonopt(1);
-    conf.dmname = "depthmap";
+    conf.dmname = "depth-L0";
     conf.image = "undistorted";
     conf.with_normals = false;
     conf.with_scale = false;
     conf.with_conf = false;
+    conf.poisson_normals = false;
+    conf.min_valid_fraction = 0.0f;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
@@ -92,6 +106,8 @@ main (int argc, char** argv)
             case 'm': conf.mask = arg->arg; break;
             case 'v': parse_ids(arg->arg, conf.ids); break;
             case 'b': conf.aabb = arg->arg; break;
+            case 'f': conf.min_valid_fraction = arg->get_arg<float>(); break;
+            case 'p': conf.poisson_normals = true; break;
             default: throw std::runtime_error("Unknown option");
         }
     }
@@ -102,6 +118,12 @@ main (int argc, char** argv)
         conf.with_normals = true;
         conf.with_scale = false;
         conf.with_conf = false;
+    }
+
+    if (conf.poisson_normals)
+    {
+        conf.with_normals = true;
+        conf.with_conf = true;
     }
 
     /* If requested, use given AABB. */
@@ -157,6 +179,23 @@ main (int argc, char** argv)
         if (dm == NULL)
             continue;
 
+        if (conf.min_valid_fraction > 0.0f)
+        {
+            float num_total = static_cast<float>(dm->get_value_amount());
+            float num_recon = 0;
+            for (int j = 0; j < dm->get_value_amount(); ++j)
+                if (dm->at(j) > 0.0f)
+                    num_recon += 1.0f;
+            float fraction = num_recon / num_total;
+            if (fraction < conf.min_valid_fraction)
+            {
+                std::cout << "View " << view->get_name() << ": Fill status "
+                    << util::string::get_fixed(fraction * 100.0f, 2)
+                    << "%, skipping." << std::endl;
+                continue;
+            }
+        }
+
         mve::ByteImage::Ptr ci;
         if (!conf.image.empty())
             ci = view->get_byte_image(conf.image);
@@ -179,6 +218,9 @@ main (int argc, char** argv)
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
         mve::TriangleMesh::ConfidenceList const& mconfs(mesh->get_vertex_confidences());
+
+        if (conf.poisson_normals)
+            poisson_scale_normals(mconfs, &mesh->get_vertex_normals());
 
         /* If scale is requested, compute it. */
         std::vector<float> mvscale;
