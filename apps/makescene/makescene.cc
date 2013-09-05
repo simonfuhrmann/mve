@@ -251,6 +251,19 @@ find_min_max_percentile (typename mve::Image<T>::ConstPtr image,
 
 /* ---------------------------------------------------------------- */
 
+void
+add_exif_to_view (mve::View::Ptr view, std::string const& exif)
+{
+    if (exif.empty())
+        return;
+
+    mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
+    std::copy(exif.begin(), exif.end(), exif_image->begin());
+    view->add_data("exif", exif_image);
+}
+
+/* ---------------------------------------------------------------- */
+
 mve::ByteImage::Ptr
 create_thumbnail (mve::ImageBase::ConstPtr img)
 {
@@ -519,8 +532,9 @@ import_bundle_nvm (AppSettings const& conf)
         view->set_name(util::string::get_filled(i, 4, '0'));
 
         mve::ByteImage::Ptr image;
+        std::string exif;
         try
-        { image = mve::image::load_file(views[i].filename); }
+        { image = load_8bit_image(views[i].filename, &exif); }
         catch (...)
         {
             std::cout << "Error loading: " << views[i].filename << std::endl;
@@ -530,6 +544,7 @@ import_bundle_nvm (AppSettings const& conf)
         int const maxdim = std::max(image->width(), image->height());
         view->add_image("original", image);
         view->add_image("thumbnail", create_thumbnail(image));
+        add_exif_to_view(view, exif);
 
         mve::CameraInfo cam;
         cam.flen = views[i].focal_length / static_cast<float>(maxdim);
@@ -545,8 +560,9 @@ import_bundle_nvm (AppSettings const& conf)
         view->add_image("undistorted", undist);
 
         view->set_camera(cam);
-        view->save_mve_file_as(conf.views_path + "view_"
-            + util::string::get_filled(i, 4, '0') + ".mve");
+        std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
+        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
+        view->save_mve_file_as(conf.views_path + fname);
     }
     std::cout << std::endl << "Done importing NVM file!" << std::endl;
 }
@@ -843,18 +859,11 @@ import_bundle (AppSettings const& conf)
             std::cerr << "Warning: Original image missing!" << std::endl;
 
         /* Add EXIF data to view if available. */
-        if (!exif.empty())
-        {
-            mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
-            std::copy(exif.begin(), exif.end(), exif_image->begin());
-            view->add_data("exif", exif_image);
-        }
+        add_exif_to_view(view, exif);
 
         /* Save MVE file. */
-        {
-            std::string view_filename = conf.views_path + fname;
-            view->save_mve_file_as(view_filename);
-        }
+        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
+        view->save_mve_file_as(conf.views_path + fname);
 
         if (cam.flen != 0)
             valid_cnt += 1;
@@ -977,15 +986,11 @@ import_images (AppSettings const& conf)
             view->add_image("thumbnail", thumb);
 
         /* Add EXIF data to view if available. */
-        if (!exif.empty())
-        {
-            mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
-            std::copy(exif.begin(), exif.end(), exif_image->begin());
-            view->add_data("exif", exif_image);
-        }
+        add_exif_to_view(view, exif);
 
         /* Save view to disc. */
         fname = "view_" + util::string::get_filled(id_cnt, 4) + ".mve";
+        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
         view->save_mve_file_as(conf.views_path + fname);
 
         /* Advance ID of successfully imported images. */
@@ -1003,31 +1008,35 @@ main (int argc, char** argv)
 {
     /* Setup argument parser. */
     util::Arguments args;
+    args.set_usage(argv[0], "[ OPTIONS ] INPUT OUT_SCENE");
+    args.set_exit_on_error(true);
+    args.set_nonopt_maxnum(2);
+    args.set_nonopt_minnum(2);
+    args.set_helptext_indent(22);
+    args.set_description("This utility creates MVE scenes by importing "
+        "from a Photosynther bundle directory, a Noah bundle directory "
+        "or a VisualSfM .nvm file.\n\n"
+
+        "For Photosynther, makescene expects the bundle directory as INPUT, "
+        "an \"undistorted\" directory in INPUT with the bundled images, and "
+        "an \"images\" directory with the original images, if requested. "
+        "This also requires coll.log. For Photosynther, it is not possible "
+        "to keep invalid views.\n\n"
+
+        "For Noah bundles, makescene expects the bundle directory as INPUT, "
+        "a file \"list.txt\" in INPUT and the bundle file in the "
+        "\"bundle\" directory.\n\n"
+
+        "For VisualSfM, makescene expects the .nvm file as INPUT.\n\n"
+
+        "With the \"images-only\" option, all images in INPUT_DIR "
+        "are directly imported without camera information. If "
+        "\"append-images\" is specified, images are added to the scene.");
     args.add_option('o', "original", false, "Import original images");
     args.add_option('b', "bundle-id", true, "ID of the bundle [0]");
     args.add_option('k', "keep-invalid", false, "Keeps images with invalid cameras");
     args.add_option('i', "images-only", false, "Imports images from INPUT_DIR only");
     args.add_option('a', "append-images", false, "Appends images to an existing scene");
-    args.set_description("This utility creates MVE scenes by importing "
-        "from a Photosynther or Noah format bundle directory INPUT_DIR. "
-        "Images corresponding to invalid cameras are ignored by default. "
-
-        "For Photosynther, makescene expects an \"undistorted\" directory "
-        "with the bundled images, and an \"images\" directory with the "
-        "original images, if requested. This also requires coll.log. "
-        "For Photosynther, it is not possible to keep invalid views. "
-
-        "For Noah bundles, makescene expects \"list.txt\" in INPUT_DIR "
-        "and the bundle file in the \"bundle\" directory. "
-
-        "With the \"images-only\" option, all images in INPUT_DIR "
-        "are directly imported without camera information. If "
-        "\"append-images\" is specified, images are added to the scene.");
-    args.set_exit_on_error(true);
-    args.set_nonopt_maxnum(2);
-    args.set_nonopt_minnum(2);
-    args.set_helptext_indent(22);
-    args.set_usage(argv[0], "[ OPTIONS ] INPUT_DIR OUT_SCENE");
     args.parse(argc, argv);
 
     /* Setup defaults. */
