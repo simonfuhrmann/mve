@@ -244,11 +244,11 @@ ToneMappingHistogram::get_mapping_range (float* map_min, float* map_max)
 /* ---------------------------------------------------------------- */
 
 ToneMapping::ToneMapping (void)
-    : ignore_zeros(false)
+    : ignore_zeros(true)
 {
     this->histogram = new ToneMappingHistogram();
     this->ignore_zeros_checkbox = new QCheckBox("Ignore zeros");
-    this->ignore_zeros_checkbox->setChecked(false);
+    this->ignore_zeros_checkbox->setChecked(this->ignore_zeros);
     this->gamma_label = new QLabel("1.00");
     this->gamma_slider = new QSlider();
     this->gamma_slider->setRange(-20, 20);
