@@ -376,8 +376,8 @@ ToneMapping::highlight_from_slider (void) const
 void
 ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
 {
-    util::WallTimer timer;
-    std::cout << "Computing histogram..." << std::flush;
+    //util::WallTimer timer;
+    //std::cout << "Computing histogram..." << std::flush;
     int const num_bins = this->histogram->preferred_num_bins();
     std::vector<int> bins(num_bins, 0);
     float const image_range = this->image_vmax - this->image_vmin;
@@ -394,7 +394,7 @@ ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
         }
     }
     this->histogram->set_bins(bins);
-    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
+    //std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 }
 
 void
@@ -561,14 +561,11 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 mve::ByteImage::ConstPtr
 ToneMapping::render (void)
 {
-    util::WallTimer timer;
-    std::cout << "Rendering..." << std::flush;
-
     if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
-    {
         return this->image;
-    }
 
+    //util::WallTimer timer;
+    //std::cout << "Rendering..." << std::flush;
     int const width = this->image->width();
     int const height = this->image->height();
     int const chans = this->image->channels();
@@ -627,7 +624,7 @@ ToneMapping::render (void)
             out_ptr[2] = 127;
         }
     }
-    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
+    //std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 
     return ret;
 }
