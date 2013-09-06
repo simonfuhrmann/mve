@@ -60,6 +60,7 @@ struct AppSettings
     bool skip_invalid;
     bool images_only;
     bool append_images;
+    int max_pixels;
 
     /* Computed values. */
     std::string bundle_path;
@@ -300,6 +301,15 @@ create_thumbnail (mve::ImageBase::ConstPtr img)
     }
 
     return image;
+}
+
+template <class T>
+typename mve::Image<T>::Ptr
+limit_image_size (typename mve::Image<T>::Ptr img, int max_pixels)
+{
+    while (img->get_pixel_amount() > max_pixels)
+        img = mve::image::rescale_half_size<uint8_t>(img);
+    return img;
 }
 
 /* ---------------------------------------------------------------- */
@@ -557,6 +567,7 @@ import_bundle_nvm (AppSettings const& conf)
 
         mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
             (image, cam.flen, views[i].radial_distortion);
+        undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
         view->add_image("undistorted", undist);
 
         view->set_camera(cam);
@@ -849,7 +860,10 @@ import_bundle (AppSettings const& conf)
             view->add_image("thumbnail", thumb);
 
         if (undist != NULL)
+        {
+            undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
             view->add_image("undistorted", undist);
+        }
         else if (cam.flen != 0.0f && undist == NULL)
             std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
@@ -1037,6 +1051,7 @@ main (int argc, char** argv)
     args.add_option('k', "keep-invalid", false, "Keeps images with invalid cameras");
     args.add_option('i', "images-only", false, "Imports images from INPUT_DIR only");
     args.add_option('a', "append-images", false, "Appends images to an existing scene");
+    args.add_option('\0', "max-pixels", true, "Limit image size by iterative half-sizing");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -1048,6 +1063,7 @@ main (int argc, char** argv)
     conf.input_dir = args.get_nth_nonopt(0);
     conf.output_dir = args.get_nth_nonopt(1);
     conf.bundle_id = 0;
+    conf.max_pixels = std::numeric_limits<int>::max();
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
@@ -1060,6 +1076,12 @@ main (int argc, char** argv)
             case 'k': conf.skip_invalid = false; break;
             case 'i': conf.images_only = true; break;
             case 'a': conf.append_images = true; break;
+            case '\0':
+                if (i->opt->lopt == "max-pixels")
+                {
+                    conf.max_pixels = i->get_arg<int>();
+                    break;
+                }
             default: throw std::invalid_argument("Unexpected option");
         }
     }
