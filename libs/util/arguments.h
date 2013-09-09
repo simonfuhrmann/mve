@@ -171,7 +171,7 @@ public:
     T get_nth_nonopt_as (std::size_t index);
 
     /** Returns a numeric list of IDs by parsing the given string. */
-    void get_ids_from_string (std::string const& str, std::vector<int>& ids);
+    void get_ids_from_string (std::string const& str, std::vector<int>* ids);
 
     /** Generates a help text that lists all arguments. */
     void generate_helptext (std::ostream& stream) const;

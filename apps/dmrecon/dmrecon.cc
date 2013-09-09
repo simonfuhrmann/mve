@@ -116,7 +116,7 @@ main (int argc, char** argv)
         else if (arg->opt->lopt == "master-view")
             master_id = arg->get_arg<int>();
         else if (arg->opt->lopt == "list-view")
-            args.get_ids_from_string(arg->arg, listIDs);
+            args.get_ids_from_string(arg->arg, &listIDs);
         else if (arg->opt->lopt == "scale")
             mySettings.scale = arg->get_arg<int>();
         else if (arg->opt->lopt == "filter-width")

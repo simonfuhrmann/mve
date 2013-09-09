@@ -323,9 +323,9 @@ Arguments::get_nth_nonopt (std::size_t index)
 /* ---------------------------------------------------------------- */
 
 void
-Arguments::get_ids_from_string (std::string const& str, std::vector<int>& ids)
+Arguments::get_ids_from_string (std::string const& str, std::vector<int>* ids)
 {
-    ids.clear();
+    ids->clear();
     if (str.empty() || util::string::lowercase(str) == "all")
         return;
 
@@ -336,15 +336,15 @@ Arguments::get_ids_from_string (std::string const& str, std::vector<int>& ids)
         std::size_t pos = t[i].find_first_of('-');
         if (pos != std::string::npos)
         {
-            int first = util::string::convert<int>(t[i].substr(0, pos));
-            int last = util::string::convert<int>(t[i].substr(pos + 1));
-            int inc = (first > last ? -1 : 1);
+            int const first = util::string::convert<int>(t[i].substr(0, pos));
+            int const last = util::string::convert<int>(t[i].substr(pos + 1));
+            int const inc = (first > last ? -1 : 1);
             for (int j = first; j != last + inc; j += inc)
-                ids.push_back(j);
+                ids->push_back(j);
         }
         else
         {
-            ids.push_back(util::string::convert<std::size_t>(t[i]));
+            ids->push_back(util::string::convert<std::size_t>(t[i]));
         }
     }
 }

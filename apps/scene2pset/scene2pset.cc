@@ -28,20 +28,8 @@ struct AppSettings
     bool with_conf;
     bool poisson_normals;
     float min_valid_fraction;
-    std::vector<std::size_t> ids;
+    std::vector<int> ids;
 };
-
-void
-parse_ids (std::string const& id_string, std::vector<std::size_t>& ids)
-{
-    ids.clear();
-    if (id_string == "all")
-        return;
-    util::Tokenizer t;
-    t.split(id_string, ',');
-    for (std::size_t i = 0; i < t.size(); ++i)
-        ids.push_back(util::string::convert<std::size_t>(t[i]));
-}
 
 void
 poisson_scale_normals (mve::TriangleMesh::ConfidenceList const& confs,
@@ -104,7 +92,7 @@ main (int argc, char** argv)
             case 'd': conf.dmname = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
             case 'm': conf.mask = arg->arg; break;
-            case 'v': parse_ids(arg->arg, conf.ids); break;
+            case 'v': args.get_ids_from_string(arg->arg, &conf.ids); break;
             case 'b': conf.aabb = arg->arg; break;
             case 'f': conf.min_valid_fraction = arg->get_arg<float>(); break;
             case 'p': conf.poisson_normals = true; break;
