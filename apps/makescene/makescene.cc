@@ -103,6 +103,7 @@ read_photosynther_log (std::string const& filename,
     }
 
     /* Find number of images. */
+    std::getline(in, line);
     util::Tokenizer tok;
     tok.split(line);
     if (tok.size() != 7)
@@ -733,7 +734,6 @@ import_bundle (AppSettings const& conf)
          */
         std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
 
-        std::cout << std::endl;
         std::cout << "Processing view " << fname << "..." << std::endl;
 
         /* Skip invalid cameras... */
@@ -826,23 +826,6 @@ import_bundle (AppSettings const& conf)
         }
         else if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER)
         {
-            /*
-             * With the Photosynther, load undistorted and original.
-             * The new version uses "forStereo_xxxx_yyyy.png" as file
-             * name and the older version uses "undistorted_xxxx_yyyy.jpg".
-             */
-            std::string undist_new_filename = undist_path + "forStereo_"
-                + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(valid_cnt, 4) + ".png";
-            std::string undist_old_filename = undist_path + "undistorted_"
-                + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(valid_cnt, 4) + ".jpg";
-            /* Try the newer file name and fall back if not existing. */
-            if (util::fs::file_exists(undist_new_filename.c_str()))
-                undist = mve::image::load_file(undist_new_filename);
-            else
-                undist = mve::image::load_file(undist_old_filename);
-
             if (conf.import_orig)
             {
                 std::string orig_filename(image_path + orig_files[valid_cnt]);
@@ -852,6 +835,26 @@ import_bundle (AppSettings const& conf)
                 undist = mve::image::image_undistort_msps<uint8_t>
                     (original, cam.dist[0], cam.dist[1]);
             }
+            else
+            {
+                /*
+                 * With the Photosynther, load undistorted and original.
+                 * The new version uses "forStereo_xxxx_yyyy.png" as file
+                 * name and the older version uses "undistorted_xxxx_yyyy.jpg".
+                 */
+                std::string undist_new_filename = undist_path + "forStereo_"
+                    + util::string::get_filled(conf.bundle_id, 4) + "_"
+                    + util::string::get_filled(valid_cnt, 4) + ".png";
+                std::string undist_old_filename = undist_path + "undistorted_"
+                    + util::string::get_filled(conf.bundle_id, 4) + "_"
+                    + util::string::get_filled(valid_cnt, 4) + ".jpg";
+                /* Try the newer file name and fall back if not existing. */
+                if (util::fs::file_exists(undist_new_filename.c_str()))
+                    undist = mve::image::load_file(undist_new_filename);
+                else
+                    undist = mve::image::load_file(undist_old_filename);
+            }
+
             thumb = create_thumbnail(undist);
         }
 
@@ -876,7 +879,6 @@ import_bundle (AppSettings const& conf)
         add_exif_to_view(view, exif);
 
         /* Save MVE file. */
-        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
         view->save_mve_file_as(conf.views_path + fname);
 
         if (cam.flen != 0)
