@@ -8,7 +8,6 @@ clean:
 	$(MAKE) -C makescene $@
 	$(MAKE) -C meshconvert $@
 	$(MAKE) -C mveshell $@
-	$(MAKE) -C scene2poisson $@
 	$(MAKE) -C scene2pset $@
 
 .PHONY: all clean
