@@ -74,7 +74,7 @@ public:
     /** Default ctor. */
     Vector (void);
     /** Ctor taking a pointer to initialize values. */
-    Vector (T const* values);
+    explicit Vector (T const* values);
     /** Ctor that initializes ALL elements. */
     explicit Vector (T const& value);
     /** Ctor that initializes the first two elements. */

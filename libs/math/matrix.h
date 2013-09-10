@@ -49,7 +49,7 @@ public:
     /** Default ctor that leaves values uninitialized. */
     Matrix (void);
     /** Ctor taking a pointer to initialize values. */
-    Matrix (T const* values);
+    explicit Matrix (T const* values);
     /** Ctor that initializes ALL elements. */
     explicit Matrix (T const& value);
 
@@ -88,6 +88,12 @@ public:
     /** Stacks this (top) and another matrix (bottom) vertically. */
     template <int O>
     Matrix<T,N+O,M> vstack (Matrix<T,O,M> const& other);
+
+    /** Stacks this matrix (left) and another vector (right) horizontally. */
+    Matrix<T,N,M+1> hstack (Vector<T,N> const& other);
+
+    /** Stacks this matrix (top) and another vector (bottom) vertically. */
+    Matrix<T,N+1,M> vstack (Vector<T,M> const& other);
 
     /* ---------------------- Unary operators --------------------- */
 
@@ -338,6 +344,31 @@ Matrix<T,N,M>::vstack (Matrix<T,O,M> const& other)
     Matrix<T,N+O,M> ret;
     std::copy(m, m + M*N, *ret);
     std::copy(*other, *other + O*M, *ret + M*N);
+    return ret;
+}
+
+template <typename T, int N, int M>
+inline Matrix<T,N,M+1>
+Matrix<T,N,M>::hstack (Vector<T,N> const& other)
+{
+    Matrix<T,N,M+1> ret;
+    T const* in1 = m;
+    T const* in2 = *other;
+    for (T* out = *ret; in1 < m + M*N; in1 += M, in2 += 1, out += M+1)
+    {
+        std::copy(in1, in1 + M, out);
+        std::copy(in2, in2 + 1, out + M);
+    }
+    return ret;
+}
+
+template <typename T, int N, int M>
+inline Matrix<T,N+1,M>
+Matrix<T,N,M>::vstack (Vector<T,M> const& other)
+{
+    Matrix<T,N+1,M> ret;
+    std::copy(m, m + M*N, *ret);
+    std::copy(*other, *other + M, *ret + M*N);
     return ret;
 }
 

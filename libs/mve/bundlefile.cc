@@ -302,7 +302,7 @@ BundleFile::get_points_mesh (int cam_id) const
         if (cam_id >= 0 && !p.contains_view_id(cam_id))
             continue;
 
-        verts.push_back(p.pos);
+        verts.push_back(math::Vec3f(p.pos));
         math::Vec4f color(1.0f);
         for (int j = 0; j < 3; ++j)
             color[j] = float(p.color[j]) / 255.0f;
