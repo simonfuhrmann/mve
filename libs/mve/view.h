@@ -34,8 +34,8 @@ MVE_NAMESPACE_BEGIN
 
 /**
  * Proxy class for image and data proxies.
- * For image proxies, width, height and channels is set.
- * For data proxies, width, height and channels is set to 0.
+ * For data proxies, 'is_image' is set to false, width is set to the
+ * byte size of the embedding, height and channels is set to 1.
  */
 struct MVEFileProxy
 {
@@ -47,8 +47,8 @@ struct MVEFileProxy
 
     /* Image/data properties as present in file. */
     int width; ///< Width of image (or length of data).
-    int height; ///< Height of image (or 0 for data).
-    int channels; ///< Channels of image (or 0 for data).
+    int height; ///< Height of image (or 1 for data).
+    int channels; ///< Channels of image (or 1 for data).
     std::string datatype; ///< String rep. of image datatype.
 
     /* Properties that links the embedding to a storage location. */
