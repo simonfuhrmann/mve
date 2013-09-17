@@ -197,15 +197,29 @@ main (int argc, char** argv)
         mve::CameraInfo const& cam = view->get_camera();
         mve::TriangleMesh::Ptr mesh;
         mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
-        if (conf.with_normals)
-            mesh->ensure_normals();
-        if (conf.with_conf)
-            mve::geom::depthmap_mesh_confidences(mesh, 4);
-
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
-        mve::TriangleMesh::ConfidenceList const& mconfs(mesh->get_vertex_confidences());
+        mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
+
+        if (conf.with_normals)
+            mesh->ensure_normals();
+
+        /* If confidence is requested, compute it. */
+        if (conf.with_conf)
+        {
+            /* Per-vertex confidence down-weighting boundaries. */
+            mve::geom::depthmap_mesh_confidences(mesh, 4);
+
+#if 0
+            /* Per-vertex confidence based on normal-viewdir dot product. */
+            mesh->ensure_normals();
+            math::Vec3f campos;
+            cam.fill_camera_pos(*campos);
+            for (std::size_t i = 0; i < mverts.size(); ++i)
+                mconfs[i] *= (campos - mverts[i]).normalized().dot(mnorms[i]);
+#endif
+        }
 
         if (conf.poisson_normals)
             poisson_scale_normals(mconfs, &mesh->get_vertex_normals());
