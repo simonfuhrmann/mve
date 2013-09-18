@@ -18,6 +18,15 @@ class SceneInspect : public QWidget
 {
     Q_OBJECT
 
+public:
+    SceneInspect (QWidget* parent = NULL);
+
+    /* Loads a mesh from file and adds to mesh list. */
+    void load_file (std::string const& filename);
+
+    /* Removes references to the scene. */
+    void reset (void);
+
 private:
     GLWidget* glw;
     QTabWidget* scene_details;
@@ -43,15 +52,6 @@ private slots:
     void on_save_screenshot (void);
     void on_scene_selected (mve::Scene::Ptr scene);
     void on_view_selected (mve::View::Ptr view);
-
-public:
-    SceneInspect (QWidget* parent = NULL);
-
-    /* Loads a mesh from file and adds to mesh list. */
-    void load_file (std::string const& filename);
-
-    /* Removes references to the scene. */
-    void reset (void);
 };
 
 #endif /* UMVE_SCENE_INSPECT_HEADER */
