@@ -15,7 +15,7 @@
 uint8_t const color_black[] = { 0, 0, 0 };
 
 template <typename DESCR, int DIM>
-sfm::MatchingResult
+sfm::Matching::Result
 twoview_matching (std::vector<DESCR> const& descr1,
     std::vector<DESCR> const& descr2)
 {
@@ -52,16 +52,16 @@ twoview_matching (std::vector<DESCR> const& descr1,
 #endif
 
     /* Perform matching. */
-    sfm::MatchingOptions matchopts;
+    sfm::Matching::Options matchopts;
     matchopts.descriptor_length = DIM;
     matchopts.lowe_ratio_threshold = 0.9f;
     matchopts.distance_threshold = std::numeric_limits<float>::max();
 
     util::WallTimer timer;
-    sfm::MatchingResult matching;
-    sfm::match_features(matchopts, matchset_1.begin(), descr1.size(),
+    sfm::Matching::Result matching;
+    sfm::Matching::twoway_match(matchopts, matchset_1.begin(), descr1.size(),
         matchset_2.begin(), descr2.size(), &matching);
-    sfm::remove_inconsistent_matches(&matching);
+    sfm::Matching::remove_inconsistent_matches(&matching);
     std::cout << "Two-view matching took " << timer.get_elapsed() << "ms." << std::endl;
 
     int num_matches = 0;
@@ -73,19 +73,19 @@ twoview_matching (std::vector<DESCR> const& descr1,
 
 template <typename DESCR>
 mve::ByteImage::Ptr
-visualize_matching (sfm::MatchingResult const& matching,
+visualize_matching (sfm::Matching::Result const& matching,
     mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2,
     std::vector<DESCR> const& descr1, std::vector<DESCR> const& descr2)
 {
     /* Visualize keypoints. */
-    std::vector<sfm::Visualizer::Match> vis_matches;
+    sfm::Correspondences vis_matches;
     for (std::size_t i = 0; i < matching.matches_1_2.size(); ++i)
     {
         if (matching.matches_1_2[i] < 0)
             continue;
         int j = matching.matches_1_2[i];
 
-        sfm::Visualizer::Match match;
+        sfm::Correspondence match;
         match.p1[0] = descr1[i].x;
         match.p1[1] = descr1[i].y;
         match.p2[0] = descr2[j].x;
@@ -95,8 +95,7 @@ visualize_matching (sfm::MatchingResult const& matching,
 
     std::cout << "Drawing matches..." << std::endl;
     mve::ByteImage::Ptr match_image = sfm::Visualizer::draw_matches
-        (mve::image::expand_grayscale<uint8_t>(image1),
-        mve::image::expand_grayscale<uint8_t>(image2), vis_matches);
+        (image1, image2, vis_matches);
     return match_image;
 }
 
@@ -121,7 +120,7 @@ sift_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
         descr2 = sift.get_descriptors();
     }
 
-    sfm::MatchingResult matching
+    sfm::Matching::Result matching
         = twoview_matching<sfm::Sift::Descriptor, 128>(descr1, descr2);
     mve::ByteImage::Ptr match_image
         = visualize_matching(matching, image1, image2, descr1, descr2);
@@ -136,8 +135,9 @@ surf_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 {
     sfm::Surf::Descriptors descr1;
     {
-        sfm::Surf surf;
-        surf.set_contrast_threshold(500.0f);
+        sfm::Surf::Options surf_opts;
+        surf_opts.contrast_threshold = 500.0f;
+        sfm::Surf surf(surf_opts);
         surf.set_image(image1);
         surf.process();
         descr1 = surf.get_descriptors();
@@ -145,14 +145,15 @@ surf_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 
     sfm::Surf::Descriptors descr2;
     {
-        sfm::Surf surf;
-        surf.set_contrast_threshold(500.0f);
+        sfm::Surf::Options surf_opts;
+        surf_opts.contrast_threshold = 500.0f;
+        sfm::Surf surf(surf_opts);
         surf.set_image(image2);
         surf.process();
         descr2 = surf.get_descriptors();
     }
 
-    sfm::MatchingResult matching
+    sfm::Matching::Result matching
         = twoview_matching<sfm::Surf::Descriptor, 64>(descr1, descr2);
     mve::ByteImage::Ptr match_image
         = visualize_matching(matching, image1, image2, descr1, descr2);
