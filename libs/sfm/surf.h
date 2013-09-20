@@ -84,10 +84,6 @@ public:
 
     /** Sets the input image. */
     void set_image (mve::ByteImage::ConstPtr image);
-    /** Sets the hessian threshold, defaults to 10.0. */
-    void set_contrast_threshold (float thres);
-    /** Sets whether to generate the upright descriptor version. */
-    void set_upright_descriptor (bool upright);
 
     /** Starts Surf keypoint detection and descriptor extraction. */
     void process (void);
