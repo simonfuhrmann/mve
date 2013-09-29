@@ -4,6 +4,7 @@ SOURCES := $(wildcard [^_]*.cc)
 OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 BINARY := makescene
 LIBDIR := ../../libs
+DESTDIR := ../../bin
 OPENMP := -fopenmp
 
 EXT_INCL := -I${LIBDIR}
@@ -21,6 +22,10 @@ Makefile.dep: ${SOURCES}
 clean:
 	${RM} ${OBJECTS} ${BINARY} Makefile.dep
 
-.PHONY: clean
+install: ${BINARY}
+	${MKDIR} ${DESTDIR}
+	${CP} ${BINARY} ${DESTDIR}
+
+.PHONY: clean install
 
 -include Makefile.dep

@@ -10,4 +10,8 @@ clean:
 	$(MAKE) -C libs $@
 	#$(MAKE) -C docs $@
 
-.PHONY: all doc clean
+install:
+	$(MAKE) -C libs
+	$(MAKE) -C apps $@
+
+.PHONY: all doc clean install

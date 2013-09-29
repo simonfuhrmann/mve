@@ -4,6 +4,7 @@ SOURCES := $(wildcard [^_]*.cc)
 OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 BINARY := mveshell
 LIBDIR := ../../libs
+DESTDIR := ../../bin
 
 EXT_INCL := -I${LIBDIR}
 EXT_LIBS := -lpng -ljpeg -ltiff -lreadline
@@ -19,6 +20,10 @@ Makefile.dep: ${SOURCES}
 
 clean:
 	${RM} ${OBJECTS} ${BINARY} Makefile.dep
+
+install: ${BINARY}
+	${MKDIR} ${DESTDIR}
+	${CP} ${BINARY} ${DESTDIR}
 
 .PHONY: clean
 

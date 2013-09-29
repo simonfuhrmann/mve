@@ -4,6 +4,7 @@ SOURCES := $(wildcard [^_]*.cc)
 OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
 BINARY := meshconvert
 LIBDIR := ../../libs
+DESTDIR := ../../bin
 
 EXT_INCL := -I${LIBDIR}
 EXT_LIBS := -lpng -ljpeg -ltiff
@@ -20,6 +21,10 @@ Makefile.dep: ${SOURCES}
 clean:
 	${RM} ${OBJECTS} ${BINARY} ${TESTBIN} Makefile.dep
 
-.PHONY: clean
+install: ${BINARY}
+	${MKDIR} ${DESTDIR}
+	${CP} ${BINARY} ${DESTDIR}
+
+.PHONY: clean install
 
 -include Makefile.dep

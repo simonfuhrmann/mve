@@ -5,6 +5,8 @@ SOURCES += [^_]*.cc viewinspect/*.cc sceneinspect/*.cc
 HEADERS += *.h viewinspect/*.h sceneinspect/*.h
 RESOURCES = umve.qrc
 TARGET = umve
+TARGET.path = ../../bin
+INSTALLS += TARGET
 
 INCLUDEPATH += ../../libs ../../extern
 DEPENDPATH += ../../libs

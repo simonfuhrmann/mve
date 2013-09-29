@@ -24,3 +24,7 @@ endif
 GCCFLAGS ?= -Wall -Wextra -Wundef -ansi -pedantic -g -O3
 GCCDEFINES ?=
 CXXFLAGS = ${GCCFLAGS} ${GCCDEFINES}
+
+# Common commands
+MKDIR := mkdir -p
+CP    := cp -f
