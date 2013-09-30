@@ -8,8 +8,8 @@
 #include <QStatusBar>
 
 #include "util/exception.h"
-#include "util/filesystem.h"
-#include "mve/plyfile.h"
+#include "util/file_system.h"
+#include "mve/mesh_io_ply.h"
 
 #include "guihelpers.h"
 #include "batchoperations.h"

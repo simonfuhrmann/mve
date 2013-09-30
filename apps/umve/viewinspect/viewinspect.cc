@@ -7,10 +7,10 @@
 
 #include "mve/view.h"
 #include "mve/image.h"
-#include "mve/plyfile.h"
-#include "mve/imageexif.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "mve/mesh_io_ply.h"
+#include "mve/image_exif.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 
 #include "guihelpers.h"
 #include "scenemanager.h"

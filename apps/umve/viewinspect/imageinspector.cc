@@ -3,7 +3,7 @@
 #include <QFormLayout>
 #include <QVBoxLayout>
 
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 #include "mve/image.h"
 
 #include "imageinspector.h"

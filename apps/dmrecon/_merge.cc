@@ -7,11 +7,11 @@
 #include "math/vector.h"
 #include "mve/camera.h"
 #include "mve/depthmap.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
 #include "mve/scene.h"
-#include "mve/trianglemesh.h"
+#include "mve/mesh.h"
 #include "mve/bilateral.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 
 int
 main (int argc, char** argv)

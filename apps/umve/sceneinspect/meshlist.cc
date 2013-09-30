@@ -8,11 +8,11 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/string.h"
-#include "mve/trianglemesh.h"
-#include "mve/meshtools.h"
-#include "mve/offfile.h"
+#include "mve/mesh.h"
+#include "mve/mesh_tools.h"
+#include "mve/mesh_io_off.h"
 
 #include "meshlist.h"
 

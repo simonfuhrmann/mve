@@ -8,10 +8,10 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 
-#include "util/filesystem.h"
-#include "mve/plyfile.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "util/file_system.h"
+#include "mve/mesh_io_ply.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 
 #include "guihelpers.h"
 #include "batchoperations.h"

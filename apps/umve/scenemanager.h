@@ -5,7 +5,7 @@
 
 #include "mve/scene.h"
 #include "mve/view.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 
 /**
  * The currently active scene as well as the selected view are requried

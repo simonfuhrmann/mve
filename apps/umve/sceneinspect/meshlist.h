@@ -6,9 +6,9 @@
 #include <QMenu>
 
 #include "math/matrix.h"
-#include "mve/trianglemesh.h"
+#include "mve/mesh.h"
 
-#include "ogl/meshrenderer.h"
+#include "ogl/mesh_renderer.h"
 
 /* Simple mesh representation with name and modelview matrix. */
 struct MeshRep

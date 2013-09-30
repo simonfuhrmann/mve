@@ -9,8 +9,8 @@
 #include "ogl/opengl.h"
 #include "ogl/context.h"
 #include "ogl/texture.h"
-#include "ogl/vertexarray.h"
-#include "ogl/shaderprogram.h"
+#include "ogl/vertex_array.h"
+#include "ogl/shader_program.h"
 
 #include "mve/scene.h"
 #include "mve/view.h"

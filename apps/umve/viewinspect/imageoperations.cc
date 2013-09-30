@@ -16,7 +16,7 @@
 #include "mve/view.h"
 #include "mve/depthmap.h"
 #include "mve/bilateral.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
 
 #include "jobqueue.h"
 #include "guihelpers.h"

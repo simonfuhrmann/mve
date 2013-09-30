@@ -3,8 +3,8 @@
 
 #include "util/arguments.h"
 #include "util/string.h"
-#include "mve/meshtools.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_tools.h"
+#include "mve/mesh_io_ply.h"
 
 struct AppSettings
 {

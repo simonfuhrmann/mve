@@ -10,7 +10,7 @@
 #include "util/timer.h"
 #include "util/string.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
+#include "mve/image_tools.h"
 
 #include "tonemapping.h"
 

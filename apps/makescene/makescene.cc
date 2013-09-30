@@ -20,20 +20,20 @@
 #include <algorithm>
 
 #include "math/matrix.h" // for rot matrix determinant
-#include "math/matrixtools.h" // for rot matrix determinant
+#include "math/matrix_tools.h" // for rot matrix determinant
 #include "math/algo.h"
 #include "util/arguments.h"
 #include "util/string.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/tokenizer.h"
-#include "mve/bundlefile.h"
+#include "mve/bundle_file.h"
 #include "mve/view.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
-#include "mve/imageexif.h" // extract EXIF for JPEG images
-#include "mve/trianglemesh.h"
-#include "mve/meshtools.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
+#include "mve/image_exif.h" // extract EXIF for JPEG images
+#include "mve/mesh.h"
+#include "mve/mesh_tools.h"
 
 #define THUMBNAIL_SIZE 50
 

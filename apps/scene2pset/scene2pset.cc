@@ -8,12 +8,12 @@
 
 #include "util/arguments.h"
 #include "util/tokenizer.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_tools.h"
 #include "mve/depthmap.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
 #include "mve/scene.h"
 #include "mve/view.h"
-#include "mve/vertexinfo.h"
+#include "mve/mesh_info.h"
 
 struct AppSettings
 {
