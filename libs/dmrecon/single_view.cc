@@ -1,11 +1,11 @@
 #include <cassert>
 #include <limits>
 
-#include "util/filesystem.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "util/file_system.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 #include "mve/depthmap.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
 #include "mve/view.h"
 #include "dmrecon/defines.h"
 #include "dmrecon/single_view.h"

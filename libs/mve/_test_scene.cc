@@ -2,10 +2,10 @@
 
 #include "mve/view.h"
 #include "mve/scene.h"
-#include "mve/trianglemesh.h"
+#include "mve/mesh.h"
 #include "mve/depthmap.h"
-#include "mve/plyfile.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_io_ply.h"
+#include "mve/mesh_tools.h"
 #include "mve/math/matrix.h"
 #include "mve/math/matrixtools.h"
 

@@ -17,7 +17,7 @@ ${LIBRARY}: ${OBJECTS}
 	#ar rcs $@ $^
 	#chmod a+x $@
 
-gtest: ${GTEST_OBJS} ${OBJECTS}
+_gtest: ${GTEST_OBJS} ${OBJECTS}
 	${CXX} -o $@ $^ ${GTEST_LIBS} ${EXT_LIBS}
 
 _gtest_%.o: _gtest_%.cc

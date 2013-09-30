@@ -8,7 +8,7 @@
 #include "math/defines.h"
 #include "math/vector.h"
 #include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 
 MATH_NAMESPACE_BEGIN
 MATH_GEOM_NAMESPACE_BEGIN

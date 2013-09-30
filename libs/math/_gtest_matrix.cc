@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 
 TEST(MatrixTest, RowMajor)
 {

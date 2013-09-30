@@ -2,8 +2,8 @@
 
 #include "util/system.h"
 
-#include "mve/imagefile.h"
-#include "mve/imageexif.h"
+#include "mve/image_io.h"
+#include "mve/image_exif.h"
 #include "mve/view.h"
 
 int

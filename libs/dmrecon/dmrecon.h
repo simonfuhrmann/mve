@@ -6,7 +6,7 @@
 #include <vector>
 #include <queue>
 
-#include "mve/bundlefile.h"
+#include "mve/bundle_file.h"
 #include "mve/image.h"
 #include "mve/scene.h"
 #include "dmrecon/defines.h"

@@ -2,7 +2,7 @@
 #include "math/algo.h"
 #include "math/defines.h"
 #include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "math/vector.h"
 #include "dmrecon/patch_optimization.h"
 #include "dmrecon/settings.h"

@@ -9,7 +9,7 @@
 #include <limits>
 
 #include "math/vector.h"
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN

@@ -4,8 +4,8 @@
 #include <gtest/gtest.h>
 
 #include "mve/image.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 
 TEST(ImageTest, ImageBaseInitialization)
 {

@@ -3,7 +3,7 @@
 
 #include "util/exception.h"
 #include "util/timer.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "mve/scene.h"
 
 MVE_NAMESPACE_BEGIN

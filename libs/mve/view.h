@@ -23,11 +23,11 @@
 #include <string>
 #include <vector>
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "util/atomic.h"
 #include "mve/defines.h"
 #include "mve/camera.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 #include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN

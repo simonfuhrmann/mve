@@ -10,7 +10,7 @@
 #include "mve/defines.h"
 #include "mve/camera.h"
 #include "mve/image.h"
-#include "mve/trianglemesh.h"
+#include "mve/mesh.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN

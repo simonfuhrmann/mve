@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "math/jacobisolver.h"
+#include "math/jacobi_solver.h"
 
 TEST(SolverTest, JacobiSolverTest)
 {

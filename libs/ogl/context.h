@@ -11,7 +11,7 @@
 #include "ogl/defines.h"
 #include "ogl/events.h"
 #include "ogl/camera.h"
-#include "ogl/camtrackball.h"
+#include "ogl/camera_trackball.h"
 #include "ogl/cam2d.h"
 
 OGL_NAMESPACE_BEGIN

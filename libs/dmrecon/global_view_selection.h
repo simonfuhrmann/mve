@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "mve/bundlefile.h"
+#include "mve/bundle_file.h"
 #include "dmrecon/single_view.h"
 #include "dmrecon/view_selection.h"
 

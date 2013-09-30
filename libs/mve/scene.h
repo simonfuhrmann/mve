@@ -9,10 +9,10 @@
 #include <vector>
 #include <string>
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "mve/defines.h"
 #include "mve/view.h"
-#include "mve/bundlefile.h"
+#include "mve/bundle_file.h"
 
 #define MVE_SCENE_VIEWS_DIR "views/"
 #define MVE_SCENE_BUNDLE_FILE "synth_0.out"

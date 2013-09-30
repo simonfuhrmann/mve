@@ -1,7 +1,7 @@
 #ifndef DMRECON_VIEW_SELECTION_H
 #define DMRECON_VIEW_SELECTION_H
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "dmrecon/defines.h"
 #include "dmrecon/settings.h"
 

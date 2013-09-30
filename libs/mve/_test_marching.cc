@@ -6,10 +6,10 @@
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "mve/defines.h"
-#include "mve/trianglemesh.h"
-#include "mve/meshtools.h"
-#include "mve/marchingtets.h"
-#include "mve/marchingcubes.h"
+#include "mve/mesh.h"
+#include "mve/mesh_tools.h"
+#include "mve/marching_tets.h"
+#include "mve/marching_cubes.h"
 #include "mve/volume.h"
 
 template <typename T>
