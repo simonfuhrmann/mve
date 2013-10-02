@@ -2,7 +2,7 @@
 
 #include "math/matrix_tools.h"
 #include "ogl/opengl.h"
-#include "ogl/cam2d.h"
+#include "ogl/camera_2d.h"
 
 OGL_NAMESPACE_BEGIN
 
