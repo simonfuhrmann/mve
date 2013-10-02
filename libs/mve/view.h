@@ -424,7 +424,9 @@ inline bool
 View::mark_as_dirty (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    return p != NULL && (p->is_dirty = true);
+    if (p != NULL)
+        p->is_dirty = true;
+    return p != NULL;
 }
 
 inline void

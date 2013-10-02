@@ -376,7 +376,7 @@ ellipsize (std::string const& str, std::size_t chars, int type)
         case 2:
             return "..." + str.substr(str.size() - chars + 3);
         default:
-            return str;
+            break;
     }
     return str;
 }
