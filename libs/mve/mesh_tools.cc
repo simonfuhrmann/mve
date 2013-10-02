@@ -7,134 +7,13 @@
 #include <cerrno>
 #include <cstring>
 
-#include "util/exception.h"
-#include "util/string.h"
 #include "math/algo.h"
 #include "math/vector.h"
-#include "mve/mesh_io_off.h"
-#include "mve/mesh_io_ply.h"
-#include "mve/mesh_io_pbrt.h"
 #include "mve/mesh_info.h"
 #include "mve/mesh_tools.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
-
-TriangleMesh::Ptr
-load_mesh (std::string const& filename)
-{
-    if (util::string::right(filename, 4) == ".off")
-        return load_off_mesh(filename);
-    else if (util::string::right(filename, 4) == ".ply")
-        return load_ply_mesh(filename);
-    else if (util::string::right(filename, 5) == ".npts")
-        return load_npts_mesh(filename, false);
-    else if (util::string::right(filename, 6) == ".bnpts")
-        return load_npts_mesh(filename, true);
-    else
-        throw std::runtime_error("Extension not recognized");
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
-{
-    if (util::string::right(filename, 4) == ".off")
-        save_off_mesh(mesh, filename);
-    else if (util::string::right(filename, 4) == ".ply")
-        save_ply_mesh(mesh, filename);
-    else if (util::string::right(filename, 5) == ".pbrt")
-        save_pbrt_mesh(mesh, filename);
-    else if (util::string::right(filename, 5) == ".npts")
-        save_npts_mesh(mesh, filename, false);
-    else if (util::string::right(filename, 6) == ".bnpts")
-        save_npts_mesh(mesh, filename, true);
-    else
-        throw std::runtime_error("Extension not recognized");
-}
-
-/* ---------------------------------------------------------------- */
-
-TriangleMesh::Ptr
-load_npts_mesh (std::string const& filename, bool format_binary)
-{
-    /* Precondition checks. */
-    if (filename.empty())
-        throw std::invalid_argument("No filename given");
-
-    /* Open file. */
-    std::ifstream input(filename.c_str());
-    if (!input.good())
-        throw util::FileException(filename, std::strerror(errno));
-
-    TriangleMesh::Ptr mesh = TriangleMesh::create();
-    TriangleMesh::VertexList& verts = mesh->get_vertices();
-    TriangleMesh::NormalList& vnorm = mesh->get_vertex_normals();
-
-    while (true)
-    {
-        math::Vec3f v, n;
-        if (format_binary)
-        {
-            input.read((char*)*v, sizeof(float) * 3);
-            input.read((char*)*n, sizeof(float) * 3);
-        }
-        else
-        {
-            for (int i = 0; i < 3; ++i)
-                input >> v[i];
-            for (int i = 0; i < 3; ++i)
-                input >> n[i];
-        }
-        if (input.eof())
-            break;
-
-        verts.push_back(v);
-        vnorm.push_back(n);
-    }
-
-    return mesh;
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-save_npts_mesh (TriangleMesh::ConstPtr mesh,
-    std::string const& filename, bool format_binary)
-{
-    if (mesh == NULL || mesh->get_vertices().empty())
-        throw std::invalid_argument("Input mesh is empty");
-    if (filename.empty())
-        throw std::invalid_argument("No filename given");
-    if (mesh->get_vertex_normals().size() != mesh->get_vertices().size())
-        throw std::invalid_argument("No vertex normals given");
-
-    std::ofstream out(filename.c_str());
-    if (!out.good())
-        throw util::FileException(filename, std::strerror(errno));
-
-    TriangleMesh::VertexList const& verts(mesh->get_vertices());
-    TriangleMesh::NormalList const& vnorm(mesh->get_vertex_normals());
-    for (std::size_t i = 0; i < verts.size(); ++i)
-    {
-        math::Vec3f const& v(verts[i]);
-        math::Vec3f const& n(vnorm[i]);
-        if (format_binary)
-        {
-            out.write((char const*)*v, sizeof(float) * 3);
-            out.write((char const*)*n, sizeof(float) * 3);
-        }
-        else
-        {
-            out << v[0] << " " << v[1] << " " << v[2] << " "
-                << n[0] << " " << n[1] << " " << n[2] << std::endl;
-        }
-    }
-    out.close();
-}
-
-/* ---------------------------------------------------------------- */
 
 /** for-each functor: homogenous matrix-vector multiplication. */
 template <typename T, int D>

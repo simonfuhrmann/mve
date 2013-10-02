@@ -6,37 +6,13 @@
 #ifndef MVE_MESH_TOOLS_HEADER
 #define MVE_MESH_TOOLS_HEADER
 
+#include "math/vector.h"
 #include "math/matrix.h"
 #include "mve/defines.h"
 #include "mve/mesh.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
-
-/**
- * Auto-detects filetype from extension and refers to other readers.
- */
-TriangleMesh::Ptr
-load_mesh (std::string const& filename);
-
-/**
- * Auto-detects filetime from extension and refers to other writers
- */
-void
-save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename);
-
-/**
- * Simple importer for Kazhdan's .npts ASCII files.
- */
-TriangleMesh::Ptr
-load_npts_mesh (std::string const& filename, bool format_binary = false);
-
-/**
- * Simple exporter for Kazhdan's .npts ASCII files.
- */
-void
-save_npts_mesh (TriangleMesh::ConstPtr mesh,
-    std::string const& filename, bool format_binary = false);
 
 /**
  * Transforms the vertices and normals of the mesh using the

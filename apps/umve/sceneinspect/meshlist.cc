@@ -11,8 +11,8 @@
 #include "util/file_system.h"
 #include "util/string.h"
 #include "mve/mesh.h"
+#include "mve/mesh_io.h"
 #include "mve/mesh_tools.h"
-#include "mve/mesh_io_off.h"
 
 #include "meshlist.h"
 
