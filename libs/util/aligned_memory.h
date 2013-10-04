@@ -85,7 +85,7 @@ template <typename T, uintptr_t MODULO>
 inline void
 AlignedMemory<T, MODULO>::deallocate (void)
 {
-    delete this->raw;
+    delete [] this->raw;
     this->raw = 0;
     this->aligned = 0;
     this->size = 0;
