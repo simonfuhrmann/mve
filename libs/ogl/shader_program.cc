@@ -124,6 +124,12 @@ void
 ShaderProgram::print_shader_log (GLuint shader_id)
 {
     GLint log_size = this->get_shader_property(shader_id, GL_INFO_LOG_LENGTH);
+    if (log_size == 0)
+    {
+        std::cout << "Shader compile log is empty!" << std::endl;
+        return;
+    }
+
     std::vector<char> log;
     log.resize(log_size + 1, '\0');
     glGetShaderInfoLog(shader_id, log_size + 1, NULL, &log[0]);
