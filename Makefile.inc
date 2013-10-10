@@ -1,26 +1,32 @@
-ifeq (${OS},Windows_NT)
-  PLATFORM = win32
-else
-  SHELL = /bin/sh
-  PLATFORM = $(shell uname|tr '[:upper:]' '[:lower:]')
-endif
-
-# Compiler to use if not specified otherwise
+# Compiler, Flags, Definitions, ...
 CXX ?= g++
+CXXFLAGS ?= -Wall -Wextra -Wundef -ansi -pedantic -g -O3
+COMPILE.cc = ${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
+LINK.o = ${CXX} ${LDFLAGS}
+.DEFAULT_GOAL := ${TARGET}
 
-# Number of cores in the system
-ifeq (${PLATFORM},linux)
-  CORES = $(shell grep processor /proc/cpuinfo | wc -l)
-else ifeq (${PLATFORM},freebsd)
-  CORES = $(shell sysctl -n hw.ncpu)
-else ifeq (${PLATFORM},darwin)
-  CORES_LINE = $(shell system_profiler SPHardwareDataType | grep Cores)
-  CORES = $(lastword $(CORES_LINE))
-else
-  CORES = 1
-endif
+# Always compile programs and libs compatible with multithreading.
+CXXFLAGS += -pthread
 
-# Compiler flags and defines
-GCCFLAGS ?= -Wall -Wextra -Wundef -ansi -pedantic -g -O3
-GCCDEFINES ?=
-CXXFLAGS = ${GCCFLAGS} ${GCCDEFINES}
+# How to link example from example.o and other files:
+%: %.o
+	${LINK.o} -o $@ $^ ${LDLIBS}
+
+# How to compile example.o from example.cc:
+%.o: %.cc
+	${COMPILE.cc} -o $@ $<
+
+# Library paths:
+vpath libmve_dmrecon.a ${MVE_ROOT}/libs/dmrecon/
+vpath libmve.a ${MVE_ROOT}/libs/mve/
+vpath libmve_math.a ${MVE_ROOT}/libs/math/
+vpath libmve_ogl.a ${MVE_ROOT}/libs/ogl/
+vpath libmve_util.a ${MVE_ROOT}/libs/util/
+
+vpath libgtest_main.a ${GTEST_PATH}/make/
+
+# Autogenerate dependencies.
+Makefile.dep: *.cc
+	${COMPILE.cc} -MM $^ >$@
+
+-include Makefile.dep
