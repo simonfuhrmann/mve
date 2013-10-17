@@ -1,25 +1,14 @@
-include ../../Makefile.inc
+MVE_ROOT := ../..
+TARGET := $(shell basename `pwd`)
+include ${MVE_ROOT}/Makefile.inc
+
+CXXFLAGS += -I${MVE_ROOT}/libs -fopenmp
+LDLIBS += -lpng -ltiff -ljpeg -fopenmp
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-BINARY := mveshell
-LIBDIR := ../../libs
-
-EXT_INCL := -I${LIBDIR}
-EXT_LIBS := -lpng -ljpeg -ltiff -lreadline
-
-${BINARY}: ${OBJECTS} ${LIBDIR}/mve/libmve.a ${LIBDIR}/util/libutil.a
-	${CXX} -o $@ $^ ${EXT_LIBS}
-
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
-
-Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
+${TARGET}: ${SOURCES:.cc=.o} libmve.a libmve_util.a
 
 clean:
-	${RM} ${OBJECTS} ${BINARY} Makefile.dep
+	${RM} ${TARGET} *.o Makefile.dep
 
 .PHONY: clean
-
--include Makefile.dep

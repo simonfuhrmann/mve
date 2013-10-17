@@ -6,8 +6,8 @@
 #include "mve/depthmap.h"
 #include "mve/mesh_io_ply.h"
 #include "mve/mesh_tools.h"
-#include "mve/math/matrix.h"
-#include "mve/math/matrixtools.h"
+#include "math/matrix.h"
+#include "math/matrix_tools.h"
 
 int
 main (int argc, char** argv)

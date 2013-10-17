@@ -1,42 +1,22 @@
-include ../../Makefile.inc
+MVE_ROOT := ../..
+TARGET := libmve.a
+include ${MVE_ROOT}/Makefile.inc
+
+CXXFLAGS += -I${MVE_ROOT}/libs
+LDLIBS += -lpng -ltiff -ljpeg
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-LIBRARY := libmve.a
+${TARGET}: ${SOURCES:.cc=.o}
+	$(AR) rcs $@ $^
 
-EXT_INCL := -I..
-EXT_LIBS := -lpng -ljpeg -ltiff
+_test%: _test%.o libmve.a libmve_util.a
+	${LINK.cc} -o $@ $^ ${LDLIBS}
 
-TEST_SRC := _test_image.cc
-TEST_BIN := _test
-
-GTEST_SRCS := $(wildcard _gtest_*.cc)
-GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
-GTEST_INCL := -I${GTEST_PATH}/include
-GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main -lpthread
-
-${LIBRARY}: ${OBJECTS}
-	ar rcs $@ $^
-	chmod a+x $@
-
-${TEST_BIN}: ${TEST_SRC} ${LIBRARY} ../util/libutil.a
-	${CXX} -o $@ $^ ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
-
-_gtest: ${GTEST_OBJS} ${LIBRARY} ../util/libutil.a
-	${CXX} -o $@ $^ ${GTEST_LIBS} ${EXT_LIBS}
-
-_gtest_%.o: _gtest_%.cc
-	${CXX} -c -o $@ $< ${GTEST_INCL} ${EXT_INCL}
-
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
-
-Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
+_gtest: CXXFLAGS += -I ${GTEST_PATH}/include
+_gtest: _gtest_*.o ${TARGET} libgtest_main.a
+	${LINK.cc} -o $@ $^ ${LDLIBS}
 
 clean:
-	${RM} ${OBJECTS} ${LIBRARY} ${TEST_BIN} _gtest ${GTEST_OBJS} Makefile.dep
+	${RM} ${TARGET} *.o Makefile.dep _gtest
 
 .PHONY: clean
-
--include Makefile.dep
