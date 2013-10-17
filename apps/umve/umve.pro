@@ -1,3 +1,5 @@
+MVE_ROOT = ../..
+
 CONFIG += qt opengl release
 QT += opengl
 
@@ -6,9 +8,9 @@ HEADERS += *.h viewinspect/*.h sceneinspect/*.h
 RESOURCES = umve.qrc
 TARGET = umve
 
-INCLUDEPATH += ../../libs ../../extern
-DEPENDPATH += ../../libs
-LIBS = -L../../libs/mve -L../../libs/ogl -L../../libs/util -L../../libs/dmrecon -ldmrecon -lmve -logl -lutil -lpng -ljpeg -ltiff -lGLEW
+INCLUDEPATH += $${MVE_ROOT}/libs
+DEPENDPATH += $${MVE_ROOT}/libs
+LIBS = $${MVE_ROOT}/libs/dmrecon/libmve_dmrecon.a $${MVE_ROOT}/libs/mve/libmve.a $${MVE_ROOT}/libs/ogl/libmve_ogl.a $${MVE_ROOT}/libs/util/libmve_util.a -lpng -ljpeg -ltiff -lGLEW
 QMAKE_LIBDIR_QT =
 
 OBJECTS_DIR = build
