@@ -3,16 +3,19 @@
 
 #include "ogl/opengl.h"
 
-#include <vector>
+#include <string>
 
 #include <QGLWidget>
+#include <QTabWidget>
+#include <QString>
+#include <QWidget>
+#include <QToolBar>
 
 #include "mve/scene.h"
+#include "mve/view.h"
 
 #include "glwidget.h"
-#include "meshlist.h"
-#include "guicontext.h"
-#include "sceneoperations.h"
+#include "scene_inspect/addin_manager.h"
 
 class SceneInspect : public QWidget
 {
@@ -28,30 +31,25 @@ public:
     void reset (void);
 
 private:
-    GLWidget* glw;
-    QTabWidget* scene_details;
-    QAction* action_open_mesh;
-    QAction* action_reload_shaders;
-    QAction* action_show_details;
-    QAction* action_save_screenshot;
-    QString last_mesh_dir;
-
-    std::vector<GuiContext*> contexts;
-    SceneOperations* scene_operations;
-    std::size_t current_context;
-
-private:
-    void create_actions (void);
-    void activate_context (std::size_t i);
+    void create_actions (QToolBar* toolbar);
 
 private slots:
     void on_open_mesh (void);
     void on_reload_shaders (void);
     void on_details_toggled (void);
-    void on_tab_changed (int id);
     void on_save_screenshot (void);
     void on_scene_selected (mve::Scene::Ptr scene);
     void on_view_selected (mve::View::Ptr view);
+
+private:
+    QTabWidget* tab_widget;
+    AddinManager* addin_manager;
+    GLWidget* gl_widget;
+    QAction* action_open_mesh;
+    QAction* action_reload_shaders;
+    QAction* action_show_details;
+    QAction* action_save_screenshot;
+    QString last_mesh_dir;
 };
 
 #endif /* UMVE_SCENE_INSPECT_HEADER */

@@ -1,10 +1,10 @@
 MVE_ROOT = ../..
 
-CONFIG += qt opengl release
+CONFIG += qt opengl debug
 QT += opengl
 
-SOURCES += [^_]*.cc viewinspect/*.cc sceneinspect/*.cc
-HEADERS += *.h viewinspect/*.h sceneinspect/*.h
+SOURCES += [^_]*.cc viewinspect/*.cc scene_inspect/*.cc scene_addins/*.cc
+HEADERS += *.h viewinspect/*.h scene_inspect/*.h scene_addins/*.h
 RESOURCES = umve.qrc
 TARGET = umve
 

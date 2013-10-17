@@ -9,7 +9,7 @@
 #include "mve/view.h"
 
 #include "viewinspect/viewinspect.h"
-#include "sceneinspect/sceneinspect.h"
+#include "scene_inspect/scene_inspect.h"
 #include "jobqueue.h"
 #include "sceneoverview.h"
 

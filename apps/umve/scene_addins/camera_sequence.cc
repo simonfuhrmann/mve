@@ -7,7 +7,7 @@
 #include "util/tokenizer.h"
 #include "util/string.h"
 
-#include "camerasequence.h"
+#include "scene_addins/camera_sequence.h"
 
 void
 CameraSequence::parse (std::string const& fname)

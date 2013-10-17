@@ -27,9 +27,8 @@ ImageOperationsWidget::ImageOperationsWidget (void)
 {
     this->selected_view = new SelectedView();
 
-    const mvs::Settings default_settings;
-
-    /* Depthmap recon layout. */
+    /* MVS layout. */
+    mvs::Settings const default_settings;
     this->mvs_color_scale.setText("Enable Color Scale");
     this->mvs_color_scale.setChecked(default_settings.useColorScale);
     this->mvs_write_ply.setText("Write PLY after recon");

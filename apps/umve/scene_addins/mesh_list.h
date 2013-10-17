@@ -95,8 +95,6 @@ public:
     QMeshList (QWidget* parent = NULL);
     ~QMeshList (void);
 
-    void load_mesh (std::string const& filename);
-
     void add (std::string const& name, mve::TriangleMesh::Ptr mesh,
         std::string const& filename = "");
     void remove (std::string const& name);

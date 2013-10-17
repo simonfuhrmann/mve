@@ -89,7 +89,7 @@ ViewInspect::create_detail_frame (void)
     this->connect(this->operations, SIGNAL(signal_select_embedding
         (QString const&)), this, SLOT(on_embedding_selected(QString const&)));
 
-    this->image_details = new QTabWidget();//tr("Details"));
+    this->image_details = new QTabWidget();
     this->image_details->setTabPosition(QTabWidget::East);
     this->image_details->addTab(this->operations, tr("Operations"));
     this->image_details->addTab(this->inspector, tr("Image Inspector"));

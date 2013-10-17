@@ -14,7 +14,7 @@
 #include "mve/mesh_io.h"
 #include "mve/mesh_tools.h"
 
-#include "meshlist.h"
+#include "scene_addins/mesh_list.h"
 
 QMeshContextMenu::QMeshContextMenu (QMeshList* parent)
 {
@@ -386,29 +386,6 @@ QMeshList::QMeshList (QWidget *parent)
 
 QMeshList::~QMeshList (void)
 {
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-QMeshList::load_mesh (std::string const& filename)
-{
-    std::cout << "Loading triangle mesh..." << std::endl;
-    mve::TriangleMesh::Ptr mesh;
-    try
-    {
-        mesh = mve::geom::load_mesh(filename);
-    }
-    catch (std::exception& e)
-    {
-        std::cout << "> Error loading mesh: " << e.what() << std::endl;
-        mesh = mve::TriangleMesh::create();
-    }
-    //mve::geom::mesh_scale_and_center(mesh);
-    mesh->ensure_normals();
-
-    std::string name = util::fs::get_file_component(filename);
-    this->add(name, mesh);
 }
 
 /* ---------------------------------------------------------------- */
