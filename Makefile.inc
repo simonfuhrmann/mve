@@ -26,7 +26,7 @@ vpath libmve_util.a ${MVE_ROOT}/libs/util/
 vpath libgtest_main.a ${GTEST_PATH}/make/
 
 # Autogenerate dependencies.
-Makefile.dep: *.cc
+Makefile.dep: [^_]*.cc
 	${COMPILE.cc} -MM $^ >$@
 
 -include Makefile.dep
