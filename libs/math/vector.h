@@ -6,6 +6,13 @@
 #ifndef MATH_VECTOR_HEADER
 #define MATH_VECTOR_HEADER
 
+#include <algorithm>
+#include <functional>
+#include <stdexcept>
+#include <numeric>
+#include <cmath>
+#include <ostream>
+
 #include "math/defines.h"
 #include "math/algo.h"
 

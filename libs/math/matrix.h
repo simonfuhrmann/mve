@@ -6,6 +6,12 @@
 #ifndef MATH_MATRIX_HEADER
 #define MATH_MATRIX_HEADER
 
+#include <algorithm>
+#include <functional>
+#include <utility>
+#include <numeric>
+#include <ostream>
+
 #include "math/defines.h"
 #include "math/algo.h"
 #include "math/vector.h"
