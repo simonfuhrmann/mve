@@ -69,11 +69,15 @@ MainWindow::MainWindow (void)
     /* Connect signals. */
     this->connect(this->update_timer, SIGNAL(timeout()),
         this, SLOT(on_update_memory()));
+    this->connect(this->tabs, SIGNAL(currentChanged(int)),
+        this, SLOT(on_switch_tabs(int)));
 
     /* Trick to get job queue dock widget smaller. */
     this->jobqueue->setMaximumHeight(100); // Dock widget trick
     this->show();
     this->jobqueue->setMaximumHeight(QWIDGETSIZE_MAX); // Dock widget trick
+
+    this->on_switch_tabs(0);
 }
 
 /* ---------------------------------------------------------------- */
@@ -539,6 +543,18 @@ MainWindow::on_cache_cleanup (void)
 
     scene->cache_cleanup();
     this->on_update_memory();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::on_switch_tabs (int tab_id)
+{
+    for (int i = 0; i < this->tabs->count(); ++i)
+    {
+        QWidget *tab = this->tabs->widget(i);
+        dynamic_cast<MainWindowTab&>(*tab).set_tab_active(i == tab_id);
+    }
 }
 
 /* ---------------------------------------------------------------- */

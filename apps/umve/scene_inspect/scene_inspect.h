@@ -14,10 +14,11 @@
 #include "mve/scene.h"
 #include "mve/view.h"
 
+#include "mainwindowtab.h"
 #include "glwidget.h"
 #include "scene_inspect/addin_manager.h"
 
-class SceneInspect : public QWidget
+class SceneInspect : public MainWindowTab
 {
     Q_OBJECT
 
@@ -40,8 +41,12 @@ private slots:
     void on_save_screenshot (void);
     void on_scene_selected (mve::Scene::Ptr scene);
     void on_view_selected (mve::View::Ptr view);
+    void on_tab_activated (void);
 
 private:
+    QString last_mesh_dir;
+    mve::View::Ptr next_view;
+
     QTabWidget* tab_widget;
     AddinManager* addin_manager;
     GLWidget* gl_widget;
@@ -49,7 +54,6 @@ private:
     QAction* action_reload_shaders;
     QAction* action_show_details;
     QAction* action_save_screenshot;
-    QString last_mesh_dir;
 };
 
 #endif /* UMVE_SCENE_INSPECT_HEADER */
