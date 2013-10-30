@@ -1,6 +1,6 @@
 MVE_ROOT = ../..
 
-CONFIG += qt opengl debug
+CONFIG += qt opengl release
 QT += opengl
 
 SOURCES += [^_]*.cc viewinspect/*.cc scene_inspect/*.cc scene_addins/*.cc
