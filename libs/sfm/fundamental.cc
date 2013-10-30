@@ -9,7 +9,7 @@
 #include <limits>
 #include <stdexcept>
 
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "sfm/fundamental.h"
 #include "sfm/matrixsvd.h"
 
@@ -221,6 +221,32 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
     matrix_pseudo_inverse(P1, &P1inv);
 
     *result = ex * P2 * P1inv;
+}
+
+
+double
+sampson_distance (FundamentalMatrix const& F, Correspondence const& m)
+{
+    /*
+     * Computes the Sampson distance SD for a given match and fundamental
+     * matrix. SD is computed as [Sect 11.4.3, Hartley, Zisserman]:
+     *
+     *   SD = (x'Fx)^2 / ( (Fx)_1^2 + (Fx)_2^2 + (x'F)_1^2 + (x'F)_2^2 )
+     */
+
+    double p2_F_p1 = 0.0;
+    p2_F_p1 += m.p2[0] * (m.p1[0] * F[0] + m.p1[1] * F[1] + F[2]);
+    p2_F_p1 += m.p2[1] * (m.p1[0] * F[3] + m.p1[1] * F[4] + F[5]);
+    p2_F_p1 +=     1.0 * (m.p1[0] * F[6] + m.p1[1] * F[7] + F[8]);
+    p2_F_p1 *= p2_F_p1;
+
+    double sum = 0.0;
+    sum += math::algo::fastpow(m.p1[0] * F[0] + m.p1[1] * F[1] + F[2], 2);
+    sum += math::algo::fastpow(m.p1[0] * F[3] + m.p1[1] * F[4] + F[5], 2);
+    sum += math::algo::fastpow(m.p2[0] * F[0] + m.p2[1] * F[3] + F[6], 2);
+    sum += math::algo::fastpow(m.p2[0] * F[1] + m.p2[1] * F[4] + F[7], 2);
+
+    return p2_F_p1 / sum;
 }
 
 SFM_NAMESPACE_END

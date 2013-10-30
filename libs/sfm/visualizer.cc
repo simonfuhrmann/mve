@@ -1,7 +1,7 @@
 #include <stdexcept>
 
-#include "mve/imagetools.h"
-#include "mve/imagedrawing.h"
+#include "mve/image_tools.h"
+#include "mve/image_drawing.h"
 #include "sfm/visualizer.h"
 
 SFM_NAMESPACE_BEGIN

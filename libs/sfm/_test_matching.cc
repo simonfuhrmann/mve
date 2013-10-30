@@ -1,11 +1,11 @@
 #include <iostream>
 #include <fstream>
 
-#include "util/alignedmemory.h"
+#include "util/aligned_memory.h"
 #include "util/timer.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
 
 #include "surf.h"
 #include "sift.h"

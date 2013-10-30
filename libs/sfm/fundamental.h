@@ -126,6 +126,14 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
     FundamentalMatrix* result);
 
 /**
+ * Computes the Sampson distance for a feature correspondence given the
+ * fundamental matrix between two views.
+ */
+double
+sampson_distance (FundamentalMatrix const& fundamental,
+    Correspondence const& match);
+
+/**
  * Computes a transformation for 2D points in homogeneous coordinates
  * such that the mean of the points is zero and the points fit in the unit
  * square. (The thrid coordinate will still be 1 after normalization.)

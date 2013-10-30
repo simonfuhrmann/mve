@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 #include "mve/image.h"
-#include "mve/imagefile.h"
+#include "mve/image_io.h"
 #include "sfm/bundle.h"
 
 mve::ByteImage::Ptr

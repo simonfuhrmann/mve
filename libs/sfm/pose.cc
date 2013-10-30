@@ -1,4 +1,4 @@
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "sfm/pose.h"
 #include "sfm/matrixsvd.h"
 #include "sfm/matrixqrdecomp.h"

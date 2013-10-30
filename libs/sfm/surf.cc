@@ -3,10 +3,10 @@
 #include "util/timer.h"
 #include "math/vector.h"
 #include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagedrawing.h"
+#include "mve/image_tools.h"
+#include "mve/image_drawing.h"
 #include "sfm/defines.h"
 #include "sfm/surf.h"
 

@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "sfm/matrixsvd.h"
 #include "sfm/pose.h"
 #include "sfm/fundamental.h"

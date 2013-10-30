@@ -74,8 +74,7 @@ private:
         FundamentalMatrix* fundamental);
     void find_inliers (Correspondences const& matches,
         FundamentalMatrix const& fundamental, std::vector<int>* result);
-    double sampson_distance (FundamentalMatrix const& fundamental,
-        Correspondence const& match);
+
 private:
     Options opts;
 };

@@ -1,42 +1,22 @@
-include ../../Makefile.inc
+MVE_ROOT := ../..
+TARGET := libmve_sfm.a
+include ${MVE_ROOT}/Makefile.inc
+
+CXXFLAGS += -I${MVE_ROOT}/libs
+LDLIBS += -lpng -ltiff -ljpeg
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-LIBRARY := libsfm.a
+${TARGET}: ${SOURCES:.cc=.o}
+	$(AR) rcs $@ $^
 
-EXT_INCL := -I..
-EXT_LIBS := -L. -L../mve -L../util -lmve -lutil -lpng -ljpeg -ltiff
+_test%: _test%.o libmve.a libmve_util.a
+	${LINK.cc} -o $@ $^ ${LDLIBS}
 
-TESTSRC := _test_bundle.cc
-TESTBIN := test
+_gtest: CXXFLAGS += -I ${GTEST_PATH}/include
+_gtest: _gtest_*.o ${TARGET} libgtest_main.a
+	${LINK.cc} -o $@ $^ ${LDLIBS}
 
-GTEST_SRCS := _gtest_matrixqrdecomp.cc _gtest_matrixsvd.cc _gtest_matrixpinv.cc _gtest_pose.cc # $(wildcard _gtest_*.cc)
-GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
-GTEST_INCL := -I${GTEST_PATH}/include
-GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main -lpthread
+clean:
+	${RM} ${TARGET} *.o Makefile.dep _gtest
 
-libsfm: ${OBJECTS}
-	ar rcs ${LIBRARY} ${OBJECTS}
-	chmod a+x ${LIBRARY}
-
-test: libsfm FORCE
-	${CXX} -o ${TESTBIN} ${OBJECTS} ${TESTSRC} ${CXXFLAGS} ${EXT_INCL} ${EXT_LIBS}
-
-gtest: ${GTEST_OBJS}
-	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
-
-_gtest_%.o: _gtest_%.cc
-	${CXX} -c -o $@ $< ${GTEST_INCL} ${EXT_INCL}
-
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
-
-depend:
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
-
-clean: FORCE
-	${RM} ${OBJECTS} ${GTEST_OBJS} ${LIBRARY} ${TESTBIN} _gtest
-
-FORCE:
-
--include Makefile.dep
+.PHONY: clean

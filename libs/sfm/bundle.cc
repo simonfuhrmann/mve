@@ -2,8 +2,9 @@
 #include <algorithm>
 
 #include "util/timer.h"
-#include "mve/trianglemesh.h"
-#include "mve/meshtools.h"
+#include "mve/mesh.h"
+#include "mve/mesh_tools.h"
+#include "mve/mesh_io.h"
 #include "sfm/bundle.h"
 #include "sfm/triangulate.h"
 

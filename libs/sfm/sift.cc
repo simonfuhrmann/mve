@@ -4,9 +4,9 @@
 
 #include "util/timer.h"
 #include "math/matrix.h"
-#include "math/matrixtools.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "math/matrix_tools.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 #include "sfm/sift.h"
 
 SFM_NAMESPACE_BEGIN

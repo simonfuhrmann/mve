@@ -12,7 +12,7 @@
 #include <map>
 #include <set>
 
-#include "util/alignedmemory.h"
+#include "util/aligned_memory.h"
 #include "mve/image.h"
 #include "sfm/defines.h"
 #include "sfm/matching.h"
