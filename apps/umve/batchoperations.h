@@ -114,6 +114,25 @@ public:
 
 /* ---------------------------------------------------------------- */
 
+class BatchGenerateThumbs : public BatchOperations
+{
+    Q_OBJECT
+
+private:
+    QLineEdit embedding_name;
+
+private:
+    void setup_gui (void);
+
+private slots:
+    void on_generate (void);
+
+public:
+    BatchGenerateThumbs (QWidget* parent = NULL);
+};
+
+/* ---------------------------------------------------------------- */
+
 inline void
 BatchOperations::set_scene (mve::Scene::Ptr scene)
 {

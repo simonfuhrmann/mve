@@ -185,6 +185,12 @@ MainWindow::create_actions (void)
     this->connect(this->action_batch_delete, SIGNAL(triggered()),
         this, SLOT(on_batch_delete()));
 
+    this->action_generate_thumbs = new QAction(
+        QIcon(":/images/icon_image_inspect.svg"),
+        tr("Generate thumbmails..."), this);
+    this->connect(this->action_generate_thumbs, SIGNAL(triggered()),
+        this, SLOT(on_generate_thumbs()));
+
     this->action_cache_cleanup = new QAction(QIcon(":/images/icon_clean.svg"),
         tr("Cache cleanup"), this);
     this->connect(this->action_cache_cleanup, SIGNAL(triggered()),
@@ -227,6 +233,7 @@ MainWindow::create_menus (void)
     this->menu_scene->addAction(this->action_import_images);
     this->menu_scene->addAction(this->action_recon_export);
     this->menu_scene->addAction(this->action_batch_delete);
+    this->menu_scene->addAction(this->action_generate_thumbs);
     this->menu_scene->addAction(this->action_cache_cleanup);
     this->menu_scene->addSeparator();
     this->menu_scene->addAction(this->action_exit);
@@ -317,6 +324,7 @@ MainWindow::enable_scene_actions (bool value)
     this->action_import_images->setEnabled(value);
     this->action_recon_export->setEnabled(value);
     this->action_batch_delete->setEnabled(value);
+    this->action_generate_thumbs->setEnabled(value);
     this->action_cache_cleanup->setEnabled(value);
     this->action_refresh_scene->setEnabled(value);
 }
@@ -497,6 +505,25 @@ MainWindow::on_batch_delete (void)
 
     BatchDelete dialog(this);
     dialog.setModal(true);
+    dialog.set_scene(scene);
+    dialog.exec();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::on_generate_thumbs (void)
+{
+    mve::Scene::Ptr scene = SceneManager::get().get_scene();
+    if (scene == NULL)
+    {
+        QMessageBox::information(this, "Error generating thumbnails!",
+            "No scene is loaded, rookie.");
+        return;
+    }
+
+    BatchGenerateThumbs dialog(this);
+    dialog.setModal(this);
     dialog.set_scene(scene);
     dialog.exec();
 }
