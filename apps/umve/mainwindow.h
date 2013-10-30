@@ -1,13 +1,15 @@
 #ifndef UMVE_MAIN_WINDOW_HEADER
 #define UMVE_MAIN_WINDOW_HEADER
 
+#include "ogl/opengl.h"
+
 #include <string>
-#include <QtGui>
+#include <QMainWindow>
 
 #include "mve/view.h"
 
 #include "viewinspect/viewinspect.h"
-#include "sceneinspect/sceneinspect.h"
+#include "scene_inspect/scene_inspect.h"
 #include "jobqueue.h"
 #include "sceneoverview.h"
 
@@ -38,6 +40,7 @@ private:
     QAction* action_import_images;
     QAction* action_recon_export;
     QAction* action_batch_delete;
+    QAction* action_generate_thumbs;
     QAction* action_cache_cleanup;
     QAction* action_refresh_scene;
     QAction* action_exit;
@@ -66,6 +69,7 @@ private slots:
     void on_cache_cleanup (void);
     void on_recon_export (void);
     void on_batch_delete (void);
+    void on_generate_thumbs (void);
 
     void closeEvent (QCloseEvent* event);
 

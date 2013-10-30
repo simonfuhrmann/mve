@@ -1,36 +1,18 @@
-include ../../Makefile.inc
+MVE_ROOT := ../..
+TARGET := libmve_util.a
+include ${MVE_ROOT}/Makefile.inc
+
+CXXFLAGS += -I${MVE_ROOT}/libs
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-LIBRARY := libutil.a
+${TARGET}: ${SOURCES:.cc=.o}
+	$(AR) rcs $@ $^
 
-EXT_INCL := -I..
-EXT_LIBS := -lpthread
+_gtest: CXXFLAGS += -I ${GTEST_PATH}/include
+_gtest: _gtest_*.cc ${TARGET} libgtest_main.a
+	${LINK.cc} -o $@ $^ ${LDLIBS}
 
-GTEST_SRCS := $(wildcard _gtest_*.cc)
-GTEST_OBJS := $(foreach file,$(GTEST_SRCS),$(subst .cc,.o,$(file)))
-GTEST_INCL := -I${GTEST_PATH}/include
-GTEST_LIBS := -L${GTEST_PATH}/make -lgtest_main
+clean:
+	${RM} ${TARGET} *.o Makefile.dep _gtest
 
-libutil: ${OBJECTS}
-	ar rcs ${LIBRARY} ${OBJECTS}
-	chmod a+x ${LIBRARY}
-
-gtest: ${GTEST_OBJS} ${OBJECTS}
-	${CXX} ${GTEST_OBJS} ${OBJECTS} -o _gtest ${GTEST_LIBS} ${EXT_LIBS}
-
-_gtest_%.o: _gtest_%.cc
-	${CXX} -c -o $@ $< ${GTEST_INCL} ${EXT_INCL}
-
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
-
-depend:
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
-
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
-
-FORCE:
-
--include Makefile.dep
+.PHONY: clean

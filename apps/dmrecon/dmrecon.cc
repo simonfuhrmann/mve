@@ -3,34 +3,39 @@
 #include <cstdlib>
 #include <csignal>
 
-#include "dmrecon/Settings.h"
-#include "dmrecon/DMRecon.h"
+#include "dmrecon/settings.h"
+#include "dmrecon/dmrecon.h"
 #include "mve/scene.h"
 #include "mve/view.h"
+#include "util/timer.h"
 #include "util/arguments.h"
 #include "util/system.h"
 #include "util/tokenizer.h"
 
+#include "fancy_progress_printer.h"
+
+enum ProgressStyle
+{
+    PROGRESS_SILENT,
+    PROGRESS_SIMPLE,
+    PROGRESS_FANCY
+};
+
+FancyProgressPrinter fancyProgressPrinter;
+
 void
 reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
 {
-    if (settings.scale == -1.f)
-    {
-        for (unsigned int s = 0; s <= 4; ++s)
-        {
-            std::cout << "Reconstructing at scale " << s << std::endl;
-
-            /* Start MVS reconstruction */
-            settings.scale = float(s);
-            mvs::DMRecon recon(scene, settings);
-            recon.start();
-        }
-    }
-    else
-    {
-        mvs::DMRecon recon(scene, settings);
-        recon.start();
-    }
+    /*
+     * Note: destructor of ProgressHandle sets status to failed
+     * if setDone() is not called (this happens when an exception
+     * is thrown in mvs::DMRecon)
+     */
+    ProgressHandle handle(fancyProgressPrinter, settings);
+    mvs::DMRecon recon(scene, settings);
+    handle.setRecon(recon);
+    recon.start();
+    handle.setDone();
 }
 
 int
@@ -60,58 +65,59 @@ main (int argc, char** argv)
         "turn off color scale");
     args.add_option('i', "image", true,
         "specify image embedding used in reconstruction");
+    args.add_option('\0', "keep-dz", false,
+        "store dz map into view");
+    args.add_option('\0', "keep-conf", false,
+        "store confidence map into view");
     args.add_option('p', "writeply", false,
         "use this option to write the ply file");
     args.add_option('\0', "plydest", true,
         "path suffix appended to scene dir to write ply files");
     args.add_option('\0', "logdest", true,
         "path suffix appended to scene dir to write log files");
+    args.add_option('\0', "progress", true,
+        "progress output style: 'silent', 'simple' or 'fancy'");
     args.add_option('\0', "force", false, "Re-reconstruct existing depthmaps");
     args.parse(argc, argv);
 
-    std::string basePath;
+    std::string basePath = args.get_nth_nonopt(0);
     bool writeply = false;
     std::string plyDest("/recon");
     std::string logDest("/log");
     int master_id = -1;
     bool force_recon = false;
+    ProgressStyle progress_style;
+
+#ifdef _WIN32
+    progress_style = PROGRESS_SIMPLE;
+#else
+    progress_style = PROGRESS_FANCY;
+#endif
 
     mvs::Settings mySettings;
-    mySettings.useColorScale = true;
-    mySettings.globalVSMax = 20;
-    mySettings.scale = 0.f;
-    mySettings.filterWidth = 5;
     std::vector<int> listIDs;
 
     util::ArgResult const * arg;
-    while ((arg = args.next_result()))
+    while ((arg = args.next_option()))
     {
-        if (arg->opt == 0)
-        {
-            basePath = arg->arg;
-            continue;
-        }
-
         if (arg->opt->lopt == "neighbors")
-        {
-            mySettings.globalVSMax =
-                util::string::convert<std::size_t>(arg->arg);
-            std::cout << "global view selection uses "
-                      << mySettings.globalVSMax
-                      << " neighbors" << std::endl;
-        }
+            mySettings.globalVSMax = arg->get_arg<std::size_t>();
         else if (arg->opt->lopt == "nocolorscale")
             mySettings.useColorScale = false;
         else if (arg->opt->lopt == "master-view")
             master_id = arg->get_arg<int>();
         else if (arg->opt->lopt == "list-view")
-            args.get_ids_from_string(arg->arg, listIDs);
+            args.get_ids_from_string(arg->arg, &listIDs);
         else if (arg->opt->lopt == "scale")
-            mySettings.scale = arg->get_arg<float>();
+            mySettings.scale = arg->get_arg<int>();
         else if (arg->opt->lopt == "filter-width")
             mySettings.filterWidth = arg->get_arg<unsigned int>();
         else if (arg->opt->lopt == "image")
             mySettings.imageEmbedding = arg->get_arg<std::string>();
+        else if (arg->opt->lopt == "keep-dz")
+            mySettings.keepDzMap = true;
+        else if (arg->opt->lopt == "keep-conf")
+            mySettings.keepConfidenceMap = true;
         else if (arg->opt->lopt == "writeply")
             writeply = true;
         else if (arg->opt->lopt == "plydest")
@@ -120,19 +126,37 @@ main (int argc, char** argv)
             logDest = arg->arg;
         else if (arg->opt->lopt == "force")
             force_recon = true;
-        else {
-            std::cout << "WARNING: unrecognized option" << std::endl;
+        else if (arg->opt->lopt == "progress")
+        {
+            if (arg->arg == "silent")
+                progress_style = PROGRESS_SILENT;
+            else if (arg->arg == "simple")
+                progress_style = PROGRESS_SIMPLE;
+            else if (arg->arg == "fancy")
+                progress_style = PROGRESS_FANCY;
+            else
+                std::cerr << "WARNING: unrecognized progress style" << std::endl;
+        }
+        else
+        {
+            std::cerr << "WARNING: unrecognized option" << std::endl;
         }
     }
 
+    /* don't show progress twice */
+    if (progress_style != PROGRESS_SIMPLE)
+        mySettings.quiet = true;
+
     /* Load MVE scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
-    try {
+    try
+    {
         scene->load_scene(basePath);
         scene->get_bundle();
     }
-    catch (std::exception& e) {
-        std::cout<<"Error loading scene: "<<e.what()<<std::endl;
+    catch (std::exception& e)
+    {
+        std::cerr << "Error loading scene: " << e.what() << std::endl;
         return 1;
     }
 
@@ -147,50 +171,80 @@ main (int argc, char** argv)
     mySettings.logPath += logDest;
     mySettings.logPath += "/";
 
-    if (master_id >= 0) {
+    fancyProgressPrinter.setBasePath(basePath);
+    fancyProgressPrinter.setNumViews(scene->get_views().size());
+
+    if (progress_style == PROGRESS_FANCY)
+        fancyProgressPrinter.pt_create();
+
+    util::WallTimer timer;
+    if (master_id >= 0)
+    {
         std::cout << "Reconstructing view with ID " << master_id << std::endl;
         mySettings.refViewNr = (std::size_t)master_id;
-        reconstruct(scene, mySettings);
+        fancyProgressPrinter.addRefView(master_id);
+        try
+        {
+            reconstruct(scene, mySettings);
+        }
+        catch (std::exception &err)
+        {
+            std::cerr << err.what() << std::endl;
+        }
     }
     else
     {
         mve::Scene::ViewList& views(scene->get_views());
         std::string embedding_name = "depth-L" +
             util::string::get(mySettings.scale);
-        if (listIDs.empty()) {
+        if (listIDs.empty())
+        {
+            std::cout << "Reconstructing all views..." << std::endl;
             for(std::size_t i = 0; i < views.size(); ++i)
                 listIDs.push_back(i);
-            std::cout << "Reconstructing all views..." << std::endl;
         }
-        else {
+        else
+        {
             std::cout << "Reconstructing views from list..." << std::endl;
         }
+        fancyProgressPrinter.addRefViews(listIDs);
 
 #pragma omp parallel for schedule(dynamic, 1)
         for (std::size_t i = 0; i < listIDs.size(); ++i)
         {
             std::size_t id = listIDs[i];
-            if (id >= views.size()){
-                std::cout << "ID: " << id << " is too large! Skipping..."
-                << std::endl;
+            if (id >= views.size())
+            {
+                std::cout << "Invalid ID " << id << ", skipping!" << std::endl;
                 continue;
             }
-            if (!views[id].get() || !views[id]->is_camera_valid())
+            if (views[id] == NULL || !views[id]->is_camera_valid())
                 continue;
             if (!force_recon && views[id]->has_embedding(embedding_name))
                 continue;
 
             mvs::Settings settings(mySettings);
             settings.refViewNr = id;
-            reconstruct(scene, settings);
-
-#pragma omp critical
+            try
             {
+                reconstruct(scene, settings);
                 views[id]->save_mve_file();
-                //scene->cache_cleanup();
+            }
+            catch (std::exception &err)
+            {
+                std::cerr << err.what() << std::endl;
             }
         }
     }
+
+    if (progress_style == PROGRESS_FANCY)
+    {
+        fancyProgressPrinter.stop();
+        fancyProgressPrinter.pt_join();
+    }
+
+    std::cout << "Reconstruction took "
+        << timer.get_elapsed() << "ms." << std::endl;
 
     /* Save scene */
     std::cout << "Saving views back to disc..." << std::endl;

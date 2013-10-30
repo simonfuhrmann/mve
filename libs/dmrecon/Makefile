@@ -1,25 +1,15 @@
-include ../../Makefile.inc
+MVE_ROOT = ../..
+TARGET := libmve_dmrecon.a
+include ${MVE_ROOT}/Makefile.inc
 
-SOURCES := $(wildcard [^_]*.cpp)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cpp,.o,$(file)))
-LIBRARY := libdmrecon.a
+CXXFLAGS += -I${MVE_ROOT}/libs
 
-EXT_INCL := -I..
-EXT_LIBS := -L../util -L../mve -lmve -lutil -lpng -ljpeg -ltiff
+SOURCES := $(wildcard [^_]*.cc)
+${TARGET}: ${SOURCES:.cc=.o}
+	$(AR) rcs $@ $^
 
-libmve: ${OBJECTS}
-	ar rcs ${LIBRARY} ${OBJECTS}
-	chmod a+x ${LIBRARY}
+clean:
+	${RM} ${TARGET} *.o Makefile.dep
 
-%.o: %.cpp
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
+.PHONY: clean
 
-depend:
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
-
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
-
-FORCE:
-
--include Makefile.dep

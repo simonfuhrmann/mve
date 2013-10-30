@@ -6,7 +6,7 @@
 
 GLWidget::GLWidget (QWidget *parent)
     : QGLWidget(parent)
-    , context(0)
+    , context(NULL)
     , gl_width(0)
     , gl_height(0)
     , cx_init(false)
@@ -38,7 +38,7 @@ GLWidget::resizeGL(int width, int height)
 
     this->gl_width = width;
     this->gl_height = height;
-    if (this->context != 0)
+    if (this->context != NULL)
         this->context->resize(width, height);
 }
 
@@ -170,9 +170,6 @@ GLWidget::keyReleaseEvent (QKeyEvent* event)
     ogl::KeyboardEvent e;
     e.type = ogl::KEYBOARD_EVENT_RELEASE;
     e.keycode = event->key();
-    // FIXME: HACK
-    if (e.keycode == -1)
-        e.keycode = 0x01000020; // KEY_SHIFT
     this->context->keyboard_event(e);
     this->repaint();
 }

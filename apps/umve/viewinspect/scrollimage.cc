@@ -1,4 +1,5 @@
 #include <iostream>
+#include <QScrollBar>
 
 #include "scrollimage.h"
 

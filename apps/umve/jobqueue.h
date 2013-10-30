@@ -1,7 +1,11 @@
 #ifndef JOB_QUEUE_HEADER
 #define JOB_QUEUE_HEADER
 
-#include <QtGui>
+#include <QBoxLayout>
+#include <QDockWidget>
+#include <QListWidget>
+#include <QPushButton>
+#include <QTimer>
 #include <vector>
 
 struct JobProgress
@@ -23,7 +27,7 @@ struct JobQueueEntry
     QListWidgetItem* item;
     int finished;
 
-    JobQueueEntry (void) : progress(0), item(0), finished(0) {}
+    JobQueueEntry (void) : progress(NULL), item(NULL), finished(0) {}
 };
 
 /* ---------------------------------------------------------------- */

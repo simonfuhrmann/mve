@@ -1,11 +1,16 @@
 #include <limits>
 #include <iostream>
 #include <cmath>
+#include <QButtonGroup>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPushButton>
+#include <QRadioButton>
 
 #include "util/timer.h"
 #include "util/string.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
+#include "mve/image_tools.h"
 
 #include "tonemapping.h"
 
@@ -55,14 +60,14 @@ ToneMappingHistogram::mouseMoveEvent (QMouseEvent* event)
     /* Handle changes to the mapping area. */
     if (this->move_left_handle)
     {
-        this->mapped_left = std::max(0.0f, std::min(this->mapped_right - 0.1f,
+        this->mapped_left = std::max(0.0f, std::min(this->mapped_right - 0.05f,
             static_cast<float>(mouse_x - x_start) / (x_end - x_start)));
         this->update();
         this->timer.start(250);
     }
     if (this->move_right_handle)
     {
-        this->mapped_right = std::max(this->mapped_left + 0.1f, std::min(1.0f,
+        this->mapped_right = std::max(this->mapped_left + 0.05f, std::min(1.0f,
             static_cast<float>(mouse_x - x_start) / (x_end - x_start)));
         this->update();
         this->timer.start(250);
@@ -239,8 +244,11 @@ ToneMappingHistogram::get_mapping_range (float* map_min, float* map_max)
 /* ---------------------------------------------------------------- */
 
 ToneMapping::ToneMapping (void)
+    : ignore_zeros(true)
 {
     this->histogram = new ToneMappingHistogram();
+    this->ignore_zeros_checkbox = new QCheckBox("Ignore zeros");
+    this->ignore_zeros_checkbox->setChecked(this->ignore_zeros);
     this->gamma_label = new QLabel("1.00");
     this->gamma_slider = new QSlider();
     this->gamma_slider->setRange(-20, 20);
@@ -272,6 +280,8 @@ ToneMapping::ToneMapping (void)
     main_layout->setSpacing(0);
     main_layout->addWidget(this->histogram);
     main_layout->addSpacing(10);
+    main_layout->addWidget(this->ignore_zeros_checkbox);
+    main_layout->addSpacing(10);
     main_layout->addLayout(gamma_box);
     main_layout->addWidget(this->gamma_slider);
     main_layout->addSpacing(10);
@@ -282,6 +292,8 @@ ToneMapping::ToneMapping (void)
     main_layout->addStretch(1);
     this->setLayout(main_layout);
 
+    this->connect(this->ignore_zeros_checkbox, SIGNAL(toggled(bool)),
+        this, SLOT(on_ignore_zeroes_changed()));
     this->connect(this->gamma_slider, SIGNAL(valueChanged(int)),
         this, SLOT(on_gamma_value_changed()));
     this->connect(this->highlight_slider, SIGNAL(valueChanged(int)),
@@ -305,6 +317,15 @@ ToneMapping::reset (void)
     this->image_vmax = 0.0f;
     std::fill(this->channel_assignment, this->channel_assignment + 3, 0);
     // TODO: Clear/disable widgets?
+}
+
+void
+ToneMapping::on_ignore_zeroes_changed (void)
+{
+    this->ignore_zeros = this->ignore_zeros_checkbox->isChecked();
+    this->find_min_max();
+    this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
+    emit this->tone_mapping_changed();
 }
 
 void
@@ -355,22 +376,25 @@ ToneMapping::highlight_from_slider (void) const
 void
 ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
 {
-    util::WallTimer timer;
-    std::cout << "Computing histogram..." << std::flush;
-    float const vmin = this->image_vmin;
-    float const vmax = this->image_vmax;
-    float const log_vmin = std::log10(vmin);
-    float const log_vmax = std::log10(vmax);
+    //util::WallTimer timer;
+    //std::cout << "Computing histogram..." << std::flush;
     int const num_bins = this->histogram->preferred_num_bins();
     std::vector<int> bins(num_bins, 0);
-    for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
+    float const image_range = this->image_vmax - this->image_vmin;
+    /* Only build a histogram if the image is not constant. */
+    if (this->image_vmax != this->image_vmin)
     {
-        float value = std::log10(*ptr);
-        int bin = (value - log_vmin) / (log_vmax - log_vmin) * (num_bins - 1);
-        bins[bin]++;
+        for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
+        {
+            if (!std::isfinite(*ptr) || *ptr < this->image_vmin || *ptr > this->image_vmax)
+                continue;
+            float normalized = (*ptr - this->image_vmin) / image_range;
+            int bin = std::log10(1.0f + 9.0f * normalized) * (num_bins - 1);
+            bins[bin] += 1;
+        }
     }
     this->histogram->set_bins(bins);
-    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
+    //std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 }
 
 void
@@ -389,6 +413,31 @@ ToneMapping::setup_histogram (mve::ByteImage::ConstPtr img)
 }
 
 void
+ToneMapping::find_min_max ()
+{
+    if (this->image->get_type() != mve::IMAGE_TYPE_FLOAT)
+        throw std::invalid_argument("Only float images are supported.");
+
+    mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(*this->image);
+
+    float min = std::numeric_limits<float>::max();
+    float max = -std::numeric_limits<float>::max();
+
+    for (float const *p = fimg.begin(); p != fimg.end(); ++p)
+    {
+        float v = *p;
+        if (std::isfinite(v) && (!this->ignore_zeros || v != 0.0f))
+        {
+            min = std::min(min, v);
+            max = std::max(max, v);
+        }
+    }
+
+    this->image_vmin = min;
+    this->image_vmax = max;
+}
+
+void
 ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 {
     this->image = img;
@@ -397,14 +446,19 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
     switch (this->image->get_type())
     {
         case mve::IMAGE_TYPE_FLOAT:
-            mve::image::find_min_max_value(img,
-                &this->image_vmin, &this->image_vmax);
+            this->find_min_max();
             this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
             break;
 
         case mve::IMAGE_TYPE_UINT8:
             // This takes too long!
             //this->setup_histogram(mve::ByteImage::ConstPtr(this->image));
+            break;
+
+        case mve::IMAGE_TYPE_UINT16:
+            this->image = mve::image::type_to_type_image<uint16_t, float>(img);
+            this->find_min_max();
+            this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
             break;
 
         default:
@@ -500,14 +554,11 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 mve::ByteImage::ConstPtr
 ToneMapping::render (void)
 {
-    util::WallTimer timer;
-    std::cout << "Rendering..." << std::flush;
-
     if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
-    {
         return this->image;
-    }
 
+    //util::WallTimer timer;
+    //std::cout << "Rendering..." << std::flush;
     int const width = this->image->width();
     int const height = this->image->height();
     int const chans = this->image->channels();
@@ -515,42 +566,43 @@ ToneMapping::render (void)
 
     if (this->image->get_type() != mve::IMAGE_TYPE_FLOAT)
     {
-        std::cerr << "Warning: Unspported image type!" << std::endl;
+        std::cerr << "Warning: Unsupported image type!" << std::endl;
         return ret;
     }
 
     float const gamma_exp = this->gamma_from_slider();
     float const highlight = this->highlight_from_slider();
+    float const image_range = this->image_vmax - this->image_vmin;
+
     float map_min, map_max;
     this->histogram->get_mapping_range(&map_min, &map_max);
-    float log_vmin = std::log10(this->image_vmin);
-    float log_vmax = std::log10(this->image_vmax);
-    map_min = std::pow(10.0f, log_vmin + map_min * (log_vmax - log_vmin));
-    map_max = std::pow(10.0f, log_vmin + map_max * (log_vmax - log_vmin));
+    float linear_min = (std::pow(10.0f, map_min) - 1.0f) / 9.0f;
+    float linear_max = (std::pow(10.0f, map_max) - 1.0f) / 9.0f;
+    float min_value = this->image_vmin + linear_min * image_range;
+    float max_value = this->image_vmin + linear_max * image_range;
+
     mve::FloatImage::ConstPtr fimg = this->image;
     uint8_t* out_ptr = ret->begin();
     for (float const* px = fimg->begin();
         px != fimg->end(); px += chans, out_ptr += 3)
     {
         bool all_below_highlight = true;
-        bool has_one_nan_value = false;
-        bool has_one_inf_value = false;
-        for (int c = 0; !has_one_inf_value && !has_one_nan_value && c < 3; ++c)
+        bool has_bad_value = false;
+        for (int c = 0; !has_bad_value && c < 3; ++c)
         {
             float value = px[this->channel_assignment[c]];
-            has_one_nan_value = has_one_nan_value || MATH_ISNAN(value);
-            has_one_inf_value = has_one_inf_value || MATH_ISINF(value);
+            has_bad_value = has_bad_value || !std::isfinite(value);
             all_below_highlight = all_below_highlight
                 && value <= highlight && value >= 0.0f;
 
-            value = (value - map_min) / (map_max - map_min);
+            value = (value - min_value) / (max_value - min_value);
             value = std::max(0.0f, std::min(1.0f, value));
             if (gamma_exp != 1.0f)
                 value = std::pow(value, gamma_exp);
             out_ptr[c] = static_cast<uint8_t>(value * 255.0f + 0.5f);
         }
 
-        if (has_one_nan_value)
+        if (has_bad_value)
         {
             out_ptr[0] = 255;
             out_ptr[1] = 255;
@@ -563,7 +615,7 @@ ToneMapping::render (void)
             out_ptr[2] = 127;
         }
     }
-    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
+    //std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 
     return ret;
 }

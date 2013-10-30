@@ -20,20 +20,20 @@
 #include <algorithm>
 
 #include "math/matrix.h" // for rot matrix determinant
-#include "math/matrixtools.h" // for rot matrix determinant
+#include "math/matrix_tools.h" // for rot matrix determinant
 #include "math/algo.h"
 #include "util/arguments.h"
 #include "util/string.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/tokenizer.h"
-#include "mve/bundlefile.h"
+#include "mve/bundle_file.h"
 #include "mve/view.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
-#include "mve/imageexif.h" // extract EXIF for JPEG images
-#include "mve/trianglemesh.h"
-#include "mve/meshtools.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
+#include "mve/image_exif.h" // extract EXIF for JPEG images
+#include "mve/mesh.h"
+#include "mve/mesh_tools.h"
 
 #define THUMBNAIL_SIZE 50
 
@@ -60,6 +60,7 @@ struct AppSettings
     bool skip_invalid;
     bool images_only;
     bool append_images;
+    int max_pixels;
 
     /* Computed values. */
     std::string bundle_path;
@@ -102,6 +103,7 @@ read_photosynther_log (std::string const& filename,
     }
 
     /* Find number of images. */
+    std::getline(in, line);
     util::Tokenizer tok;
     tok.split(line);
     if (tok.size() != 7)
@@ -220,15 +222,15 @@ mve::ImageBase::Ptr
 load_any_image (std::string const& fname, std::string* exif)
 {
     mve::ByteImage::Ptr img_8 = load_8bit_image(fname, exif);
-    if (img_8.get())
+    if (img_8 != NULL)
         return img_8;
 
     mve::RawImage::Ptr img_16 = load_16bit_image(fname);
-    if (img_16.get())
+    if (img_16 != NULL)
         return img_16;
 
     mve::FloatImage::Ptr img_float = load_float_image(fname);
-    if (img_float.get())
+    if (img_float != NULL)
         return img_float;
 
     std::cerr << "Skipping file " << util::fs::get_file_component(fname)
@@ -247,6 +249,19 @@ find_min_max_percentile (typename mve::Image<T>::ConstPtr image,
     std::sort(copy->begin(), copy->end());
     *vmin = copy->at(copy->get_value_amount() / 10);
     *vmax = copy->at(9 * copy->get_value_amount() / 10);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+add_exif_to_view (mve::View::Ptr view, std::string const& exif)
+{
+    if (exif.empty())
+        return;
+
+    mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
+    std::copy(exif.begin(), exif.end(), exif_image->begin());
+    view->add_data("exif", exif_image);
 }
 
 /* ---------------------------------------------------------------- */
@@ -287,6 +302,15 @@ create_thumbnail (mve::ImageBase::ConstPtr img)
     }
 
     return image;
+}
+
+template <class T>
+typename mve::Image<T>::Ptr
+limit_image_size (typename mve::Image<T>::Ptr img, int max_pixels)
+{
+    while (img->get_pixel_amount() > max_pixels)
+        img = mve::image::rescale_half_size<uint8_t>(img);
+    return img;
 }
 
 /* ---------------------------------------------------------------- */
@@ -340,6 +364,18 @@ get_rot_from_quaternion(double const* values)
     return rot;
 }
 
+std::string
+get_relative_path_component (std::string const& full_path)
+{
+    std::size_t pos = full_path.find_last_of('/');
+    if (pos == std::string::npos)
+        return "./";
+    else if (pos == 0)
+        return "/.";
+    else
+        return full_path.substr(0, pos);
+}
+
 void
 import_bundle_nvm (AppSettings const& conf)
 {
@@ -350,9 +386,8 @@ import_bundle_nvm (AppSettings const& conf)
         return;
     }
 
-    std::cout << "Start parsing NVM file..." << std::endl;
-
     /* Check NVM file signature. */
+    std::cout << "Start parsing NVM file..." << std::endl;
     std::string signature;
     in >> signature;
     if (signature != "NVM_V3")
@@ -377,6 +412,7 @@ import_bundle_nvm (AppSettings const& conf)
     std::cout << "Number of views: " << num_views << std::endl;
 
     /* Read views. */
+    std::string nvm_path = get_relative_path_component(conf.input_dir);
     std::vector<NVMView> views;
     for (int i = 0; i < num_views; ++i)
     {
@@ -388,6 +424,17 @@ import_bundle_nvm (AppSettings const& conf)
         for (int j = 0; j < 3; ++j)
             in >> view.camera_center[j];
         in >> view.radial_distortion;
+        if (in.eof())
+        {
+            std::cerr << "Error: Premature end of NVM file." << std::endl;
+            in.close();
+            return;
+        }
+
+        /* If the filename is not absolute, make relative to NVM. */
+        if (view.filename[0] != '/')
+            view.filename = nvm_path + "/" + view.filename;
+
         views.push_back(view);
 
         int temp;
@@ -495,10 +542,20 @@ import_bundle_nvm (AppSettings const& conf)
         view->set_id(i);
         view->set_name(util::string::get_filled(i, 4, '0'));
 
-        mve::ByteImage::Ptr image = mve::image::load_file(views[i].filename);
+        mve::ByteImage::Ptr image;
+        std::string exif;
+        try
+        { image = load_8bit_image(views[i].filename, &exif); }
+        catch (...)
+        {
+            std::cout << "Error loading: " << views[i].filename << std::endl;
+            continue;
+        }
+
         int const maxdim = std::max(image->width(), image->height());
         view->add_image("original", image);
         view->add_image("thumbnail", create_thumbnail(image));
+        add_exif_to_view(view, exif);
 
         mve::CameraInfo cam;
         cam.flen = views[i].focal_length / static_cast<float>(maxdim);
@@ -511,11 +568,13 @@ import_bundle_nvm (AppSettings const& conf)
 
         mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
             (image, cam.flen, views[i].radial_distortion);
+        undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
         view->add_image("undistorted", undist);
 
         view->set_camera(cam);
-        view->save_mve_file_as(conf.views_path + "view_"
-            + util::string::get_filled(i, 4, '0') + ".mve");
+        std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
+        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
+        view->save_mve_file_as(conf.views_path + fname);
     }
     std::cout << std::endl << "Done importing NVM file!" << std::endl;
 }
@@ -675,7 +734,6 @@ import_bundle (AppSettings const& conf)
          */
         std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
 
-        std::cout << std::endl;
         std::cout << "Processing view " << fname << "..." << std::endl;
 
         /* Skip invalid cameras... */
@@ -768,23 +826,6 @@ import_bundle (AppSettings const& conf)
         }
         else if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER)
         {
-            /*
-             * With the Photosynther, load undistorted and original.
-             * The new version uses "forStereo_xxxx_yyyy.png" as file
-             * name and the older version uses "undistorted_xxxx_yyyy.jpg".
-             */
-            std::string undist_new_filename = undist_path + "forStereo_"
-                + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(valid_cnt, 4) + ".png";
-            std::string undist_old_filename = undist_path + "undistorted_"
-                + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(valid_cnt, 4) + ".jpg";
-            /* Try the newer file name and fall back if not existing. */
-            if (util::fs::file_exists(undist_new_filename.c_str()))
-                undist = mve::image::load_file(undist_new_filename);
-            else
-                undist = mve::image::load_file(undist_old_filename);
-
             if (conf.import_orig)
             {
                 std::string orig_filename(image_path + orig_files[valid_cnt]);
@@ -794,40 +835,55 @@ import_bundle (AppSettings const& conf)
                 undist = mve::image::image_undistort_msps<uint8_t>
                     (original, cam.dist[0], cam.dist[1]);
             }
+            else
+            {
+                /*
+                 * With the Photosynther, load undistorted and original.
+                 * The new version uses "forStereo_xxxx_yyyy.png" as file
+                 * name and the older version uses "undistorted_xxxx_yyyy.jpg".
+                 */
+                std::string undist_new_filename = undist_path + "forStereo_"
+                    + util::string::get_filled(conf.bundle_id, 4) + "_"
+                    + util::string::get_filled(valid_cnt, 4) + ".png";
+                std::string undist_old_filename = undist_path + "undistorted_"
+                    + util::string::get_filled(conf.bundle_id, 4) + "_"
+                    + util::string::get_filled(valid_cnt, 4) + ".jpg";
+                /* Try the newer file name and fall back if not existing. */
+                if (util::fs::file_exists(undist_new_filename.c_str()))
+                    undist = mve::image::load_file(undist_new_filename);
+                else
+                    undist = mve::image::load_file(undist_old_filename);
+            }
+
             thumb = create_thumbnail(undist);
         }
 
         /* Add images to view. */
-        if (thumb.get())
+        if (thumb != NULL)
             view->add_image("thumbnail", thumb);
 
-        if (undist.get())
+        if (undist != NULL)
+        {
+            undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
             view->add_image("undistorted", undist);
-        else if (cam.flen != 0.0f && !undist.get())
+        }
+        else if (cam.flen != 0.0f && undist == NULL)
             std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
-        if (original.get())
+        if (original != NULL)
             view->add_image("original", original);
-        else if (conf.import_orig && undist.get())
+        else if (conf.import_orig && original == NULL)
             std::cerr << "Warning: Original image missing!" << std::endl;
 
         /* Add EXIF data to view if available. */
-        if (!exif.empty())
-        {
-            mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
-            std::copy(exif.begin(), exif.end(), exif_image->begin());
-            view->add_data("exif", exif_image);
-        }
+        add_exif_to_view(view, exif);
 
         /* Save MVE file. */
-        {
-            std::string view_filename = conf.views_path + fname;
-            view->save_mve_file_as(view_filename);
-        }
+        view->save_mve_file_as(conf.views_path + fname);
 
         if (cam.flen != 0)
             valid_cnt += 1;
-        if (undist.get())
+        if (undist != NULL)
             undist_imported += 1;
     }
 
@@ -923,7 +979,7 @@ import_images (AppSettings const& conf)
         std::string exif;
         mve::ByteImage::Ptr image = load_any_image
             (dir[i].get_absolute_name(), &exif);
-        if (!image.get())
+        if (image == NULL)
             continue;
 
         /* Generate view name. */
@@ -942,19 +998,15 @@ import_images (AppSettings const& conf)
 
         /* Add thumbnail for byte images. */
         mve::ByteImage::Ptr thumb = create_thumbnail(image);
-        if (thumb.get())
+        if (thumb != NULL)
             view->add_image("thumbnail", thumb);
 
         /* Add EXIF data to view if available. */
-        if (!exif.empty())
-        {
-            mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
-            std::copy(exif.begin(), exif.end(), exif_image->begin());
-            view->add_data("exif", exif_image);
-        }
+        add_exif_to_view(view, exif);
 
         /* Save view to disc. */
         fname = "view_" + util::string::get_filled(id_cnt, 4) + ".mve";
+        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
         view->save_mve_file_as(conf.views_path + fname);
 
         /* Advance ID of successfully imported images. */
@@ -972,31 +1024,36 @@ main (int argc, char** argv)
 {
     /* Setup argument parser. */
     util::Arguments args;
+    args.set_usage(argv[0], "[ OPTIONS ] INPUT OUT_SCENE");
+    args.set_exit_on_error(true);
+    args.set_nonopt_maxnum(2);
+    args.set_nonopt_minnum(2);
+    args.set_helptext_indent(22);
+    args.set_description("This utility creates MVE scenes by importing "
+        "from a Photosynther bundle directory, a Noah bundle directory "
+        "or a VisualSfM .nvm file.\n\n"
+
+        "For Photosynther, makescene expects the bundle directory as INPUT, "
+        "an \"undistorted\" directory in INPUT with the bundled images, and "
+        "an \"images\" directory with the original images, if requested. "
+        "This also requires coll.log. For Photosynther, it is not possible "
+        "to keep invalid views.\n\n"
+
+        "For Noah bundles, makescene expects the bundle directory as INPUT, "
+        "a file \"list.txt\" in INPUT and the bundle file in the "
+        "\"bundle\" directory.\n\n"
+
+        "For VisualSfM, makescene expects the .nvm file as INPUT.\n\n"
+
+        "With the \"images-only\" option, all images in INPUT_DIR "
+        "are directly imported without camera information. If "
+        "\"append-images\" is specified, images are added to the scene.");
     args.add_option('o', "original", false, "Import original images");
     args.add_option('b', "bundle-id", true, "ID of the bundle [0]");
     args.add_option('k', "keep-invalid", false, "Keeps images with invalid cameras");
     args.add_option('i', "images-only", false, "Imports images from INPUT_DIR only");
     args.add_option('a', "append-images", false, "Appends images to an existing scene");
-    args.set_description("This utility creates MVE scenes by importing "
-        "from a Photosynther or Noah format bundle directory INPUT_DIR. "
-        "Images corresponding to invalid cameras are ignored by default. "
-
-        "For Photosynther, makescene expects an \"undistorted\" directory "
-        "with the bundled images, and an \"images\" directory with the "
-        "original images, if requested. This also requires coll.log. "
-        "For Photosynther, it is not possible to keep invalid views. "
-
-        "For Noah bundles, makescene expects \"list.txt\" in INPUT_DIR "
-        "and the bundle file in the \"bundle\" directory. "
-
-        "With the \"images-only\" option, all images in INPUT_DIR "
-        "are directly imported without camera information. If "
-        "\"append-images\" is specified, images are added to the scene.");
-    args.set_exit_on_error(true);
-    args.set_nonopt_maxnum(2);
-    args.set_nonopt_minnum(2);
-    args.set_helptext_indent(22);
-    args.set_usage(argv[0], "[ OPTIONS ] INPUT_DIR OUT_SCENE");
+    args.add_option('\0', "max-pixels", true, "Limit image size by iterative half-sizing");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -1008,10 +1065,11 @@ main (int argc, char** argv)
     conf.input_dir = args.get_nth_nonopt(0);
     conf.output_dir = args.get_nth_nonopt(1);
     conf.bundle_id = 0;
+    conf.max_pixels = std::numeric_limits<int>::max();
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
-        i != 0; i = args.next_option())
+        i != NULL; i = args.next_option())
     {
         switch (i->opt->sopt)
         {
@@ -1020,6 +1078,12 @@ main (int argc, char** argv)
             case 'k': conf.skip_invalid = false; break;
             case 'i': conf.images_only = true; break;
             case 'a': conf.append_images = true; break;
+            case '\0':
+                if (i->opt->lopt == "max-pixels")
+                {
+                    conf.max_pixels = i->get_arg<int>();
+                    break;
+                }
             default: throw std::invalid_argument("Unexpected option");
         }
     }

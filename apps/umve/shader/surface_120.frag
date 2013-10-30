@@ -1,5 +1,17 @@
 #version 120 
 
+/* Fragment Shader Special Variables
+ *
+ * in  vec4  gl_FragCoord;
+ * in  bool  gl_FrontFacing;
+ * in  float gl_ClipDistance[];
+ * out vec4  gl_FragColor;                   // deprecated
+ * out vec4  gl_FragData[gl_MaxDrawBuffers]; // deprecated
+ * out float gl_FragDepth;
+ * in  vec2  gl_PointCoord;
+ * in  int   gl_PrimitiveID;
+ */
+
 varying vec3 onormal;
 varying vec4 ocolor;
 
@@ -15,15 +27,17 @@ void main(void)
     /* Assign material albedo. */
     vec4 albedo = ccolor;
     if (ccolor.a == 0.0)
-      albedo = ocolor;
+        albedo = ocolor;
 
     gl_FragDepth = gl_FragCoord.z;
     if (lighting == 1)
     {
         /* Compute shading from normal and lights. */
         vec4 normal = viewmat * vec4(onormal, 0);
-        vec4 light_vector = vec4(normalize(-light1), 0);
-        float light_factor = abs(dot(normal, light_vector));
+        vec4 light_vector = vec4(normalize(light1), 0);
+        float light_factor = dot(normal, light_vector);
+        if (light_factor < 0.0)
+            light_factor = -light_factor / 2.0;
         gl_FragColor = albedo * light_factor;
     }
     else

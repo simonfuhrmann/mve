@@ -9,7 +9,7 @@
 #include <limits>
 
 #include "math/vector.h"
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
@@ -29,17 +29,17 @@ public:
     typedef std::vector<T> Voxels;
 
 private:
-    std::size_t w;
-    std::size_t h;
-    std::size_t d;
+    int w;
+    int h;
+    int d;
     Voxels data;
 
 public:
     Volume (void);
-    static Ptr create (std::size_t w, std::size_t h, std::size_t d);
+    static Ptr create (int width, int height, int depth);
 
     /** Allocates new volume space, clearing previous contents. */
-    void allocate (std::size_t w, std::size_t h, std::size_t d);
+    void allocate (int width, int height, int depth);
 
     /** Returns data vector for the volume. */
     Voxels& get_data (void);
@@ -47,11 +47,11 @@ public:
     Voxels const& get_data (void) const;
 
     /** Returns width of the image. */
-    std::size_t width (void) const;
+    int width (void) const;
     /** Returns height of the image. */
-    std::size_t height (void) const;
+    int height (void) const;
     /** Returns depth of the image. */
-    std::size_t depth (void) const;
+    int depth (void) const;
 };
 
 /* ---------------------------------------------------------------- */
@@ -66,10 +66,12 @@ public:
     float sdf[8];
     std::size_t vid[8];
     math::Vec3f pos[8];
+    math::Vec3f color[8];
 
 public:
     VolumeMCAccessor (void);
     bool next (void);
+    bool has_colors (void) const;
 };
 
 /* ---------------------------------------------------------------- */
@@ -105,21 +107,21 @@ Volume<T>::Volume (void)
 
 template <typename T>
 inline typename Volume<T>::Ptr
-Volume<T>::create (std::size_t w, std::size_t h, std::size_t d)
+Volume<T>::create (int width, int height, int depth)
 {
     typename Volume<T>::Ptr v(new Volume());
-    v->allocate(w, h, d);
+    v->allocate(width, height, depth);
     return v;
 }
 
 template <typename T>
 inline void
-Volume<T>::allocate (std::size_t w, std::size_t h, std::size_t d)
+Volume<T>::allocate (int width, int height, int depth)
 {
-    this->w = w;
-    this->h = h;
-    this->d = d;
-    this->data.resize(w * h * d);
+    this->w = width;
+    this->h = height;
+    this->d = depth;
+    this->data.resize(width * height * depth);
 }
 
 template <typename T>
@@ -137,21 +139,21 @@ Volume<T>::get_data (void) const
 }
 
 template <typename T>
-inline std::size_t
+inline int
 Volume<T>::width (void) const
 {
     return this->w;
 }
 
 template <typename T>
-inline std::size_t
+inline int
 Volume<T>::height (void) const
 {
     return this->h;
 }
 
 template <typename T>
-inline std::size_t
+inline int
 Volume<T>::depth (void) const
 {
     return this->d;

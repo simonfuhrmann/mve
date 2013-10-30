@@ -1,6 +1,9 @@
 #include <iostream>
 
-#include "mve/imagebase.h"
+#include <QFormLayout>
+#include <QVBoxLayout>
+
+#include "mve/image_base.h"
 #include "mve/image.h"
 
 #include "imageinspector.h"
@@ -55,7 +58,7 @@ ImageInspectorWidget::set_image (mve::ByteImage::ConstPtr byte_image,
     this->orig_image = orig_image;
     if (this->byte_image->width() != this->orig_image->width()
         || this->byte_image->height() != this->orig_image->height())
-        std::cerr << "Warning: images don't match!" << std::endl;
+        throw std::invalid_argument("Byte and original image don't match");
 
     int mag_x = this->inspect_x;
     int mag_y = this->inspect_y;
@@ -136,9 +139,26 @@ ImageInspectorWidget::get_magnified (int x, int y, int size, int scale)
 unsigned int
 ImageInspectorWidget::get_image_color (int x, int y)
 {
-    unsigned int red = this->byte_image->at(x, y, 0);
-    unsigned int green = this->byte_image->at(x, y, 1);
-    unsigned int blue = this->byte_image->at(x, y, 2);
+    int const chans = this->byte_image->channels();
+    unsigned int red, green, blue;
+    if (chans == 1)
+    {
+        red = this->byte_image->at(x, y, 0);
+        green = red;
+        blue = red;
+    }
+    else if (chans == 2)
+    {
+        red = this->byte_image->at(x, y, 0);
+        green = this->byte_image->at(x, y, 1);
+        blue = 0;
+    }
+    else
+    {
+        red = this->byte_image->at(x, y, 0);
+        green = this->byte_image->at(x, y, 1);
+        blue = this->byte_image->at(x, y, 2);
+    }
     return red << 16 | green << 8 | blue;
 }
 
@@ -169,6 +189,19 @@ ImageInspectorWidget::update_value_label (int x, int y)
     else if (this->orig_image->get_type() == mve::IMAGE_TYPE_UINT8)
     {
         mve::ByteImage::ConstPtr img(this->orig_image);
+        for (int i = 0; i < ic; ++i)
+        {
+            if (ic <= 4 || i < 3)
+                value_str += tr(" %1").arg((int)img->at(off + i));
+            if (ic > 4 && i == 3)
+                value_str += tr(" ...");
+            if (ic > 4)
+                tooltip_str += tr(" %1").arg((int)img->at(off + i));
+        }
+    }
+    else if (this->orig_image->get_type() == mve::IMAGE_TYPE_UINT16)
+    {
+        mve::RawImage::ConstPtr img(this->orig_image);
         for (int i = 0; i < ic; ++i)
         {
             if (ic <= 4 || i < 3)

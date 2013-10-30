@@ -1,9 +1,15 @@
 #include <iostream>
 #include <cstdlib>
 
+#include <QApplication>
+#include <QFileDialog>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QStatusBar>
+
 #include "util/exception.h"
-#include "util/filesystem.h"
-#include "mve/plyfile.h"
+#include "util/file_system.h"
+#include "mve/mesh_io_ply.h"
 
 #include "guihelpers.h"
 #include "batchoperations.h"
@@ -97,13 +103,16 @@ MainWindow::load_file (const std::string& filename)
 {
     try
     {
-        if (util::string::right(filename, 4) == ".off"
-            || util::string::right(filename, 4) == ".ply")
+        std::string ext4 = util::string::right(filename, 4);
+        std::string ext5 = util::string::right(filename, 5);
+        if (ext4 == ".off" || ext4 == ".ply")
         {
             this->tab_sceneinspect->load_file(filename);
             this->tabs->setCurrentIndex(1);
         }
-        else if (util::string::right(filename, 4) == ".mve")
+        else if (ext4 == ".mve" || ext4 == ".tif" || ext5 == ".tiff"
+            || ext4 == ".pfm" || ext4 == ".png"
+            || ext4 == ".jpg" || ext5 == ".jpeg")
         {
             this->tab_viewinspect->load_file(filename.c_str());
             this->tabs->setCurrentIndex(0);
@@ -176,6 +185,12 @@ MainWindow::create_actions (void)
     this->connect(this->action_batch_delete, SIGNAL(triggered()),
         this, SLOT(on_batch_delete()));
 
+    this->action_generate_thumbs = new QAction(
+        QIcon(":/images/icon_image_inspect.svg"),
+        tr("Generate thumbmails..."), this);
+    this->connect(this->action_generate_thumbs, SIGNAL(triggered()),
+        this, SLOT(on_generate_thumbs()));
+
     this->action_cache_cleanup = new QAction(QIcon(":/images/icon_clean.svg"),
         tr("Cache cleanup"), this);
     this->connect(this->action_cache_cleanup, SIGNAL(triggered()),
@@ -218,6 +233,7 @@ MainWindow::create_menus (void)
     this->menu_scene->addAction(this->action_import_images);
     this->menu_scene->addAction(this->action_recon_export);
     this->menu_scene->addAction(this->action_batch_delete);
+    this->menu_scene->addAction(this->action_generate_thumbs);
     this->menu_scene->addAction(this->action_cache_cleanup);
     this->menu_scene->addSeparator();
     this->menu_scene->addAction(this->action_exit);
@@ -259,7 +275,7 @@ MainWindow::perform_close_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (!scene.get())
+    if (scene == NULL)
         return true;
 
     if (!this->jobqueue->is_empty())
@@ -308,6 +324,7 @@ MainWindow::enable_scene_actions (bool value)
     this->action_import_images->setEnabled(value);
     this->action_recon_export->setEnabled(value);
     this->action_batch_delete->setEnabled(value);
+    this->action_generate_thumbs->setEnabled(value);
     this->action_cache_cleanup->setEnabled(value);
     this->action_refresh_scene->setEnabled(value);
 }
@@ -353,7 +370,7 @@ MainWindow::on_reload_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene.get() == 0 || scene->get_path().empty())
+    if (scene == NULL || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error reloading scene!",
             "There is nothing to reload, rookie.");
@@ -374,7 +391,7 @@ MainWindow::on_save_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene.get() == 0 || scene->get_path().empty())
+    if (scene == NULL || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error saving scene!",
             "There is nothing to save, rookie.");
@@ -425,7 +442,7 @@ MainWindow::on_update_memory (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
     std::size_t mem = 0;
-    if (scene.get())
+    if (scene != NULL)
         mem = scene->get_total_mem_usage();
 
     std::string memstr = util::string::get_size_string(mem);
@@ -438,7 +455,7 @@ void
 MainWindow::on_import_images (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -460,7 +477,7 @@ void
 MainWindow::on_recon_export (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -479,7 +496,7 @@ void
 MainWindow::on_batch_delete (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -495,10 +512,29 @@ MainWindow::on_batch_delete (void)
 /* ---------------------------------------------------------------- */
 
 void
+MainWindow::on_generate_thumbs (void)
+{
+    mve::Scene::Ptr scene = SceneManager::get().get_scene();
+    if (scene == NULL)
+    {
+        QMessageBox::information(this, "Error generating thumbnails!",
+            "No scene is loaded, rookie.");
+        return;
+    }
+
+    BatchGenerateThumbs dialog(this);
+    dialog.setModal(this);
+    dialog.set_scene(scene);
+    dialog.exec();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 MainWindow::on_cache_cleanup (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
         return;
 
     scene->cache_cleanup();

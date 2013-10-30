@@ -143,3 +143,52 @@ TEST(AlgoTest, MaxMinElementIdTest)
         EXPECT_EQ(id, 2);
     }
 }
+
+TEST(AlgoTest, FastPowTest)
+{
+    EXPECT_EQ(1, math::algo::fastpow(10, 0));
+    EXPECT_EQ(10, math::algo::fastpow(10, 1));
+    EXPECT_EQ(100, math::algo::fastpow(10, 2));
+    EXPECT_EQ(1000, math::algo::fastpow(10, 3));
+
+    EXPECT_EQ(1, math::algo::fastpow(2, 0));
+    EXPECT_EQ(2, math::algo::fastpow(2, 1));
+    EXPECT_EQ(4, math::algo::fastpow(2, 2));
+    EXPECT_EQ(8, math::algo::fastpow(2, 3));
+    EXPECT_EQ(16, math::algo::fastpow(2, 4));
+    EXPECT_EQ(32, math::algo::fastpow(2, 5));
+    EXPECT_EQ(64, math::algo::fastpow(2, 6));
+    EXPECT_EQ(128, math::algo::fastpow(2, 7));
+    EXPECT_EQ(256, math::algo::fastpow(2, 8));
+    EXPECT_EQ(512, math::algo::fastpow(2, 9));
+    EXPECT_EQ(1024, math::algo::fastpow(2, 10));
+}
+
+TEST(AlgoTest, SortValues)
+{
+    int a, b, c;
+
+    a = 1; b = 2; c = 3;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 1; b = 3; c = 2;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 2; b = 1; c = 3;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 2; b = 3; c = 1;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 3; b = 1; c = 2;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+
+    a = 3; b = 2; c = 1;
+    math::algo::sort_values(&a, &b, &c);
+    EXPECT_EQ(1, a); EXPECT_EQ(2, b); EXPECT_EQ(3, c);
+}

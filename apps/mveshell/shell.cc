@@ -9,11 +9,11 @@
 #endif
 
 #include "util/tokenizer.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "mve/scene.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
-#include "mve/imageexif.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
+#include "mve/image_exif.h"
 
 #include "shell.h"
 
@@ -142,7 +142,7 @@ Shell::print_help (void)
 void
 Shell::delete_embeddings (std::string const& name)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         throw std::runtime_error("No scene loaded");
 
     std::size_t num_removed = 0;
@@ -150,7 +150,7 @@ Shell::delete_embeddings (std::string const& name)
     for (std::size_t i = 0; i < vl.size(); ++i)
     {
         mve::View::Ptr view = vl[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         bool removed = view->remove_embedding(name);
@@ -166,7 +166,7 @@ Shell::delete_embeddings (std::string const& name)
 void
 Shell::list_embeddings (void)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         throw std::runtime_error("No scene loaded");
 
     typedef std::set<std::string> StringSet;
@@ -176,7 +176,7 @@ Shell::list_embeddings (void)
     for (std::size_t i = 0; i < vl.size(); ++i)
     {
         mve::View::ConstPtr view = vl[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
         mve::View::Proxies const& p(view->get_proxies());
         for (std::size_t j = 0; j < p.size(); ++j)
@@ -262,7 +262,7 @@ export_float_image (mve::FloatImage::Ptr image, std::string const& filename)
 void
 Shell::export_embeddings (std::string const& name, std::string const& path)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         throw std::runtime_error("No scene loaded");
 
     /* Create output directory. */
@@ -283,7 +283,7 @@ Shell::export_embeddings (std::string const& name, std::string const& path)
     for (std::size_t i = 0; i < vl.size(); ++i)
     {
         mve::View::Ptr view = vl[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         std::cout << "View " << i << " (" << view->get_name() << "): ";
@@ -291,7 +291,7 @@ Shell::export_embeddings (std::string const& name, std::string const& path)
 
         /* Get byte image. */
         mve::ImageBase::Ptr image = view->get_byte_image(name);
-        if (image.get())
+        if (image != NULL)
         {
             export_byte_image(image, filename);
             continue;
@@ -299,7 +299,7 @@ Shell::export_embeddings (std::string const& name, std::string const& path)
 
         /* No byte image? Check float image! */
         image = view->get_float_image(name);
-        if (image.get())
+        if (image != NULL)
         {
             export_float_image(image, filename);
             continue;
@@ -314,7 +314,7 @@ Shell::export_embeddings (std::string const& name, std::string const& path)
 void
 Shell::add_exif (std::string const& path)
 {
-    if (!this->scene.get())
+    if (this->scene == NULL)
         throw std::runtime_error("No scene loaded");
 
     if (!util::fs::dir_exists(path.c_str()))
@@ -324,7 +324,7 @@ Shell::add_exif (std::string const& path)
     for (std::size_t i = 0; i < vl.size(); ++i)
     {
         mve::View::Ptr view = vl[i];
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         std::string name = path + "/" + view->get_name();

@@ -6,10 +6,8 @@ doc:
 	$(MAKE) -C docs
 
 clean:
-	$(MAKE) -C apps clean
-	$(MAKE) -C libs clean
-	#$(MAKE) -C docs clean
+	$(MAKE) -C apps $@
+	$(MAKE) -C libs $@
+	#$(MAKE) -C docs $@
 
-depend:
-	$(MAKE) -C libs depend
-	$(MAKE) -C apps depend
+.PHONY: all doc clean

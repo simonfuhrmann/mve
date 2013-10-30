@@ -6,7 +6,7 @@
 #ifndef UTIL_STRING_HEADER
 #define UTIL_STRING_HEADER
 
-#include <stdint.h>
+#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <sstream>
 #include <string>
 #include <iomanip>
@@ -55,7 +55,7 @@ void clip_whitespaces (std::string* str);
 std::string clipped_whitespaces (std::string const& str);
 
 /** Clips newlines from the end of the string, in-place. */
-void clip_newlines (std::string& str);
+void clip_newlines (std::string* str);
 
 /** Clips newlines from the end of the string. */
 std::string clipped_newlines (std::string const& str);
@@ -131,7 +131,7 @@ inline T
 convert (std::string const& str)
 {
     std::stringstream ss(str);
-    T ret;
+    T ret = T();
     ss >> ret;
     return ret;
 }
@@ -308,7 +308,7 @@ clipped_newlines (std::string const& str)
 inline std::string
 wordwrap (char const* str, int width)
 {
-    if (str == 0)
+    if (str == NULL)
         return std::string();
     if (width <= 0)
         return str;
@@ -376,7 +376,7 @@ ellipsize (std::string const& str, std::size_t chars, int type)
         case 2:
             return "..." + str.substr(str.size() - chars + 3);
         default:
-            return str;
+            break;
     }
     return str;
 }

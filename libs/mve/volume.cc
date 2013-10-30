@@ -1,6 +1,6 @@
 #include "math/vector.h"
-#include "mve/marchingtets.h"
-#include "mve/marchingcubes.h"
+#include "mve/marching_tets.h"
+#include "mve/marching_cubes.h"
 #include "mve/volume.h"
 
 MVE_NAMESPACE_BEGIN
@@ -15,15 +15,15 @@ VolumeMTAccessor::VolumeMTAccessor (void)
 bool
 VolumeMTAccessor::next (void)
 {
-    std::size_t w = this->vol->width();
-    std::size_t h = this->vol->height();
-    std::size_t d = this->vol->depth();
+    std::size_t const width = static_cast<std::size_t>(this->vol->width());
+    std::size_t const height = static_cast<std::size_t>(this->vol->height());
+    std::size_t const depth = static_cast<std::size_t>(this->vol->depth());
 
     this->iter += 1;
-    if (this->iter == (w - 1) * (h - 1) * (d - 1) * 6)
+    if (this->iter == (width - 1) * (height - 1) * (depth - 1) * 6)
         return false;
 
-    int tet_id = this->iter % 6;
+    int tet_id = static_cast<int>(this->iter % 6);
     if (tet_id == 0)
         this->load_new_cube();
 
@@ -43,24 +43,24 @@ VolumeMTAccessor::next (void)
 void
 VolumeMTAccessor::load_new_cube (void)
 {
-    std::size_t w = this->vol->width();
-    std::size_t h = this->vol->height();
+    int const width = this->vol->width();
+    int const height = this->vol->height();
 
-    std::size_t base_x = (iter / 6) % (w - 1);
-    std::size_t base_y = (iter / (6 * (w - 1))) % (h - 1);
-    std::size_t base_z = (iter / (6 * (w - 1) * (h - 1)));
-    std::size_t base = base_z * w * h + base_y * w + base_x;
+    int const base_x = (iter / 6) % (width - 1);
+    int const base_y = (iter / (6 * (width - 1))) % (height - 1);
+    int const base_z = (iter / (6 * (width - 1) * (height - 1)));
+    int const base = base_z * width * height + base_y * width + base_x;
 
-    float spacing = 1.0f / (float)(w - 1);
+    float spacing = 1.0f / (float)(width - 1);
 
     this->cube_vids[0] = base;
     this->cube_vids[1] = base + 1;
-    this->cube_vids[2] = base + 1 + w * h;
-    this->cube_vids[3] = base + w * h;
-    this->cube_vids[4] = base + w;
-    this->cube_vids[5] = base + 1 + w;
-    this->cube_vids[6] = base + 1 + w + w * h;
-    this->cube_vids[7] = base + w + w * h;
+    this->cube_vids[2] = base + 1 + width * height;
+    this->cube_vids[3] = base + width * height;
+    this->cube_vids[4] = base + width;
+    this->cube_vids[5] = base + 1 + width;
+    this->cube_vids[6] = base + 1 + width + width * height;
+    this->cube_vids[7] = base + width + width * height;
 
     /* Find 8 voxel positions. */
     math::Vec3f basepos(base_x * spacing - 0.5f, base_y * spacing - 0.5f, base_z * spacing - 0.5f);
@@ -84,35 +84,36 @@ VolumeMCAccessor::VolumeMCAccessor (void)
 bool
 VolumeMCAccessor::next (void)
 {
-    std::size_t w = this->vol->width();
-    std::size_t h = this->vol->height();
-    std::size_t d = this->vol->depth();
+    std::size_t const width = static_cast<std::size_t>(this->vol->width());
+    std::size_t const height = static_cast<std::size_t>(this->vol->height());
+    std::size_t const depth = static_cast<std::size_t>(this->vol->depth());
 
     this->iter += 1;
-    if (this->iter == (w - 1) * (h - 1) * (d - 1))
+    if (this->iter == (width - 1) * (height - 1) * (depth - 1))
         return false;
 
-    std::size_t base_x = iter % (w - 1);
-    std::size_t base_y = (iter / (w - 1)) % (h - 1);
-    std::size_t base_z = iter / ((w - 1) * (h - 1));
-    std::size_t base = base_z * w * h + base_y * w + base_x;
+    int const base_x = iter % (width - 1);
+    int const base_y = (iter / (width - 1)) % (height - 1);
+    int const base_z = iter / ((width - 1) * (height - 1));
+    int const base = base_z * width * height + base_y * width + base_x;
 
-    float spacing = 1.0f / (float)(w - 1);
+    float spacing = 1.0f / (float)(width - 1);
 
     this->vid[0] = base;
     this->vid[1] = base + 1;
-    this->vid[2] = base + 1 + w * h;
-    this->vid[3] = base + w * h;
-    this->vid[4] = base + w;
-    this->vid[5] = base + 1 + w;
-    this->vid[6] = base + 1 + w + w * h;
-    this->vid[7] = base + w + w * h;
+    this->vid[2] = base + 1 + width * height;
+    this->vid[3] = base + width * height;
+    this->vid[4] = base + width;
+    this->vid[5] = base + 1 + width;
+    this->vid[6] = base + 1 + width + width * height;
+    this->vid[7] = base + width + width * height;
 
     for (int i = 0; i < 8; ++i)
         this->sdf[i] = this->vol->get_data()[this->vid[i]];
 
     /* Find 8 voxel positions. */
-    math::Vec3f basepos(base_x * spacing - 0.5f, base_y * spacing - 0.5f, base_z * spacing - 0.5f);
+    math::Vec3f basepos(base_x * spacing - 0.5f,
+        base_y * spacing - 0.5f, base_z * spacing - 0.5f);
     this->pos[0] = basepos;
     this->pos[1] = basepos + math::Vec3f(spacing, 0, 0);
     this->pos[2] = basepos + math::Vec3f(spacing, 0, spacing);
@@ -123,6 +124,12 @@ VolumeMCAccessor::next (void)
     this->pos[7] = basepos + math::Vec3f(0, spacing, spacing);
 
     return true;
+}
+
+bool
+VolumeMCAccessor::has_colors (void) const
+{
+    return false;
 }
 
 MVE_NAMESPACE_END

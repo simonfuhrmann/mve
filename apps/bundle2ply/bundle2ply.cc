@@ -1,5 +1,5 @@
 #include <iostream>
-#include "mve/bundlefile.h"
+#include "mve/bundle_file.h"
 
 int
 main (int argc, char** argv)

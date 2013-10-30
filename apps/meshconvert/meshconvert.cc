@@ -3,8 +3,8 @@
 
 #include "util/arguments.h"
 #include "util/string.h"
-#include "mve/meshtools.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io.h"
+#include "mve/mesh_io_ply.h"
 
 struct AppSettings
 {
@@ -22,12 +22,12 @@ main (int argc, char** argv)
     args.set_nonopt_minnum(2);
     args.set_nonopt_maxnum(2);
     args.set_helptext_indent(25);
-    args.set_usage("Usage: meshconvert [ OPTS ] IN_MESH OUT_MESH");
+    args.set_usage(argv[0], "[ OPTS ] IN_MESH OUT_MESH");
     args.set_description(
         "Converts the mesh given by IN_MESH to the output file OUT_MESH. "
         "The format of the input and output mesh are detected by extension. "
-        "Supported file formats are .off, .ply (Stanford), .npts (PoissonSR) "
-        "and .pbrt.");
+        "Supported file formats are .off, .ply (Stanford), .npts or .bnpts "
+        "(Poisson Surface Reconstruction) and .pbrt.");
     args.add_option('n', "normals", false, "Compute vertex normals");
     args.parse(argc, argv);
 
@@ -38,11 +38,8 @@ main (int argc, char** argv)
     conf.compute_normals = false;
 
     for (util::ArgResult const* arg = args.next_result();
-        arg != 0; arg = args.next_result())
+        arg != NULL; arg = args.next_option())
     {
-        if (arg->opt == 0)
-            continue;
-
         switch (arg->opt->sopt)
         {
             case 'n': conf.compute_normals = true; break;
@@ -66,9 +63,13 @@ main (int argc, char** argv)
 
     try
     {
-        using util::string::right;
-        if (conf.compute_normals && right(conf.outfile, 4) == ".ply")
-            mve::geom::save_ply_mesh(mesh, conf.outfile, true, true, true);
+        if (conf.compute_normals
+            && util::string::right(conf.outfile, 4) == ".ply")
+        {
+            mve::geom::SavePLYOptions opts;
+            opts.write_vertex_normals = true;
+            mve::geom::save_ply_mesh(mesh, conf.outfile, opts);
+        }
         else
             mve::geom::save_mesh(mesh, conf.outfile);
     }

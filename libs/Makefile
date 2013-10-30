@@ -1,23 +1,17 @@
-include ../Makefile.inc
-
 all:
-	${MAKE} -j${CORES} -C util
-	${MAKE} -j${CORES} -C mve
-	${MAKE} -j${CORES} -C sfm
-	${MAKE} -j${CORES} -C dmrecon
-	${MAKE} -j${CORES} -C ogl 
+	${MAKE} -C math
+	${MAKE} -C util
+	${MAKE} -C mve
+	${MAKE} -C sfm
+	${MAKE} -C dmrecon
+	${MAKE} -C ogl
 
 clean:
-	${MAKE} -C util clean
-	${MAKE} -C mve clean
-	${MAKE} -C sfm clean
-	${MAKE} -C dmrecon clean
-	${MAKE} -C ogl clean
+	${MAKE} -C math $@
+	${MAKE} -C util $@
+	${MAKE} -C mve $@
+	${MAKE} -C sfm $@
+	${MAKE} -C dmrecon $@
+	${MAKE} -C ogl $@
 
-depend:
-	${MAKE} -C util depend
-	${MAKE} -C mve depend
-	${MAKE} -C sfm depend
-	${MAKE} -C dmrecon depend
-	${MAKE} -C ogl depend
-
+.PHONY: all clean

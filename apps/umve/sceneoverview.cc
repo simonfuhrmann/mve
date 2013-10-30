@@ -1,3 +1,5 @@
+#include <QLineEdit>
+
 #include "util/string.h"
 
 #include "guihelpers.h"
@@ -52,7 +54,7 @@ SceneOverview::on_scene_changed (mve::Scene::Ptr scene)
     this->viewlist->clear();
     this->viewlist->setEnabled(false);
 
-    if (!scene.get())
+    if (scene == NULL)
         return;
 
     std::string filter_str = this->filter->text().toStdString();
@@ -74,7 +76,7 @@ SceneOverview::on_scene_changed (mve::Scene::Ptr scene)
     for (std::size_t i = 0; i < sl.size(); ++i)
     {
         mve::View::Ptr view(sl[i]);
-        if (!view.get())
+        if (view == NULL)
             continue;
 
         /* Add view if at least one embedding matches filter. */
@@ -98,7 +100,7 @@ SceneOverview::on_scene_changed (mve::Scene::Ptr scene)
 void
 SceneOverview::add_view_to_layout (std::size_t id, mve::View::Ptr view)
 {
-    if (!view.get())
+    if (view == NULL)
         return;
 
     /* Find view name and number of embeddings. */
@@ -115,7 +117,7 @@ SceneOverview::add_view_to_layout (std::size_t id, mve::View::Ptr view)
     /* Create the item image. */
     mve::ByteImage::ConstPtr thumb(view->get_byte_image("thumbnail"));
     QPixmap button_pixmap;
-    if (thumb.get() == 0)
+    if (thumb == NULL)
     {
         button_pixmap.load(":/images/icon_broken.svg");
     }

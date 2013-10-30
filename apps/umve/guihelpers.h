@@ -1,7 +1,10 @@
 #ifndef GUI_HELPERS_HEADER
 #define GUI_HELPERS_HEADER
 
-#include <QtGui>
+#include <QComboBox>
+#include <QDialog>
+#include <QLayout>
+#include <QPushButton>
 #include "mve/image.h"
 
 #include "selectedview.h"
@@ -33,7 +36,7 @@ public:
     QComboBox colorimage_cb;
 
 public:
-    PlyExportDialog (mve::View::Ptr view, QWidget* parent = 0);
+    PlyExportDialog (mve::View::Ptr view, QWidget* parent = NULL);
     void accept (void);
 };
 
@@ -76,7 +79,7 @@ private slots:
     void on_clicked (void);
 
 public:
-    QFileSelector (QWidget* parent = 0);
+    QFileSelector (QWidget* parent = NULL);
     void set_directory_mode (void);
     void set_ellipsize (std::size_t chars);
     std::string const& get_filename (void) const;

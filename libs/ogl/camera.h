@@ -8,7 +8,7 @@
 
 #include "math/vector.h"
 #include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "ogl/defines.h"
 
 OGL_NAMESPACE_BEGIN

@@ -1,7 +1,8 @@
 #ifndef SCENE_OVERVIEW_HEADER
 #define SCENE_OVERVIEW_HEADER
 
-#include <QtGui>
+#include <QListWidget>
+#include <QToolBar>
 
 #include "mve/scene.h"
 

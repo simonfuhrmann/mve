@@ -4,12 +4,12 @@
 
 #include "util/timer.h"
 #include "util/system.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "math/vector.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
-#include "mve/imageexif.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
+#include "mve/image_exif.h"
 #include "mve/bilateral.h"
 
 int

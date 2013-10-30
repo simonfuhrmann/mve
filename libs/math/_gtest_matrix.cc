@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 
 TEST(MatrixTest, RowMajor)
 {
@@ -114,7 +114,7 @@ TEST(MatrixTest, MatrixNegate)
         EXPECT_EQ(M2[i], M1[i]);
 }
 
-TEST(MatrixTest, MatrixStacking)
+TEST(MatrixTest, MatrixStackMatrix)
 {
     math::Matrix<float, 1, 1> m(1.0f);
     math::Matrix<float, 1, 2> m1 = m.hstack(math::Matrix<float, 1, 1>(2.0f));
@@ -135,6 +135,27 @@ TEST(MatrixTest, MatrixStacking)
     ASSERT_EQ(m6(0,0), 1.0f);  ASSERT_EQ(m6(0,1), 4.0f);
     ASSERT_EQ(m6(1,0), 3.0f);  ASSERT_EQ(m6(1,1), 4.0f);
     ASSERT_EQ(m6(2,0), 5.0f);  ASSERT_EQ(m6(2,1), 6.0f);
+}
+
+TEST(MatrixTest, MatrixStackVector)
+{
+    math::Matrix<float, 1, 1> m(1.0f);
+    math::Matrix<float, 1, 2> m1 = m.hstack(math::Vec1f(2.0f));
+    ASSERT_EQ(m1(0,0), 1.0f);
+    ASSERT_EQ(m1(0,1), 2.0f);
+
+    math::Matrix<float, 2, 1> m2 = m.vstack(math::Vec1f(3.0f));
+    ASSERT_EQ(m2(0,0), 1.0f);
+    ASSERT_EQ(m2(1,0), 3.0f);
+
+    math::Matrix<float, 2, 2> m3 = m2.hstack(math::Vec2f(4.0f, 5.0f));
+    ASSERT_EQ(m3(0,0), 1.0f);  ASSERT_EQ(m3(0,1), 4.0f);
+    ASSERT_EQ(m3(1,0), 3.0f);  ASSERT_EQ(m3(1,1), 5.0f);
+
+    math::Matrix<float, 3, 2> m4 = m3.vstack(math::Vec2f(7.0f, 6.0f));
+    ASSERT_EQ(m4(0,0), 1.0f);  ASSERT_EQ(m4(0,1), 4.0f);
+    ASSERT_EQ(m4(1,0), 3.0f);  ASSERT_EQ(m4(1,1), 5.0f);
+    ASSERT_EQ(m4(2,0), 7.0f);  ASSERT_EQ(m4(2,1), 6.0f);
 }
 
 TEST(MatrixToolsTest, DiagonalMatrixTest)
@@ -172,7 +193,7 @@ TEST(MatrixToolsTest, DiagonalMatrixTest)
 TEST(MatrixToolsTest, MatrixIsIdentity)
 {
     math::Matrix3f mat, mat2;
-    math::matrix_set_identity(mat);
+    math::matrix_set_identity(&mat);
     EXPECT_TRUE(math::matrix_is_identity(mat));
 
     mat2 = mat;

@@ -1,10 +1,12 @@
 #ifndef UMVE_BATCHOPERATIONS_HEADER
 #define UMVE_BATCHOPERATIONS_HEADER
 
-#include <QtGui>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QListWidget>
 
 #include "mve/scene.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 
 #include "guihelpers.h"
 
@@ -30,7 +32,7 @@ private slots:
     void on_close_clicked (void);
 
 public:
-    BatchOperations (QWidget* parent = 0);
+    BatchOperations (QWidget* parent = NULL);
     void set_scene (mve::Scene::Ptr scene);
 };
 
@@ -53,7 +55,7 @@ private slots:
     void on_batchdel_exec (void);
 
 public:
-    BatchDelete (QWidget* parent = 0);
+    BatchDelete (QWidget* parent = NULL);
 };
 
 /* ---------------------------------------------------------------- */
@@ -79,7 +81,7 @@ private slots:
     void on_dirselect (void);
 
 public:
-    BatchExport (QWidget* parent = 0);
+    BatchExport (QWidget* parent = NULL);
 };
 
 /* ---------------------------------------------------------------- */
@@ -107,7 +109,26 @@ private slots:
     void on_import_images (void);
 
 public:
-    BatchImportImages (QWidget* parent = 0);
+    BatchImportImages (QWidget* parent = NULL);
+};
+
+/* ---------------------------------------------------------------- */
+
+class BatchGenerateThumbs : public BatchOperations
+{
+    Q_OBJECT
+
+private:
+    QLineEdit embedding_name;
+
+private:
+    void setup_gui (void);
+
+private slots:
+    void on_generate (void);
+
+public:
+    BatchGenerateThumbs (QWidget* parent = NULL);
 };
 
 /* ---------------------------------------------------------------- */

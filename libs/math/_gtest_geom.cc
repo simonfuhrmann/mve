@@ -7,7 +7,7 @@
 
 #include "math/vector.h"
 #include "math/matrix.h"
-#include "math/octreetools.h"
+#include "math/octree_tools.h"
 
 TEST(GeomTests, RayRayIntersectTest)
 {

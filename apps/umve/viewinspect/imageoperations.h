@@ -1,9 +1,13 @@
 #ifndef IMAGE_OPERATIONS_HEADER
 #define IMAGE_OPERATIONS_HEADER
 
-#include <QtGui>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QLineEdit>
+#include <QSpinBox>
 
-#include "dmrecon/Progress.h"
+#include "dmrecon/progress.h"
 #include "mve/scene.h"
 #include "mve/view.h"
 
@@ -35,6 +39,8 @@ private:
     QComboBox mvs_color_image;
     QCheckBox mvs_color_scale;
     QCheckBox mvs_write_ply;
+    QCheckBox mvs_dz_map;
+    QCheckBox mvs_conf_map;
     QCheckBox mvs_auto_save;
 
 private:

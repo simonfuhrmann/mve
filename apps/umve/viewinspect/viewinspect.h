@@ -2,7 +2,8 @@
 #define VIEW_INSPECT_HEADER
 
 #include <string>
-#include <QtGui>
+#include <QTextEdit>
+#include <QToolBar>
 
 #include "mve/view.h"
 
@@ -20,20 +21,13 @@ private:
     QComboBox* embeddings;
     QToolBar* toolbar;
     QTabWidget* image_details;
-
     QLabel* label_name;
     QLabel* label_dimension;
     QLabel* label_memory;
-
     ImageInspectorWidget* inspector;
     ImageOperationsWidget* operations;
     ToneMapping* tone_mapping;
     QTextEdit* exif_viewer;
-
-    mve::View::Ptr view;
-    mve::ImageBase::ConstPtr image;
-    std::string recent_embedding;
-
     QAction* action_open;
     QAction* action_reload;
     QAction* action_save_view;
@@ -46,6 +40,11 @@ private:
     QAction* action_show_details;
     QAction* action_copy_embedding;
     QAction* action_del_embedding;
+    QString last_image_dir;
+
+    mve::View::Ptr view;
+    mve::ImageBase::ConstPtr image;
+    std::string recent_embedding;
 
 private slots:
     void on_open (void);
@@ -80,7 +79,7 @@ private:
     void display_byte_image (mve::ByteImage::ConstPtr img);
 
 public:
-    ViewInspect (QWidget* parent = 0);
+    ViewInspect (QWidget* parent = NULL);
 
     void set_image (mve::ImageBase::ConstPtr img);
     void show_details (bool show);
