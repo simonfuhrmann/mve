@@ -17,6 +17,7 @@
 #include "mve/depthmap.h"
 #include "mve/bilateral.h"
 #include "mve/mesh_io_ply.h"
+#include "util/exception.h"
 
 #include "jobqueue.h"
 #include "guihelpers.h"
@@ -390,8 +391,17 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     if (ret != QMessageBox::Yes)
         return;
 
-    /* Prefetch bundle file. */
-    scene->get_bundle();
+    try {
+        /* Prefetch bundle file. */
+        scene->get_bundle();
+    }
+    catch (util::Exception &exc)
+    {
+        QMessageBox::warning(this, tr("MVS batch reconstruct"),
+            tr("Could not load bundle file, reconstruction cancelled."));
+
+        return;
+    }
 
     std::string dmname("depth-L" + util::string::get(scale));
 
