@@ -444,9 +444,9 @@ gamma_correct_inv_srgb (typename Image<T>::Ptr image);
  * The integral image is computed channel-wise, i.e. the output image has
  * the same amount of channels as the input image.
  */
-template <typename IN, typename OUT>
-typename Image<OUT>::Ptr
-integral_image (typename Image<IN>::ConstPtr image);
+template <typename T_IN, typename T_OUT>
+typename Image<T_OUT>::Ptr
+integral_image (typename Image<T_IN>::ConstPtr image);
 
 /**
  * Sums over the rectangle defined by A=(x1,y1) and B=(x2,y2) on the given
@@ -1564,9 +1564,9 @@ gamma_correct_inv_srgb (typename Image<T>::Ptr image)
 
 /* ---------------------------------------------------------------- */
 
-template <typename IN, typename OUT>
-typename Image<OUT>::Ptr
-integral_image (typename Image<IN>::ConstPtr image)
+template <typename T_IN, typename T_OUT>
+typename Image<T_OUT>::Ptr
+integral_image (typename Image<T_IN>::ConstPtr image)
 {
     if (image == NULL)
         throw std::invalid_argument("NULL image given");
@@ -1576,14 +1576,14 @@ integral_image (typename Image<IN>::ConstPtr image)
     int const chans = image->channels();
     int const row_stride = width * chans;
 
-    typename Image<OUT>::Ptr ret(Image<OUT>::create());
+    typename Image<T_OUT>::Ptr ret(Image<T_OUT>::create());
     ret->allocate(width, height, chans);
 
     /* Input image row and destination image rows. */
-    std::vector<OUT> zeros(row_stride, OUT(0));
-    IN const* inrow = image->get_data_pointer();
-    OUT* dest = ret->get_data_pointer();
-    OUT* prev = &zeros[0];
+    std::vector<T_OUT> zeros(row_stride, T_OUT(0));
+    T_IN const* inrow = image->get_data_pointer();
+    T_OUT* dest = ret->get_data_pointer();
+    T_OUT* prev = &zeros[0];
 
     /*
      * I(x,y) = i(x,y) + I(x-1,y) + I(x,y-1) - I(x-1,y-1)
@@ -1592,7 +1592,7 @@ integral_image (typename Image<IN>::ConstPtr image)
     {
         /* Calculate first pixel in row. */
         for (int cc = 0; cc < chans; ++cc)
-            dest[cc] = static_cast<OUT>(inrow[cc]) + prev[cc];
+            dest[cc] = static_cast<T_OUT>(inrow[cc]) + prev[cc];
         /* Calculate all following pixels in row. */
         for (int i = chans; i < row_stride; ++i)
             dest[i] = inrow[i] + prev[i] + dest[i - chans] - prev[i - chans];
