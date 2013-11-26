@@ -70,6 +70,7 @@ private slots:
     void on_recon_export (void);
     void on_batch_delete (void);
     void on_generate_thumbs (void);
+    void on_switch_tabs (int tab_id);
 
     void closeEvent (QCloseEvent* event);
 
