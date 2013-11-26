@@ -7,7 +7,7 @@
 
 TEST(MatchingTest, RemoveInconsistentMatches)
 {
-    sfm::MatchingResult result;
+    sfm::Matching::Result result;
     result.matches_1_2.resize(4, -1);
     result.matches_2_1.resize(5, -1);
     result.matches_1_2[0] = 1;
@@ -16,7 +16,7 @@ TEST(MatchingTest, RemoveInconsistentMatches)
     result.matches_2_1[0] = 3;
     result.matches_2_1[1] = 1;
     result.matches_2_1[3] = 2;
-    remove_inconsistent_matches(&result);
+    sfm::Matching::remove_inconsistent_matches(&result);
 
     EXPECT_EQ(-1, result.matches_1_2[0]);
     EXPECT_EQ(-1, result.matches_1_2[1]);

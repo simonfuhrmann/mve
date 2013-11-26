@@ -7,6 +7,11 @@
 
 class SurfTest : public sfm::Surf, public testing::Test
 {
+public:
+    SurfTest()
+        : sfm::Surf(sfm::Surf::Options())
+    {
+    }
 };
 
 /*
@@ -75,7 +80,7 @@ TEST_F(SurfTest, TestSmallImages)
     for (int i = 0; i < 20; ++i)
     {
         mve::ByteImage::Ptr img = mve::ByteImage::create(i, i, 1);
-        sfm::Surf surf;
+        sfm::Surf surf = sfm::Surf(sfm::Surf::Options());
         surf.set_image(img);
         surf.process();
     }
