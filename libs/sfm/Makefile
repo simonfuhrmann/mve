@@ -13,7 +13,7 @@ _test%: _test%.o libmve.a libmve_util.a
 	${LINK.cc} -o $@ $^ ${LDLIBS}
 
 _gtest: CXXFLAGS += -I ${GTEST_PATH}/include
-_gtest: _gtest_*.o ${TARGET} libgtest_main.a
+_gtest: _gtest_*.cc ${TARGET} libmve.a libmve_util.a libgtest_main.a
 	${LINK.cc} -o $@ $^ ${LDLIBS}
 
 clean:
