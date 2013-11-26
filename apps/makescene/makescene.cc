@@ -19,8 +19,8 @@
 #include <string>
 #include <algorithm>
 
-#include "math/matrix.h" // for rot matrix determinant
-#include "math/matrix_tools.h" // for rot matrix determinant
+#include "math/matrix.h"
+#include "math/matrix_tools.h"
 #include "math/algo.h"
 #include "util/arguments.h"
 #include "util/string.h"
@@ -31,7 +31,7 @@
 #include "mve/image.h"
 #include "mve/image_tools.h"
 #include "mve/image_io.h"
-#include "mve/image_exif.h" // extract EXIF for JPEG images
+#include "mve/image_exif.h"
 #include "mve/mesh.h"
 #include "mve/mesh_tools.h"
 
@@ -350,17 +350,17 @@ get_rot_from_quaternion(double const* values)
     q.normalize();
 
     math::Matrix3f rot;
-    rot[0] = 1.0f - 2.0f * q[2]*q[2] - 2.0f * q[3]*q[3];
-    rot[1] = 2.0f * q[1]*q[2] - 2.0f * q[3]*q[0];
-    rot[2] = 2.0f * q[1]*q[3] + 2.0f * q[2]*q[0];
+    rot[0] = 1.0f - 2.0f * q[2] * q[2] - 2.0f * q[3] * q[3];
+    rot[1] = 2.0f * q[1] * q[2] - 2.0f * q[3] * q[0];
+    rot[2] = 2.0f * q[1] * q[3] + 2.0f * q[2] * q[0];
 
-    rot[3] = 2.0f * q[1]*q[2] + 2.0f * q[3]*q[0];
-    rot[4] = 1.0f - 2.0f * q[1]*q[1] - 2.0f * q[3]*q[3];
-    rot[5] = 2.0f * q[2]*q[3] - 2.0f * q[1]*q[0];
+    rot[3] = 2.0f * q[1] * q[2] + 2.0f * q[3] * q[0];
+    rot[4] = 1.0f - 2.0f * q[1] * q[1] - 2.0f * q[3] * q[3];
+    rot[5] = 2.0f * q[2] * q[3] - 2.0f * q[1] * q[0];
 
-    rot[6] = 2.0f * q[1]*q[3] - 2.0f * q[2]*q[0];
-    rot[7] = 2.0f * q[2]*q[3] + 2.0f * q[1]*q[0];
-    rot[8] = 1.0f - 2.0f * q[1]*q[1] - 2.0f * q[2]*q[2];
+    rot[6] = 2.0f * q[1] * q[3] - 2.0f * q[2] * q[0];
+    rot[7] = 2.0f * q[2] * q[3] + 2.0f * q[1] * q[0];
+    rot[8] = 1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2];
     return rot;
 }
 
@@ -454,6 +454,7 @@ import_bundle_nvm (AppSettings const& conf)
     std::cout << "Number of points: " << num_points << std::endl;
 
     /* Read points. */
+    std::size_t num_strange_points = 0;
     std::vector<NVMPoint> points;
     for (int i = 0; i < num_points; ++i)
     {
@@ -470,6 +471,15 @@ import_bundle_nvm (AppSettings const& conf)
         /* Read number of refs. */
         int num_refs = 0;
         in >> num_refs;
+
+        /* Detect strange points not seen by cameras. Why does this happen? */
+        if (num_refs == 0)
+        {
+            num_strange_points += 1;
+            continue;
+        }
+
+        /* There should be at least 2 cameras that see the point. */
         if (num_refs < 2 || num_refs > 1000)
         {
             std::cerr << "Error: Invalid number of feature refs: "
@@ -488,6 +498,13 @@ import_bundle_nvm (AppSettings const& conf)
         points.push_back(point);
     }
     in.close();
+
+    /* Warn about strange points. */
+    if (num_strange_points > 0)
+    {
+        std::cerr << "Warning: " << num_strange_points
+            << " strange points not seem by any camera!" << std::endl;
+    }
 
     /* Create output directories. */
     std::cout << "Creating output directories..." << std::endl;
@@ -552,12 +569,13 @@ import_bundle_nvm (AppSettings const& conf)
             continue;
         }
 
-        int const maxdim = std::max(image->width(), image->height());
-        view->add_image("original", image);
+        if (conf.import_orig)
+            view->add_image("original", image);
         view->add_image("thumbnail", create_thumbnail(image));
         add_exif_to_view(view, exif);
 
         mve::CameraInfo cam;
+        int const maxdim = std::max(image->width(), image->height());
         cam.flen = views[i].focal_length / static_cast<float>(maxdim);
         cam.dist[0] = views[i].radial_distortion;
         cam.dist[1] = 0.0f;
@@ -837,6 +855,7 @@ import_bundle (AppSettings const& conf)
             }
             else
             {
+#if 0
                 /*
                  * With the Photosynther, load undistorted and original.
                  * The new version uses "forStereo_xxxx_yyyy.png" as file
@@ -853,6 +872,18 @@ import_bundle (AppSettings const& conf)
                     undist = mve::image::load_file(undist_new_filename);
                 else
                     undist = mve::image::load_file(undist_old_filename);
+#else
+                /*
+                 * The new Photosynther exports an image pyramid with
+                 * undistorted images. Use L0 of the pyramid as input.
+                 */
+                std::string undist_l0_filename = undist_path + "l0/img"
+                    + util::string::get_filled(valid_cnt, 4) + ".jpg";
+                if (util::fs::file_exists(undist_l0_filename.c_str()))
+                    undist = mve::image::load_file(undist_l0_filename);
+                else
+                    std::cerr << "ERROR: Cannot find L0 image!" << std::endl;
+#endif
             }
 
             thumb = create_thumbnail(undist);
