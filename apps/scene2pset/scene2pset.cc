@@ -261,9 +261,6 @@ main (int argc, char** argv)
         else
         {
             /* Check every point if a bounding box is given.  */
-            if (conf.with_normals)
-                mesh->ensure_normals();
-
             for (std::size_t i = 0; i < mverts.size(); ++i)
             {
                 math::Vec3f const& pt = mverts[i];
@@ -293,10 +290,10 @@ main (int argc, char** argv)
     }
 
     /* If a mask is given, clip vertices with the masks in all images. */
-    std::vector<bool> delete_list(verts.size(), false);
     if (!conf.mask.empty())
     {
         std::cout << "Filtering points using silhouette masks..." << std::endl;
+        std::vector<bool> delete_list(verts.size(), false);
         std::size_t num_filtered = 0;
 
         for (std::size_t i = 0; i < views.size(); ++i)
