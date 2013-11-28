@@ -215,7 +215,7 @@ AddinOffscreenRenderer::on_play_sequence (bool save)
     /* Load sequence. */
     CameraSequence sequence;
     try
-    { sequence.parse(seq_file); }
+    { sequence.read_file(seq_file); }
     catch (std::exception& e)
     {
         this->show_error_box("Error reading sequence",
@@ -280,7 +280,7 @@ AddinOffscreenRenderer::on_display_sequence (void)
     std::string seq_file = this->sequence_file->get_filename();
     CameraSequence sequence;
     try
-    { sequence.parse(seq_file); }
+    { sequence.read_file(seq_file); }
     catch (std::exception& e)
     {
         this->show_error_box("Error reading sequence",
