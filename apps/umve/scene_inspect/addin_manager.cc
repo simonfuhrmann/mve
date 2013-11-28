@@ -30,6 +30,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     this->offscreen_renderer->set_scene_camera(&this->camera);
     this->rephotographer = new AddinRephotographer();
     this->rephotographer->set_scene_camera(&this->camera);
+    this->aabb_creator = new AddinAABBCreator();
 
     /* Register addins. */
     this->addins.push_back(this->axis_renderer);
@@ -39,6 +40,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     this->addins.push_back(this->dm_triangulate);
     this->addins.push_back(this->offscreen_renderer);
     this->addins.push_back(this->rephotographer);
+    this->addins.push_back(this->aabb_creator);
 
     /* Create scene rendering form. */
     QFormLayout* rendering_form = new QFormLayout();
@@ -59,8 +61,13 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
         this->dm_triangulate->get_sidebar_widget());
     QCollapsible* offscreen_header = new QCollapsible("Offscreen Rendering",
         this->offscreen_renderer->get_sidebar_widget());
+    offscreen_header->set_collapsed(true);
     QCollapsible* rephotographer_header = new QCollapsible("Rephotographer",
         this->rephotographer->get_sidebar_widget());
+    rephotographer_header->set_collapsed(true);
+    QCollapsible* aabb_creator_header = new QCollapsible("AABB Creator",
+        this->aabb_creator->get_sidebar_widget());
+    aabb_creator_header->set_collapsed(true);
 
     /* Create the rendering tab. */
     QVBoxLayout* rendering_layout = new QVBoxLayout();
@@ -77,6 +84,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     operations_layout->addWidget(dm_triangulate_header, 0);
     operations_layout->addWidget(offscreen_header, 0);
     operations_layout->addWidget(rephotographer_header, 0);
+    operations_layout->addWidget(aabb_creator_header, 0);
     operations_layout->addStretch(1);
 
     /* Setup tab widget. */

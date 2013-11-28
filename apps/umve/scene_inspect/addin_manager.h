@@ -24,6 +24,7 @@
 #include "scene_addins/addin_dm_triangulate.h"
 #include "scene_addins/addin_offscreen_renderer.h"
 #include "scene_addins/addin_rephotographer.h"
+#include "scene_addins/addin_aabb_creator.h"
 
 /*
  * The addin manager sets up the basic OpenGL context, creates the shaders
@@ -66,6 +67,7 @@ private:
     AddinDMTriangulate* dm_triangulate;
     AddinOffscreenRenderer* offscreen_renderer;
     AddinRephotographer* rephotographer;
+    AddinAABBCreator* aabb_creator;
 
     /* UI elements. */
     QTabWidget* tab_widget;
