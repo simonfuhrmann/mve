@@ -10,7 +10,7 @@
 #include "scene_addins/camera_sequence.h"
 
 void
-CameraSequence::parse (std::string const& fname)
+CameraSequence::read_file (std::string const& fname)
 {
     std::ifstream in(fname.c_str());
     if (!in.good())
@@ -187,6 +187,71 @@ CameraSequence::parse (std::string const& fname)
         }
     }
     std::cout << "Done setting up." << std::endl;
+}
+
+/* ----------------------------------------------------------------------- */
+
+void
+CameraSequence::write_file (std::string const& fname)
+{
+    std::ofstream out(fname.c_str());
+    if (!out.good())
+        throw util::FileException(fname, std::strerror(errno));
+
+    out << "fps " << this->fps << std::endl;
+    out << "upvec " << this->upvec << std::endl;
+
+    for (std::size_t i = 0; i < this->seq.size(); ++i)
+    {
+        CameraSpline& spline = this->seq[i];
+
+        out << std::endl;
+
+        if (spline.camera.empty() && spline.lookat.empty()
+            && spline.cs.empty() && spline.ls.empty())
+        {
+            out << "pause " << spline.length << std::endl;
+            continue;
+        }
+
+        out << "sequence " << spline.name << std::endl;
+        out << "length " << spline.length << std::endl;
+
+        out << "camera-spline-begin" << std::endl;
+        for (std::size_t j = 0; j < spline.cs.get_points().size(); ++j)
+            out << spline.cs.get_points()[j] << std::endl;
+        out << "camera-spline-end" << std::endl;
+
+        out << "camera-knots";
+        for (std::size_t j = 0; j < spline.cs.get_knots().size(); ++j)
+            out << ' ' << spline.cs.get_knots()[j];
+        out << std::endl;
+
+        out << "lookat-spline-begin" << std::endl;
+        for (std::size_t j = 0; j < spline.ls.get_points().size(); ++j)
+            out << spline.ls.get_points()[j] << std::endl;
+        out << "lookat-spline-end" << std::endl;
+
+        out << "lookat-knots";
+        for (std::size_t j = 0; j < spline.ls.get_knots().size(); ++j)
+            out << ' ' << spline.ls.get_knots()[j];
+        out << std::endl;
+    }
+}
+
+/* ----------------------------------------------------------------------- */
+
+void
+CameraSequence::transform (math::Matrix4f const& transf)
+{
+    this->upvec = transf.mult(this->upvec, 0.0f);
+
+    for (std::size_t i = 0; i < this->seq.size(); ++i)
+    {
+        CameraSpline& spline = this->seq[i];
+        spline.cs.transform(transf);
+        spline.ls.transform(transf);
+    }
 }
 
 /* ----------------------------------------------------------------------- */

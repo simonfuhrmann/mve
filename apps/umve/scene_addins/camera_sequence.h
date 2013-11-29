@@ -44,7 +44,10 @@ private:
 
 public:
     CameraSequence (void);
-    void parse (std::string const& fname);
+    void read_file (std::string const& fname);
+    void write_file (std::string const& fname);
+
+    void transform (math::Matrix4f const& transf);
 
     void set_fps (int fps);
     int get_fps (void) const;
