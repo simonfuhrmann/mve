@@ -110,7 +110,7 @@ protected:
     void triangulate_initial_pair (ImagePair const& image_pair);
     void save_tracks_to_mesh (std::string const& filename);
 
-private:
+protected:
     Options options;
     std::vector<Viewport> viewports;
     std::set<std::size_t> remaining;

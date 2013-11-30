@@ -9,7 +9,7 @@ SOURCES := $(wildcard [^_]*.cc)
 ${TARGET}: ${SOURCES:.cc=.o}
 	$(AR) rcs $@ $^
 
-_test%: _test%.o libmve.a libmve_util.a
+_test%: _test%.o libmve_sfm.a libmve.a libmve_util.a
 	${LINK.cc} -o $@ $^ ${LDLIBS}
 
 _gtest: CXXFLAGS += -I ${GTEST_PATH}/include
