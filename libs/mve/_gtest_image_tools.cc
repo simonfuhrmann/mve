@@ -6,17 +6,31 @@
 #include "mve/image.h"
 #include "mve/image_tools.h"
 
-mve::FloatImage::Ptr
-create_test_float_image (int width, int height, int chans)
+namespace
 {
-    mve::FloatImage::Ptr img = mve::FloatImage::create(width, height, chans);
-    for (int i = 0; i < img->get_pixel_amount(); i += chans)
+    mve::FloatImage::Ptr
+    create_test_float_image (int width, int height, int chans)
     {
-        img->at(i, 0) = i / static_cast<float>(width * height * chans);
-        img->at(i, 1) = 1.0f - img->at(i, 0);
-        img->at(i, 2) = std::abs(1.0f - 2.0f * img->at(i, 0));
+        mve::FloatImage::Ptr img;
+        img = mve::FloatImage::create(width, height, chans);
+        for (int i = 0; i < img->get_pixel_amount(); i += chans)
+        {
+            img->at(i, 0) = i / static_cast<float>(width * height * chans);
+            img->at(i, 1) = 1.0f - img->at(i, 0);
+            img->at(i, 2) = std::abs(1.0f - 2.0f * img->at(i, 0));
+        }
+        return img;
     }
-    return img;
+
+    mve::ByteImage::Ptr
+    create_test_byte_image (int width, int height, int chans)
+    {
+        mve::ByteImage::Ptr img;
+        img = mve::ByteImage::create(width, height, chans);
+        for (int i = 0; i < img->get_value_amount(); ++i)
+            img->at(i) = i;
+        return img;
+    }
 }
 
 TEST(ImageToolsTest, ImageConversion)
@@ -363,3 +377,73 @@ TEST(ImageToolsTest, GammaCorrectSRGB_Float_BackAndForth)
     for (int i = 0; i < out->get_value_amount(); ++i)
         EXPECT_NEAR(img->at(i), out->at(i), 1e-6f);
 }
+
+TEST(ImageToolsTest, ByteImageSubtractDifference)
+{
+    mve::ByteImage::Ptr img1 = create_test_byte_image(3, 2, 2);
+    mve::ByteImage::Ptr img2 = create_test_byte_image(3, 2, 2);
+    for (int i = 0; i < img2->get_value_amount(); ++i)
+        img2->at(i) += 1;
+
+    mve::ByteImage::Ptr result;
+
+    /* Test subtraction of images. */
+    result = mve::image::subtract<uint8_t>(img2, img1);
+    EXPECT_EQ(3, result->width());
+    EXPECT_EQ(2, result->height());
+    EXPECT_EQ(2, result->channels());
+    for (int i = 0; i < result->get_value_amount(); ++i)
+        EXPECT_EQ(1, result->at(i));
+
+    /* Test (absolute) difference of images. */
+    result = mve::image::difference<uint8_t>(img1, img2);
+    EXPECT_EQ(3, result->width());
+    EXPECT_EQ(2, result->height());
+    EXPECT_EQ(2, result->channels());
+    for (int i = 0; i < result->get_value_amount(); ++i)
+        EXPECT_EQ(1, result->at(i));
+
+    /* Test (absolute) difference with swapped operands. */
+    result = mve::image::difference<uint8_t>(img2, img1);
+    for (int i = 0; i < result->get_value_amount(); ++i)
+        EXPECT_EQ(1, result->at(i));
+}
+
+TEST(ImageToolsTest, FloatImageSubtractDifference)
+{
+    mve::FloatImage::Ptr img1 = mve::FloatImage::create(2, 3, 2);
+    mve::FloatImage::Ptr img2 = mve::FloatImage::create(2, 3, 2);
+
+    for (int i = 0; i < img1->get_value_amount(); ++i)
+    {
+        img1->at(i) = 1.0f;
+        img2->at(i) = 2.0f;
+    }
+
+    mve::FloatImage::Ptr result;
+    /* Test subtract images. */
+    result = mve::image::subtract<float>(img1, img2);
+    for (int i = 0; i < img1->get_value_amount(); ++i)
+        EXPECT_EQ(-1.0f, result->at(i));
+    /* Test subtract images. */
+    result = mve::image::subtract<float>(img2, img1);
+    for (int i = 0; i < img1->get_value_amount(); ++i)
+        EXPECT_EQ(1.0f, result->at(i));
+    /* Test images difference. */
+    result = mve::image::difference<float>(img1, img2);
+    for (int i = 0; i < img1->get_value_amount(); ++i)
+        EXPECT_EQ(1.0f, result->at(i));
+    /* Test images difference. */
+    result = mve::image::difference<float>(img2, img1);
+    for (int i = 0; i < img1->get_value_amount(); ++i)
+        EXPECT_EQ(1.0f, result->at(i));
+}
+
+// TODO
+// Test rescale_half_size and variations
+// Test rescale_double_size and variations
+// Test blurring of images, boxfilter, gaussian
+// Test gamma correction with byte and float
+// Test image flipping with all parameters
+// Test simple image rotation
+
