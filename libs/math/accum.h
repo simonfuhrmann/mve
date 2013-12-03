@@ -1,13 +1,12 @@
 /*
- * Accumulator class that accumulates values of arbitrary type
- * without the overflow or rounding errors.
- *
+ * Accumulator for arbitrary type without overflow or rounding errors.
  * Written by Simon Fuhrmann.
  */
 
 #ifndef MATH_ACCUM_HEADER
 #define MATH_ACCUM_HEADER
 
+#include "math/algo.h"
 #include "math/defines.h"
 
 MATH_NAMESPACE_BEGIN
@@ -22,6 +21,10 @@ MATH_NAMESPACE_BEGIN
  * Accumulation of arbitrary types is handled by specializations of
  * the 'Accum' class. For example, unsigned char values are all
  * internally converted to float to achieve accurate results.
+ *
+ * Note: This class currently supports:
+ *   - Floating point types
+ *   - unsigned char (through specialization)
  */
 template <typename T>
 class Accum
@@ -139,27 +142,27 @@ Accum<unsigned char>::Accum (unsigned char const& init)
 inline void
 Accum<unsigned char>::add (unsigned char const& value, float weight)
 {
-    this->v += (float)value * weight;
+    this->v += static_cast<float>(value) * weight;
     this->w += weight;
 }
 
 inline void
 Accum<unsigned char>::sub (unsigned char const& value, float weight)
 {
-    this->v -= (float)value * weight;
+    this->v -= static_cast<float>(value) * weight;
     this->w -= weight;
 }
 
 inline unsigned char
 Accum<unsigned char>::normalized (float weight) const
 {
-    return (unsigned char)(this->v / weight + 0.5f);
+    return static_cast<unsigned char>(math::algo::round(this->v / weight));
 }
 
 inline unsigned char
 Accum<unsigned char>::normalized (void) const
 {
-    return (unsigned char)(this->v / this->w + 0.5f);
+    return static_cast<unsigned char>(math::algo::round(this->v / this->w));
 }
 
 MATH_NAMESPACE_END
