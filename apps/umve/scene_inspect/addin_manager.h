@@ -25,6 +25,7 @@
 #include "scene_addins/addin_offscreen_renderer.h"
 #include "scene_addins/addin_rephotographer.h"
 #include "scene_addins/addin_aabb_creator.h"
+#include "scene_addins/addin_plane_creator.h"
 
 /*
  * The addin manager sets up the basic OpenGL context, creates the shaders
@@ -68,6 +69,7 @@ private:
     AddinOffscreenRenderer* offscreen_renderer;
     AddinRephotographer* rephotographer;
     AddinAABBCreator* aabb_creator;
+    AddinPlaneCreator* plane_creator;
 
     /* UI elements. */
     QTabWidget* tab_widget;
