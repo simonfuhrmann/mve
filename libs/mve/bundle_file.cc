@@ -98,6 +98,12 @@ BundleFile::read_bundle_intern (std::string const& filename)
         throw util::Exception("Error reading bundle: Unexpected EOF");
     }
 
+    if (num_cameras > 10000 || num_points > 100000000)
+    {
+        in.close();
+        throw util::Exception("Spurious amount of cameras or features");
+    }
+
     /* Print message according to passed parser format. */
     {
         std::string parser;
@@ -108,10 +114,9 @@ BundleFile::read_bundle_intern (std::string const& filename)
             default: throw std::runtime_error("Invalid parser format");
         }
 
-        std::cout << "Reading " << parser << " file " << filename
-            << " (version \"" << this->version << "\", "
+        std::cout << "Reading " << parser << " file ("
             << num_cameras << " cameras, "
-            << num_points << " points)" << std::endl;
+            << num_points << " points)..." << std::endl;
     }
 
     this->cameras.reserve(num_cameras);
@@ -131,6 +136,12 @@ BundleFile::read_bundle_intern (std::string const& filename)
             this->num_valid_cams += 1;
     }
 
+    if (in.eof())
+    {
+        in.close();
+        throw util::Exception("Unexpected EOF");
+    }
+
     /* Read all points. */
     for (std::size_t i = 0; i < num_points; ++i)
     {
@@ -148,6 +159,12 @@ BundleFile::read_bundle_intern (std::string const& filename)
         /* Read feature references. */
         int ref_amount;
         in >> ref_amount;
+        if (ref_amount < 0 || ref_amount > 100)
+        {
+            in.close();
+            throw util::Exception("Invalid feature reference amount");
+        }
+
         for (int j = 0; j < ref_amount; ++j)
         {
             /* For the Photosynther, the third parameter is the reprojection
@@ -162,6 +179,13 @@ BundleFile::read_bundle_intern (std::string const& filename)
             if (this->format == BUNDLER_NOAHBUNDLER)
                 in >> dummy_float >> dummy_float;
             point.refs.push_back(point_ref);
+        }
+
+        /* Check for premature EOF. */
+        if (in.eof())
+        {
+            in.close();
+            throw util::Exception("Unexpected EOF");
         }
     }
 
