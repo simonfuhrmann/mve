@@ -153,8 +153,8 @@ BundleFile::read_bundle_intern (std::string const& filename)
         int color[3];
         in >> point.pos[0] >> point.pos[1] >> point.pos[2];
         in >> color[0] >> color[1] >> color[2];
-        for (int i = 0; i < 3; ++i)
-            point.color[i] = color[i];
+        for (int j = 0; j < 3; ++j)
+            point.color[j] = color[j];
 
         /* Read feature references. */
         int ref_amount;
@@ -184,8 +184,9 @@ BundleFile::read_bundle_intern (std::string const& filename)
         /* Check for premature EOF. */
         if (in.eof())
         {
-            in.close();
-            throw util::Exception("Unexpected EOF");
+            std::cerr << "Warning: Unexpected EOF at point " << i << std::endl;
+            points.pop_back();
+            break;
         }
     }
 
