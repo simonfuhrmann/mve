@@ -17,6 +17,7 @@ AddinAABBCreator::AddinAABBCreator (void)
         this->spins[i]->setMinimum(-999.0);
         this->spins[i]->setMaximum(999.0);
         this->spins[i]->setDecimals(4);
+        this->spins[i]->setSingleStep(0.1);
     }
     for (int i = 0; i < 3; ++i)
         this->layout->addRow(this->spins[i], this->spins[i + 3]);
@@ -37,10 +38,13 @@ AddinAABBCreator::get_sidebar_widget (void)
 void
 AddinAABBCreator::on_create_clicked (void)
 {
-    math::Vec3f aabb_min(this->spins[0]->value(),
-        this->spins[1]->value(), this->spins[2]->value());
-    math::Vec3f aabb_max(this->spins[3]->value(),
-        this->spins[4]->value(), this->spins[5]->value());
+    math::Vec3f aabb_min, aabb_max;
+    aabb_min[0] = std::min(this->spins[0]->value(), this->spins[3]->value());
+    aabb_max[0] = std::max(this->spins[0]->value(), this->spins[3]->value());
+    aabb_min[1] = std::min(this->spins[1]->value(), this->spins[4]->value());
+    aabb_max[1] = std::max(this->spins[1]->value(), this->spins[4]->value());
+    aabb_min[2] = std::min(this->spins[2]->value(), this->spins[5]->value());
+    aabb_max[2] = std::max(this->spins[2]->value(), this->spins[5]->value());
 
     mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
     mve::TriangleMesh::VertexList& verts = mesh->get_vertices();

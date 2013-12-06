@@ -32,6 +32,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     this->rephotographer->set_scene_camera(&this->camera);
     this->aabb_creator = new AddinAABBCreator();
     this->plane_creator = new AddinPlaneCreator();
+    this->sphere_creator = new AddinSphereCreator();
 
     /* Register addins. */
     this->addins.push_back(this->axis_renderer);
@@ -43,6 +44,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     this->addins.push_back(this->rephotographer);
     this->addins.push_back(this->aabb_creator);
     this->addins.push_back(this->plane_creator);
+    this->addins.push_back(this->sphere_creator);
 
     /* Create scene rendering form. */
     QFormLayout* rendering_form = new QFormLayout();
@@ -73,6 +75,9 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     QCollapsible* plane_creator_header = new QCollapsible("Plane Creator",
         this->plane_creator->get_sidebar_widget());
     plane_creator_header->set_collapsed(true);
+    QCollapsible* sphere_creator_header = new QCollapsible("Sphere Creator",
+        this->sphere_creator->get_sidebar_widget());
+    sphere_creator_header->set_collapsed(true);
 
     /* Create the rendering tab. */
     QVBoxLayout* rendering_layout = new QVBoxLayout();
@@ -91,6 +96,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     operations_layout->addWidget(rephotographer_header, 0);
     operations_layout->addWidget(aabb_creator_header, 0);
     operations_layout->addWidget(plane_creator_header, 0);
+    operations_layout->addWidget(sphere_creator_header, 0);
     operations_layout->addStretch(1);
 
     /* Setup tab widget. */

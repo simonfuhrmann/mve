@@ -17,6 +17,7 @@ AddinPlaneCreator::AddinPlaneCreator (void)
         this->spins[i]->setMinimum(-999.0);
         this->spins[i]->setMaximum(999.0);
         this->spins[i]->setDecimals(4);
+        this->spins[i]->setSingleStep(0.1);
     }
     for (int i = 0; i < 3; ++i)
         this->layout->addRow(this->spins[i], this->spins[i + 3]);
@@ -33,7 +34,7 @@ AddinPlaneCreator::get_sidebar_widget (void)
 {
     return get_wrapper(this->layout);
 }
-#include <iostream>
+
 void
 AddinPlaneCreator::on_create_clicked (void)
 {
