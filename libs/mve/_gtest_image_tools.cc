@@ -439,6 +439,77 @@ TEST(ImageToolsTest, FloatImageSubtractDifference)
         EXPECT_EQ(1.0f, result->at(i));
 }
 
+TEST(ImageToolsTest, ImageFlippingOneChannel)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(2, 2, 1);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+
+    mve::ByteImage::Ptr nflip = img->duplicate();
+    mve::image::flip<uint8_t>(nflip, mve::image::FLIP_NONE);
+    EXPECT_EQ(0, nflip->at(0, 0, 0));
+    EXPECT_EQ(1, nflip->at(1, 0, 0));
+    EXPECT_EQ(2, nflip->at(0, 1, 0));
+    EXPECT_EQ(3, nflip->at(1, 1, 0));
+
+    mve::ByteImage::Ptr hflip = img->duplicate();
+    mve::image::flip<uint8_t>(hflip, mve::image::FLIP_HORIZONTAL);
+    EXPECT_EQ(1, hflip->at(0, 0, 0));
+    EXPECT_EQ(0, hflip->at(1, 0, 0));
+    EXPECT_EQ(3, hflip->at(0, 1, 0));
+    EXPECT_EQ(2, hflip->at(1, 1, 0));
+
+    mve::ByteImage::Ptr vflip = img->duplicate();
+    mve::image::flip<uint8_t>(vflip, mve::image::FLIP_VERTICAL);
+    EXPECT_EQ(2, vflip->at(0, 0, 0));
+    EXPECT_EQ(3, vflip->at(1, 0, 0));
+    EXPECT_EQ(0, vflip->at(0, 1, 0));
+    EXPECT_EQ(1, vflip->at(1, 1, 0));
+
+    mve::ByteImage::Ptr bflip = img->duplicate();
+    mve::image::flip<uint8_t>(bflip, mve::image::FLIP_BOTH);
+    EXPECT_EQ(3, bflip->at(0, 0, 0));
+    EXPECT_EQ(2, bflip->at(1, 0, 0));
+    EXPECT_EQ(1, bflip->at(0, 1, 0));
+    EXPECT_EQ(0, bflip->at(1, 1, 0));
+}
+
+TEST(ImageToolsTest, ImageFlippingTwoChannels)
+{
+    mve::ByteImage::Ptr img = mve::ByteImage::create(2, 2, 2);
+    for (int i = 0; i < img->get_value_amount(); ++i)
+        img->at(i) = i;
+
+    mve::ByteImage::Ptr nflip = img->duplicate();
+    mve::image::flip<uint8_t>(nflip, mve::image::FLIP_NONE);
+    EXPECT_EQ(0, nflip->at(0, 0, 0)); EXPECT_EQ(1, nflip->at(0, 0, 1));
+    EXPECT_EQ(2, nflip->at(1, 0, 0)); EXPECT_EQ(3, nflip->at(1, 0, 1));
+    EXPECT_EQ(4, nflip->at(0, 1, 0)); EXPECT_EQ(5, nflip->at(0, 1, 1));
+    EXPECT_EQ(6, nflip->at(1, 1, 0)); EXPECT_EQ(7, nflip->at(1, 1, 1));
+
+    mve::ByteImage::Ptr hflip = img->duplicate();
+    mve::image::flip<uint8_t>(hflip, mve::image::FLIP_HORIZONTAL);
+    EXPECT_EQ(2, hflip->at(0, 0, 0)); EXPECT_EQ(3, hflip->at(0, 0, 1));
+    EXPECT_EQ(0, hflip->at(1, 0, 0)); EXPECT_EQ(1, hflip->at(1, 0, 1));
+    EXPECT_EQ(6, hflip->at(0, 1, 0)); EXPECT_EQ(7, hflip->at(0, 1, 1));
+    EXPECT_EQ(4, hflip->at(1, 1, 0)); EXPECT_EQ(5, hflip->at(1, 1, 1));
+
+    mve::ByteImage::Ptr vflip = img->duplicate();
+    mve::image::flip<uint8_t>(vflip, mve::image::FLIP_VERTICAL);
+    EXPECT_EQ(4, vflip->at(0, 0, 0)); EXPECT_EQ(5, vflip->at(0, 0, 1));
+    EXPECT_EQ(6, vflip->at(1, 0, 0)); EXPECT_EQ(7, vflip->at(1, 0, 1));
+    EXPECT_EQ(0, vflip->at(0, 1, 0)); EXPECT_EQ(1, vflip->at(0, 1, 1));
+    EXPECT_EQ(2, vflip->at(1, 1, 0)); EXPECT_EQ(3, vflip->at(1, 1, 1));
+
+    mve::ByteImage::Ptr bflip = img->duplicate();
+    mve::image::flip<uint8_t>(bflip, mve::image::FLIP_BOTH);
+    EXPECT_EQ(6, bflip->at(0, 0, 0)); EXPECT_EQ(7, bflip->at(0, 0, 1));
+    EXPECT_EQ(4, bflip->at(1, 0, 0)); EXPECT_EQ(5, bflip->at(1, 0, 1));
+    EXPECT_EQ(2, bflip->at(0, 1, 0)); EXPECT_EQ(3, bflip->at(0, 1, 1));
+    EXPECT_EQ(0, bflip->at(1, 1, 0)); EXPECT_EQ(1, bflip->at(1, 1, 1));
+}
+
+
 // TODO
 // Test rescale_half_size and variations
 // Test rescale_double_size and variations
