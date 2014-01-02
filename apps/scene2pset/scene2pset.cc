@@ -55,11 +55,11 @@ main (int argc, char** argv)
     args.set_description(
         "Generates a pointset from the scene by projecting reconstructed "
         "depth values in the world coordinate system.");
-    args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
-    args.add_option('s', "with-scale", false, "Write points with scale information (PLY only)");
-    args.add_option('c', "with-conf", false, "Writes points with confidences (PLY only)");
     args.add_option('d', "depthmap", true, "Name of depthmap to use [depth-L0]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
+    args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
+    args.add_option('s', "with-scale", false, "Write points with scale values (PLY only)");
+    args.add_option('c', "with-conf", false, "Write points with confidence (PLY only)");
     args.add_option('m', "mask", true, "Name of mask/silhouette image to clip 3D points []");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
