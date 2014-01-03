@@ -11,7 +11,6 @@
 
 namespace
 {
-
     void
     fill_golden_correspondences(sfm::Correspondences& c,
         sfm::HomographyMatrix& H)
@@ -149,4 +148,4 @@ TEST(RansacHomographyTest, TestEstimateNoisy)
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR((H[i] - H2[i]), 0.0, 1e-6);
 }
-# endif
+#endif

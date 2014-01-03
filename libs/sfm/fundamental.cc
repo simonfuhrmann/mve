@@ -15,8 +15,8 @@
 
 SFM_NAMESPACE_BEGIN
 
-namespace {
-
+namespace
+{
     /**
      * Creates the cross product matrix [x] for x. With this matrix,
      * the cross product cross(x, y) can be expressed using matrix

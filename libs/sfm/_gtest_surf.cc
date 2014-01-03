@@ -17,8 +17,8 @@ public:
 /*
  * This is a collection of test images, e.g. gradients.
  */
-namespace {
-
+namespace
+{
     mve::ByteImage::Ptr
     create_constant_image(int size, unsigned char value)
     {

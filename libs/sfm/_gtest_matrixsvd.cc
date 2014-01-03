@@ -71,9 +71,10 @@ TEST(MatrixSVDTest, BeforeAfter4)
     EXPECT_GT(S(0,0), S(1,1));
 }
 
-namespace {
-
-    double getrand (void)
+namespace
+{
+    double
+    getrand (void)
     {
         return std::rand() / static_cast<double>(RAND_MAX);
     }

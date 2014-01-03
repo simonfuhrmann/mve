@@ -181,9 +181,9 @@ Bundle::two_view_pose (ImagePair* image_pair)
     }
 
     /* Pose RANSAC. */
-    sfm::PoseRansac2D2D::Result ransac_result;
+    sfm::RansacFundamental::Result ransac_result;
     {
-        sfm::PoseRansac2D2D ransac(this->options.ransac2d2d_options);
+        sfm::RansacFundamental ransac(this->options.ransac_fundamental_options);
         util::WallTimer timer;
         ransac.estimate(unfiltered_matches, &ransac_result);
         std::cout << "RANSAC took " << timer.get_elapsed() << "ms, "

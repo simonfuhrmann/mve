@@ -16,7 +16,8 @@
 #include "mve/image.h"
 #include "sfm/defines.h"
 #include "sfm/matching.h"
-#include "sfm/poseransac.h"
+#include "sfm/ransac_fundamental.h"
+#include "sfm/ransac_pose.h"
 #include "sfm/sift.h"
 #include "sfm/surf.h"
 #include "sfm/fundamental.h"
@@ -34,8 +35,8 @@ public:
         Matching::Options sift_matching_options;
         Surf::Options surf_options;
         Matching::Options surf_matching_options;
-        PoseRansac2D2D::Options ransac2d2d_options;
-        PoseRansac2D3D::Options ransac2d3d_options;
+        RansacFundamental::Options ransac_fundamental_options;
+        RansacPose::Options ransac_pose_options;
 
         int max_image_size; // TODO
         bool use_sift_features; // TODO
