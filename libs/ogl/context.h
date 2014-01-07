@@ -56,13 +56,13 @@ public:
      * Injects a mouse event to the context.
      * Default implementation prints debug information only.
      */
-    virtual void mouse_event (MouseEvent const& event);
+    virtual bool mouse_event (MouseEvent const& event);
 
     /**
      * Injects a keyboard event to the context.
      * Default implementation prints debug information only.
      */
-    virtual void keyboard_event (KeyboardEvent const& event);
+    virtual bool keyboard_event (KeyboardEvent const& event);
 
     /** Returns the width of the viewport. */
     int get_width (void) const;
@@ -108,8 +108,8 @@ protected:
 public:
     CameraContext (void);
     ~CameraContext (void);
-    void keyboard_event (KeyboardEvent const& event);
-    void mouse_event (MouseEvent const& event);
+    bool keyboard_event (KeyboardEvent const& event);
+    bool mouse_event (MouseEvent const& event);
 };
 
 /* ------------------------- Implementation ----------------------- */
@@ -139,16 +139,18 @@ Context::paint (void)
     this->paint_impl();
 }
 
-inline void
+inline bool
 Context::mouse_event (MouseEvent const& event)
 {
     ogl::event_debug_print(event);
+    return true;
 }
 
-inline void
+inline bool
 Context::keyboard_event (KeyboardEvent const& event)
 {
     ogl::event_debug_print(event);
+    return true;
 }
 
 inline int
@@ -220,19 +222,21 @@ CameraContext<CTRL>::update_camera (void)
 }
 
 template <typename CTRL>
-void
+bool
 CameraContext<CTRL>::mouse_event (MouseEvent const& event)
 {
-    this->controller.consume_event(event);
+    bool is_handled = this->controller.consume_event(event);
     this->update_camera();
+    return is_handled;
 }
 
 template <typename CTRL>
-void
+bool
 CameraContext<CTRL>::keyboard_event (KeyboardEvent const& event)
 {
-    this->controller.consume_event(event);
+    bool is_handled = this->controller.consume_event(event);
     this->update_camera();
+    return is_handled;
 }
 
 OGL_NAMESPACE_END

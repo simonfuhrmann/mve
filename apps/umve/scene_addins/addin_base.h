@@ -8,6 +8,8 @@
 #include "mve/view.h"
 #include "mve/mesh.h"
 #include "ogl/context.h"
+#include "ogl/vertex_array.h"
+#include "ogl/texture.h"
 #include "ogl/shader_program.h"
 
 #include "glwidget.h"
@@ -30,6 +32,12 @@ public:
         ogl::ShaderProgram::Ptr texture_shader;
         mve::Scene::Ptr scene;
         mve::View::Ptr view;
+
+        /* UI overlay. */
+        mve::ByteImage::Ptr ui_image;
+        ogl::Texture::Ptr gui_texture;
+        ogl::VertexArray::Ptr gui_renderer;
+        bool ui_needs_redraw;
     };
 
 public:
@@ -43,8 +51,10 @@ public:
     virtual void init_impl (void);
     virtual void resize_impl (int old_width, int old_height);
     virtual void paint_impl (void);
-    virtual void mouse_event (ogl::MouseEvent const& event);
-    virtual void keyboard_event (ogl::KeyboardEvent const& event);
+    virtual bool mouse_event (ogl::MouseEvent const& event);
+    virtual bool keyboard_event (ogl::KeyboardEvent const& event);
+
+    virtual void redraw_gui (void);
 
 signals:
     void mesh_generated (std::string const& name, mve::TriangleMesh::Ptr mesh);
@@ -101,13 +111,20 @@ AddinBase::paint_impl (void)
 {
 }
 
-inline void
+inline bool
 AddinBase::mouse_event (ogl::MouseEvent const& /*event*/)
 {
+    return false;
+}
+
+inline bool
+AddinBase::keyboard_event (ogl::KeyboardEvent const& /*event*/)
+{
+    return false;
 }
 
 inline void
-AddinBase::keyboard_event (ogl::KeyboardEvent const& /*event*/)
+AddinBase::redraw_gui (void)
 {
 }
 
