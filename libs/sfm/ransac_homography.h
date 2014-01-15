@@ -11,8 +11,7 @@ SFM_NAMESPACE_BEGIN
  * The homography matrix for two views is to be determined from a set of image
  * correspondences contaminated with outliers. The algorithm randomly selects 4
  * image correspondences to estimate a homography matrix. Running for a number
- * of iterations, the homography matrix supporting the most matches is
- * re-computed with all inliers in a least-squares sense and returned as result.
+ * of iterations, the homography matrix supporting the most matches returned.
  */
 class RansacHomography
 {

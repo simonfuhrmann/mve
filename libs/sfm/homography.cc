@@ -54,7 +54,6 @@ homography_dlt (Correspondences const& points, HomographyMatrix* result)
     return true;
 }
 
-
 double
 symmetric_transfer_error(HomographyMatrix const& homography,
     Correspondence const& match)

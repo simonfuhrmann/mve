@@ -1,9 +1,6 @@
 #ifndef SFM_RANSAC_HEADER
 #define SFM_RANSAC_HEADER
 
-#include <cmath>
-
-#include "math/algo.h"
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN

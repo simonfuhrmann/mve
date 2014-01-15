@@ -1,3 +1,6 @@
+#include <cmath>
+
+#include "math/algo.h"
 #include "sfm/ransac.h"
 
 SFM_NAMESPACE_BEGIN
