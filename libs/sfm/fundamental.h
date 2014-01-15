@@ -126,7 +126,7 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
     FundamentalMatrix* result);
 
 /**
- * Computes the Sampson distance for a feature correspondence given the
+ * Computes the Sampson distance for an image correspondence given the
  * fundamental matrix between two views.
  */
 double

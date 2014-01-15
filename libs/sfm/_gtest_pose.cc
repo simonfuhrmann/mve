@@ -7,7 +7,9 @@
 #include "sfm/matrixsvd.h"
 #include "sfm/pose.h"
 #include "sfm/fundamental.h"
-#include "sfm/poseransac.h"
+#include "sfm/ransac.h"
+#include "sfm/ransac_fundamental.h"
+#include "sfm/ransac_pose.h"
 #include "sfm/triangulate.h"
 #include "sfm/correspondence.h"
 
@@ -128,7 +130,8 @@ TEST(PoseTest, Correspondences2D3DNormalization)
     EXPECT_NEAR(T3D[15], 1.0, 1e-10);
 }
 
-namespace {
+namespace
+{
 
     void
     fill_golden_correspondences(sfm::Eight2DPoints& p1,
@@ -229,7 +232,8 @@ TEST(PoseTest, TestLeastSquaresPose)
         EXPECT_NEAR((F[i] - F2[i]) / (F[i] + F2[i]), 0.0, 0.1);
 }
 
-namespace {
+namespace
+{
 
     void
     fill_ground_truth_pose (sfm::CameraPose* pose1, sfm::CameraPose* pose2)
@@ -437,7 +441,7 @@ TEST(PoseTest, ComputeRANSACIterations)
 }
 
 #if 0 // This test case is disabled because it is not deterministic.
-TEST(PoseRansac2D2DTest, TestRansac1)
+TEST(PoseRansacFundamental, TestRansac1)
 {
     // This test computes from a given pose eight corresponding pairs
     // of 2D projections in the images. These correspondences are used
@@ -480,12 +484,12 @@ TEST(PoseRansac2D2DTest, TestRansac1)
     //matches[points3d.size()-2].p1[0] += 25.0;
     //matches[points3d.size()-2].p1[1] -= 13.0;
 
-    sfm::PoseRansac2D2D::Options opts;
+    sfm::RansacFundamental::Options opts;
     opts.max_iterations = 50;
     opts.threshold = 1.0;
     opts.already_normalized = false;
-    sfm::PoseRansac2D2D ransac(opts);
-    sfm::PoseRansac2D2D::Result result;
+    sfm::RansacFundamental ransac(opts);
+    sfm::RansacFundamental::Result result;
     std::srand(std::time(0));
     ransac.estimate(matches, &result);
 

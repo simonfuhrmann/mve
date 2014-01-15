@@ -26,9 +26,9 @@ main (void)
     options.sift_matching_options.descriptor_length = 128;
     options.sift_matching_options.lowe_ratio_threshold = 0.8f;
     options.sift_matching_options.distance_threshold = 0.7f;
-    options.ransac2d2d_options.max_iterations = 1000;
-    options.ransac2d2d_options.threshold = 2.0f;
-    options.ransac2d2d_options.already_normalized = false;
+    options.ransac_fundamental_options.max_iterations = 1000;
+    options.ransac_fundamental_options.threshold = 2.0f;
+    options.ransac_fundamental_options.already_normalized = false;
 
     sfm::Bundle bundle(options);
     try

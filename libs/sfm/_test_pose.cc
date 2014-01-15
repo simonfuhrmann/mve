@@ -9,6 +9,7 @@
 #include "mve/image_io.h"
 #include "mve/mesh.h"
 #include "mve/mesh_tools.h"
+#include "mve/mesh_io.h"
 
 #include "surf.h"
 #include "sift.h"
@@ -16,7 +17,8 @@
 #include "pose.h"
 #include "correspondence.h"
 #include "triangulate.h"
-#include "poseransac.h"
+#include "ransac_fundamental.h"
+#include "ransac_pose.h"
 #include "visualizer.h"
 
 #define DIM 128
@@ -110,21 +112,21 @@ main (int argc, char** argv)
     //image2.load_descriptors("/Users/sfuhrmann/Downloads/fountain20.descr");
 
     /* Feature matching. */
-    sfm::MatchingResult matching;
+    sfm::Matching::Result matching;
     {
         /* Perform matching. */
-        sfm::MatchingOptions matchopts;
+        sfm::Matching::Options matchopts;
         matchopts.descriptor_length = DIM;
         matchopts.lowe_ratio_threshold = 0.80f;
         matchopts.distance_threshold = 0.7f;
 
         util::WallTimer timer;
-        sfm::match_features(matchopts,
+        sfm::Matching::twoway_match(matchopts,
             image1.descr.begin(), image1.descr_pos.size(),
             image2.descr.begin(), image2.descr_pos.size(), &matching);
-        sfm::remove_inconsistent_matches(&matching);
+        sfm::Matching::remove_inconsistent_matches(&matching);
         std::cout << "Two-view matching took " << timer.get_elapsed() << "ms, "
-            << sfm::count_consistent_matches(matching) << " matches."
+            << sfm::Matching::count_consistent_matches(matching) << " matches."
             << std::endl;
     }
 
@@ -154,13 +156,13 @@ main (int argc, char** argv)
     }
 
     /* Pose RANSAC. */
-    sfm::PoseRansac2D2D::Result ransac_result;
+    sfm::RansacFundamental::Result ransac_result;
     {
-        sfm::PoseRansac2D2D::Options ransac_options;
+        sfm::RansacFundamental::Options ransac_options;
         ransac_options.max_iterations = 1000;
         ransac_options.threshold = 2.0;
         ransac_options.already_normalized = false;
-        sfm::PoseRansac2D2D ransac(ransac_options);
+        sfm::RansacFundamental ransac(ransac_options);
 
         util::WallTimer timer;
         ransac.estimate(matches, &ransac_result);
@@ -188,7 +190,7 @@ main (int argc, char** argv)
 
     {
         std::cout << "Two-View matching statistics: " << std::endl;
-        int const num_matches = sfm::count_consistent_matches(matching);
+        int const num_matches = sfm::Matching::count_consistent_matches(matching);
         int const num_inliers = ransac_result.inliers.size();
         int const num_descriptors = std::min(image1.descr_pos.size(), image2.descr_pos.size());
         float matching_ratio = (float)num_matches / (float)num_descriptors;
