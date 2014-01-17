@@ -159,7 +159,7 @@ BundleFile::read_bundle_intern (std::string const& filename)
         /* Read feature references. */
         int ref_amount;
         in >> ref_amount;
-        if (ref_amount < 0 || ref_amount > 100)
+        if (ref_amount < 0 || ref_amount > num_cameras)
         {
             in.close();
             throw util::Exception("Invalid feature reference amount");
