@@ -191,7 +191,7 @@ Bundle::two_view_pose (ImagePair* image_pair)
     }
 
     /* Require at least 8 inlier matches. */
-    if (matching_result.matches_1_2.size() < 8)
+    if (ransac_result.inliers.size() < 8)
         return;
 
     /* Build correspondences from inliers only. */
