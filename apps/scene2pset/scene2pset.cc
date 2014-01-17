@@ -36,7 +36,7 @@ void
 poisson_scale_normals (mve::TriangleMesh::ConfidenceList const& confs,
     mve::TriangleMesh::NormalList* normals)
 {
-    if (confs.empty() || confs.size() != normals->size())
+    if (confs.size() != normals->size())
         throw std::invalid_argument("Invalid confidences or normals");
     for (std::size_t i = 0; i < confs.size(); ++i)
         normals->at(i) *= confs[i];
@@ -349,12 +349,9 @@ main (int argc, char** argv)
             << " points." << std::endl;
     }
 
-    std::cout << "Writing final point set..." << std::endl;
-    std::cout << "  Points: " << verts.size() << std::endl;
-    std::cout << "  Normals: " << vnorm.size() << std::endl;
-    std::cout << "  Colors: " << vcolor.size() << std::endl;
-
     /* Write mesh to disc. */
+    std::cout << "Writing final point set ("
+        << verts.size() << " points)..." << std::endl;
     if (util::string::right(conf.outmesh, 4) == ".ply")
     {
         mve::geom::SavePLYOptions opts;
