@@ -8,6 +8,8 @@
 #include "util/file_system.h"
 #include "util/string.h"
 #include "mve/image.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
 #include "mve/view.h"
 
 /* The signature to identify MVE files. */
@@ -501,6 +503,12 @@ View::save_mve_file (bool force_rebuild)
         util::fs::unlink(orig_filename.c_str());
         this->rename_file(orig_filename);
     }
+
+    /* save depth map as ppm image */
+    std::string dm_name = this->filename + ".ppm";
+    FloatImage::Ptr dm_float = this->get_float_image("depth-L0");
+    ByteImage::Ptr  dm_byte  = mve::image::float_to_byte_image(dm_float, 0.0f, 1.0f);
+    mve::image::save_file(dm_byte, dm_name);
 
     //std::cout << "Done saving '" << file_component << "'." << std::endl;
 }
