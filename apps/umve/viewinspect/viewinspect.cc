@@ -7,17 +7,17 @@
 
 #include "mve/view.h"
 #include "mve/image.h"
-#include "mve/plyfile.h"
-#include "mve/imageexif.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "mve/mesh_io_ply.h"
+#include "mve/image_exif.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 
 #include "guihelpers.h"
 #include "scenemanager.h"
 #include "viewinspect.h"
 
 ViewInspect::ViewInspect (QWidget* parent)
-    : QWidget(parent)
+    : MainWindowTab(parent)
 {
     this->scroll_image = new ScrollImage();
     this->embeddings = new QComboBox();
@@ -41,6 +41,8 @@ ViewInspect::ViewInspect (QWidget* parent)
     this->connect(this->scroll_image->get_image(),
         SIGNAL(mouse_clicked(int, int, QMouseEvent*)),
         this, SLOT(on_image_clicked(int, int, QMouseEvent*)));
+
+    this->connect(this, SIGNAL(tab_activated()), SLOT(on_tab_activated()));
 
     this->connect(&SceneManager::get(), SIGNAL(scene_selected(mve::Scene::Ptr)),
         this, SLOT(on_scene_selected(mve::Scene::Ptr)));
@@ -89,7 +91,7 @@ ViewInspect::create_detail_frame (void)
     this->connect(this->operations, SIGNAL(signal_select_embedding
         (QString const&)), this, SLOT(on_embedding_selected(QString const&)));
 
-    this->image_details = new QTabWidget();//tr("Details"));
+    this->image_details = new QTabWidget();
     this->image_details->setTabPosition(QTabWidget::East);
     this->image_details->addTab(this->operations, tr("Operations"));
     this->image_details->addTab(this->inspector, tr("Image Inspector"));
@@ -316,8 +318,14 @@ ViewInspect::load_ply_file (QString filename)
 void
 ViewInspect::on_view_selected (mve::View::Ptr view)
 {
+    if (!this->is_tab_active) {
+        this->next_view = view;
+        return;
+    }
+
     this->reset();
     this->view = view;
+    this->next_view = NULL;
     if (this->view == NULL)
         return;
 
@@ -333,6 +341,15 @@ void
 ViewInspect::on_scene_selected (mve::Scene::Ptr /*scene*/)
 {
     this->reset();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+ViewInspect::on_tab_activated (void)
+{
+    if (this->next_view != NULL)
+        this->on_view_selected(this->next_view);
 }
 
 /* ---------------------------------------------------------------- */

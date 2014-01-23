@@ -38,7 +38,7 @@ GLWidget::resizeGL(int width, int height)
 
     this->gl_width = width;
     this->gl_height = height;
-    if (this->context != 0)
+    if (this->context != NULL)
         this->context->resize(width, height);
 }
 

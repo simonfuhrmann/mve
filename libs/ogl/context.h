@@ -11,8 +11,8 @@
 #include "ogl/defines.h"
 #include "ogl/events.h"
 #include "ogl/camera.h"
-#include "ogl/camtrackball.h"
-#include "ogl/cam2d.h"
+#include "ogl/camera_trackball.h"
+#include "ogl/camera_2d.h"
 
 OGL_NAMESPACE_BEGIN
 
@@ -48,7 +48,7 @@ public:
     /** Initializes the context. */
     void init (void);
     /** Resizes the context. */
-    void resize (int width, int height);
+    void resize (int new_width, int new_height);
     /** Paints the frame. */
     void paint (void);
 
@@ -126,11 +126,11 @@ Context::init (void)
 }
 
 inline void
-Context::resize (int width, int height)
+Context::resize (int new_width, int new_height)
 {
-    std::swap(width, this->width);
-    std::swap(height, this->height);
-    this->resize_impl(width, height);
+    std::swap(new_width, this->width);
+    std::swap(new_height, this->height);
+    this->resize_impl(new_height, new_height);
 }
 
 inline void

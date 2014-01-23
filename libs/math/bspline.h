@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "math/defines.h"
+#include "math/matrix.h"
 
 MATH_NAMESPACE_BEGIN
 
@@ -41,6 +42,9 @@ private:
 public:
     BSpline (void);
 
+    /** Returns whether there are no points in this spline. */
+    bool empty (void) const;
+
     /** Sets the degree of spline segments. */
     void set_degree (int degree);
     /** Returns the degree of the spline segments. */
@@ -65,6 +69,9 @@ public:
 
     /** Evalutes the B-Spline. */
     V evaluate (T const& t) const;
+
+    /** Transforms the B-Spline. */
+    void transform (math::Matrix4f const& transf);
 };
 
 MATH_NAMESPACE_END
@@ -78,6 +85,13 @@ inline
 BSpline<V,T>::BSpline (void)
     : n(3)
 {
+}
+
+template <class V, class T>
+bool
+BSpline<V,T>::empty (void) const
+{
+    return this->points.empty();
 }
 
 template <class V, class T>
@@ -195,6 +209,14 @@ BSpline<V,T>::deboor (int i, int k, T const& x) const
     T v1 = d1 > T(0) ? (x - this->knots[i]) / d1 : T(0);
     T v2 = d2 > T(0) ? (this->knots[i+k+1] - x) / d2 : T(0);
     return v1 * deboor(i, k-1, x) + v2 * deboor(i+1, k-1, x);
+}
+
+template <class V, class T>
+inline void
+BSpline<V,T>::transform (math::Matrix4f const& transf)
+{
+    for (std::size_t i = 0; i < points.size(); ++i)
+        points[i] = transf.mult(points[i], 1.0f);
 }
 
 MATH_NAMESPACE_END

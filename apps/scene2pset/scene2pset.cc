@@ -1,19 +1,20 @@
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
 #include <vector>
+#include <string>
 #include <cstring>
 #include <cerrno>
 
 #include "util/arguments.h"
 #include "util/tokenizer.h"
-#include "mve/meshtools.h"
 #include "mve/depthmap.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_info.h"
+#include "mve/mesh_io.h"
+#include "mve/mesh_io_ply.h"
+#include "mve/mesh_tools.h"
 #include "mve/scene.h"
 #include "mve/view.h"
-#include "mve/vertexinfo.h"
 
 struct AppSettings
 {
@@ -35,7 +36,7 @@ void
 poisson_scale_normals (mve::TriangleMesh::ConfidenceList const& confs,
     mve::TriangleMesh::NormalList* normals)
 {
-    if (confs.empty() || confs.size() != normals->size())
+    if (confs.size() != normals->size())
         throw std::invalid_argument("Invalid confidences or normals");
     for (std::size_t i = 0; i < confs.size(); ++i)
         normals->at(i) *= confs[i];
@@ -54,11 +55,11 @@ main (int argc, char** argv)
     args.set_description(
         "Generates a pointset from the scene by projecting reconstructed "
         "depth values in the world coordinate system.");
-    args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
-    args.add_option('s', "with-scale", false, "Write points with scale information (PLY only)");
-    args.add_option('c', "with-conf", false, "Writes points with confidences (PLY only)");
     args.add_option('d', "depthmap", true, "Name of depthmap to use [depth-L0]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
+    args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
+    args.add_option('s', "with-scale", false, "Write points with scale values (PLY only)");
+    args.add_option('c', "with-conf", false, "Write points with confidence (PLY only)");
     args.add_option('m', "mask", true, "Name of mask/silhouette image to clip 3D points []");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
@@ -197,15 +198,29 @@ main (int argc, char** argv)
         mve::CameraInfo const& cam = view->get_camera();
         mve::TriangleMesh::Ptr mesh;
         mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
-        if (conf.with_normals)
-            mesh->ensure_normals();
-        if (conf.with_conf)
-            mve::geom::depthmap_mesh_confidences(mesh, 4);
-
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
-        mve::TriangleMesh::ConfidenceList const& mconfs(mesh->get_vertex_confidences());
+        mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
+
+        if (conf.with_normals)
+            mesh->ensure_normals();
+
+        /* If confidence is requested, compute it. */
+        if (conf.with_conf)
+        {
+            /* Per-vertex confidence down-weighting boundaries. */
+            mve::geom::depthmap_mesh_confidences(mesh, 4);
+
+#if 0
+            /* Per-vertex confidence based on normal-viewdir dot product. */
+            mesh->ensure_normals();
+            math::Vec3f campos;
+            cam.fill_camera_pos(*campos);
+            for (std::size_t i = 0; i < mverts.size(); ++i)
+                mconfs[i] *= (campos - mverts[i]).normalized().dot(mnorms[i]);
+#endif
+        }
 
         if (conf.poisson_normals)
             poisson_scale_normals(mconfs, &mesh->get_vertex_normals());
@@ -246,9 +261,6 @@ main (int argc, char** argv)
         else
         {
             /* Check every point if a bounding box is given.  */
-            if (conf.with_normals)
-                mesh->ensure_normals();
-
             for (std::size_t i = 0; i < mverts.size(); ++i)
             {
                 math::Vec3f const& pt = mverts[i];
@@ -278,10 +290,10 @@ main (int argc, char** argv)
     }
 
     /* If a mask is given, clip vertices with the masks in all images. */
-    std::vector<bool> delete_list(verts.size(), false);
     if (!conf.mask.empty())
     {
         std::cout << "Filtering points using silhouette masks..." << std::endl;
+        std::vector<bool> delete_list(verts.size(), false);
         std::size_t num_filtered = 0;
 
         for (std::size_t i = 0; i < views.size(); ++i)
@@ -337,12 +349,9 @@ main (int argc, char** argv)
             << " points." << std::endl;
     }
 
-    std::cout << "Writing final point set..." << std::endl;
-    std::cout << "  Points: " << verts.size() << std::endl;
-    std::cout << "  Normals: " << vnorm.size() << std::endl;
-    std::cout << "  Colors: " << vcolor.size() << std::endl;
-
     /* Write mesh to disc. */
+    std::cout << "Writing final point set ("
+        << verts.size() << " points)..." << std::endl;
     if (util::string::right(conf.outmesh, 4) == ".ply")
     {
         mve::geom::SavePLYOptions opts;

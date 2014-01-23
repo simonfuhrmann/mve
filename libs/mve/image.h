@@ -9,10 +9,10 @@
 #include <string>
 #include <vector>
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "math/algo.h"
 #include "mve/defines.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 
 MVE_NAMESPACE_BEGIN
 

@@ -8,8 +8,8 @@
 #include <QStatusBar>
 
 #include "util/exception.h"
-#include "util/filesystem.h"
-#include "mve/plyfile.h"
+#include "util/file_system.h"
+#include "mve/mesh_io_ply.h"
 
 #include "guihelpers.h"
 #include "batchoperations.h"
@@ -69,11 +69,15 @@ MainWindow::MainWindow (void)
     /* Connect signals. */
     this->connect(this->update_timer, SIGNAL(timeout()),
         this, SLOT(on_update_memory()));
+    this->connect(this->tabs, SIGNAL(currentChanged(int)),
+        this, SLOT(on_switch_tabs(int)));
 
     /* Trick to get job queue dock widget smaller. */
     this->jobqueue->setMaximumHeight(100); // Dock widget trick
     this->show();
     this->jobqueue->setMaximumHeight(QWIDGETSIZE_MAX); // Dock widget trick
+
+    this->on_switch_tabs(0);
 }
 
 /* ---------------------------------------------------------------- */
@@ -185,6 +189,12 @@ MainWindow::create_actions (void)
     this->connect(this->action_batch_delete, SIGNAL(triggered()),
         this, SLOT(on_batch_delete()));
 
+    this->action_generate_thumbs = new QAction(
+        QIcon(":/images/icon_image_inspect.svg"),
+        tr("Generate thumbmails..."), this);
+    this->connect(this->action_generate_thumbs, SIGNAL(triggered()),
+        this, SLOT(on_generate_thumbs()));
+
     this->action_cache_cleanup = new QAction(QIcon(":/images/icon_clean.svg"),
         tr("Cache cleanup"), this);
     this->connect(this->action_cache_cleanup, SIGNAL(triggered()),
@@ -227,6 +237,7 @@ MainWindow::create_menus (void)
     this->menu_scene->addAction(this->action_import_images);
     this->menu_scene->addAction(this->action_recon_export);
     this->menu_scene->addAction(this->action_batch_delete);
+    this->menu_scene->addAction(this->action_generate_thumbs);
     this->menu_scene->addAction(this->action_cache_cleanup);
     this->menu_scene->addSeparator();
     this->menu_scene->addAction(this->action_exit);
@@ -317,6 +328,7 @@ MainWindow::enable_scene_actions (bool value)
     this->action_import_images->setEnabled(value);
     this->action_recon_export->setEnabled(value);
     this->action_batch_delete->setEnabled(value);
+    this->action_generate_thumbs->setEnabled(value);
     this->action_cache_cleanup->setEnabled(value);
     this->action_refresh_scene->setEnabled(value);
 }
@@ -504,6 +516,25 @@ MainWindow::on_batch_delete (void)
 /* ---------------------------------------------------------------- */
 
 void
+MainWindow::on_generate_thumbs (void)
+{
+    mve::Scene::Ptr scene = SceneManager::get().get_scene();
+    if (scene == NULL)
+    {
+        QMessageBox::information(this, "Error generating thumbnails!",
+            "No scene is loaded, rookie.");
+        return;
+    }
+
+    BatchGenerateThumbs dialog(this);
+    dialog.setModal(this);
+    dialog.set_scene(scene);
+    dialog.exec();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 MainWindow::on_cache_cleanup (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
@@ -512,6 +543,18 @@ MainWindow::on_cache_cleanup (void)
 
     scene->cache_cleanup();
     this->on_update_memory();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::on_switch_tabs (int tab_id)
+{
+    for (int i = 0; i < this->tabs->count(); ++i)
+    {
+        QWidget *tab = this->tabs->widget(i);
+        dynamic_cast<MainWindowTab&>(*tab).set_tab_active(i == tab_id);
+    }
 }
 
 /* ---------------------------------------------------------------- */

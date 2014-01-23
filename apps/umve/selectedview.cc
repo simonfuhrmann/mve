@@ -1,6 +1,3 @@
-#include <iostream> // RM
-#include <stdexcept>
-
 #include <QVBoxLayout>
 
 #include "selectedview.h"
@@ -51,7 +48,7 @@ SelectedView::set_view (mve::View::Ptr view)
     if (img != NULL)
     {
         std::size_t iw(img->width());
-        std::size_t ih(img->width());
+        std::size_t ih(img->height());
         QImage qimg(iw, ih, QImage::Format_RGB32);
         for (std::size_t y = 0; y < ih; ++y)
             for (std::size_t x = 0; x < iw; ++x)
@@ -65,6 +62,8 @@ SelectedView::set_view (mve::View::Ptr view)
 
         this->image->setPixmap(QPixmap::fromImage(qimg));
     }
+
+    emit this->view_selected(this->view);
 }
 
 /* ---------------------------------------------------------------- */
@@ -111,4 +110,5 @@ SelectedView::reset_view (void)
     this->viewname->setText("<no view selected>");
     this->viewinfo->setText("");
     this->image->setPixmap(QPixmap(":/images/icon_broken.svg"));
+    emit this->view_selected(this->view);
 }

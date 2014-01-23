@@ -6,7 +6,7 @@
 #include <QListWidget>
 
 #include "mve/scene.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 
 #include "guihelpers.h"
 
@@ -110,6 +110,25 @@ private slots:
 
 public:
     BatchImportImages (QWidget* parent = NULL);
+};
+
+/* ---------------------------------------------------------------- */
+
+class BatchGenerateThumbs : public BatchOperations
+{
+    Q_OBJECT
+
+private:
+    QLineEdit embedding_name;
+
+private:
+    void setup_gui (void);
+
+private slots:
+    void on_generate (void);
+
+public:
+    BatchGenerateThumbs (QWidget* parent = NULL);
 };
 
 /* ---------------------------------------------------------------- */

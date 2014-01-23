@@ -1,31 +1,14 @@
-include ../../Makefile.inc
+MVE_ROOT := ../..
+TARGET := $(shell basename `pwd`)
+include ${MVE_ROOT}/Makefile.inc
+
+CXXFLAGS += -I${MVE_ROOT}/libs -fopenmp
+LDLIBS += -lpng -ltiff -ljpeg -fopenmp
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-BINARY := makescene
-LIBDIR := ../../libs
-DESTDIR := ../../bin
-OPENMP := -fopenmp
-
-EXT_INCL := -I${LIBDIR}
-EXT_LIBS := -lpng -ljpeg -ltiff
-
-${BINARY}: ${OBJECTS} ${LIBDIR}/mve/libmve.a ${LIBDIR}/util/libutil.a
-	${CXX} -o $@ $^ ${EXT_LIBS} ${OPENMP}
-
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL} ${OPENMP}
-
-Makefile.dep: ${SOURCES}
-	${CXX} -MM ${SOURCES} ${EXT_INCL} >$@
+${TARGET}: ${SOURCES:.cc=.o} libmve.a libmve_util.a
 
 clean:
-	${RM} ${OBJECTS} ${BINARY} Makefile.dep
+	${RM} ${TARGET} *.o Makefile.dep
 
-install: ${BINARY}
-	${MKDIR} ${DESTDIR}
-	${CP} ${BINARY} ${DESTDIR}
-
-.PHONY: clean install
-
--include Makefile.dep
+.PHONY: clean

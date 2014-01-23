@@ -6,14 +6,14 @@
 
 #include "mve/scene.h"
 #include "mve/view.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 
 #include "mve/camera.h"
 #include "math/matrix.h"
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "dmrecon/defines.h"
 #include "util/thread.h"
-#include "util/threadlocks.h"
+#include "util/thread_locks.h"
 
 MVS_NAMESPACE_BEGIN
 

@@ -6,7 +6,7 @@
 #ifndef OGL_TEXTURE_HEADER
 #define OGL_TEXTURE_HEADER
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "mve/image.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"

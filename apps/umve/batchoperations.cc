@@ -7,11 +7,12 @@
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QApplication>
 
-#include "util/filesystem.h"
-#include "mve/plyfile.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "util/file_system.h"
+#include "mve/mesh_io_ply.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 
 #include "guihelpers.h"
 #include "batchoperations.h"
@@ -61,7 +62,6 @@ BatchOperations::get_embedding_names (mve::ImageType type,
 }
 
 /* ---------------------------------------------------------------- */
-/* ---------------------------------------------------------------- */
 
 BatchDelete::BatchDelete (QWidget* parent)
     : BatchOperations(parent)
@@ -81,8 +81,6 @@ BatchDelete::BatchDelete (QWidget* parent)
         this, SLOT(on_batchdel_exec()));
 }
 
-/* ---------------------------------------------------------------- */
-
 void
 BatchDelete::setup_gui (void)
 {
@@ -100,8 +98,6 @@ BatchDelete::setup_gui (void)
         item->setCheckState(Qt::Unchecked);
     }
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 BatchDelete::on_batchdel_exec (void)
@@ -147,7 +143,6 @@ BatchDelete::on_batchdel_exec (void)
 }
 
 /* ---------------------------------------------------------------- */
-/* ---------------------------------------------------------------- */
 
 BatchExport::BatchExport (QWidget *parent)
     : BatchOperations(parent)
@@ -180,8 +175,6 @@ BatchExport::BatchExport (QWidget *parent)
     this->connect(dirselect_but, SIGNAL(clicked()), this, SLOT(on_dirselect()));
 }
 
-/* ---------------------------------------------------------------- */
-
 void
 BatchExport::setup_gui (void)
 {
@@ -205,8 +198,6 @@ BatchExport::setup_gui (void)
         this->colorimage_combo.addItem(byte_names[i].c_str());
 }
 
-/* ---------------------------------------------------------------- */
-
 void
 BatchExport::on_dirselect (void)
 {
@@ -217,8 +208,6 @@ BatchExport::on_dirselect (void)
 
     this->exportpath.setText(dirname);
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 export_view_intern (mve::View::Ptr view, std::string const& basename,
@@ -484,6 +473,70 @@ BatchImportImages::on_import_images (void)
     info_message << "Images with errors: " << num_errors << std::endl;
     QMessageBox::information(this, "Import complete",
         info_message.str().c_str());
+
+    /* Close the dialog. */
+    this->accept();
+}
+
+/* ---------------------------------------------------------------- */
+
+BatchGenerateThumbs::BatchGenerateThumbs (QWidget* parent)
+    : BatchOperations(parent)
+{
+    this->embedding_name.setText("undistorted");
+
+    QFormLayout* form = new QFormLayout();
+    form->setSpacing(2);
+    form->addRow("Embedding name:", &this->embedding_name);
+
+    QPushButton* exec_but = new QPushButton
+        (QIcon(":/images/icon_exec.svg"), "Generate!");
+
+    this->main_box.addLayout(form);
+    this->button_box.addWidget(exec_but);
+    this->connect(exec_but, SIGNAL(clicked()), this, SLOT(on_generate()));
+}
+
+void
+BatchGenerateThumbs::setup_gui (void)
+{
+}
+
+void
+BatchGenerateThumbs::on_generate (void)
+{
+    if (this->scene == NULL)
+        return;
+
+    this->setDisabled(true);
+    while (QApplication::hasPendingEvents())
+        QApplication::processEvents();
+
+    std::string embedding_name = this->embedding_name.text().toStdString();
+    std::size_t num_generated = 0;
+    mve::Scene::ViewList& views(this->scene->get_views());
+    for (std::size_t i = 0; i < views.size(); ++i)
+    {
+        mve::View::Ptr view(views[i]);
+        if (view == NULL)
+            continue;
+
+        mve::ByteImage::Ptr img = view->get_byte_image(embedding_name);
+        if (img == NULL)
+            continue;
+
+        img = mve::image::create_thumbnail<uint8_t>(img, 50, 50);
+        view->set_image("thumbnail", img);
+        num_generated += 1;
+    }
+
+    /* Print message. */
+    std::stringstream info_message;
+    info_message << "Generated " << num_generated << " thumbnails!";
+    QMessageBox::information(this, "Operation complete",
+        info_message.str().c_str());
+
+    this->setDisabled(false);
 
     /* Close the dialog. */
     this->accept();

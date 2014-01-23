@@ -9,15 +9,6 @@ for more details visit the following websites:
     http://www.gris.tu-darmstadt.de/
     http://www.tu-darmstadt.de/
 
-The libraries and applications has been developed by, or received
-contributions from, the following persons:
-
-    Simon Fuhrmann <simon.fuhrmann at gris.tu-darmstadt.de>
-    Ronny Klowsky <ronny.klowsky at gris.tu-darmstadt.de>
-    Jens Ackermann <jens.ackermann at gris.tu-darmstadt.de>
-    Sebastian Koch <sebastian.koch at gris.tu-darmstadt.de>
-    Fabian Langguth <fabian.langguth at gris.tu-darmstadt.de>
-
 This README file covers some basic information regarding MVE.
 
     * Building MVE / UMVE

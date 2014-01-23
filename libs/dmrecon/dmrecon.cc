@@ -7,8 +7,8 @@
 
 #include "math/vector.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "util/filesystem.h"
+#include "mve/image_tools.h"
+#include "util/file_system.h"
 #include "util/string.h"
 #include "dmrecon/settings.h"
 #include "dmrecon/dmrecon.h"

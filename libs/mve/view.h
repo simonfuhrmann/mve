@@ -23,19 +23,19 @@
 #include <string>
 #include <vector>
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "util/atomic.h"
 #include "mve/defines.h"
 #include "mve/camera.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 #include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
 
 /**
  * Proxy class for image and data proxies.
- * For image proxies, width, height and channels is set.
- * For data proxies, width, height and channels is set to 0.
+ * For data proxies, 'is_image' is set to false, width is set to the
+ * byte size of the embedding, height and channels is set to 1.
  */
 struct MVEFileProxy
 {
@@ -47,8 +47,8 @@ struct MVEFileProxy
 
     /* Image/data properties as present in file. */
     int width; ///< Width of image (or length of data).
-    int height; ///< Height of image (or 0 for data).
-    int channels; ///< Channels of image (or 0 for data).
+    int height; ///< Height of image (or 1 for data).
+    int channels; ///< Channels of image (or 1 for data).
     std::string datatype; ///< String rep. of image datatype.
 
     /* Properties that links the embedding to a storage location. */
@@ -424,7 +424,9 @@ inline bool
 View::mark_as_dirty (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    return p != NULL && (p->is_dirty = true);
+    if (p != NULL)
+        p->is_dirty = true;
+    return p != NULL;
 }
 
 inline void

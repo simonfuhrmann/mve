@@ -7,6 +7,7 @@
 #include "dmrecon/dmrecon.h"
 #include "mve/scene.h"
 #include "mve/view.h"
+#include "util/timer.h"
 #include "util/arguments.h"
 #include "util/system.h"
 #include "util/tokenizer.h"
@@ -25,9 +26,11 @@ FancyProgressPrinter fancyProgressPrinter;
 void
 reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
 {
-    /* Note: destructor of ProgressHandle sets status to failed
-       if setDone() is not called (this happens when an exception
-       is thrown in mvs::DMRecon) */
+    /*
+     * Note: destructor of ProgressHandle sets status to failed
+     * if setDone() is not called (this happens when an exception
+     * is thrown in mvs::DMRecon)
+     */
     ProgressHandle handle(fancyProgressPrinter, settings);
     mvs::DMRecon recon(scene, settings);
     handle.setRecon(recon);
@@ -77,7 +80,7 @@ main (int argc, char** argv)
     args.add_option('\0', "force", false, "Re-reconstruct existing depthmaps");
     args.parse(argc, argv);
 
-    std::string basePath;
+    std::string basePath = args.get_nth_nonopt(0);
     bool writeply = false;
     std::string plyDest("/recon");
     std::string logDest("/log");
@@ -95,22 +98,10 @@ main (int argc, char** argv)
     std::vector<int> listIDs;
 
     util::ArgResult const * arg;
-    while ((arg = args.next_result()))
+    while ((arg = args.next_option()))
     {
-        if (arg->opt == NULL)
-        {
-            basePath = arg->arg;
-            continue;
-        }
-
         if (arg->opt->lopt == "neighbors")
-        {
-            mySettings.globalVSMax =
-                util::string::convert<std::size_t>(arg->arg);
-            std::cout << "global view selection uses "
-                      << mySettings.globalVSMax
-                      << " neighbors" << std::endl;
-        }
+            mySettings.globalVSMax = arg->get_arg<std::size_t>();
         else if (arg->opt->lopt == "nocolorscale")
             mySettings.useColorScale = false;
         else if (arg->opt->lopt == "master-view")
@@ -144,10 +135,11 @@ main (int argc, char** argv)
             else if (arg->arg == "fancy")
                 progress_style = PROGRESS_FANCY;
             else
-                std::cout << "WARNING: unrecognized progress style" << std::endl;
+                std::cerr << "WARNING: unrecognized progress style" << std::endl;
         }
-        else {
-            std::cout << "WARNING: unrecognized option" << std::endl;
+        else
+        {
+            std::cerr << "WARNING: unrecognized option" << std::endl;
         }
     }
 
@@ -157,12 +149,14 @@ main (int argc, char** argv)
 
     /* Load MVE scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
-    try {
+    try
+    {
         scene->load_scene(basePath);
         scene->get_bundle();
     }
-    catch (std::exception& e) {
-        std::cout<<"Error loading scene: "<<e.what()<<std::endl;
+    catch (std::exception& e)
+    {
+        std::cerr << "Error loading scene: " << e.what() << std::endl;
         return 1;
     }
 
@@ -183,6 +177,7 @@ main (int argc, char** argv)
     if (progress_style == PROGRESS_FANCY)
         fancyProgressPrinter.pt_create();
 
+    util::WallTimer timer;
     if (master_id >= 0)
     {
         std::cout << "Reconstructing view with ID " << master_id << std::endl;
@@ -204,9 +199,9 @@ main (int argc, char** argv)
             util::string::get(mySettings.scale);
         if (listIDs.empty())
         {
+            std::cout << "Reconstructing all views..." << std::endl;
             for(std::size_t i = 0; i < views.size(); ++i)
                 listIDs.push_back(i);
-            std::cout << "Reconstructing all views..." << std::endl;
         }
         else
         {
@@ -218,9 +213,9 @@ main (int argc, char** argv)
         for (std::size_t i = 0; i < listIDs.size(); ++i)
         {
             std::size_t id = listIDs[i];
-            if (id >= views.size()){
-                std::cout << "ID: " << id << " is too large! Skipping..."
-                << std::endl;
+            if (id >= views.size())
+            {
+                std::cout << "Invalid ID " << id << ", skipping!" << std::endl;
                 continue;
             }
             if (views[id] == NULL || !views[id]->is_camera_valid())
@@ -247,6 +242,9 @@ main (int argc, char** argv)
         fancyProgressPrinter.stop();
         fancyProgressPrinter.pt_join();
     }
+
+    std::cout << "Reconstruction took "
+        << timer.get_elapsed() << "ms." << std::endl;
 
     /* Save scene */
     std::cout << "Saving views back to disc..." << std::endl;

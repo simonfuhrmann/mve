@@ -1,6 +1,6 @@
 #include "dmrecon/image_pyramid.h"
 
-#include "mve/imagetools.h"
+#include "mve/image_tools.h"
 #include <cassert>
 
 MVS_NAMESPACE_BEGIN

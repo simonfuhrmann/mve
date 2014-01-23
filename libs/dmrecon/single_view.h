@@ -9,7 +9,7 @@
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "mve/view.h"
-#include "mve/bundlefile.h"
+#include "mve/bundle_file.h"
 #include "mve/image.h"
 #include "dmrecon/defines.h"
 #include "dmrecon/image_pyramid.h"

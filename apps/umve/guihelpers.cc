@@ -4,7 +4,7 @@
 #include <QPainter>
 #include <QStyleFactory>
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 
 #include "guihelpers.h"
 

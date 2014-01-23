@@ -16,7 +16,8 @@
 #include "mve/view.h"
 #include "mve/depthmap.h"
 #include "mve/bilateral.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
+#include "util/exception.h"
 
 #include "jobqueue.h"
 #include "guihelpers.h"
@@ -27,9 +28,8 @@ ImageOperationsWidget::ImageOperationsWidget (void)
 {
     this->selected_view = new SelectedView();
 
-    const mvs::Settings default_settings;
-
-    /* Depthmap recon layout. */
+    /* MVS layout. */
+    mvs::Settings const default_settings;
     this->mvs_color_scale.setText("Enable Color Scale");
     this->mvs_color_scale.setChecked(default_settings.useColorScale);
     this->mvs_write_ply.setText("Write PLY after recon");
@@ -391,8 +391,17 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     if (ret != QMessageBox::Yes)
         return;
 
-    /* Prefetch bundle file. */
-    scene->get_bundle();
+    try {
+        /* Prefetch bundle file. */
+        scene->get_bundle();
+    }
+    catch (util::Exception &exc)
+    {
+        QMessageBox::warning(this, tr("MVS batch reconstruct"),
+            tr("Could not load bundle file, reconstruction cancelled."));
+
+        return;
+    }
 
     std::string dmname("depth-L" + util::string::get(scale));
 

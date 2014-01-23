@@ -5,9 +5,9 @@
 
 #include "math/defines.h"
 #include "math/matrix.h"
-#include "mve/vertexinfo.h"
+#include "mve/mesh_info.h"
 #include "mve/depthmap.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_tools.h"
 #include "mve/bilateral.h"
 
 MVE_NAMESPACE_BEGIN

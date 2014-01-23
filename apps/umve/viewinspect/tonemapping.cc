@@ -10,7 +10,7 @@
 #include "util/timer.h"
 #include "util/string.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
+#include "mve/image_tools.h"
 
 #include "tonemapping.h"
 
@@ -386,7 +386,7 @@ ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
     {
         for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
         {
-            if (*ptr < this->image_vmin || *ptr > this->image_vmax)
+            if (!std::isfinite(*ptr) || *ptr < this->image_vmin || *ptr > this->image_vmax)
                 continue;
             float normalized = (*ptr - this->image_vmin) / image_range;
             int bin = std::log10(1.0f + 9.0f * normalized) * (num_bins - 1);
@@ -420,28 +420,21 @@ ToneMapping::find_min_max ()
 
     mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(*this->image);
 
-    if (this->ignore_zeros)
-    {
-        float min = std::numeric_limits<float>::max();
-        float max = -std::numeric_limits<float>::max();
+    float min = std::numeric_limits<float>::max();
+    float max = -std::numeric_limits<float>::max();
 
-        for (float const *p = fimg.begin(); p != fimg.end(); ++p)
+    for (float const *p = fimg.begin(); p != fimg.end(); ++p)
+    {
+        float v = *p;
+        if (std::isfinite(v) && (!this->ignore_zeros || v != 0.0f))
         {
-            float v = *p;
-            if (v == 0.0f)
-                continue;
             min = std::min(min, v);
             max = std::max(max, v);
         }
+    }
 
-        this->image_vmin = min;
-        this->image_vmax = max;
-    }
-    else
-    {
-        mve::image::find_min_max_value(this->image,
-            &this->image_vmin, &this->image_vmax);
-    }
+    this->image_vmin = min;
+    this->image_vmax = max;
 }
 
 void
@@ -594,13 +587,11 @@ ToneMapping::render (void)
         px != fimg->end(); px += chans, out_ptr += 3)
     {
         bool all_below_highlight = true;
-        bool has_one_nan_value = false;
-        bool has_one_inf_value = false;
-        for (int c = 0; !has_one_inf_value && !has_one_nan_value && c < 3; ++c)
+        bool has_bad_value = false;
+        for (int c = 0; !has_bad_value && c < 3; ++c)
         {
             float value = px[this->channel_assignment[c]];
-            has_one_nan_value = has_one_nan_value || MATH_ISNAN(value);
-            has_one_inf_value = has_one_inf_value || MATH_ISINF(value);
+            has_bad_value = has_bad_value || !std::isfinite(value);
             all_below_highlight = all_below_highlight
                 && value <= highlight && value >= 0.0f;
 
@@ -611,7 +602,7 @@ ToneMapping::render (void)
             out_ptr[c] = static_cast<uint8_t>(value * 255.0f + 0.5f);
         }
 
-        if (has_one_nan_value)
+        if (has_bad_value)
         {
             out_ptr[0] = 255;
             out_ptr[1] = 255;

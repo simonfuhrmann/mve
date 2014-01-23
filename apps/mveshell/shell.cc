@@ -9,11 +9,11 @@
 #endif
 
 #include "util/tokenizer.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "mve/scene.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
-#include "mve/imageexif.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
+#include "mve/image_exif.h"
 
 #include "shell.h"
 
