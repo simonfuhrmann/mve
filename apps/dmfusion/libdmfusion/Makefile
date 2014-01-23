@@ -1,4 +1,4 @@
-MVE_ROOT ?= ../../../../mve
+MVE_ROOT := ../../../
 TARGET := libdmf.a
 include ${MVE_ROOT}/Makefile.inc
 

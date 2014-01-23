@@ -276,8 +276,8 @@ int main (int argc, char** argv)
 
     /* Setup defaults. */
     AppSettings conf;
-    conf.depthmap = "depth-L1";
-    conf.image = "undist-L1";
+    conf.depthmap = "depth-L0";
+    conf.image = "undistorted";
     conf.maxview = 0;
     conf.border_dw = 3;
     conf.border_peel = 0;
