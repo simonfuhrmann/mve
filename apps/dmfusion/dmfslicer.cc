@@ -4,12 +4,12 @@
 #include <cstring>
 #include <cerrno>
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/arguments.h"
 #include "util/timer.h"
 
 #include "mve/image.h"
-#include "mve/imagefile.h"
+#include "mve/image_io.h"
 
 #include "libdmfusion/octree.h"
 

@@ -6,7 +6,7 @@
 #include "math/vector.h"
 #include "mve/image.h"
 #include "mve/camera.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_tools.h"
 
 #include "defines.h"
 

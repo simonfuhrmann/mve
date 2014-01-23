@@ -3,11 +3,12 @@
 #include <iostream>
 #include <fstream>
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/string.h"
 #include "util/exception.h"
 #include "util/tokenizer.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_io.h"
+#include "mve/mesh_tools.h"
 
 #include "stanford.h"
 

@@ -6,7 +6,7 @@
 
 #include "math/vector.h"
 #include "math/quaternion.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_tools.h"
 #include "mve/image.h"
 
 #include "defines.h"

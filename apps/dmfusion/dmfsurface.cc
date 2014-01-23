@@ -5,12 +5,13 @@
 #include <fstream>
 #include <limits>
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/arguments.h"
 #include "util/timer.h"
 
-#include "mve/meshtools.h"
-#include "mve/marchingtets.h"
+#include "mve/mesh_io.h"
+#include "mve/mesh_tools.h"
+#include "mve/marching_tets.h"
 
 #include "libdmfusion/tetmeshaccessor.h"
 

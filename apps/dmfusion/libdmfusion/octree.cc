@@ -13,8 +13,8 @@
 #include "util/exception.h"
 #include "math/matrix.h"
 #include "math/vector.h"
-#include "math/octreetools.h"
-#include "mve/meshtools.h"
+#include "math/octree_tools.h"
+#include "mve/mesh_tools.h"
 #include "mve/depthmap.h"
 
 #include "octree.h"

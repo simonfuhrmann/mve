@@ -27,14 +27,15 @@
 #include <cstring>
 #include <cerrno>
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/arguments.h"
 #include "util/timer.h"
 #include "util/tokenizer.h"
 
 #include "mve/scene.h"
 #include "mve/view.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_io.h"
+#include "mve/mesh_tools.h"
 #include "mve/depthmap.h"
 
 #include "libdmfusion/stanford.h"

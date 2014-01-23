@@ -8,8 +8,8 @@
 #include "util/file_system.h"
 #include "util/string.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
 #include "mve/view.h"
 
 /* The signature to identify MVE files. */

@@ -4,16 +4,17 @@
 #include <algorithm>
 #include <fstream>
 
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "math/geometry.h"
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/arguments.h"
 #include "util/timer.h"
 
-#include "mve/meshtools.h"
-#include "mve/marchingcubes.h"
-#include "mve/marchingtets.h"
+#include "mve/mesh_io.h"
+#include "mve/mesh_tools.h"
+#include "mve/marching_cubes.h"
+#include "mve/marching_tets.h"
 
 #include "libdmfusion/octree.h"
 #include "libdmfusion/octreeaccessor.h"
