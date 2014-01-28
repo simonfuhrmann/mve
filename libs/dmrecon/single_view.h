@@ -20,8 +20,11 @@ class SingleView
 {
 public:
     typedef util::RefPtr<SingleView> Ptr;
+    typedef util::RefPtr<SingleView const> ConstPtr;
 
-    SingleView(mve::Scene::Ptr _scene, mve::View::Ptr _view);
+public:
+    static Ptr create (mve::Scene::Ptr scene, mve::View::Ptr view,
+        std::string const& embedding);
     ~SingleView();
 
     void addFeature(std::size_t idx);
@@ -37,44 +40,53 @@ public:
     math::Vec3f viewRay(int x, int y, int level) const;
     math::Vec3f viewRay(float x, float y, int level) const;
     math::Vec3f viewRayScaled(int x, int y) const;
-    void loadColorImage(std::string const& name, int minLevel);
-    bool pointInFrustum(math::Vec3f const& wp);
+    void loadColorImage(int minLevel);
+    bool pointInFrustum(math::Vec3f const& wp) const;
     void saveReconAsPly(std::string const& path, float scale) const;
     bool seesFeature(std::size_t idx) const;
-    void prepareRecon(int _scale);
+    void prepareMasterView(int scale);
     math::Vec2f worldToScreen(math::Vec3f const& point, int level);
     math::Vec2f worldToScreenScaled(math::Vec3f const& point);
+    std::size_t getViewID() const;
 
 public:
-    std::size_t viewID;
     math::Vec3f camPos;
-
     mve::FloatImage::Ptr depthImg;
     mve::FloatImage::Ptr normalImg;
     mve::FloatImage::Ptr dzImg;
     mve::FloatImage::Ptr confImg;
 
 private:
-    /** external camera parameters */
+    /** Constructor is private, use the create() method for instantiation. */
+    SingleView(mve::Scene::Ptr _scene, mve::View::Ptr _view,
+        std::string const& _embedding);
+
+private:
     math::Matrix4f worldToCam;
+    mve::Scene::Ptr scene;
+    mve::View::Ptr view;
+    std::string embedding;
 
     /** feature indices */
     std::vector<std::size_t> featInd;
 
-    /** mve scene */
-    mve::Scene::Ptr scene;
-
-    /** mve view */
-    mve::View::Ptr view;
-
     bool has_target_level;
 
-    /** the original image in different scales */
+    /** The original image in different scales. */
     ImagePyramid::ConstPtr img_pyramid;
-    ImagePyramidLevel source_level, target_level;
+    ImagePyramidLevel source_level;
+    ImagePyramidLevel target_level;
     int minLevel;
 };
 
+/* ------------------------ Implementation ------------------------ */
+
+inline SingleView::Ptr
+SingleView::create (mve::Scene::Ptr scene, mve::View::Ptr view,
+    std::string const& embedding)
+{
+    return Ptr(new SingleView(scene, view, embedding));
+}
 
 inline void
 SingleView::addFeature(std::size_t idx)
@@ -125,7 +137,7 @@ inline std::string
 SingleView::createFileName(float scale) const
 {
     std::string fileName = "mvs-";
-    fileName += util::string::get_filled(this->viewID, 4);
+    fileName += util::string::get_filled(this->getViewID(), 4);
     fileName += "-L";
     fileName += util::string::get(scale);
     return fileName;
@@ -173,6 +185,12 @@ SingleView::worldToScreen(math::Vec3f const& point, int level)
 
     math::Vec2f res(sp[0] / sp[2] - 0.5f, sp[1] / sp[2] - 0.5f);
     return res;
+}
+
+inline std::size_t
+SingleView::getViewID() const
+{
+    return this->view->get_id();
 }
 
 MVS_NAMESPACE_END

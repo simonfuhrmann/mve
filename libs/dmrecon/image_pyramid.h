@@ -59,9 +59,7 @@ public:
 class ImagePyramidCache {
 public:
     static ImagePyramid::ConstPtr get(mve::Scene::Ptr scene,
-                                    mve::View::Ptr view,
-                                    std::string embeddingName,
-                                    int minLevel);
+        mve::View::Ptr view, std::string embeddingName, int minLevel);
     static void cleanup();
 
 private:
