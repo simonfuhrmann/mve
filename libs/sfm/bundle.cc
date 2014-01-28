@@ -1,3 +1,35 @@
+/*
+ * High-level tool to create a bundle.
+ * Written by Simon Fuhrmann.
+ *
+ * The tool has three stages:
+ * 1. Feature detection
+ * 2. Feature matching
+ * 3. Bundling
+ *
+ * 1. Strategy for feature detection
+ * - Do feature computation in parallel for all views.
+ * - Where to store per-view features, in view or in extra file?
+ *   - In view: Requires to save ALL views again
+ *   - In extra file: Tedious file handling
+ * - Feature Statistic
+ *   - Matching with 3MP results in 10k features
+ *   - Mathcing with 1MP results in 4k features
+ *
+ * 2. Strategy for feature matching
+ * - Exhaustive matching (complexity of n^2 for n views)
+ * - Memory consumption of 1k views with 10k features each:
+ *   128 * sizeof(float) * 10000 * 1000 = 4882 MB -> Too large
+ *   128 * sizeof(uint8) * 10000 * 1000 = 1220 MB -> Large but OK
+ * - Keep all in memory or load subsets of views from file?
+ * - How and where to store matching? Memory for one huge file:
+ * - Matching statistics:
+ *   - Matching between good views of 10k features: 2.5k matches
+ *   - Mathcing between good views of 4k features: 800 matches
+ *
+ * 3. Strategy for bundling
+ */
+
 #include <iostream>
 #include <algorithm>
 
@@ -36,7 +68,8 @@ Bundle::create_bundle (void)
     this->remaining.erase(initial_pair.first);
     this->remaining.erase(initial_pair.second);
 
-    std::cout << "Saving tracks after initial pair..." << std::endl;
+    /* DEBUG: Save initial tracks to mesh. */
+    std::cout << "Bundle: Saving tracks after initial pair..." << std::endl;
     this->save_tracks_to_mesh("/tmp/initialpair.ply");
 
     while (this->remaining.empty())

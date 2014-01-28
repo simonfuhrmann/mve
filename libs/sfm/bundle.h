@@ -113,8 +113,8 @@ protected:
 
 protected:
     Options options;
-    std::vector<Viewport> viewports;
     std::set<std::size_t> remaining;
+    std::vector<Viewport> viewports;
     std::vector<Feature2D> features;
     std::vector<Feature3D> tracks;
 };
