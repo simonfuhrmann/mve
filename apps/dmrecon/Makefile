@@ -7,6 +7,7 @@ LDLIBS += -lpng -ltiff -ljpeg -fopenmp
 
 SOURCES := $(wildcard [^_]*.cc)
 ${TARGET}: ${SOURCES:.cc=.o} libmve_dmrecon.a libmve.a libmve_util.a
+	$(LINK.o) $^ $(LDLIBS) -o $@
 
 clean:
 	${RM} ${TARGET} *.o Makefile.dep
