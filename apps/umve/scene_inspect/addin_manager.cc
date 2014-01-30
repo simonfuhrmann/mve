@@ -5,6 +5,7 @@
 #include <QColorDialog>
 
 #include "util/file_system.h"
+#include "ogl/render_tools.h"
 
 #include "guihelpers.h"
 #include "scene_inspect/addin_manager.h"
@@ -16,6 +17,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
 {
     /* Initialize state and widgets. */
     this->state.gl_widget = gl_widget;
+    this->state.ui_needs_redraw = true;
     this->selected_view_1 = new SelectedView();
     this->selected_view_2 = new SelectedView();
 
@@ -33,6 +35,8 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     this->aabb_creator = new AddinAABBCreator();
     this->plane_creator = new AddinPlaneCreator();
     this->sphere_creator = new AddinSphereCreator();
+    this->selection = new AddinSelection();
+    this->selection->set_scene_camera(&this->camera);
 
     /* Register addins. */
     this->addins.push_back(this->axis_renderer);
@@ -45,6 +49,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     this->addins.push_back(this->aabb_creator);
     this->addins.push_back(this->plane_creator);
     this->addins.push_back(this->sphere_creator);
+    this->addins.push_back(this->selection);
 
     /* Create scene rendering form. */
     QFormLayout* rendering_form = new QFormLayout();
@@ -109,6 +114,28 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
 
     /* Finalize UI. */
     this->apply_clear_color();
+}
+
+/* ---------------------------------------------------------------- */
+
+bool
+AddinManager::keyboard_event(const ogl::KeyboardEvent &event)
+{
+    for (std::size_t i = 0; i < this->addins.size(); ++i)
+        if (this->addins[i]->keyboard_event(event))
+            return true;
+
+    return ogl::CameraTrackballContext::keyboard_event(event);
+}
+
+bool
+AddinManager::mouse_event (const ogl::MouseEvent &event)
+{
+    for (std::size_t i = 0; i < this->addins.size(); ++i)
+        if (this->addins[i]->mouse_event(event))
+            return true;
+
+    return ogl::CameraTrackballContext::mouse_event(event);
 }
 
 /* ---------------------------------------------------------------- */
@@ -180,6 +207,8 @@ AddinManager::init_impl (void)
     this->state.surface_shader->load_all(shader_path + "surface_120");
     this->state.wireframe_shader->load_all(shader_path + "wireframe_120");
     this->state.texture_shader->load_all(shader_path + "texture_120");
+    this->state.gui_renderer = ogl::create_fullscreen_quad(this->state.texture_shader);
+    this->state.gui_texture = ogl::Texture::create();
 
     for (std::size_t i = 0; i < this->addins.size(); ++i)
     {
@@ -198,6 +227,8 @@ AddinManager::resize_impl (int old_width, int old_height)
     this->ogl::CameraTrackballContext::resize_impl(old_width, old_height);
     for (std::size_t i = 0; i < this->addins.size(); ++i)
         this->addins[i]->resize(this->ogl::Context::width, this->ogl::Context::height);
+
+    this->state.ui_needs_redraw = true;
 }
 
 void
@@ -230,9 +261,41 @@ AddinManager::paint_impl (void)
     this->state.surface_shader->send_uniform("viewmat", this->camera.view);
     this->state.surface_shader->send_uniform("projmat", this->camera.proj);
 
+    /* Setup texture shader. */
+    this->state.texture_shader->bind();
+    this->state.texture_shader->send_uniform("viewmat", this->camera.view);
+    this->state.texture_shader->send_uniform("projmat", this->camera.proj);
+
+    if (this->state.ui_needs_redraw)
+    {
+        this->state.ui_image = mve::ByteImage::create(ogl::Context::width,
+            ogl::Context::height, 4);
+        this->state.ui_image->fill(0);
+    }
+
     /* Paint all implementations. */
     for (std::size_t i = 0; i < this->addins.size(); ++i)
+    {
+        if (this->state.ui_needs_redraw)
+            this->addins[i]->redraw_gui();
         this->addins[i]->paint();
+    }
+
+    if (this->state.ui_needs_redraw)
+        this->state.gui_texture->upload(this->state.ui_image);
+
+    /* Draw UI. */
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    this->state.gui_texture->bind();
+    this->state.texture_shader->bind();
+    this->state.gui_renderer->draw();
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+    this->state.ui_needs_redraw = false;
 }
 
 /* ---------------------------------------------------------------- */

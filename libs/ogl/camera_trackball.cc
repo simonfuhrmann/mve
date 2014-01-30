@@ -18,9 +18,11 @@ CamTrackball::CamTrackball (void)
 
 /* ---------------------------------------------------------------- */
 
-void
+bool
 CamTrackball::consume_event (MouseEvent const& event)
 {
+    bool is_handled = false;
+
     if (event.type == MOUSE_EVENT_PRESS)
     {
         if (event.button == MOUSE_BUTTON_LEFT)
@@ -41,6 +43,7 @@ CamTrackball::consume_event (MouseEvent const& event)
             if (center != math::Vec3f(0.0f))
                 this->tb_center = center;
         }
+        is_handled = true;
     }
     else if (event.type == MOUSE_EVENT_MOVE)
     {
@@ -55,6 +58,7 @@ CamTrackball::consume_event (MouseEvent const& event)
             {
                 this->handle_tb_rotation(event.x, event.y);
             }
+            is_handled = true;
         }
 
         if (event.button_mask & MOUSE_BUTTON_MIDDLE)
@@ -64,25 +68,31 @@ CamTrackball::consume_event (MouseEvent const& event)
             float cam_diff = (float)mouse_diff * zoom_speed;
             float new_radius = this->zoom_tb_radius + cam_diff;
             this->tb_radius = math::algo::clamp(new_radius, this->cam->z_near, this->cam->z_far);
+            is_handled = true;
         }
     }
     else if (event.type == MOUSE_EVENT_WHEEL_UP)
     {
         this->tb_radius = this->tb_radius + this->tb_radius / 10.0f;
         this->tb_radius = std::min(this->cam->z_far, this->tb_radius);
+        is_handled = true;
     }
     else if (event.type == MOUSE_EVENT_WHEEL_DOWN)
     {
         this->tb_radius = this->tb_radius - this->tb_radius / 10.0f;
         this->tb_radius = std::max(this->cam->z_near, this->tb_radius);
+        is_handled = true;
     }
+
+    return is_handled;
 }
 
 /* ---------------------------------------------------------------- */
 
-void
+bool
 CamTrackball::consume_event (KeyboardEvent const& /*event*/)
 {
+    return false;
 }
 
 /* ---------------------------------------------------------------- */

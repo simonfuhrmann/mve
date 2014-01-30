@@ -47,8 +47,8 @@ public:
     CamTrackball (void);
 
     void set_camera (Camera* camera);
-    void consume_event (MouseEvent const& event);
-    void consume_event (KeyboardEvent const& event);
+    bool consume_event (MouseEvent const& event);
+    bool consume_event (KeyboardEvent const& event);
 
     void set_camera_params (math::Vec3f const& center,
         math::Vec3f const& lookat, math::Vec3f const& upvec);

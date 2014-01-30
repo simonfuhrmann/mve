@@ -27,6 +27,7 @@
 #include "scene_addins/addin_aabb_creator.h"
 #include "scene_addins/addin_plane_creator.h"
 #include "scene_addins/addin_sphere_creator.h"
+#include "scene_addins/addin_selection.h"
 
 /*
  * The addin manager sets up the basic OpenGL context, creates the shaders
@@ -45,6 +46,9 @@ public:
     void load_file (std::string const& filename);
     void reload_shaders (void);
     void reset_scene (void);
+
+    virtual bool keyboard_event (ogl::KeyboardEvent const& event);
+    virtual bool mouse_event (ogl::MouseEvent const& event);
 
 protected:
     void init_impl (void);
@@ -72,6 +76,7 @@ private:
     AddinAABBCreator* aabb_creator;
     AddinPlaneCreator* plane_creator;
     AddinSphereCreator* sphere_creator;
+    AddinSelection* selection;
 
     /* UI elements. */
     QTabWidget* tab_widget;
