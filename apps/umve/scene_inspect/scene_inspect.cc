@@ -178,3 +178,11 @@ SceneInspect::on_save_screenshot (void)
         QMessageBox::critical(this, "Cannot save image",
             "Error saving image");
 }
+
+/* ---------------------------------------------------------------- */
+
+QString
+SceneInspect::get_title (void)
+{
+    return tr("Scene inspect");
+}
