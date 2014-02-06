@@ -34,16 +34,18 @@
 #include <algorithm>
 
 #include "util/timer.h"
+#include "util/file_system.h"
+#include "mve/view.h"
 #include "mve/mesh.h"
 #include "mve/mesh_tools.h"
 #include "mve/mesh_io.h"
-#include "sfm/bundle.h"
+#include "sfm/bundler.h"
 #include "sfm/triangulate.h"
 
 SFM_NAMESPACE_BEGIN
 
 void
-Bundle::add_image (mve::ByteImage::ConstPtr image, double focal_length)
+Bundler::add_image (mve::ByteImage::ConstPtr image, double focal_length)
 {
     this->viewports.push_back(Viewport());
     this->viewports.back().image = image;
@@ -53,96 +55,154 @@ Bundle::add_image (mve::ByteImage::ConstPtr image, double focal_length)
 }
 
 void
-Bundle::create_bundle (void)
+Bundler::create_bundle (void)
 {
-    /* Mark all view ports as remaining (to be bundled). */
+    /* Mark all viewports as remaining (to be bundled). */
     for (std::size_t i = 0; i < this->viewports.size(); ++i)
         this->remaining.insert(i);
 
-    /* Bundle initial pair, which is assumed to be known here. */
-    ImagePair initial_pair = this->select_initial_pair();
-    this->compute_sift_descriptors(initial_pair.first);
-    this->compute_sift_descriptors(initial_pair.second);
-    this->two_view_pose(&initial_pair);
-    this->triangulate_initial_pair(initial_pair);
-    this->remaining.erase(initial_pair.first);
-    this->remaining.erase(initial_pair.second);
+    /* Bundle initial pair. */
+    this->add_initial_pair_to_bundle();
 
     /* DEBUG: Save initial tracks to mesh. */
     std::cout << "Bundle: Saving tracks after initial pair..." << std::endl;
     this->save_tracks_to_mesh("/tmp/initialpair.ply");
 
-    while (this->remaining.empty())
-    {
-        /* Obtain next view to reconstruct. */
-        std::size_t view_id = this->select_next_view();
-        this->remaining.erase(view_id);
+    /* Incrementally bundle remaining views. */
+    while (!this->remaining.empty())
+        this->add_next_view_to_bundle();
 
-        /* Compute descriptors for this view. */
-        this->compute_sift_descriptors(view_id);
-
-        /*
-         * Create a map with (track IDs, SIFT IDs) to map 3D points to
-         * 2D points in this image. If the same track maps to multiple
-         * SIFT IDs, the mapping is invalidated by setting the SIFT ID to -1.
-         */
-        std::map<int, int> tracks_to_sift;
-
-        for (std::size_t i = 0; i < this->viewports.size(); ++i)
-        {
-            if (this->viewports[i].descr_info.empty())
-                continue;
-
-            /* Perform two-view matching to filter feature matches. */
-            std::cout << "Processing image pair " << view_id
-                << "," << i << "..." << std::endl;
-            Bundle::ImagePair image_pair(view_id, i);
-            this->two_view_pose(&image_pair);
-
-            if (image_pair.indices.size() < 8)
-            {
-                std::cout << "Skipping pair with " << image_pair.indices.size()
-                    << " correspondences." << std::endl;
-                continue;
-            }
-
-            /* Collect 2D-3D correspondences for view. */
-            for (std::size_t j = 0; j < image_pair.indices.size(); ++j)
-            {
-                int this_sift_id = image_pair.indices[i].first;
-                int other_sift_id = image_pair.indices[i].second;
-                int other_f2d_id = this->viewports[i].descr_info[other_sift_id].feature2d_id;
-                if (other_f2d_id < 0)
-                    continue;
-                int other_f3d_id = this->features[other_f2d_id].feature3d_id;
-
-
-
-                // TODO CONTINUE!
-
-
-
-            }
-        }
-    }
+    /* DEBUG: Create a MVE scene from the bundle. */
+    generate_scene_from_bundle("/tmp/bundler_scene/");
 }
 
-Bundle::ImagePair
-Bundle::select_initial_pair (void)
+void
+Bundler::add_initial_pair_to_bundle (void)
+{
+    ImagePair initial_pair = this->select_initial_pair();
+    this->remaining.erase(initial_pair.first);
+    this->remaining.erase(initial_pair.second);
+    std::cout << "Processing initial pair " << initial_pair.first
+        << "," << initial_pair.second << "..." << std::endl;
+
+    this->compute_sift_descriptors(initial_pair.first);
+    this->compute_sift_descriptors(initial_pair.second);
+    this->compute_fundamental_for_pair(&initial_pair);
+    this->compute_pose_from_fundamental(initial_pair);
+    this->triangulate_initial_pair(initial_pair);
+}
+
+void
+Bundler::add_next_view_to_bundle (void)
+{
+    std::size_t view_id = this->select_next_view();
+    Viewport& viewport = this->viewports[view_id];
+    this->remaining.erase(view_id);
+
+    /* Compute descriptors for this view. */
+    this->compute_sift_descriptors(view_id);
+
+    /*
+     * Match the descriptors for the current viewport with all other
+     * viewports. If the other viewports feature corresponds to a track,
+     * the 2D-3D correspondence is collected and considered for pose.
+     *
+     * Since a track was generated from multiple views, this procedure
+     * collects the same track multiple times. The track IDs are made
+     * unique by using a map that records "track IDs" to "SIFT IDs".
+     *
+     * The following inconsistencies can arise:
+     * - One track maps to different SIFT IDs.
+     * - One SIFT ID maps to multiple tracks.
+     * The mapping is then invalidated by setting the SIFT ID to -1.
+     *
+     * Note: Maybe use two-way mapping using vectors for inconsistencies?
+     *   std::vector<int> tracks_to_sift(this->tracks.size());
+     *   std::vector<int> sift_to_tracks(viewport.descr_info.size());
+     */
+    typedef std::map<int, int> TracksToSiftMapping;
+    TracksToSiftMapping tracks_to_sift;
+    for (std::size_t i = 0; i < this->viewports.size(); ++i)
+    {
+        if (this->viewports[i].descr_info.empty())
+            continue;
+
+        /*
+         * Match the current view to the other view and compute the
+         * fundamental matrix for geometric correspondence filtering.
+         */
+        std::cout << "Processing image pair " << view_id
+            << "," << i << "..." << std::endl;
+        ImagePair image_pair(view_id, i);
+        this->compute_fundamental_for_pair(&image_pair);
+
+        /*
+         * For every correspondence, check if the other feature ID
+         * corresponds to a track and collect 2D-3D correspondences.
+         */
+        for (std::size_t j = 0; j < image_pair.indices.size(); ++j)
+        {
+            int this_sift_id = image_pair.indices[j].first;
+            int other_sift_id = image_pair.indices[j].second;
+            int other_f2d_id = this->viewports[i].descr_info[other_sift_id].feature2d_id;
+            if (other_f2d_id < 0)
+                continue;
+            int other_f3d_id = this->features[other_f2d_id].feature3d_id;
+
+            /* Register new 2D-3D correspondence. */
+            // TODO Detect inconsistencies.
+            tracks_to_sift[other_f3d_id] = this_sift_id;
+        }
+    }
+
+    /* Build list of 2D-3D correspondences and update data structure. */
+    Correspondences2D3D corresp_2d3d;
+    for (TracksToSiftMapping::const_iterator iter = tracks_to_sift.begin();
+        iter != tracks_to_sift.end(); ++iter)
+    {
+        int const track_id = iter->first;
+        Feature3D& track = this->tracks[track_id];
+        int const sift_id = iter->second;
+        Feature2DRef const& feature_ref = viewport.descr_info[sift_id];
+
+        /* Create new 2D feature, update track. */
+        Feature2D feature;
+        std::copy(feature_ref.pos, feature_ref.pos + 2, feature.pos);
+        feature.view_id = view_id;
+        feature.feature3d_id = track_id;
+        this->features.push_back(feature);
+        track.feature2d_ids.push_back(this->features.size() - 1);
+
+        /* Create correspondence. */
+        Correspondence2D3D corresp;
+        std::copy(feature.pos, feature.pos + 2, corresp.p2d);
+        std::copy(track.pos, track.pos + 3, corresp.p3d);
+        corresp_2d3d.push_back(corresp);
+    }
+
+    /* Compute pose given the 2D-3D correspondences. */
+    this->compute_pose_from_2d3d(view_id, corresp_2d3d);
+
+    /* Collect new 2D-2D correspondences and create new tracks. */
+    // TODO
+}
+
+Bundler::ImagePair
+Bundler::select_initial_pair (void)
 {
     // TODO: Replace with proper implementation
     return ImagePair(0, 1);
 }
 
 int
-Bundle::select_next_view (void)
+Bundler::select_next_view (void)
 {
     // TODO: Replace with proper implementation
     return *this->remaining.begin();
 }
 
 void
-Bundle::compute_sift_descriptors (std::size_t view_id)
+Bundler::compute_sift_descriptors (std::size_t view_id)
 {
     Viewport& view = this->viewports[view_id];
 
@@ -169,11 +229,13 @@ Bundle::compute_sift_descriptors (std::size_t view_id)
     this->options.sift_matching_options.descriptor_length = 128;
 }
 
+/* Success of this function is indicated if indices are not empty. */
 void
-Bundle::two_view_pose (ImagePair* image_pair)
+Bundler::compute_fundamental_for_pair (ImagePair* image_pair)
 {
     Viewport const& view_1 = this->viewports[image_pair->first];
     Viewport const& view_2 = this->viewports[image_pair->second];
+    image_pair->indices.clear();
 
     /* Perform two-view descriptor matching. */
     Matching::Result matching_result;
@@ -191,7 +253,9 @@ Bundle::two_view_pose (ImagePair* image_pair)
 
     /* Require at least 8 matches. (This can be much higher?) */
     if (matching_result.matches_1_2.size() < 8)
+    {
         return;
+    }
 
     /* Build correspondences from feature matching result. */
     sfm::Correspondences unfiltered_matches;
@@ -252,23 +316,23 @@ Bundle::two_view_pose (ImagePair* image_pair)
 }
 
 void
-Bundle::triangulate_initial_pair (ImagePair const& image_pair)
+Bundler::compute_pose_from_fundamental (ImagePair const& image_pair)
 {
-    Viewport& view1 = this->viewports[image_pair.first];
-    Viewport& view2 = this->viewports[image_pair.second];
+    Viewport& view_1 = this->viewports[image_pair.first];
+    Viewport& view_2 = this->viewports[image_pair.second];
 
     /* Compute pose from fundamental matrix. */
     std::cout << "Computing pose..." << std::endl;
     sfm::CameraPose pose1, pose2;
     {
         /* Populate K-matrices. */
-        int const width1 = view1.image->width();
-        int const height1 = view1.image->height();
-        int const width2 = view2.image->width();
-        int const height2 = view2.image->height();
-        double flen1 = view1.focal_length
+        int const width1 = view_1.image->width();
+        int const height1 = view_1.image->height();
+        int const width2 = view_2.image->width();
+        int const height2 = view_2.image->height();
+        double flen1 = view_1.focal_length
             * static_cast<double>(std::max(width1, height1));
-        double flen2 = view2.focal_length
+        double flen2 = view_2.focal_length
             * static_cast<double>(std::max(width2, height2));
         pose1.set_k_matrix(flen1, width1 / 2.0, height1 / 2.0);
         pose1.init_canonical_form();
@@ -286,10 +350,10 @@ Bundle::triangulate_initial_pair (ImagePair const& image_pair)
         {
             int index_view1 = image_pair.indices[0].first;
             int index_view2 = image_pair.indices[0].second;
-            test_match.p1[0] = view1.descr_info[index_view1].pos[0];
-            test_match.p1[1] = view1.descr_info[index_view1].pos[1];
-            test_match.p2[0] = view1.descr_info[index_view2].pos[0];
-            test_match.p2[1] = view1.descr_info[index_view2].pos[1];
+            test_match.p1[0] = view_1.descr_info[index_view1].pos[0];
+            test_match.p1[1] = view_1.descr_info[index_view1].pos[1];
+            test_match.p2[0] = view_1.descr_info[index_view2].pos[0];
+            test_match.p2[1] = view_1.descr_info[index_view2].pos[1];
         }
 
         for (std::size_t i = 0; i < poses.size(); ++i)
@@ -309,6 +373,36 @@ Bundle::triangulate_initial_pair (ImagePair const& image_pair)
         }
     }
 
+    /* Store recovered pose in viewport. */
+    view_1.pose = pose1;
+    view_2.pose = pose2;
+}
+
+void
+Bundler::compute_pose_from_2d3d (int view_id, Correspondences2D3D const& corresp)
+{
+    Viewport& view = this->viewports[view_id];
+
+    /* Estimate pose given the 2D-3D correspondences. */
+    // TODO: Normalization for stability?
+    math::Matrix<double, 3, 4> p_matrix;
+    pose_from_2d_3d_correspondences(corresp, &p_matrix);
+
+    /* Build K matrix for the view. */
+    int const width = view.image->width();
+    int const height = view.image->height();
+    double const flen = view.focal_length * std::max(width, height);
+
+    view.pose.set_k_matrix(flen, width / 2.0, height / 2.0);
+    view.pose.set_from_p_and_known_k(p_matrix);
+}
+
+void
+Bundler::triangulate_initial_pair (ImagePair const& image_pair)
+{
+    Viewport& view1 = this->viewports[image_pair.first];
+    Viewport& view2 = this->viewports[image_pair.second];
+
     /* Triangulate 3D points from pose. */
     this->features.reserve(image_pair.indices.size() * 2);
     this->tracks.reserve(image_pair.indices.size());
@@ -323,7 +417,7 @@ Bundle::triangulate_initial_pair (ImagePair const& image_pair)
         Correspondence match;
         std::copy(f2dr_1.pos, f2dr_1.pos + 2, match.p1);
         std::copy(f2dr_2.pos, f2dr_2.pos + 2, match.p2);
-        math::Vec3d x = sfm::triangulate_match(match, pose1, pose2);
+        math::Vec3d x = sfm::triangulate_match(match, view1.pose, view2.pose);
 
         /* Register new features. */
         Feature2D f2d_1, f2d_2;
@@ -344,7 +438,7 @@ Bundle::triangulate_initial_pair (ImagePair const& image_pair)
 }
 
 void
-Bundle::save_tracks_to_mesh(std::string const& filename)
+Bundler::save_tracks_to_mesh(std::string const& filename)
 {
     mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
     mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
@@ -354,6 +448,43 @@ Bundle::save_tracks_to_mesh(std::string const& filename)
         verts.push_back(x);
     }
     mve::geom::save_mesh(mesh, filename);
+}
+
+void
+Bundler::generate_scene_from_bundle (std::string const& directory)
+{
+    if (!util::fs::mkdir(directory.c_str()))
+    {
+        std::cerr << "Error creating scene directory!" << std::endl;
+        return;
+    }
+
+    std::string views_dir = directory + "/views";
+    if (!util::fs::mkdir(views_dir.c_str()))
+    {
+        std::cerr << "Error creating views directory!" << std::endl;
+        return;
+    }
+
+    /* Generate MVE views. */
+    for (std::size_t i = 0; i < this->viewports.size(); ++i)
+    {
+        Viewport const& viewport = this->viewports[i];
+        mve::CameraInfo camera;
+        camera.flen = viewport.focal_length;
+        std::copy(viewport.pose.t.begin(), viewport.pose.t.end(), camera.trans);
+        std::copy(viewport.pose.R.begin(), viewport.pose.R.end(), camera.rot);
+
+        mve::View::Ptr view = mve::View::create();
+        view->set_camera(camera);
+        view->add_image("original", viewport.image->duplicate());
+
+        std::string view_name = "view_" + util::string::get_filled(i, 4, '0') + ".mve";
+        view->save_mve_file_as(views_dir + "/" + view_name);
+    }
+
+    /* Generate bundle file. */
+    // TODO
 }
 
 SFM_NAMESPACE_END

@@ -5,7 +5,7 @@
 
 #include "mve/image.h"
 #include "mve/image_io.h"
-#include "sfm/bundle.h"
+#include "sfm/bundler.h"
 
 mve::ByteImage::Ptr
 load_image (std::string const& filename)
@@ -22,7 +22,7 @@ main (void)
     filenames.push_back("/Users/sfuhrmann/Downloads/Fountain-R25/0013.jpg");
     filenames.push_back("/Users/sfuhrmann/Downloads/Fountain-R25/0015.jpg");
 
-    sfm::Bundle::Options options;
+    sfm::Bundler::Options options;
     options.sift_matching_options.descriptor_length = 128;
     options.sift_matching_options.lowe_ratio_threshold = 0.8f;
     options.sift_matching_options.distance_threshold = 0.7f;
@@ -30,12 +30,12 @@ main (void)
     options.ransac_fundamental_options.threshold = 2.0f;
     options.ransac_fundamental_options.already_normalized = false;
 
-    sfm::Bundle bundle(options);
+    sfm::Bundler bundler(options);
     try
     {
-        bundle.add_image(load_image(filenames[0]), 31.0 / 35.0);
-        bundle.add_image(load_image(filenames[1]), 31.0 / 35.0);
-        bundle.add_image(load_image(filenames[2]), 31.0 / 35.0);
+        bundler.add_image(load_image(filenames[0]), 31.0 / 35.0);
+        bundler.add_image(load_image(filenames[1]), 31.0 / 35.0);
+        bundler.add_image(load_image(filenames[2]), 31.0 / 35.0);
     }
     catch (std::exception& e)
     {
@@ -43,7 +43,7 @@ main (void)
         return 1;
     }
 
-    bundle.create_bundle();
+    bundler.create_bundle();
 
     return 0;
 }
