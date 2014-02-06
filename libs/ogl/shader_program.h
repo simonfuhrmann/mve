@@ -37,24 +37,20 @@ private:
     GLuint geom_id;
     GLuint frag_id;
 
-    std::string vert_filename;
-    std::string geom_filename;
-    std::string frag_filename;
-
 private:
     ShaderProgram (void);
 
-    void load_shader (GLuint& shader_id, GLuint shader_type,
+    void load_shader_file (GLuint& shader_id, GLuint shader_type,
         std::string const& filename);
+    void load_shader_code (GLuint& shader_id, GLuint shader_type,
+        std::string const& code);
     void unload_shader (GLuint& shader_id);
-    void compile_shader (GLuint shader_id, std::string const& filename);
+    void compile_shader (GLuint shader_id, std::string const& code);
 
     GLint get_program_property (int pname);
     GLint get_shader_property (GLuint shader_id, int pname);
 
     void ensure_linked (void);
-
-    void print_shader_log (GLuint shader_id);
     void link (void) const;
 
 public:
@@ -63,25 +59,30 @@ public:
 
     /**
      * Loads all shaders by appending ".vert", ".geom"
-     * and ".frag" to basename.
+     * and ".frag" to basename, skipping ".geom" if it
+	  * doesn't exist.
      */
     void load_all (std::string const& basename);
 
-    /** Reloads all shaders from file. */
-    void reload_all (void);
+    /** Loads a vertex shader from file. */
+    void load_vert_file (std::string const& filename);
+    /** Loads optional geometry shader from file. */
+    void load_geom_file (std::string const& filename);
+    /** Load fragment shader from file. */
+    void load_frag_file (std::string const& filename);
 
     /** Loads a vertex shader from file. */
-    void load_vert (std::string const& filename);
+    void load_vert_code (std::string const& code);
     /** Loads optional geometry shader from file. */
-    void load_geom (std::string const& filename);
+    void load_geom_code (std::string const& code);
     /** Load fragment shader from file. */
-    void load_frag (std::string const& filename);
+    void load_frag_code (std::string const& code);
 
-    /** Unloads vertex shader and resets stored filename. */
+    /** Unloads vertex shader. */
     void unload_vert (void);
-    /** Unloads geometry shader and resets stored filename. */
+    /** Unloads geometry shader. */
     void unload_geom (void);
-    /** Unloads fragment shader and resets stored filename. */
+    /** Unloads fragment shader. */
     void unload_frag (void);
 
     /**
@@ -143,30 +144,44 @@ ShaderProgram::create (void)
 }
 
 inline void
-ShaderProgram::load_vert (std::string const& filename)
+ShaderProgram::load_vert_file (std::string const& filename)
 {
-    this->load_shader(this->vert_id, GL_VERTEX_SHADER, filename);
-    this->vert_filename = filename;
+    this->load_shader_file(this->vert_id, GL_VERTEX_SHADER, filename);
 }
 
 inline void
-ShaderProgram::load_geom (std::string const& filename)
+ShaderProgram::load_geom_file (std::string const& filename)
 {
-    this->load_shader(this->geom_id, GL_GEOMETRY_SHADER, filename);
-    this->geom_filename = filename;
+    this->load_shader_file(this->geom_id, GL_GEOMETRY_SHADER, filename);
 }
 
 inline void
-ShaderProgram::load_frag (std::string const& filename)
+ShaderProgram::load_frag_file (std::string const& filename)
 {
-    this->load_shader(this->frag_id, GL_FRAGMENT_SHADER, filename);
-    this->frag_filename = filename;
+    this->load_shader_file(this->frag_id, GL_FRAGMENT_SHADER, filename);
+}
+
+inline void
+ShaderProgram::load_vert_code (std::string const& code)
+{
+    this->load_shader_code(this->vert_id, GL_VERTEX_SHADER, code);
+}
+
+inline void
+ShaderProgram::load_geom_code (std::string const& code)
+{
+    this->load_shader_code(this->geom_id, GL_GEOMETRY_SHADER, code);
+}
+
+inline void
+ShaderProgram::load_frag_code (std::string const& code)
+{
+    this->load_shader_code(this->frag_id, GL_FRAGMENT_SHADER, code);
 }
 
 inline void
 ShaderProgram::unload_vert (void)
 {
-    this->vert_filename.clear();
     glDetachShader(this->prog_id, this->vert_id);
     glDeleteShader(this->vert_id);
 }
@@ -174,7 +189,6 @@ ShaderProgram::unload_vert (void)
 inline void
 ShaderProgram::unload_geom (void)
 {
-    this->geom_filename.clear();
     glDetachShader(this->prog_id, this->geom_id);
     glDeleteShader(this->geom_id);
 }
@@ -182,7 +196,6 @@ ShaderProgram::unload_geom (void)
 inline void
 ShaderProgram::unload_frag (void)
 {
-    this->frag_filename.clear();
     glDetachShader(this->prog_id, this->frag_id);
     glDeleteShader(this->frag_id);
 }
@@ -192,6 +205,14 @@ ShaderProgram::get_attrib_location (char const* name)
 {
     this->ensure_linked();
     return glGetAttribLocation(this->prog_id, name);
+}
+
+inline GLint
+ShaderProgram::get_uniform_location (char const* name)
+{
+    this->ensure_linked();
+    GLint loc = glGetUniformLocation(this->prog_id, name);
+    return loc;
 }
 
 inline void
