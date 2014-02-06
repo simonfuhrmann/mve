@@ -158,6 +158,21 @@ TEST(MatrixTest, MatrixStackVector)
     ASSERT_EQ(m4(2,0), 7.0f);  ASSERT_EQ(m4(2,1), 6.0f);
 }
 
+TEST(MatrixTest, MatrixBeginEndTest)
+{
+    math::Matrix<int, 2, 3> m;
+    for (int i = 0; i < 6; ++i)
+        m[i] = i;
+
+    int vec[7];
+    std::fill(vec, vec + 7, -1);
+    std::copy(m.begin(), m.end(), vec);
+
+    for (int i = 0; i < 6; ++i)
+        EXPECT_EQ(vec[i], i);
+    EXPECT_EQ(vec[6], -1);
+}
+
 TEST(MatrixToolsTest, DiagonalMatrixTest)
 {
     using namespace math;
