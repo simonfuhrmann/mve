@@ -16,6 +16,8 @@
 #include "scenemanager.h"
 #include "mainwindow.h"
 
+#include <QPluginLoader>
+
 MainWindow::MainWindow (void)
 {
     this->scene_overview = new SceneOverview(this);
@@ -26,8 +28,28 @@ MainWindow::MainWindow (void)
     this->tab_sceneinspect = new SceneInspect(this);
 
     this->tabs = new QTabWidget(this);
-    this->tabs->addTab(this->tab_viewinspect, tr("View inspect"));
-    this->tabs->addTab(this->tab_sceneinspect, tr("Scene inspect"));
+    this->tabs->addTab(this->tab_viewinspect, this->tab_viewinspect->get_title());
+    this->tabs->addTab(this->tab_sceneinspect, this->tab_sceneinspect->get_title());
+
+    QDir plugins_dir(QApplication::applicationDirPath() + "/plugins");
+    QFileInfoList plugin_files = plugins_dir.entryInfoList(QDir::Files);
+
+    for (std::size_t i = 0; i < plugin_files.size(); ++i)
+    {
+        QString fp = plugin_files[i].absoluteFilePath();
+        std::cout << "Loading " << fp.toStdString() << "... " << std::flush;
+        QPluginLoader pl(fp, this);
+        MainWindowTab *pl_tab = dynamic_cast<MainWindowTab*>(pl.instance());
+        if (pl_tab)
+        {
+            this->tabs->addTab(pl_tab, pl_tab->get_title());
+            std::cout << "ok." << std::endl;
+        }
+        else
+        {
+            std::cout << "ERROR (skipping)." << std::endl;
+        }
+    }
 
     this->memory_label = new QLabel("Memory: <unknown>");
     this->statusbar = new QStatusBar();

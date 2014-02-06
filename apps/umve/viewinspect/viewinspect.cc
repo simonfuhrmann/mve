@@ -814,3 +814,11 @@ ViewInspect::reset (void)
     this->scroll_image->get_image()->setPixmap(QPixmap());
     this->embeddings->clear();
 }
+
+/* ---------------------------------------------------------------- */
+
+QString
+ViewInspect::get_title (void)
+{
+    return tr("View inspect");
+}

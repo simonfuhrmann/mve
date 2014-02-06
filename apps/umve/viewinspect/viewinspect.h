@@ -90,8 +90,8 @@ public:
     void load_image_file (QString filename);
     void load_mve_file (QString filename);
     void load_ply_file (QString filename);
-
     void reset (void);
+    virtual QString get_title (void);
 };
 
 #endif /* VIEW_INSPECT_HEADER */

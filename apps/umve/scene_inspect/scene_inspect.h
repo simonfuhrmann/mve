@@ -31,6 +31,8 @@ public:
     /* Removes references to the scene. */
     void reset (void);
 
+    virtual QString get_title (void);
+
 private:
     void create_actions (QToolBar* toolbar);
 
