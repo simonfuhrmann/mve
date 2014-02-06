@@ -173,15 +173,15 @@ AddinManager::reset_scene (void)
 }
 
 void
-AddinManager::reload_shaders (void)
+AddinManager::load_shaders (void)
 {
-    std::cout << "Reloading shaders..." << std::endl;
-    if (this->state.surface_shader != NULL)
-        this->state.surface_shader->reload_all();
-    if (this->state.wireframe_shader != NULL)
-        this->state.wireframe_shader->reload_all();
-    if (this->state.texture_shader != NULL)
-        this->state.texture_shader->reload_all();
+    std::string shader_path = util::fs::get_path_component
+        (util::fs::get_binary_path()) + "/shader/";
+
+    std::cout << "Loading shaders..." << std::endl;
+    this->state.surface_shader->load_all(shader_path + "surface_120");
+    this->state.wireframe_shader->load_all(shader_path + "wireframe_120");
+    this->state.texture_shader->load_all(shader_path + "texture_120");
 }
 
 /* ---------------------------------------------------------------- */
@@ -199,14 +199,10 @@ AddinManager::init_impl (void)
             << std::endl;
 
     /* Load shaders. */
-    std::string shader_path = util::fs::get_path_component
-        (util::fs::get_binary_path()) + "/shader/";
     this->state.surface_shader = ogl::ShaderProgram::create();
     this->state.wireframe_shader = ogl::ShaderProgram::create();
     this->state.texture_shader = ogl::ShaderProgram::create();
-    this->state.surface_shader->load_all(shader_path + "surface_120");
-    this->state.wireframe_shader->load_all(shader_path + "wireframe_120");
-    this->state.texture_shader->load_all(shader_path + "texture_120");
+    this->load_shaders();
     this->state.gui_renderer = ogl::create_fullscreen_quad(this->state.texture_shader);
     this->state.gui_texture = ogl::Texture::create();
 
