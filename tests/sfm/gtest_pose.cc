@@ -436,8 +436,6 @@ TEST(PoseTest, ComputeRANSACIterations)
     int num_samples = 8;
     EXPECT_EQ(1177, sfm::compute_ransac_iterations(
         inlier_ratio, num_samples, success_rate));
-
-   std::cout << sfm::compute_ransac_iterations(0.5, 6, 0.99);
 }
 
 #if 0 // This test case is disabled because it is not deterministic.

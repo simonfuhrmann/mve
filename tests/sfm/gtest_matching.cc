@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "matching.h"
+#include "sfm/matching.h"
 
 TEST(MatchingTest, RemoveInconsistentMatches)
 {
