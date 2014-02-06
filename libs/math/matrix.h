@@ -128,6 +128,13 @@ public:
     /** Component-wise similarity using epsilon checks. */
     bool is_similar (Matrix<T,N,M> const& other, T const& epsilon) const;
 
+    /* --------------------- Value iterators ---------------------- */
+
+    T* begin (void);
+    T const* begin (void) const;
+    T* end (void);
+    T const* end (void) const;
+
     /* --------------------- Object operators --------------------- */
 
     /** Dereference operator to value array. */
@@ -456,6 +463,36 @@ Matrix<T,N,M>::is_similar (Matrix<T,N,M> const& other, T const& eps) const
 {
     return std::equal(m, m + N * M, *other,
         algo::predicate_epsilon_equal<T>(eps));
+}
+
+/* ------------------------ Value iterators ----------------------- */
+
+template <typename T, int N, int M>
+inline T*
+Matrix<T,N,M>::begin (void)
+{
+    return m;
+}
+
+template <typename T, int N, int M>
+inline T const*
+Matrix<T,N,M>::begin (void) const
+{
+    return m;
+}
+
+template <typename T, int N, int M>
+inline T*
+Matrix<T,N,M>::end (void)
+{
+    return m + N * M;
+}
+
+template <typename T, int N, int M>
+inline T const*
+Matrix<T,N,M>::end (void) const
+{
+    return m + N * M;
 }
 
 /* ------------------------ Object operators ---------------------- */
