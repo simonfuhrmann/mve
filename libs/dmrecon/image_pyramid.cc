@@ -119,7 +119,7 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
 {
     util::MutexLock lock(ImagePyramidCache::metadataMutex);
 
-    /* initialize on first access */
+    /* Initialize on first access. */
     if (ImagePyramidCache::cachedScene == NULL)
     {
         ImagePyramidCache::cachedScene = scene;
@@ -136,6 +136,7 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
     }
     else
     {
+        /* Either re-recreate or use cached entry. */
         pyramid = ImagePyramidCache::entries[view->get_id()];
         if (pyramid == NULL)
         {

@@ -17,7 +17,7 @@
 #include "viewinspect.h"
 
 ViewInspect::ViewInspect (QWidget* parent)
-    : QWidget(parent)
+    : MainWindowTab(parent)
 {
     this->scroll_image = new ScrollImage();
     this->embeddings = new QComboBox();
@@ -41,6 +41,8 @@ ViewInspect::ViewInspect (QWidget* parent)
     this->connect(this->scroll_image->get_image(),
         SIGNAL(mouse_clicked(int, int, QMouseEvent*)),
         this, SLOT(on_image_clicked(int, int, QMouseEvent*)));
+
+    this->connect(this, SIGNAL(tab_activated()), SLOT(on_tab_activated()));
 
     this->connect(&SceneManager::get(), SIGNAL(scene_selected(mve::Scene::Ptr)),
         this, SLOT(on_scene_selected(mve::Scene::Ptr)));
@@ -316,8 +318,14 @@ ViewInspect::load_ply_file (QString filename)
 void
 ViewInspect::on_view_selected (mve::View::Ptr view)
 {
+    if (!this->is_tab_active) {
+        this->next_view = view;
+        return;
+    }
+
     this->reset();
     this->view = view;
+    this->next_view = NULL;
     if (this->view == NULL)
         return;
 
@@ -333,6 +341,15 @@ void
 ViewInspect::on_scene_selected (mve::Scene::Ptr /*scene*/)
 {
     this->reset();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+ViewInspect::on_tab_activated (void)
+{
+    if (this->next_view != NULL)
+        this->on_view_selected(this->next_view);
 }
 
 /* ---------------------------------------------------------------- */
@@ -796,4 +813,12 @@ ViewInspect::reset (void)
     this->inspector->reset();
     this->scroll_image->get_image()->setPixmap(QPixmap());
     this->embeddings->clear();
+}
+
+/* ---------------------------------------------------------------- */
+
+QString
+ViewInspect::get_title (void)
+{
+    return tr("View inspect");
 }

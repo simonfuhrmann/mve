@@ -293,6 +293,7 @@ QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
     if (attrib.size() != this->rep->mesh->get_vertices().size())
         return;
 
+#if 0
     /* Find min/max value of the attribute. */
     float fmin = std::numeric_limits<float>::max();
     float fmax = -std::numeric_limits<float>::max();
@@ -301,6 +302,13 @@ QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
         fmin = std::min(fmin, attrib[i]);
         fmax = std::max(fmax, attrib[i]);
     }
+#else
+    /* Robust percentile min/max assignment. */
+    std::vector<float> tmp = attrib;
+    std::sort(tmp.begin(), tmp.end());
+    float const fmin = tmp[0];// tmp[1 * tmp.size() / 40];
+    float const fmax = tmp[19 * tmp.size() / 20];
+#endif
 
     /* Assign the min/max value as gray-scale color value. */
     vcolor.clear();
@@ -308,7 +316,10 @@ QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
     for (std::size_t i = 0; i < attrib.size(); ++i)
     {
         float value = (attrib[i] - fmin) / (fmax - fmin);
-        vcolor[i] = math::Vec4f(1.0f, 1.0f - value, 1.0f - value, 1.0f);
+        value = std::max(0.0f, std::min(1.0f, value));
+        //value = std::pow(value, 2.0f);
+        //vcolor[i] = math::Vec4f(1.0f, 1.0f - value, 1.0f - value, 1.0f);
+        vcolor[i] = math::Vec4f(1.0f, value, value, 1.0f);
     }
 
     this->rep->renderer.reset();

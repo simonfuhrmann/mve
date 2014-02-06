@@ -7,12 +7,13 @@
 
 #include "mve/view.h"
 
+#include "mainwindowtab.h"
 #include "scrollimage.h"
 #include "imageinspector.h"
 #include "imageoperations.h"
 #include "tonemapping.h"
 
-class ViewInspect : public QWidget
+class ViewInspect : public MainWindowTab
 {
     Q_OBJECT
 
@@ -43,6 +44,7 @@ private:
     QString last_image_dir;
 
     mve::View::Ptr view;
+    mve::View::Ptr next_view;
     mve::ImageBase::ConstPtr image;
     std::string recent_embedding;
 
@@ -66,6 +68,7 @@ private slots:
 
     void on_scene_selected (mve::Scene::Ptr scene);
     void on_view_selected (mve::View::Ptr view);
+    void on_tab_activated (void);
 
 private:
     void create_detail_frame (void);
@@ -87,8 +90,8 @@ public:
     void load_image_file (QString filename);
     void load_mve_file (QString filename);
     void load_ply_file (QString filename);
-
     void reset (void);
+    virtual QString get_title (void);
 };
 
 #endif /* VIEW_INSPECT_HEADER */

@@ -3,12 +3,14 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
+#include <iostream>
+
 #include "guihelpers.h"
 #include "scenemanager.h"
 #include "scene_inspect/scene_inspect.h"
 
 SceneInspect::SceneInspect (QWidget* parent)
-    : QWidget(parent)
+    : MainWindowTab(parent)
 {
     /* Create toolbar, add actions. */
     QToolBar* toolbar = new QToolBar("Mesh tools");
@@ -28,6 +30,7 @@ SceneInspect::SceneInspect (QWidget* parent)
         this, SLOT(on_scene_selected(mve::Scene::Ptr)));
     this->connect(&SceneManager::get(), SIGNAL(view_selected(mve::View::Ptr)),
         this, SLOT(on_view_selected(mve::View::Ptr)));
+    this->connect(this, SIGNAL(tab_activated()), SLOT(on_tab_activated()));
 
     /* Pack everything together. */
     QVBoxLayout* vbox = new QVBoxLayout();
@@ -53,6 +56,15 @@ void
 SceneInspect::reset (void)
 {
     this->addin_manager->reset_scene();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+SceneInspect::on_tab_activated (void)
+{
+    if (this->next_view != NULL)
+        this->on_view_selected(this->next_view);
 }
 
 /* ---------------------------------------------------------------- */
@@ -140,7 +152,14 @@ SceneInspect::on_scene_selected (mve::Scene::Ptr scene)
 void
 SceneInspect::on_view_selected (mve::View::Ptr view)
 {
+    if (!this->is_tab_active)
+    {
+        this->next_view = view;
+        return;
+    }
+
     this->addin_manager->set_view(view);
+    this->next_view = NULL;
 }
 
 /* ---------------------------------------------------------------- */
@@ -158,4 +177,12 @@ SceneInspect::on_save_screenshot (void)
     if (!success)
         QMessageBox::critical(this, "Cannot save image",
             "Error saving image");
+}
+
+/* ---------------------------------------------------------------- */
+
+QString
+SceneInspect::get_title (void)
+{
+    return tr("Scene inspect");
 }

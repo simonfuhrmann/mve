@@ -8,10 +8,6 @@ SOURCES := $(wildcard [^_]*.cc)
 ${TARGET}: ${SOURCES:.cc=.o}
 	#$(AR) rcs $@ $^
 
-_gtest: CXXFLAGS += -I ${GTEST_PATH}/include
-_gtest: _gtest_*.cc libgtest_main.a
-	${LINK.cc} -o $@ $^ ${LDLIBS}
-
 clean:
 	${RM} ${TARGET} *.o Makefile.dep _gtest
 

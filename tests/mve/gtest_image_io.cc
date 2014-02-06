@@ -24,69 +24,75 @@ struct TempFile : public std::string
     }
 };
 
-bool
-compare_jpeg (mve::ByteImage::ConstPtr img1, mve::ByteImage::ConstPtr img2)
+namespace
 {
-    if (img1->width() != img2->width()
-        || img1->height() != img2->height()
-        || img1->channels() != img2->channels())
-        return false;
-    // Accumulate error over all image values.
-    int error = 0;
-    for (int i = 0; i < img1->get_value_amount(); ++i)
-        error += std::abs((int)img1->at(i) - (int)img2->at(i));
-    // Two times the number of values seems a reasonable JPEG loss.
-    if (error > img1->get_value_amount() * 2)
-        return false;
-    return true;
-}
-
-template <typename T>
-bool
-compare_exact (typename mve::Image<T>::ConstPtr img1,
-    typename mve::Image<T>::ConstPtr img2)
-{
-    if (img1->width() != img2->width()
-        || img1->height() != img2->height()
-        || img1->channels() != img2->channels())
-        return false;
-    for (int i = 0; i < img1->get_value_amount(); ++i)
-        if (img1->at(i) != img2->at(i))
+    bool
+    compare_jpeg (mve::ByteImage::ConstPtr img1, mve::ByteImage::ConstPtr img2)
+    {
+        if (img1->width() != img2->width()
+            || img1->height() != img2->height()
+            || img1->channels() != img2->channels())
             return false;
-    return true;
-}
+        // Accumulate error over all image values.
+        int error = 0;
+        for (int i = 0; i < img1->get_value_amount(); ++i)
+            error += std::abs((int)img1->at(i) - (int)img2->at(i));
+        // Two times the number of values seems a reasonable JPEG loss.
+        if (error > img1->get_value_amount() * 2)
+            return false;
+        return true;
+    }
 
-mve::ByteImage::Ptr
-make_byte_image (int width, int height, int channels)
-{
-    mve::ByteImage::Ptr img = mve::ByteImage::create(width, height, channels);
-    for (int i = 0; i < img->get_value_amount(); ++i)
-        img->at(i) = i % 256;
-    uint8_t special_values[] = { 0, 127, 128, 255 };
-    if (img->get_value_amount() >= 4)
-        std::copy(special_values, special_values + 4, img->begin());
-    return img;
-}
+    template <typename T>
+    bool
+    compare_exact (typename mve::Image<T>::ConstPtr img1,
+        typename mve::Image<T>::ConstPtr img2)
+    {
+        if (img1->width() != img2->width()
+            || img1->height() != img2->height()
+            || img1->channels() != img2->channels())
+            return false;
+        for (int i = 0; i < img1->get_value_amount(); ++i)
+            if (img1->at(i) != img2->at(i))
+                return false;
+        return true;
+    }
 
-mve::FloatImage::Ptr
-make_float_image (int width, int height, int channels)
-{
-    mve::FloatImage::Ptr img = mve::FloatImage::create(width, height, channels);
-    for (int i = 0; i < img->get_value_amount(); ++i)
-        img->at(i) = static_cast<float>(i) / 32.0f;
-    return img;
-}
+    mve::ByteImage::Ptr
+    make_byte_image (int width, int height, int channels)
+    {
+        mve::ByteImage::Ptr img;
+        img = mve::ByteImage::create(width, height, channels);
+        for (int i = 0; i < img->get_value_amount(); ++i)
+            img->at(i) = i % 256;
+        uint8_t special_values[] = { 0, 127, 128, 255 };
+        if (img->get_value_amount() >= 4)
+            std::copy(special_values, special_values + 4, img->begin());
+        return img;
+    }
 
-mve::RawImage::Ptr
-make_raw_image (int width, int height, int channels)
-{
-    mve::RawImage::Ptr img = mve::RawImage::create(width, height, channels);
-    for (int i = 0; i < img->get_value_amount(); ++i)
-        img->at(i) = i % (1<<14);
-    uint16_t special_values[] = { 0, 32767, 32768, 65535 };
-    if (img->get_value_amount() >= 4)
-        std::copy(special_values, special_values + 4, img->begin());
-    return img;
+    mve::FloatImage::Ptr
+    make_float_image (int width, int height, int channels)
+    {
+        mve::FloatImage::Ptr img;
+        img = mve::FloatImage::create(width, height, channels);
+        for (int i = 0; i < img->get_value_amount(); ++i)
+            img->at(i) = static_cast<float>(i) / 32.0f;
+        return img;
+    }
+
+    mve::RawImage::Ptr
+    make_raw_image (int width, int height, int channels)
+    {
+        mve::RawImage::Ptr img;
+        img = mve::RawImage::create(width, height, channels);
+        for (int i = 0; i < img->get_value_amount(); ++i)
+            img->at(i) = i % (1<<14);
+        uint16_t special_values[] = { 0, 32767, 32768, 65535 };
+        if (img->get_value_amount() >= 4)
+            std::copy(special_values, special_values + 4, img->begin());
+        return img;
+    }
 }
 
 TEST(ImageFileTest, JPEGSaveLoad)
