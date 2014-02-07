@@ -60,23 +60,6 @@ public:
 
 /* ---------------------------------------------------------------- */
 
-inline
-SceneManager::SceneManager (void)
-{
-}
-
-inline
-SceneManager::~SceneManager (void)
-{
-}
-
-inline SceneManager&
-SceneManager::get (void)
-{
-    static SceneManager instance;
-    return instance;
-}
-
 inline void
 SceneManager::select_scene (mve::Scene::Ptr scene)
 {

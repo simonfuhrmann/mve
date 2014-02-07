@@ -47,7 +47,8 @@ MainWindow::MainWindow (void)
         }
         else
         {
-            std::cout << "ERROR (skipping)." << std::endl;
+            std::cout << "ERROR (skipping):" << std::endl;
+            std::cout << pl.errorString().toStdString() << std::endl;
         }
     }
 

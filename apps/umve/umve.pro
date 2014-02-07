@@ -3,6 +3,9 @@ MVE_ROOT = ../..
 CONFIG += qt opengl release
 QT += opengl
 
+QMAKE_LFLAGS += -rdynamic
+QMAKE_CXXFLAGS += -fPIC
+
 SOURCES += [^_]*.cc viewinspect/*.cc scene_inspect/*.cc scene_addins/*.cc
 HEADERS += *.h viewinspect/*.h scene_inspect/*.h scene_addins/*.h
 RESOURCES = umve.qrc
