@@ -32,6 +32,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <vector>
 
 #include "util/timer.h"
 #include "util/file_system.h"
@@ -109,19 +110,24 @@ Bundler::add_next_view_to_bundle (void)
      *
      * Since a track was generated from multiple views, this procedure
      * collects the same track multiple times. The track IDs are made
-     * unique by using a map that records "track IDs" to "SIFT IDs".
+     * unique by using a vector that records "track IDs" to "SIFT IDs".
      *
      * The following inconsistencies can arise:
-     * - One track maps to different SIFT IDs.
-     * - One SIFT ID maps to multiple tracks.
-     * The mapping is then invalidated by setting the SIFT ID to -1.
+     * - One track maps to different SIFT IDs. This issue can be resolved
+     *   by removing all SIFT IDs to avoid invalid tracks.
+     * - One SIFT ID maps to multiple tracks. This issue must be resolved
+     *   by merging the tracks (if possible) to create long tracks.
+     *   Merging can fail if inconsisntencies arise.
      *
      * Note: Maybe use two-way mapping using vectors for inconsistencies?
      *   std::vector<int> tracks_to_sift(this->tracks.size());
      *   std::vector<int> sift_to_tracks(viewport.descr_info.size());
      */
-    typedef std::map<int, int> TracksToSiftMapping;
-    TracksToSiftMapping tracks_to_sift;
+
+    typedef std::vector<int> SiftToTracksMapping;
+    typedef std::vector<int> TracksToSiftMapping;
+    SiftToTracksMapping sift_to_tracks(viewport.descr_info.size(), -1);
+    TracksToSiftMapping tracks_to_sift(this->tracks.size(), -1);
     for (std::size_t i = 0; i < this->viewports.size(); ++i)
     {
         if (this->viewports[i].descr_info.empty())
@@ -149,20 +155,44 @@ Bundler::add_next_view_to_bundle (void)
                 continue;
             int other_f3d_id = this->features[other_f2d_id].feature3d_id;
 
-            /* Register new 2D-3D correspondence. */
-            // TODO Detect inconsistencies.
-            tracks_to_sift[other_f3d_id] = this_sift_id;
+            /* If the SIFT ID saw a different track, they should be merged. */
+            if (sift_to_tracks[this_sift_id] != -1
+                && sift_to_tracks[this_sift_id] != other_f3d_id)
+            {
+                // TODO Merge. Skip SIFT ID for now.
+                sift_to_tracks[this_sift_id] = -2;
+                continue;
+            }
+            else
+            {
+                sift_to_tracks[this_sift_id] = other_f3d_id;
+            }
+
+            /* If multiple SIFT IDs map to one track, resolve inconsistency. */
+            if (tracks_to_sift[other_f3d_id] != -1)
+            {
+                sift_to_tracks[this_sift_id] = -2;
+                sift_to_tracks[tracks_to_sift[other_f3d_id]] = -2;
+                tracks_to_sift[other_f3d_id] = -2;
+                continue;
+            }
+            else
+            {
+                tracks_to_sift[other_f3d_id] = this_sift_id;
+            }
         }
     }
 
     /* Build list of 2D-3D correspondences and update data structure. */
     Correspondences2D3D corresp_2d3d;
-    for (TracksToSiftMapping::const_iterator iter = tracks_to_sift.begin();
-        iter != tracks_to_sift.end(); ++iter)
+    for (std::size_t i = 0; i < tracks_to_sift.size(); ++i)
     {
-        int const track_id = iter->first;
+        if (tracks_to_sift[i] < 0)
+            continue;
+        int const track_id = i;
+        int const sift_id = tracks_to_sift[i];
+
         Feature3D& track = this->tracks[track_id];
-        int const sift_id = iter->second;
         Feature2DRef const& feature_ref = viewport.descr_info[sift_id];
 
         /* Create new 2D feature, update track. */
@@ -427,6 +457,8 @@ Bundler::triangulate_initial_pair (ImagePair const& image_pair)
         this->features.push_back(f2d_1);
         f2dr_2.feature2d_id = this->features.size();
         this->features.push_back(f2d_2);
+        f2d_1.feature3d_id = this->tracks.size();
+        f2d_2.feature3d_id = this->tracks.size();
 
         /* Register new track. */
         Feature3D f3d;

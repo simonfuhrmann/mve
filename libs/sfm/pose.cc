@@ -30,6 +30,28 @@ CameraPose::set_k_matrix (double flen, double px, double py)
 }
 
 void
+CameraPose::set_from_p_and_known_k (math::Matrix<double, 3, 4> const&  p_matrix)
+{
+    /*
+     * There are two ways to obtain [R t] from known P and K.
+     *
+     * The first method is to compute K^-1 * P to get [R' t'] with
+     * non-orthogonal R' and inaccurate t'. This can be fixed using
+     * SVD on R and setting the eigenvalues to 1.
+     *
+     * The second method is to do QR decomposition on P and obtain
+     * K' [R t] to then replace K' with known K. This introduces
+     * inaccuracies when computing the final P = K [R t].
+     *
+     * Here, for simplicity, the second approach is performed.
+     */
+    CameraPose pose;
+    pose_from_p_matrix(p_matrix, &pose);
+    this->R = pose.R;
+    this->t = pose.t;
+}
+
+void
 pose_from_2d_3d_correspondences (Correspondences2D3D const& corresp,
     math::Matrix<double, 3, 4>* p_matrix)
 {
@@ -68,7 +90,7 @@ void
 pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
     CameraPose* pose)
 {
-    /* Take the 3x3 left sub-matrix of P, ignoring translation for now. */
+    /* Take the left 3x3 sub-matrix of P, ignoring translation for now. */
     math::Matrix<double, 3, 3> p_sub;
     std::copy(*p_matrix + 0, *p_matrix + 0 + 3, *p_sub);
     std::copy(*p_matrix + 4, *p_matrix + 4 + 3, *p_sub + 3);
