@@ -58,11 +58,10 @@ public:
     static Ptr create (void);
 
     /**
-     * Loads all shaders by appending ".vert", ".geom"
-     * and ".frag" to basename, skipping ".geom" if it
-	  * doesn't exist.
+     * Try loading all shaders by appending ".vert", ".geom"
+     * and ".frag" to basename.
      */
-    void load_all (std::string const& basename);
+    void try_load_all (std::string const& basename, bool unload = true);
 
     /** Loads a vertex shader from file. */
     void load_vert_file (std::string const& filename);

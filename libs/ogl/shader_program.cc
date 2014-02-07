@@ -95,17 +95,25 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
 /* ---------------------------------------------------------------- */
 
 void
-ShaderProgram::load_all (std::string const& basename)
+ShaderProgram::try_load_all (std::string const& basename, bool unload)
 {
-    this->load_vert_file(basename + ".vert");
+    std::string vert_filename = basename + ".vert";
+    if (util::fs::file_exists(vert_filename.c_str()))
+        this->load_vert_file(vert_filename);
+    else if (unload)
+        this->unload_vert();
 
     std::string geom_filename = basename + ".geom";
     if (util::fs::file_exists(geom_filename.c_str()))
         this->load_geom_file(geom_filename);
-    else
+    else if (unload)
         this->unload_geom();
 
-    this->load_frag_file(basename + ".frag");
+    std::string frag_filename = basename + ".frag";
+    if (util::fs::file_exists(frag_filename.c_str()))
+        this->load_frag_file(frag_filename);
+    else if (unload)
+        this->unload_frag();
 }
 
 OGL_NAMESPACE_END

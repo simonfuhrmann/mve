@@ -4,6 +4,7 @@
 #include <QBoxLayout>
 #include <QColorDialog>
 
+#include "util/exception.h"
 #include "util/file_system.h"
 #include "ogl/render_tools.h"
 
@@ -172,16 +173,80 @@ AddinManager::reset_scene (void)
     this->state.gl_widget->repaint();
 }
 
+static void
+load_shaders_from_resources(ogl::ShaderProgram::Ptr prog, QString base)
+{
+    {
+        QFile file(base + ".frag");
+        file.open(QIODevice::ReadOnly | QIODevice::Text);
+        QByteArray code = file.readAll();
+        std::string code_str(code.constData(), code.length());
+        file.close();
+        if (!code_str.empty())
+            prog->load_frag_code(code_str);
+        else
+            prog->unload_frag();
+    }
+
+    {
+        QFile file(base + ".geom");
+        file.open(QIODevice::ReadOnly | QIODevice::Text);
+        QByteArray code = file.readAll();
+        std::string code_str(code.constData(), code.length());
+        file.close();
+        if (!code_str.empty())
+            prog->load_geom_code(code_str);
+        else
+            prog->unload_geom();
+    }
+
+    {
+        QFile file(base + ".vert");
+        file.open(QIODevice::ReadOnly | QIODevice::Text);
+        QByteArray code = file.readAll();
+        std::string code_str(code.constData(), code.length());
+        file.close();
+        if (!code_str.empty())
+            prog->load_vert_code(code_str);
+        else
+            prog->unload_vert();
+    }
+}
+
 void
 AddinManager::load_shaders (void)
 {
-    std::string shader_path = util::fs::get_path_component
-        (util::fs::get_binary_path()) + "/shader/";
+    std::string binary_folder =
+        util::fs::get_path_component(util::fs::get_binary_path());
 
-    std::cout << "Loading shaders..." << std::endl;
-    this->state.surface_shader->load_all(shader_path + "surface_120");
-    this->state.wireframe_shader->load_all(shader_path + "wireframe_120");
-    this->state.texture_shader->load_all(shader_path + "texture_120");
+    std::string home_local = std::string(getenv("HOME"));
+
+    std::vector<std::string> shader_path;
+    shader_path.push_back("/usr/share/umve/shader/");
+    shader_path.push_back("/usr/local/share/umve/shader/");
+    shader_path.push_back(home_local + "/.local/share/umve/shader");
+    shader_path.push_back(binary_folder + "/shader/");
+
+    /*
+     * Shaders loaded later override those loaded earlier, so try
+     * Qt Resources first and files afterwards.
+     */
+
+    load_shaders_from_resources(this->state.surface_shader, ":/shader/surface_120");
+    load_shaders_from_resources(this->state.wireframe_shader, ":/shader/wireframe_120");
+    load_shaders_from_resources(this->state.texture_shader, ":/shader/texture_120");
+
+    for (std::size_t i = 0; i < shader_path.size(); ++i)
+    {
+        try {
+            this->state.surface_shader->try_load_all(shader_path[i] + "surface_120", false);
+            this->state.wireframe_shader->try_load_all(shader_path[i] + "wireframe_120", false);
+            this->state.texture_shader->try_load_all(shader_path[i] + "texture_120", false);
+        } catch (util::Exception &e) {
+            std::cout << "Skipping shaders from " << shader_path[i] << ":" << std::endl;
+            std::cout << e.what() << std::endl;
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- */

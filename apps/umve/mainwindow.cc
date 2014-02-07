@@ -30,27 +30,7 @@ MainWindow::MainWindow (void)
     this->tabs = new QTabWidget(this);
     this->tabs->addTab(this->tab_viewinspect, this->tab_viewinspect->get_title());
     this->tabs->addTab(this->tab_sceneinspect, this->tab_sceneinspect->get_title());
-
-    QDir plugins_dir(QApplication::applicationDirPath() + "/plugins");
-    QFileInfoList plugin_files = plugins_dir.entryInfoList(QDir::Files);
-
-    for (std::size_t i = 0; i < plugin_files.size(); ++i)
-    {
-        QString fp = plugin_files[i].absoluteFilePath();
-        std::cout << "Loading " << fp.toStdString() << "... " << std::flush;
-        QPluginLoader pl(fp, this);
-        MainWindowTab *pl_tab = dynamic_cast<MainWindowTab*>(pl.instance());
-        if (pl_tab)
-        {
-            this->tabs->addTab(pl_tab, pl_tab->get_title());
-            std::cout << "ok." << std::endl;
-        }
-        else
-        {
-            std::cout << "ERROR (skipping):" << std::endl;
-            std::cout << pl.errorString().toStdString() << std::endl;
-        }
-    }
+    this->load_plugins();
 
     this->memory_label = new QLabel("Memory: <unknown>");
     this->statusbar = new QStatusBar();
@@ -101,6 +81,48 @@ MainWindow::MainWindow (void)
     this->jobqueue->setMaximumHeight(QWIDGETSIZE_MAX); // Dock widget trick
 
     this->on_switch_tabs(0);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::load_plugins (void)
+{
+    std::string binary_dir =
+        util::fs::get_path_component(util::fs::get_binary_path());
+
+    std::string home_local = std::string(getenv("HOME"));
+
+    std::vector<std::string> plugins_path;
+    plugins_path.push_back("/usr/share/umve/plugin/");
+    plugins_path.push_back("/usr/local/share/umve/plugin/");
+    plugins_path.push_back(home_local + "/.local/share/umve/plugin");
+    plugins_path.push_back(binary_dir + "/plugin/");
+    plugins_path.push_back(":/plugin/");
+
+    for (std::size_t i = 0; i < plugins_path.size(); ++i)
+    {
+        QDir plugins_dir(QString::fromStdString(plugins_path[i]));
+        QFileInfoList plugin_files = plugins_dir.entryInfoList(QDir::Files);
+
+        for (std::size_t j = 0; j < plugin_files.size(); ++j)
+        {
+            QString fp = plugin_files[j].absoluteFilePath();
+            std::cout << "Loading " << fp.toStdString() << "... " << std::flush;
+            QPluginLoader pl(fp, this);
+            MainWindowTab *pl_tab = dynamic_cast<MainWindowTab*>(pl.instance());
+            if (pl_tab)
+            {
+                this->tabs->addTab(pl_tab, pl_tab->get_title());
+                std::cout << "ok." << std::endl;
+            }
+            else
+            {
+                std::cout << "ERROR (skipping)." << std::endl;
+                std::cout << pl.errorString().toStdString() << std::endl;
+            }
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- */
