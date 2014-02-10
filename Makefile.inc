@@ -6,7 +6,8 @@ LINK.o = ${CXX} ${LDFLAGS}
 .DEFAULT_GOAL := ${TARGET}
 
 # Always compile programs and libs with multi-threading.
-CXXFLAGS += -pthread
+# Position independent code is required for the UMVE plugin system.
+CXXFLAGS += -pthread -fPIC
 
 # How to link example from example.o and other files:
 %: %.o
