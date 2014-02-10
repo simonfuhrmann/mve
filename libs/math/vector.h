@@ -189,6 +189,13 @@ public:
     /** Component-wise similarity using epsilon checks. */
     bool is_similar (Vector<T,N> const& other, T const& epsilon) const;
 
+    /* --------------------- Value iterators ---------------------- */
+
+    T* begin (void);
+    T const* begin (void) const;
+    T* end (void);
+    T const* end (void) const;
+
     /* --------------------- Object operators --------------------- */
 
     /** Dereference operator to value array. */
@@ -557,6 +564,36 @@ inline bool
 Vector<T,N>::is_similar (Vector<T,N> const& other, T const& eps) const
 {
     return std::equal(v, v + N, *other, algo::predicate_epsilon_equal<T>(eps));
+}
+
+/* ------------------------ Value iterators ----------------------- */
+
+template <typename T, int N>
+inline T*
+Vector<T,N>::begin (void)
+{
+    return v;
+}
+
+template <typename T, int N>
+inline T const*
+Vector<T,N>::begin (void) const
+{
+    return v;
+}
+
+template <typename T, int N>
+inline T*
+Vector<T,N>::end (void)
+{
+    return v + N;
+}
+
+template <typename T, int N>
+inline T const*
+Vector<T,N>::end (void) const
+{
+    return v + N;
 }
 
 /* ------------------------ Object operators ---------------------- */
