@@ -559,11 +559,9 @@ import_bundle_nvm (AppSettings const& conf)
         view->set_id(i);
         view->set_name(util::string::get_filled(i, 4, '0'));
 
-        mve::ByteImage::Ptr image;
         std::string exif;
-        try
-        { image = load_8bit_image(views[i].filename, &exif); }
-        catch (...)
+        mve::ByteImage::Ptr image = load_8bit_image(views[i].filename, &exif);
+        if (image == NULL)
         {
             std::cout << "Error loading: " << views[i].filename << std::endl;
             continue;
