@@ -195,40 +195,6 @@ Shell::list_embeddings (void)
 void
 export_byte_image (mve::ByteImage::Ptr image, std::string const& filename)
 {
-#if 0 // Hack to export resized square images
-    #define THUMB_SIZE 500
-    #define THUMB_SIZEF 500.0f
-    std::size_t iw = image->width();
-    std::size_t ih = image->height();
-
-    if (iw < THUMB_SIZE || ih < THUMB_SIZE)
-    {
-        std::cout << "too small, skipping." << std::endl;
-        return;
-    }
-
-    std::size_t dw, dh, dl, dt;
-    if (iw > ih)
-    {
-        dh = THUMB_SIZE;
-        dw = (std::size_t)(THUMB_SIZEF * (float)iw / (float)ih);
-        dl = (dw - THUMB_SIZE) / 2;
-        dt = 0;
-    }
-    else
-    {
-        dw = THUMB_SIZE;
-        dh = (std::size_t)(THUMB_SIZEF * (float)ih / (float)iw);
-        dl = 0;
-        dt = (dh - THUMB_SIZE) / 2;
-    }
-
-    mve::ByteImage::Ptr ret = mve::image::rescale<uint8_t>
-        (image, mve::image::RESCALE_LINEAR, dw, dh);
-    ret = mve::image::crop<uint8_t>(ret, dl, dt, THUMB_SIZE, THUMB_SIZE);
-    image = ret;
-#endif
-
     try
     {
         mve::image::save_file(image, filename);
@@ -243,20 +209,15 @@ export_byte_image (mve::ByteImage::Ptr image, std::string const& filename)
 void
 export_float_image (mve::FloatImage::Ptr image, std::string const& filename)
 {
-    float min = std::numeric_limits<float>::max();
-    float max = -std::numeric_limits<float>::min();
-    std::size_t value_amount = image->get_value_amount();
-    for (std::size_t i = 0; i < value_amount; ++i)
+    try
     {
-        float value(image->at(i));
-        if (value == 0.0f)
-            continue;
-        min = std::min(value, min);
-        max = std::max(value, max);
+        mve::image::save_pfm_file(image, filename);
+        std::cout << "exported." << std::endl;
     }
-
-    mve::ByteImage::Ptr img = mve::image::float_to_byte_image(image, min, max);
-    export_byte_image(img, filename);
+    catch (std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 }
 
 void
@@ -287,13 +248,13 @@ Shell::export_embeddings (std::string const& name, std::string const& path)
             continue;
 
         std::cout << "View " << i << " (" << view->get_name() << "): ";
-        std::string filename = destdir + name + "_" + view->get_name() + ".png";
+        std::string filename = destdir + name + "_" + view->get_name();
 
         /* Get byte image. */
         mve::ImageBase::Ptr image = view->get_byte_image(name);
         if (image != NULL)
         {
-            export_byte_image(image, filename);
+            export_byte_image(image, filename + ".png");
             continue;
         }
 
@@ -301,7 +262,7 @@ Shell::export_embeddings (std::string const& name, std::string const& path)
         image = view->get_float_image(name);
         if (image != NULL)
         {
-            export_float_image(image, filename);
+            export_float_image(image, filename + ".pfm");
             continue;
         }
 
