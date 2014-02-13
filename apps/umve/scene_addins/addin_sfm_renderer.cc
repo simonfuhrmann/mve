@@ -50,8 +50,8 @@ AddinSfmRenderer::create_renderer (bool raise_error_on_failure)
 
     try
     {
-        mve::BundleFile::ConstPtr bundle(this->state->scene->get_bundle());
-        mve::TriangleMesh::Ptr mesh(bundle->get_points_mesh());
+        mve::Bundle::ConstPtr bundle(this->state->scene->get_bundle());
+        mve::TriangleMesh::Ptr mesh(bundle->get_features_as_mesh());
         this->sfm_renderer = ogl::MeshRenderer::create(mesh);
         this->sfm_renderer->set_shader(this->state->wireframe_shader);
         this->sfm_renderer->set_primitive(GL_POINTS);
