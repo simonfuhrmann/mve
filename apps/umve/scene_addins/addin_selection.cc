@@ -152,21 +152,21 @@ AddinSelection::show_selection_info (float left, float right, float top, float b
     }
 
     /* Project bundle points to screen space and check if selected. */
-    mve::BundleFile::ConstPtr bundle;
+    mve::Bundle::ConstPtr bundle;
     try { bundle = scene->get_bundle(); }
-    catch (std::exception& e){ }
+    catch (std::exception&) { }
     if (bundle != NULL)
     {
         std::size_t num_points = 0;
 
         str_points << "<h2>Selected Bundle Points</h2>";
 
-        mve::BundleFile::FeaturePoints const& points = bundle->get_points();
+        mve::Bundle::Features const& features = bundle->get_features();
         mve::Scene::ViewList const& views(scene->get_views());
-        for (std::size_t i = 0; i < points.size(); ++i)
+        for (std::size_t i = 0; i < features.size(); ++i)
         {
             math::Vec4f pos(1.0f);
-            pos.copy(points[i].pos, 3);
+            pos.copy(features[i].pos, 3);
             pos = this->camera->view * pos;
             pos = this->camera->proj * pos;
             pos /= pos[3];
@@ -182,17 +182,15 @@ AddinSelection::show_selection_info (float left, float right, float top, float b
                 break;
 
             str_points << "Point ID " << i << ", visible in:<br/>" << std::endl;
-            for (std::size_t j = 0; j < points[i].refs.size(); ++j)
+            for (std::size_t j = 0; j < features[i].refs.size(); ++j)
             {
-                mve::View::ConstPtr ref = views[points[i].refs[j].img_id];
+                mve::View::ConstPtr ref = views[features[i].refs[j].view_id];
                 if (ref == NULL)
                     continue;
                 str_points << "&nbsp;&nbsp;View ID ";
                 str_points << ref->get_id() << ", " << ref->get_name();
                 if (!ref->is_camera_valid())
                     str_points << " (invalid)";
-                else
-                    str_points << " " <<  points[i].refs[j].error;
                 str_points << "<br/>" << std::endl;
            }
            str_points << "<br/>" << std::endl;

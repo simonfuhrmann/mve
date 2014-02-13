@@ -6,6 +6,7 @@
 #include "mve/scene.h"
 #include "mve/view.h"
 #include "mve/image_base.h"
+#include "mve/bundle.h"
 
 /**
  * The currently active scene as well as the selected view are requried
@@ -41,7 +42,7 @@ public:
     void select_scene (mve::Scene::Ptr scene);
     void select_view (mve::View::Ptr view);
     void select_image (mve::ImageBase::Ptr image);
-    void select_bundle (mve::BundleFile::Ptr bundle);
+    void select_bundle (mve::Bundle::Ptr bundle);
 
     mve::Scene::Ptr get_scene (void);
     mve::View::Ptr get_view (void);
@@ -98,7 +99,7 @@ SceneManager::select_image (mve::ImageBase::Ptr image)
 }
 
 inline void
-SceneManager::select_bundle (mve::BundleFile::Ptr bundle)
+SceneManager::select_bundle (mve::Bundle::Ptr bundle)
 {
     this->scene->set_bundle(bundle);
     emit this->scene_bundle_changed();

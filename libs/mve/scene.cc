@@ -5,6 +5,7 @@
 #include "util/timer.h"
 #include "util/file_system.h"
 #include "mve/scene.h"
+#include "mve/bundle_io.h"
 
 MVE_NAMESPACE_BEGIN
 
@@ -33,7 +34,8 @@ Scene::save_bundle (void)
 {
     if (this->bundle == NULL || !this->bundle_dirty)
         return;
-    this->bundle->write_bundle(this->basedir + "/" + "synth_0.out");
+    std::string filename = this->basedir + "/synth_0.out";
+    save_mve_bundle(this->bundle, filename);
     this->bundle_dirty = false;
 }
 
@@ -206,14 +208,13 @@ Scene::init_views (void)
 
 /* ---------------------------------------------------------------- */
 
-BundleFile::ConstPtr
+Bundle::ConstPtr
 Scene::get_bundle (void)
 {
     if (this->bundle == NULL)
     {
-        BundleFile::Ptr b = BundleFile::create();
-        b->read_bundle(this->basedir + "/" MVE_SCENE_BUNDLE_FILE);
-        this->bundle = b;
+        std::string filename = this->basedir + "/" MVE_SCENE_BUNDLE_FILE;
+        this->bundle = load_mve_bundle(filename);
         this->bundle_dirty = false;
     }
     return this->bundle;

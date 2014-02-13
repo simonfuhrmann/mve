@@ -209,8 +209,7 @@ void DMRecon::analyzeFeatures()
     progress.status = RECON_FEATURES;
 
     SingleView::ConstPtr refV = views[settings.refViewNr];
-    mve::BundleFile::FeaturePoints const& features = bundle->get_points();
-
+    mve::Bundle::Features const& features = bundle->get_features();
     for (std::size_t i = 0; i < features.size() && !progress.cancelled; ++i)
     {
         if (!features[i].contains_view_id(settings.refViewNr))
@@ -222,11 +221,12 @@ void DMRecon::analyzeFeatures()
 
         for (std::size_t j = 0; j < features[i].refs.size(); ++j)
         {
-            std::size_t id = features[i].refs[j].img_id;
-            if (id >= views.size() || views[id] == NULL)
+            int view_id = features[i].refs[j].view_id;
+            if (view_id < 0 || view_id >= static_cast<int>(views.size())
+                || views[view_id] == NULL)
                 continue;
-            if (views[id]->pointInFrustum(featurePos))
-                views[id]->addFeature(i);
+            if (views[view_id]->pointInFrustum(featurePos))
+                views[view_id]->addFeature(i);
         }
     }
 }
@@ -238,7 +238,7 @@ void DMRecon::globalViewSelection()
         return;
 
     /* Perform global view selection. */
-    GlobalViewSelection globalVS(views, bundle->get_points(), settings);
+    GlobalViewSelection globalVS(views, bundle->get_features(), settings);
     globalVS.performVS();
     neighViews = globalVS.getSelectedIDs();
 
@@ -267,7 +267,7 @@ void DMRecon::processFeatures()
     progress.status = RECON_FEATURES;
     if (progress.cancelled)  return;
     SingleView::Ptr refV = views[settings.refViewNr];
-    mve::BundleFile::FeaturePoints const & features = bundle->get_points();
+    mve::Bundle::Features const& features = bundle->get_features();
 
     /* select features that should be processed:
        take features only from master view for the moment */

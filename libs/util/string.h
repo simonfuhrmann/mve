@@ -24,6 +24,7 @@ std::string get (T const& value);
 template <typename T>
 std::string get_fixed (T const& value, int digits);
 
+/** Returns a string filled to the left to a length of 'width' chars. */
 template <typename T>
 std::string get_filled (T const& value, int width, char fill = '0');
 
