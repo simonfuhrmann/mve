@@ -5,22 +5,34 @@
 
 #include "mve/image.h"
 #include "mve/image_io.h"
+#include "mve/image_tools.h"
 #include "sfm/bundler.h"
+
+#define MAX_RES 1000000
 
 mve::ByteImage::Ptr
 load_image (std::string const& filename)
 {
     std::cout << "Loading " << filename << "..." << std::endl;
-    return mve::image::load_file(filename);
+    mve::ByteImage::Ptr image = mve::image::load_file(filename);
+
+    while (image->width() * image->height() > MAX_RES)
+        image = mve::image::rescale_half_size<uint8_t>(image);
+    return image;
 }
 
 int
-main (void)
+main (int argc, char** argv)
 {
+    if (argc <= 1)
+    {
+        std::cerr << "Syntax: " << argv[0] << " <images>" << std::endl;
+        return 1;
+    }
+
     std::vector<std::string> filenames;
-    filenames.push_back("/Users/sfuhrmann/Downloads/Fountain-R25/0011.jpg");
-    filenames.push_back("/Users/sfuhrmann/Downloads/Fountain-R25/0013.jpg");
-    filenames.push_back("/Users/sfuhrmann/Downloads/Fountain-R25/0015.jpg");
+    for (int i = 1; i < argc; ++i)
+        filenames.push_back(argv[i]);
 
     sfm::Bundler::Options options;
     options.sift_matching_options.descriptor_length = 128;
@@ -33,9 +45,8 @@ main (void)
     sfm::Bundler bundler(options);
     try
     {
-        bundler.add_image(load_image(filenames[0]), 31.0 / 35.0);
-        bundler.add_image(load_image(filenames[1]), 31.0 / 35.0);
-        bundler.add_image(load_image(filenames[2]), 31.0 / 35.0);
+        for (std::size_t i = 0; i < filenames.size(); ++i)
+            bundler.add_image(load_image(filenames[i]), 31.0 / 35.0);
     }
     catch (std::exception& e)
     {

@@ -38,7 +38,7 @@ public:
         RansacFundamental::Options ransac_fundamental_options;
         RansacPose::Options ransac_pose_options;
 
-        int max_image_size; // TODO
+        int max_image_size;
         bool use_sift_features; // TODO
         bool use_surf_features; // TODO
     };
@@ -49,6 +49,7 @@ public:
         float pos[2];
         float color[3];
         int view_id;
+        int descriptor_id;
         int feature3d_id;
     };
 
@@ -80,6 +81,7 @@ public:
     struct Feature3D
     {
         double pos[3];
+        float color[3];
         std::vector<int> feature2d_ids;
     };
 

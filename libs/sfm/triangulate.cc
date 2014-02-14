@@ -7,6 +7,7 @@ math::Vector<double, 3>
 triangulate_match (Correspondence const& match,
     CameraPose const& pose1, CameraPose const& pose2)
 {
+    /* The algorithm is described in HZ 12.2, page 312. */
     math::Matrix<double, 3, 4> P1, P2;
     pose1.fill_p_matrix(&P1);
     pose2.fill_p_matrix(&P2);
@@ -33,10 +34,7 @@ is_consistent_pose (Correspondence const& match,
     math::Vector<double, 3> x = triangulate_match(match, pose1, pose2);
     math::Vector<double, 3> x1 = pose1.R * x + pose1.t;
     math::Vector<double, 3> x2 = pose2.R * x + pose2.t;
-    if (x1[2] > 0.0f && x2[2] > 0.0f)
-        return true;
-
-    return false;
+    return x1[2] > 0.0f && x2[2] > 0.0f;
 }
 
 SFM_NAMESPACE_END
