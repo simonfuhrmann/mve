@@ -186,6 +186,16 @@ public:
     bool has_embedding (std::string const& name) const;
 
     /**
+     * Returns true if an image embedding by the given name exists.
+     */
+    bool has_image_embedding (std::string const& name) const;
+
+    /**
+     * Returns true if a data embedding by the given name exists.
+     */
+    bool has_data_embedding (std::string const& name) const;
+
+    /**
      * Returns true if the embedding by that name has been removed.
      * If more than one embedding by that name exist, it deletes all.
      */
@@ -412,6 +422,20 @@ inline bool
 View::has_embedding (std::string const& name) const
 {
     return this->get_proxy(name) != NULL;
+}
+
+inline bool
+View::has_image_embedding (std::string const& name) const
+{
+    MVEFileProxy const* proxy = this->get_proxy(name);
+    return proxy != NULL && proxy->is_image == true;
+}
+
+inline bool
+View::has_data_embedding (std::string const& name) const
+{
+    MVEFileProxy const* proxy = this->get_proxy(name);
+    return proxy != NULL && proxy->is_image == false;
 }
 
 inline std::size_t
