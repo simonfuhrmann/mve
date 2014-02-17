@@ -124,11 +124,16 @@ public:
      */
     struct Descriptor
     {
+        /** The sub-pixel x-coordinate of the image keypoint. */
         float x;
+        /** The sub-pixel y-coordinate of the image keypoint. */
         float y;
-        float scale; ///< the scale (or sigma) of the keypoint
-        float orientation; ///< Orientation of the KP in [0, 2PI]
-        math::Vector<float, 128> data; ///< The feature vector
+        /** The scale (or sigma value) of the keypoint. */
+        float scale;
+        /** The orientation of the image keypoint in [0, 2PI]. */
+        float orientation;
+        /** The descriptor data, elements are unsigned in [0.0, 1.0]. */
+        math::Vector<float, 128> data;
     };
 
 public:
@@ -188,7 +193,7 @@ protected:
     void generate_grad_ori_images (Octave* octave);
     void orientation_assignment (Keypoint const& kp,
         Octave const* octave, std::vector<float>& orientations);
-    void descriptor_assignment (Keypoint const& kp, Descriptor& desc,
+    bool descriptor_assignment (Keypoint const& kp, Descriptor& desc,
         Octave const* octave);
 
     float keypoint_relative_scale (Keypoint const& kp);

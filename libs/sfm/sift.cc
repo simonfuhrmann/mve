@@ -501,8 +501,8 @@ Sift::descriptor_generation (void)
             desc.y = scale_factor * (kp.y + 0.5f) - 0.5f;
             desc.scale = this->keypoint_absolute_scale(kp);
             desc.orientation = orientations[j];
-            this->descriptor_assignment(kp, desc, octave);
-            this->descriptors.push_back(desc);
+            if (this->descriptor_assignment(kp, desc, octave))
+                this->descriptors.push_back(desc);
         }
     }
 }
@@ -653,7 +653,7 @@ Sift::orientation_assignment (Keypoint const& kp,
 
 /* ---------------------------------------------------------------- */
 
-void
+bool
 Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
     Octave const* octave)
 {
@@ -698,7 +698,7 @@ Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
     float const binsize = 3.0f * sigma;
     int win = MATH_SQRT2 * binsize * (float)(PXB + 1) * 0.5f;
     if (ix < win || ix + win >= width || iy < win || iy + win >= height)
-        return;
+        return false;
 
     /*
      * Iterate over the window, intersected with the image region
@@ -792,6 +792,8 @@ Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
 
     /* Normalize once again. */
     desc.data.normalize();
+
+    return true;
 }
 
 /* ---------------------------------------------------------------- */

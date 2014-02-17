@@ -68,10 +68,15 @@ public:
      */
     struct Descriptor
     {
+        /** The sub-pixel x-coordinate of the image keypoint. */
         float x;
+        /** The sub-pixel y-coordinate of the image keypoint. */
         float y;
+        /** The scale (or sigma value) of the keypoint. */
         float scale;
+        /** The orientation of the image keypoint in [-PI, PI]. */
         float orientation;
+        /** The descriptor data, elements are signed in [-1.0, 1.0]. */
         math::Vector<float, 64> data;
     };
 
