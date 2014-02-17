@@ -1,14 +1,14 @@
 #include <iostream>
 
-#include "util/fs.h"
+#include "util/file_system.h"
 #include "util/timer.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
 #include "mve/image_io.h"
 
-#include "surf.h"
-#include "sift.h"
-#include "visualizer.h"
+#include "sfm/surf.h"
+#include "sfm/sift.h"
+#include "sfm/visualizer.h"
 
 int
 main (int argc, char** argv)
