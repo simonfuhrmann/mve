@@ -1,3 +1,8 @@
+/*
+ * Writer for the PBRT (Physically Based Rendering) mesh format.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef MVE_PBRTFILE_HEADER
 #define MVE_PBRTFILE_HEADER
 

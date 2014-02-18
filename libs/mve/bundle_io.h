@@ -1,3 +1,8 @@
+/*
+ * Tools for SfM Bundles for loading and saving from and to file.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef MVE_BUNDLE_IO_HEADER
 #define MVE_BUNDLE_IO_HEADER
 

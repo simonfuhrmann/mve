@@ -1,9 +1,9 @@
 /*
- * A rewritten version of the code found at:
+ * This is a rewritten version of the code found at:
  * http://code.google.com/p/easyexif/
  *
- * Copyright (c) 2011 Simon Fuhrmann
- * Copyright (c) 2010 Mayank Lahiri <mlahiri@gmail.com>
+ * Modifications: Copyright (c) 2011 Simon Fuhrmann
+ * Original code: Copyright (c) 2010 Mayank Lahiri <mlahiri@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:

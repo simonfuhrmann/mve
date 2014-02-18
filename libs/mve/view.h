@@ -10,7 +10,10 @@
  * are load only once.
  *
  * Current limitations:
- * - The following data types are supported: uint8, uint16, float, double, sint32
+ * - The following data types are supported:
+ *   uint8, uint16, float, double, sint32
+ * - Unexpected behavior occures if a process changes the structure of an
+ *   MVE file while another process relies on the previously read header.
  *
  * TODO: New Features
  * - Merging

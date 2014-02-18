@@ -1,6 +1,6 @@
 /*
  * Triangle mesh vertex info data structure.
- * Written by Simon Fuhrmann
+ * Written by Simon Fuhrmann.
  */
 
 #ifndef MVE_VERTEX_INFO_HEADER

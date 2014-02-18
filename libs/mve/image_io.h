@@ -1,5 +1,5 @@
 /*
- * Image tools: loading and saving
+ * Image tools: loading and saving.
  * Written by Simon Fuhrmann, Jens Ackermann, Sebastian Koch.
  */
 

@@ -1,12 +1,14 @@
 /*
- * Tiny code-size EXIF tag extractor.
- * Written by Simon Fuhrmann.
+ * Tiny EXIF tag extractor.
+ * Interface written by Simon Fuhrmann.
+ * Original code written by Mayank Lahiri (see .cc file).
  *
  * Original code from: http://code.google.com/p/easyexif/
  * Some docs here: http://www.awaresystems.be/imaging/tiff/tifftags/privateifd/exif.html
  * More docs: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html
  * Even more docs: http://paulbourke.net/dataformats/tiff/
  */
+
 #ifndef MVE_IMAGEEXIF_HEADER
 #define MVE_IMAGEEXIF_HEADER
 
