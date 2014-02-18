@@ -1,3 +1,8 @@
+/*
+ * Implementation of Bezier curves with arbitrary control points.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef UTIL_BEZIERCURVE_HEADER
 #define	UTIL_BEZIERCURVE_HEADER
 

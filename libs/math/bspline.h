@@ -1,3 +1,8 @@
+/*
+ * Implementation of non-uniform B-Spline curves.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef MATH_BSPLINE_HEADER
 #define MATH_BSPLINE_HEADER
 

@@ -2,6 +2,7 @@
  * Geometric tools for trianges, tetrahedra, etc.
  * Written by Simon Fuhrmann
  */
+
 #ifndef MATH_GEOMETRY_HEADER
 #define MATH_GEOMETRY_HEADER
 
