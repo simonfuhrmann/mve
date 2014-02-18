@@ -53,6 +53,11 @@ public:
          * of the randomly selected matches will be normalized for 8-point.
          */
         bool already_normalized;
+
+        /**
+         * Produce status messages on the console.
+         */
+        bool verbose_output;
     };
 
     struct Result

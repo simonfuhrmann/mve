@@ -14,6 +14,7 @@ RansacFundamental::Options::Options (void)
     : max_iterations(1000)
     , threshold(1e-3)
     , already_normalized(true)
+    , verbose_output(false)
 {
 }
 
@@ -25,10 +26,16 @@ RansacFundamental::RansacFundamental (Options const& options)
 void
 RansacFundamental::estimate (Correspondences const& matches, Result* result)
 {
+    // TODO: Move normalization here.
+
+    if (this->opts.verbose_output)
+    {
+        std::cout << "RANSAC: Running for " << this->opts.max_iterations
+            << " iterations..." << std::endl;
+    }
+
     std::vector<int> inliers;
     inliers.reserve(matches.size());
-    std::cout << "RANSAC: Running for " << this->opts.max_iterations
-        << " iterations..." << std::endl;
     for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
     {
         FundamentalMatrix fundamental;
@@ -36,10 +43,13 @@ RansacFundamental::estimate (Correspondences const& matches, Result* result)
         this->find_inliers(matches, fundamental, &inliers);
         if (inliers.size() > result->inliers.size())
         {
-            std::cout << "RANASC: Iteration " << iteration
-                << ", inliers " << inliers.size() << " ("
-                << (100.0 * inliers.size() / matches.size())
-                << "%)" << std::endl;
+            if (this->opts.verbose_output)
+            {
+                std::cout << "RANASC: Iteration " << iteration
+                    << ", inliers " << inliers.size() << " ("
+                    << (100.0 * inliers.size() / matches.size())
+                    << "%)" << std::endl;
+            }
 
             result->fundamental = fundamental;
             std::swap(result->inliers, inliers);

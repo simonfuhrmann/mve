@@ -15,6 +15,7 @@ RansacHomography::Options::Options (void)
     : max_iterations(1000)
     , threshold(0.01)
     , already_normalized(true)
+    , verbose_output(false)
 {
 }
 
@@ -34,28 +35,37 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
         sfm::apply_normalization(T1, T2, &normalized_matches);
         invT2 = math::matrix_inverse(T2);
     }
-    std::cout << "RANSAC: Running for " << this->opts.max_iterations
-        << " iterations..." << std::endl;
 
-    HomographyMatrix homography;
+    if (this->opts.verbose_output)
+    {
+        std::cout << "RANSAC: Running for " << this->opts.max_iterations
+            << " iterations..." << std::endl;
+    }
+
     std::vector<int> inliers;
+    inliers.reserve(matches.size());
     for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
     {
+        HomographyMatrix homography;
         this->compute_homography(normalized_matches, &homography);
         homography /= homography[8];
         if (!opts.already_normalized)
             homography = invT2 * homography * T1;
-        this->evaluate_homography(matches, homography, &inliers);
 
+        this->evaluate_homography(matches, homography, &inliers);
         if (inliers.size() > result->inliers.size())
         {
-            std::cout << "RANSAC: Iteration " << iteration
-                << ", inliers " << inliers.size() << " ("
-                << (100.0 * inliers.size() / matches.size())
-                << "%)" << std::endl;
+            if (this->opts.verbose_output)
+            {
+                std::cout << "RANSAC: Iteration " << iteration
+                    << ", inliers " << inliers.size() << " ("
+                    << (100.0 * inliers.size() / matches.size())
+                    << "%)" << std::endl;
+            }
 
-            std::swap(result->inliers, inliers);
             result->homography = homography;
+            std::swap(result->inliers, inliers);
+            inliers.reserve(matches.size());
         }
     }
 }

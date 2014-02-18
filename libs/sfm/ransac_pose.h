@@ -40,6 +40,11 @@ public:
          * Threshold used to determine inliers. Defaults to 0.001.
          */
         double threshold;
+
+        /**
+         * Produce status messages on the console.
+         */
+        bool verbose_output;
     };
 
     struct Result

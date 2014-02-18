@@ -13,6 +13,7 @@ SFM_NAMESPACE_BEGIN
 RansacPose::Options::Options (void)
     : max_iterations(100)
     , threshold(1e-3)
+    , verbose_output(false)
 {
 }
 
@@ -25,10 +26,14 @@ void
 RansacPose::estimate (Correspondences2D3D const& corresp,
     Result* result)
 {
+    if (this->opts.verbose_output)
+    {
+        std::cout << "RANSAC: Running for " << this->opts.max_iterations
+            << " iterations..." << std::endl;
+    }
+
     std::vector<int> inliers;
     inliers.reserve(corresp.size());
-    std::cout << "RANSAC: Running for " << this->opts.max_iterations
-        << " iterations..." << std::endl;
     for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
     {
         math::Matrix<double, 3, 4> p_matrix;
@@ -36,10 +41,13 @@ RansacPose::estimate (Correspondences2D3D const& corresp,
         this->find_inliers(corresp, p_matrix, &inliers);
         if (inliers.size() > result->inliers.size())
         {
-            std::cout << "RANASC: Iteration " << iteration
-                << ", inliers " << inliers.size() << " ("
-                << (100.0 * inliers.size() / corresp.size())
-                << "%)" << std::endl;
+            if (this->opts.verbose_output)
+            {
+                std::cout << "RANASC: Iteration " << iteration
+                    << ", inliers " << inliers.size() << " ("
+                    << (100.0 * inliers.size() / corresp.size())
+                    << "%)" << std::endl;
+            }
 
             result->p_matrix = p_matrix;
             std::swap(result->inliers, inliers);

@@ -43,6 +43,11 @@ public:
          * DLT algorithm.
          */
         bool already_normalized;
+
+        /**
+         * Produce status messages on the console.
+         */
+        bool verbose_output;
     };
 
     struct Result
