@@ -26,6 +26,15 @@ namespace
 
 /* ---------------------------------------------------------------- */
 
+Surf::Surf (Options const& options)
+    : options(options)
+{
+    if (this->options.debug_output)
+        this->options.verbose_output = true;
+}
+
+/* ---------------------------------------------------------------- */
+
 void
 Surf::process (void)
 {
@@ -36,37 +45,64 @@ Surf::process (void)
     util::WallTimer timer, total_timer;
 
     /* Compute Hessian response maps and find SS maxima (SURF 3.3). */
-    std::cout << "SURF: Creating 4 octaves (0 to 4)..." << std::endl;
+    if (this->options.verbose_output)
+    {
+        std::cout << "SURF: Creating 4 octaves (0 to 4)..." << std::endl;
+    }
     timer.reset();
     this->create_octaves();
-    //std::cout << "SURF: Creating octaves took "
-    //    << timer.get_elapsed() << " ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SURF: Creating octaves took "
+            << timer.get_elapsed() << " ms." << std::endl;
+    }
 
     /* Detect local extrema in the SS of Hessian response maps. */
-    //std::cout << "SURF: Detecting local extrema..." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SURF: Detecting local extrema..." << std::endl;
+    }
     timer.reset();
     this->extrema_detection();
-    //std::cout << "SURF: Extrema detection took "
-    //    << timer.get_elapsed() << " ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SURF: Extrema detection took "
+            << timer.get_elapsed() << " ms." << std::endl;
+    }
 
     /* Sub-pixel keypoint localization and filtering of weak keypoints. */
-    //std::cout << "SURF: Localizing and filtering keypoints..." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SURF: Localizing and filtering keypoints..." << std::endl;
+    }
     timer.reset();
     this->keypoint_localization_and_filtering();
     this->octaves.clear();
-    //std::cout << "SURF: Localization and filtering took "
-    //    << timer.get_elapsed() << " ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SURF: Localization and filtering took "
+            << timer.get_elapsed() << " ms." << std::endl;
+    }
 
     /* Compute the SURF descriptor for the keypoint location. */
-    std::cout << "SURF: Generating keypoint descriptors..." << std::endl;
+    if (this->options.verbose_output)
+    {
+        std::cout << "SURF: Generating keypoint descriptors..." << std::endl;
+    }
     timer.reset();
     this->descriptor_assignment();
-    //std::cout << "SURF: Generated " << this->descriptors.size()
-    //    << " descriptors, took " << timer.get_elapsed() << "ms." << std::endl;
-
-    std::cout << "SURF: Generated " << this->descriptors.size()
-        << " descriptors from " << this->keypoints.size() << " keypoints,"
-        << " took " << total_timer.get_elapsed() << "ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SURF: Generated " << this->descriptors.size()
+            << " descriptors, took " << timer.get_elapsed() << "ms."
+            << std::endl;
+    }
+    if (this->options.verbose_output)
+    {
+        std::cout << "SURF: Generated " << this->descriptors.size()
+            << " descriptors from " << this->keypoints.size() << " keypoints,"
+            << " took " << total_timer.get_elapsed() << "ms." << std::endl;
+    }
 
     /* Cleanup. */
     this->sat.reset();

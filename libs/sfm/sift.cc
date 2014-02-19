@@ -11,19 +11,26 @@
 
 SFM_NAMESPACE_BEGIN
 
-void
-Sift::process (void)
+Sift::Sift (Options const& options)
+    : options(options)
 {
-    /* Check options. */
     if (this->options.min_octave < -1
         || this->options.min_octave > this->options.max_octave)
         throw std::invalid_argument("Invalid octave range");
 
-    /* Compute some options. */
     if (this->options.contrast_threshold < 0.0f)
         this->options.contrast_threshold = 0.02f
-            / (float)this->options.num_samples_per_octave;
+            / static_cast<float>(this->options.num_samples_per_octave);
 
+    if (this->options.debug_output)
+        this->options.verbose_output = true;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Sift::process (void)
+{
     util::ClockTimer timer, total_timer;
 
     /*
@@ -31,32 +38,51 @@ Sift::process (void)
      * sampling the scale space and computing the DoG images.
      * See Section 3, 3.2 and 3.3 in SIFT article.
      */
-    std::cout << "SIFT: Creating "
-        << (this->options.max_octave - this->options.min_octave)
-        << " octaves (" << this->options.min_octave << " to "
-        << this->options.max_octave << ")..." << std::endl;
+    if (this->options.verbose_output)
+    {
+        std::cout << "SIFT: Creating "
+            << (this->options.max_octave - this->options.min_octave)
+            << " octaves (" << this->options.min_octave << " to "
+            << this->options.max_octave << ")..." << std::endl;
+    }
+    timer.reset();
     this->create_octaves();
-    //std::cout << "Creating octaves took " << timer.get_elapsed()
-    //    << "ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SIFT: Creating octaves took "
+            << timer.get_elapsed() << "ms." << std::endl;
+    }
 
     /*
      * Detects local extrema in the DoG function as described in Section 3.1.
      */
-    //std::cout << "SIFT: Detecting local extrema..." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SIFT: Detecting local extrema..." << std::endl;
+    }
     timer.reset();
     this->extrema_detection();
-    //std::cout << "SIFT: Detected " << this->keypoints.size()
-    //    << " keypoints, took " << timer.get_elapsed() << "ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SIFT: Detected " << this->keypoints.size()
+            << " keypoints, took " << timer.get_elapsed() << "ms." << std::endl;
+    }
 
     /*
      * Accurate keypoint localization and filtering.
      * According to Section 4 in SIFT article.
      */
-    //std::cout << "SIFT: Localizing and filtering keypoints..." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SIFT: Localizing and filtering keypoints..." << std::endl;
+    }
     timer.reset();
     this->keypoint_localization();
-    //std::cout << "SIFT: Retained " << this->keypoints.size() << " stable "
-    //    << "keypoints, took " << timer.get_elapsed() << "ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SIFT: Retained " << this->keypoints.size() << " stable "
+            << "keypoints, took " << timer.get_elapsed() << "ms." << std::endl;
+    }
 
     /*
      * Difference of Gaussian images are not needed anymore.
@@ -70,15 +96,24 @@ Sift::process (void)
      * This list can in general be larger than the amount of keypoints,
      * since for each keypoint several descriptors may be created.
      */
-    std::cout << "SIFT: Generating keypoint descriptors..." << std::endl;
+    if (this->options.verbose_output)
+    {
+        std::cout << "SIFT: Generating keypoint descriptors..." << std::endl;
+    }
     timer.reset();
     this->descriptor_generation();
-    //std::cout << "SIFT: Generated " << this->descriptors.size()
-    //    << " descriptors, took " << timer.get_elapsed() << "ms." << std::endl;
-
-    std::cout << "SIFT: Generated " << this->descriptors.size()
-        << " descriptors from " << this->keypoints.size() << " keypoints,"
-        << " took " << total_timer.get_elapsed() << "ms." << std::endl;
+    if (this->options.debug_output)
+    {
+        std::cout << "SIFT: Generated " << this->descriptors.size()
+            << " descriptors, took " << timer.get_elapsed() << "ms."
+            << std::endl;
+    }
+    if (this->options.verbose_output)
+    {
+        std::cout << "SIFT: Generated " << this->descriptors.size()
+            << " descriptors from " << this->keypoints.size() << " keypoints,"
+            << " took " << total_timer.get_elapsed() << "ms." << std::endl;
+    }
 
     /* Free memory. */
     this->octaves.clear();
@@ -433,11 +468,11 @@ Sift::keypoint_localization (void)
     /* Limit vector size to number of accepted keypoints. */
     this->keypoints.resize(num_keypoints);
 
-    //if (num_singular)
-    //{
-    //    std::cout << "Warning: " << num_singular
-    //        << " singular matrices detected!" << std::endl;
-    //}
+    if (this->options.debug_output && num_singular > 0)
+    {
+        std::cout << "SIFT: Warning: " << num_singular
+            << " singular matrices detected!" << std::endl;
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -825,8 +860,8 @@ Sift::keypoint_absolute_scale (Keypoint const& kp)
 void
 Sift::dump_octaves (void)
 {
-    std::cout << "SIFT: Dumping images to /tmp ..." << std::endl;
     /* Dumps all octaves to disc, for debugging purposes. */
+    std::cout << "SIFT: Dumping images to /tmp ..." << std::endl;
     for (std::size_t i = 0; i < this->octaves.size(); ++i)
     {
         Octave const& oct(this->octaves[i]);

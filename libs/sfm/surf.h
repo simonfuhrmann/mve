@@ -48,6 +48,16 @@ public:
 
         /** Trade rotation invariance for speed. Defaults to false. */
         bool use_upright_descriptor;
+
+        /**
+         * Produce status messages on the console.
+         */
+        bool verbose_output;
+
+        /**
+         * Produce even more messages on the console.
+         */
+        bool debug_output;
     };
 
     /**
@@ -148,12 +158,8 @@ inline
 Surf::Options::Options (void)
     : contrast_threshold(500.0f)
     , use_upright_descriptor(false)
-{
-}
-
-inline
-Surf::Surf (Options const& options)
-    : options(options)
+    , verbose_output(false)
+    , debug_output(false)
 {
 }
 

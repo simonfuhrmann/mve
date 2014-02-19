@@ -1,17 +1,15 @@
 /*
  * SIFT implementation.
- * Written by Simon Fuhrmann with great help from Ronny Klowsky
+ * Written by Simon Fuhrmann with great help from Ronny Klowsky.
  *
  * Notes:
- * - The implementation allows a minmum octave of -1 only
- * - The descriptor extration supports 128 dimensions only
+ * - The implementation allows a minmum octave of -1 only.
+ * - The descriptor extration supports 128 dimensions only.
  * - Coordinates in the keypoint are relative to the octave.
- *   Abosulte coordinates are obtained by (TODO why? explain):
+ *   Absolute coordinates are obtained by (TODO why? explain):
  *   (x + 0.5, y + 0.5) * 2^octave - (0.5, 0.5).
- *
- * TODO:
- * - Move all options to an Options struct
- * - Save memory by finding a more efficent code path to create octaves
+ * - Memory consumption is quite high, especially with large images.
+ *   TODO: Find a more efficent code path to create octaves.
  */
 #ifndef SFM_SIFT_HEADER
 #define SFM_SIFT_HEADER
@@ -33,7 +31,7 @@ SFM_NAMESPACE_BEGIN
  *   David G. Lowe, International Journal of Computer Vision, 2004.
  *
  * The implementation used the siftpp implementation as reference for some
- * parts of the algorithm. siftpp is available here:
+ * parts of the algorithm. This implementation is available here:
  *
  *   http://www.vlfeat.org/~vedaldi/code/siftpp.html
  */
@@ -83,17 +81,27 @@ public:
 
         /**
          * Sets the amount of desired base blur before constructing the
-         * octaves. Default sigma is 1.6.
-         * This determines for example how to blur the base image in each
-         * octave before creating more octave samples.
+         * octaves. Default sigma is 1.6. This determines how to blur the base
+         * image in each octave before creating more octave samples.
+         * This is a technical detail and can usually be left alone.
          */
         float base_blur_sigma;
 
         /**
          * Sets the inherent blur sigma in the input image. Default is 0.5.
-         * This is a technical detail and can mostly be left alone.
+         * This is a technical detail and can usually be left alone.
          */
         float inherent_blur_sigma;
+
+        /**
+         * Produce status messages on the console.
+         */
+        bool verbose_output;
+
+        /**
+         * Produce even more messages on the console.
+         */
+        bool debug_output;
     };
 
     /**
@@ -213,19 +221,15 @@ private:
 
 inline
 Sift::Options::Options (void)
-{
-    this->num_samples_per_octave = 3;
-    this->min_octave = 0;
-    this->max_octave = 4;
-    this->contrast_threshold = -1.0f;
-    this->edge_ratio_threshold = 10.0f;
-    this->base_blur_sigma = 1.6f;
-    this->inherent_blur_sigma = 0.5f;
-}
-
-inline
-Sift::Sift (Options const& options)
-    : options(options)
+    : num_samples_per_octave(3)
+    , min_octave(0)
+    , max_octave(4)
+    , contrast_threshold(-1.0f)
+    , edge_ratio_threshold(10.0f)
+    , base_blur_sigma(1.6f)
+    , inherent_blur_sigma(0.5f)
+    , verbose_output(false)
+    , debug_output(false)
 {
 }
 
