@@ -2,7 +2,7 @@ MVE_ROOT := ../..
 TARGET := libmve_sfm.a
 include ${MVE_ROOT}/Makefile.inc
 
-CXXFLAGS += -I${MVE_ROOT}/libs
+CXXFLAGS += -I${MVE_ROOT}/libs -fopenmp
 LDLIBS += -lpng -ltiff -ljpeg
 
 SOURCES := $(wildcard [^_]*.cc)

@@ -126,11 +126,12 @@ Matching::oneway_match (Matching::Options const& options,
     NearestNeighbor<T> nn;
     nn.set_elements(set_2, set_2_size);
     nn.set_element_dimensions(options.descriptor_length);
-    T const* query_pointer = set_1;
-    for (std::size_t i = 0; i < set_1_size; ++i,
-        query_pointer += options.descriptor_length)
+
+#pragma omp parallel for
+    for (std::size_t i = 0; i < set_1_size; ++i)
     {
         typename NearestNeighbor<T>::Result nn_result;
+        T const* query_pointer = set_1 + i * options.descriptor_length;
         nn.find(query_pointer, &nn_result);
         if (nn_result.dist_1st_best > square_dist_threshold)
             continue;

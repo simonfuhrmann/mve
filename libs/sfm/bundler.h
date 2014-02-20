@@ -5,6 +5,7 @@
  * TODO
  * - Add thread pool?
  */
+
 #ifndef SFM_BUNDLE_HEADER
 #define SFM_BUNDLE_HEADER
 
@@ -15,6 +16,7 @@
 #include "util/aligned_memory.h"
 #include "mve/image.h"
 #include "sfm/defines.h"
+#include "sfm/correspondence.h"
 #include "sfm/matching.h"
 #include "sfm/ransac_fundamental.h"
 #include "sfm/ransac_pose.h"
@@ -86,7 +88,6 @@ public:
     };
 
     /** Pair-wise image information. */
-    typedef std::vector<std::pair<int, int> > CorrespondenceIndices;
     struct ImagePair : public std::pair<int, int>
     {
         ImagePair(int a, int b) : std::pair<int, int>(a, b) {}

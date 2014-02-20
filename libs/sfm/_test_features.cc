@@ -38,6 +38,8 @@ main (int argc, char** argv)
     sfm::Surf::Keypoints surf_keypoints;
     {
         sfm::Surf::Options surf_options;
+        surf_options.verbose_output = true;
+        surf_options.debug_output = true;
         sfm::Surf surf(surf_options);
         surf.set_image(image);
 
@@ -55,6 +57,8 @@ main (int argc, char** argv)
     sfm::Sift::Keypoints sift_keypoints;
     {
         sfm::Sift::Options sift_options;
+        sift_options.verbose_output = true;
+        sift_options.debug_output = true;
         sfm::Sift sift(sift_options);
         sift.set_image(image);
 

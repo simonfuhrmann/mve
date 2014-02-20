@@ -29,7 +29,7 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
 {
     Correspondences normalized_matches(matches);
     math::Matrix3d T1, T2, invT2;
-    if (!opts.already_normalized)
+    if (!this->opts.already_normalized)
     {
         sfm::compute_normalization(normalized_matches, &T1, &T2);
         sfm::apply_normalization(T1, T2, &normalized_matches);
@@ -49,7 +49,7 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
         HomographyMatrix homography;
         this->compute_homography(normalized_matches, &homography);
         homography /= homography[8];
-        if (!opts.already_normalized)
+        if (!this->opts.already_normalized)
             homography = invT2 * homography * T1;
 
         this->evaluate_homography(matches, homography, &inliers);

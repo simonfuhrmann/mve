@@ -299,6 +299,7 @@ Bundler::compute_fundamental_for_pair (ImagePair* image_pair)
 
     /* Perform two-view descriptor matching. */
     Matching::Result matching_result;
+    std::size_t num_matches = 0;
     {
         util::WallTimer timer;
         sfm::Matching::twoway_match(this->options.sift_matching_options,
@@ -306,13 +307,13 @@ Bundler::compute_fundamental_for_pair (ImagePair* image_pair)
             view_2.descr_data.begin(), view_2.descr_info.size(),
             &matching_result);
         sfm::Matching::remove_inconsistent_matches(&matching_result);
+        num_matches = sfm::Matching::count_consistent_matches(matching_result);
         std::cout << "Two-view matching took " << timer.get_elapsed() << "ms, "
-            << sfm::Matching::count_consistent_matches(matching_result)
-            << " matches." << std::endl;
+            << num_matches << " matches." << std::endl;
     }
 
     /* Require at least 8 matches. (This can be much higher?) */
-    if (matching_result.matches_1_2.size() < 8)
+    if (num_matches < 8)
     {
         return;
     }

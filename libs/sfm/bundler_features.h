@@ -1,3 +1,8 @@
+/*
+ * High-level bundler component that computes features for every view.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef SFM_BUNDLER_FEATURES_HEADER
 #define SFM_BUNDLER_FEATURES_HEADER
 
@@ -36,6 +41,8 @@ class Features
 public:
     struct Options
     {
+        Options (void);
+
         /** The image for which features are to be computed. */
         std::string image_embedding;
         /** The embedding name for saving the features. */
@@ -51,8 +58,6 @@ public:
         Sift::Options sift_options;
         /** Options for SURF. */
         Surf::Options surf_options;
-
-        Options (void);
     };
 
     enum FeatureType
@@ -68,28 +73,6 @@ public:
 private:
     Options opts;
 };
-
-/* ---------------------------------------------------------------- */
-
-/** Conversion from SIFT descriptors to binary format. */
-mve::ByteImage::Ptr
-descriptors_to_embedding (Sift::Descriptors const& descriptors,
-    int width, int height);
-
-/** Conversion from binary format to SIFT descriptors. */
-void
-embedding_to_descriptors (mve::ByteImage::ConstPtr data,
-    Sift::Descriptors* descriptors, int* width, int* height);
-
-/** Conversion from SURF descriptors to binary format. */
-mve::ByteImage::Ptr
-descriptors_to_embedding (Surf::Descriptors const& descriptors,
-    int width, int height);
-
-/** Conversion from binary format to SURF descriptors. */
-void
-embedding_to_descriptors (mve::ByteImage::ConstPtr data,
-    Surf::Descriptors* descriptors, int* width, int* height);
 
 /* ---------------------------------------------------------------- */
 

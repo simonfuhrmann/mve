@@ -26,8 +26,6 @@ RansacFundamental::RansacFundamental (Options const& options)
 void
 RansacFundamental::estimate (Correspondences const& matches, Result* result)
 {
-    // TODO: Move normalization here.
-
     if (this->opts.verbose_output)
     {
         std::cout << "RANSAC: Running for " << this->opts.max_iterations

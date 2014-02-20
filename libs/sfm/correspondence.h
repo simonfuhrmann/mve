@@ -14,6 +14,11 @@ typedef std::vector<Correspondence> Correspondences;
 struct Correspondence2D3D;
 typedef std::vector<Correspondence2D3D> Correspondences2D3D;
 
+/** The IDs of a matching feature pair in two images. */
+typedef std::pair<int, int> CorrespondenceIndex;
+/** A list of all matching feature pairs in two images. */
+typedef std::vector<CorrespondenceIndex> CorrespondenceIndices;
+
 /**
  * Two image coordinates which correspond to each other in terms of observing
  * the same point in the scene.
