@@ -14,6 +14,7 @@
 #include "sfm/sift.h"
 #include "sfm/surf.h"
 #include "sfm/matching.h"
+#include "sfm/bundler_common.h"
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
@@ -22,19 +23,10 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 /**
  * Bundler Component: Computation of image features for an MVE scene.
  *
- * For every view in the scene the componenet computes features for a given
- * embedding name for which features have not already been computed. If
- * features already exist, the view is skipped. The computed image descriptors
- * are then stored as embedding in the view. The resulting embedding has the
- * following binary format (signature, header, then all descriptors):
- *
- * MVE_DESCRIPTORS\n
- * <int32:num_descriptors> <int32:image_width> <int32:image_height>
- * <float:x> <float:y> <float:scale> <float:orientation> <data>
- * <...>
- *
- * The <data> field corresponds to the whole descriptor with either
- * 128 unsigned (SIFT) or 64 signed (SURF) floating point values.
+ * The component computes for every view in the scene the features for the
+ * given image embedding. If features already exist as embedding, they are
+ * not recomputed. Otherwise features are computed and stored. If no feature
+ * embedding is given, only viewports are initialized.
  */
 class Features
 {
@@ -68,7 +60,24 @@ public:
 
 public:
     Features (Options const& options);
-    void compute (mve::Scene::Ptr scene, FeatureType type);
+
+    /**
+     * Computes features for all images in the scene.
+     * Optionally, if the viewports argument is not NULL, the viewports
+     * are initialized with descriptor data, positions and colors.
+     */
+    void compute (mve::Scene::Ptr scene, FeatureType type,
+        ViewportList* viewports = NULL);
+
+private:
+    template <typename FEATURE>
+    void compute (mve::View::Ptr view, Viewport* viewport) const;
+
+    template <typename FEATURE>
+    FEATURE construct (void) const;
+
+    template <typename FEATURE>
+    int descriptor_length (void) const;
 
 private:
     Options opts;

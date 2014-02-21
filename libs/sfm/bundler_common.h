@@ -28,6 +28,19 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 
 /* ------------- (De-)Serialization of SIFT and SURF -------------- */
 
+/*
+ * The feature embedding has the following binary format:
+ *
+ * MVE_DESCRIPTORS\n
+ * <int32:num_descriptors> <int32:image_width> <int32:image_height>
+ * <float:x> <float:y> <float:scale> <float:orientation> <data>
+ * <...>
+ *
+ * The first line is the file signature, the second line is the header.
+ * The <data> field corresponds to the whole descriptor with either
+ * 128 unsigned (SIFT) or 64 signed (SURF) floating point values.
+ */
+
 /** Conversion from SIFT descriptors to binary format. */
 mve::ByteImage::Ptr
 descriptors_to_embedding (Sift::Descriptors const& descriptors,
