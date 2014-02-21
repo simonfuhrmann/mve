@@ -13,7 +13,8 @@ Tracks::compute (PairwiseMatching const& matching,
     ViewportList* viewports, TrackList* tracks)
 {
     /* Initialize per-viewport track IDs. */
-    std::cout << "Initializing viewports..." << std::endl;
+    if (this->opts.verbose_output)
+        std::cout << "  Initializing viewports..." << std::endl;
     for (std::size_t i = 0; i < viewports->size(); ++i)
     {
         Viewport& viewport = viewports->at(i);
@@ -21,7 +22,8 @@ Tracks::compute (PairwiseMatching const& matching,
     }
 
     /* Propagate track IDs. */
-    std::cout << "Propagating track IDs..." << std::endl;
+    if (this->opts.verbose_output)
+        std::cout << "  Propagating track IDs..." << std::endl;
     std::size_t track_counter = 0;
     for (std::size_t i = 0; i < matching.size(); ++i)
     {
@@ -62,7 +64,8 @@ Tracks::compute (PairwiseMatching const& matching,
     }
 
     /* Create tracks. */
-    std::cout << "Creating tracks..." << std::endl;
+    if (this->opts.verbose_output)
+        std::cout << "  Collecting tracks..." << std::endl;
     tracks->clear();
     tracks->resize(track_counter);
     for (std::size_t i = 0; i < viewports->size(); ++i)
@@ -80,10 +83,12 @@ Tracks::compute (PairwiseMatching const& matching,
         }
     }
 
-    // TODO Handle conflicts where a track contains one view multiple times.
-    std::cout << "Validating tracks..." << std::flush;
+    /* Handle conflicts where a track contains one view multiple times. */
+    if (this->opts.verbose_output)
+        std::cout << "  Validating tracks..." << std::flush;
     std::size_t num_invalid_tracks = 0;
-    std::vector<int> invalid_tracks;
+    std::size_t const num_total_tracks = tracks->size();
+    std::vector<bool> delete_tracks(tracks->size());
     for (std::size_t i = 0; i < tracks->size(); ++i)
     {
         std::set<int> view_ids;
@@ -93,23 +98,19 @@ Tracks::compute (PairwiseMatching const& matching,
             if (view_ids.insert(ref.view_id).second == false)
             {
                 num_invalid_tracks += 1;
-                invalid_tracks.push_back(i);
+                delete_tracks[i] = true;
                 break;
             }
         }
     }
-    std::cout << " detected " << num_invalid_tracks << " of "
-        << tracks->size() << " invalid tracks ("
-        << (num_invalid_tracks * 100 / tracks->size()) << "%)." << std::endl;
-#if 0
-    std::cout << "Invalid tracks:";
-    for (std::size_t i = 0; i < invalid_tracks.size(); ++i)
-        std::cout << " " << invalid_tracks[i];
-    std::cout << std::endl;
-#endif
+    math::algo::vector_clean(delete_tracks, tracks);
+    if (this->opts.verbose_output)
+        std::cout << " deleted " << num_invalid_tracks << " of "
+            << num_total_tracks << " invalid tracks." << std::endl;
 
     /* Compute color for every track. */
-    std::cout << "Colorizing tracks..." << std::endl;
+    if (this->opts.verbose_output)
+        std::cout << "  Colorizing tracks..." << std::endl;
     for (std::size_t i = 0; i < tracks->size(); ++i)
     {
         // FIXME: Use 50% median color?

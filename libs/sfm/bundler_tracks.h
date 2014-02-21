@@ -20,6 +20,9 @@ public:
     struct Options
     {
         Options (void);
+
+        /** Produce status messages on the console. */
+        bool verbose_output;
     };
 
 public:
@@ -49,6 +52,7 @@ visualize_track (Track const& track, ViewportList const& viewports,
 
 inline
 Tracks::Options::Options (void)
+    : verbose_output(false)
 {
 }
 

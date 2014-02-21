@@ -37,11 +37,11 @@ Features::compute (mve::Scene::Ptr scene, FeatureType type,
         switch (type)
         {
             case SIFT_FEATURES:
-                this->compute<Sift>(view, viewport);
+                this->compute<Sift, 128>(view, viewport);
                 break;
 
             case SURF_FEATURES:
-                this->compute<Surf>(view, viewport);
+                this->compute<Surf, 64>(view, viewport);
                 break;
 
             default:
@@ -51,34 +51,20 @@ Features::compute (mve::Scene::Ptr scene, FeatureType type,
 }
 
 template <>
-sfm::Sift
-Features::construct<sfm::Sift> (void) const
+Sift
+Features::construct<Sift> (void) const
 {
-    return sfm::Sift(this->opts.sift_options);
+    return Sift(this->opts.sift_options);
 }
 
 template <>
-sfm::Surf
-Features::construct<sfm::Surf> (void) const
+Surf
+Features::construct<Surf> (void) const
 {
-    return sfm::Surf(this->opts.surf_options);
+    return Surf(this->opts.surf_options);
 }
 
-template <>
-int
-Features::descriptor_length<sfm::Sift> (void) const
-{
-    return 128;
-}
-
-template <>
-int
-Features::descriptor_length<sfm::Surf> (void) const
-{
-    return 64;
-}
-
-template <typename FEATURE>
+template <typename FEATURE, int LEN>
 void
 Features::compute (mve::View::Ptr view, Viewport* viewport) const
 {
@@ -122,6 +108,7 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
                 << " pixels." << std::endl;
         }
 
+        /* Compute features. */
         FEATURE feature = this->construct<FEATURE>();
         feature.set_image(img);
         feature.process();
@@ -151,13 +138,12 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
     /* Initialize viewports. */
     if (viewport != NULL)
     {
-        int const descr_len = this->descriptor_length<FEATURE>();
-        viewport->descr_data.allocate(descriptors.size() * descr_len);
+        viewport->descr_data.allocate(descriptors.size() * LEN);
         viewport->positions.resize(descriptors.size());
         viewport->colors.resize(descriptors.size());
 
         float* ptr = viewport->descr_data.begin();
-        for (std::size_t i = 0; i < descriptors.size(); ++i, ptr += descr_len)
+        for (std::size_t i = 0; i < descriptors.size(); ++i, ptr += LEN)
         {
             typename FEATURE::Descriptor const& d = descriptors[i];
             std::copy(d.data.begin(), d.data.end(), ptr);

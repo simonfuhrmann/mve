@@ -70,14 +70,11 @@ public:
         ViewportList* viewports = NULL);
 
 private:
-    template <typename FEATURE>
+    template <typename FEATURE, int LEN>
     void compute (mve::View::Ptr view, Viewport* viewport) const;
 
     template <typename FEATURE>
     FEATURE construct (void) const;
-
-    template <typename FEATURE>
-    int descriptor_length (void) const;
 
 private:
     Options opts;

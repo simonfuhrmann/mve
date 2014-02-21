@@ -11,73 +11,6 @@
 #include "sfm/bundler_matching.h"
 #include "sfm/bundler_tracks.h"
 
-void
-populate_viewports (mve::Scene::Ptr scene,
-    std::string const& image_embedding, std::string const& feature_embedding,
-    sfm::bundler::ViewportList* viewports)
-{
-    mve::Scene::ViewList const& views = scene->get_views();
-    viewports->resize(views.size());
-    for (std::size_t i = 0; i < views.size(); ++i)
-    {
-        mve::View::Ptr view = views[i];
-        mve::ByteImage::Ptr descr = view->get_data(feature_embedding);
-        mve::ByteImage::Ptr image = view->get_byte_image(image_embedding);
-
-        if (descr == NULL)
-        {
-            std::cout << "View " << i << ": No such embedding \""
-                << feature_embedding << "\", skipping." << std::endl;
-            view->cache_cleanup();
-            continue;
-        }
-        if (image == NULL)
-        {
-            std::cout << "View " << i << ": No such embedding \""
-                << feature_embedding << "\", skipping." << std::endl;
-            view->cache_cleanup();
-            continue;
-        }
-
-#if 1 // Interpret data as SIFT descriptors.
-        typedef sfm::Sift::Descriptor DescriptorType;
-        sfm::Sift::Descriptors descriptors;
-        int const descr_len = 128;
-#else // Interpret data as SURF descriptors.
-        typedef sfm::Surf::Descriptor DescriptorType;
-        sfm::Surf::Descriptors descriptors;
-        int const descr_len = 64;
-#endif
-
-        sfm::bundler::Viewport& viewport = viewports->at(i);
-        sfm::bundler::embedding_to_descriptors(descr,
-            &descriptors, &viewport.width, &viewport.height);
-
-        /* Resize image to match feature extraction size. */
-        while (image->width() > viewport.width
-            && image->height() > viewport.height)
-            image = mve::image::rescale_half_size<uint8_t>(image);
-        if (image->width() != viewport.width
-            || image->height() != viewport.height)
-            throw std::runtime_error("Image dimensions do not match");
-
-        viewport.descr_data.allocate(descriptors.size() * descr_len);
-        viewport.positions.resize(descriptors.size());
-        viewport.colors.resize(descriptors.size());
-
-        float* ptr = viewport.descr_data.begin();
-        for (std::size_t i = 0; i < descriptors.size(); ++i, ptr += descr_len)
-        {
-            DescriptorType const& d = descriptors[i];
-            std::copy(d.data.begin(), d.data.end(), ptr);
-            viewport.positions[i] = math::Vec2f(d.x, d.y);
-            image->linear_at(d.x, d.y, viewport.colors[i].begin());
-        }
-
-        view->cache_cleanup();
-    }
-}
-
 int
 main (int argc, char** argv)
 {
@@ -101,14 +34,11 @@ main (int argc, char** argv)
     feature_opts.skip_saving_views = false;
     feature_opts.force_recompute = false;
 
-    std::cout << "Computing image features..." << std::endl;
-    sfm::bundler::Features bundler_features(feature_opts);
-    bundler_features.compute(scene, sfm::bundler::Features::SIFT_FEATURES);
-
-    /* For every view in the scene a SfM viewport is populated. */
-    std::cout << "Loading descriptors and image information..." << std::endl;
+    std::cout << "Computing/loading image features..." << std::endl;
     sfm::bundler::ViewportList viewports;
-    populate_viewports(scene, image_embedding, feature_embedding, &viewports);
+    sfm::bundler::Features bundler_features(feature_opts);
+    bundler_features.compute(scene, sfm::bundler::Features::SIFT_FEATURES,
+        &viewports);
 
     /* Exhaustive matching between all pairs of views. */
     sfm::bundler::PairwiseMatching pairwise_matching;
