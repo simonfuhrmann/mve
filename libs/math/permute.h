@@ -1,3 +1,8 @@
+/*
+ * Helpers to apply a permutation to a sequence.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef MATH_PERMUTE_HEADER
 #define MATH_PERMUTE_HEADER
 

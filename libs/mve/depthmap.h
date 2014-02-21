@@ -2,6 +2,7 @@
  * Algorithms that deal with depth maps.
  * Written by Simon Fuhrmann.
  */
+
 #ifndef MVE_DEPTHMAP_HEADER
 #define MVE_DEPTHMAP_HEADER
 

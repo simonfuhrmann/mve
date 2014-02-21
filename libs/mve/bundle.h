@@ -1,3 +1,8 @@
+/*
+ * Data structure for SfM bundles with cameras and feature points.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef MVE_BUNDLE_HEADER
 #define MVE_BUNDLE_HEADER
 

@@ -165,22 +165,22 @@ TriangleMesh::ensure_normals (bool face, bool vertex)
 /* ---------------------------------------------------------------- */
 
 void
-TriangleMesh::delete_vertices (DeleteList const& dlist)
+TriangleMesh::delete_vertices (DeleteList const& delete_list)
 {
-    if (dlist.size() != this->vertices.size())
+    if (delete_list.size() != this->vertices.size())
         throw std::invalid_argument("Delete list does not match vertex list");
 
     if (this->has_vertex_normals())
-        math::algo::vector_clean(this->vertex_normals, dlist);
+        math::algo::vector_clean(delete_list, &this->vertex_normals);
     if (this->has_vertex_colors())
-        math::algo::vector_clean(this->vertex_colors, dlist);
+        math::algo::vector_clean(delete_list, &this->vertex_colors);
     if (this->has_vertex_confidences())
-        math::algo::vector_clean(this->vertex_confidences, dlist);
+        math::algo::vector_clean(delete_list, &this->vertex_confidences);
     if (this->has_vertex_values())
-        math::algo::vector_clean(this->vertex_values, dlist);
+        math::algo::vector_clean(delete_list, &this->vertex_values);
     if (this->has_vertex_texcoords())
-        math::algo::vector_clean(this->vertex_texcoords, dlist);
-    math::algo::vector_clean(this->vertices, dlist);
+        math::algo::vector_clean(delete_list, &this->vertex_texcoords);
+    math::algo::vector_clean(delete_list, &this->vertices);
 }
 
 /* ---------------------------------------------------------------- */

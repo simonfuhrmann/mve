@@ -9,6 +9,6 @@ ${TARGET}: ${SOURCES:.cc=.o}
 	#$(AR) rcs $@ $^
 
 clean:
-	${RM} ${TARGET} *.o Makefile.dep _gtest
+	${RM} ${TARGET} *.o Makefile.dep
 
 .PHONY: clean

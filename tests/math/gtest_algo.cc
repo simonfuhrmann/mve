@@ -80,39 +80,39 @@ TEST(AlgoTest, VectorCleanTest)
     vec.push_back(95);
     vec.push_back(94);
 
-    std::vector<bool> dlist;
-    dlist.push_back(true);
-    dlist.push_back(true);
-    dlist.push_back(false);
-    dlist.push_back(true);
-    dlist.push_back(false);
-    dlist.push_back(false);
-    dlist.push_back(false);
-    dlist.push_back(true);
-    dlist.push_back(false);
-    dlist.push_back(false);
-    dlist.push_back(true);
-    dlist.push_back(true);
+    std::vector<bool> delete_list;
+    delete_list.push_back(true);
+    delete_list.push_back(true);
+    delete_list.push_back(false);
+    delete_list.push_back(true);
+    delete_list.push_back(false);
+    delete_list.push_back(false);
+    delete_list.push_back(false);
+    delete_list.push_back(true);
+    delete_list.push_back(false);
+    delete_list.push_back(false);
+    delete_list.push_back(true);
+    delete_list.push_back(true);
 
-    math::algo::vector_clean(vec, dlist);
+    math::algo::vector_clean(delete_list, &vec);
     for (int i = 0; i < (int)vec.size(); ++i)
         EXPECT_EQ(vec[i], i);
 
     vec.clear();
-    dlist.clear();
-    math::algo::vector_clean(vec, dlist);
+    delete_list.clear();
+    math::algo::vector_clean(delete_list, &vec);
     EXPECT_TRUE(vec.empty());
 
     vec.push_back(1);
-    dlist.push_back(true);
-    math::algo::vector_clean(vec, dlist);
+    delete_list.push_back(true);
+    math::algo::vector_clean(delete_list, &vec);
     EXPECT_TRUE(vec.empty());
 
     vec.clear();
-    dlist.clear();
+    delete_list.clear();
     vec.push_back(21);
-    dlist.push_back(false);
-    math::algo::vector_clean(vec, dlist);
+    delete_list.push_back(false);
+    math::algo::vector_clean(delete_list, &vec);
     ASSERT_EQ(vec.size(), 1);
     EXPECT_EQ(vec[0], 21);
 }

@@ -2,6 +2,7 @@
  * Regular volume representation.
  * Written by Simon Fuhrmann.
  */
+
 #ifndef MVE_VOLUME_HEADER
 #define MVE_VOLUME_HEADER
 

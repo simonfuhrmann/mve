@@ -1,7 +1,8 @@
 /*
- * OFF file loading and writing functions.
+ * Loading and saving of OFF files for triangle meshes.
  * Written by Simon Fuhrmann.
  */
+
 #ifndef MVE_OFF_FILE_HEADER
 #define MVE_OFF_FILE_HEADER
 

@@ -1,7 +1,5 @@
 /*
- * Implementation of a simple Jacobi method to
- * solve a system of linear equations.
- *
+ * A simple Jacobi method to solve a system of linear equations.
  * Written by Jens Ackermann.
  */
 

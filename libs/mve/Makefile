@@ -13,6 +13,6 @@ _test%: _test%.o libmve.a libmve_util.a
 	${LINK.cc} -o $@ $^ ${LDLIBS}
 
 clean:
-	${RM} ${TARGET} *.o Makefile.dep _gtest
+	${RM} ${TARGET} *.o Makefile.dep
 
 .PHONY: clean

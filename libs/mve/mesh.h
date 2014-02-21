@@ -1,5 +1,5 @@
 /*
- * A triangle mesh representation.
+ * Data structures for meshes (usually for triangle meshes).
  * Written by Simon Fuhrmann.
  */
 

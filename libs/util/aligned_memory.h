@@ -49,14 +49,14 @@ private:
 template <typename T, uintptr_t MODULO>
 inline
 AlignedMemory<T, MODULO>::AlignedMemory (void)
-    : raw(0), aligned(0), size(0)
+    : raw(NULL), aligned(NULL), size(0)
 {
 }
 
 template <typename T, uintptr_t MODULO>
 inline
 AlignedMemory<T, MODULO>::AlignedMemory (std::size_t size)
-    : raw(0), aligned(0), size(0)
+    : raw(NULL), aligned(NULL), size(0)
 {
     this->allocate(size);
 }
@@ -86,8 +86,8 @@ inline void
 AlignedMemory<T, MODULO>::deallocate (void)
 {
     delete [] this->raw;
-    this->raw = 0;
-    this->aligned = 0;
+    this->raw = NULL;
+    this->aligned = NULL;
     this->size = 0;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Tools to process meshes.
+ * Mesh processing tools.
  * Written by Simon Fuhrmann.
  */
 
