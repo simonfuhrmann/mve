@@ -27,15 +27,6 @@ RansacHomography::RansacHomography (Options const& options)
 void
 RansacHomography::estimate (Correspondences const& matches, Result* result)
 {
-    Correspondences normalized_matches(matches);
-    math::Matrix3d T1, T2, invT2;
-    if (!this->opts.already_normalized)
-    {
-        sfm::compute_normalization(normalized_matches, &T1, &T2);
-        sfm::apply_normalization(T1, T2, &normalized_matches);
-        invT2 = math::matrix_inverse(T2);
-    }
-
     if (this->opts.verbose_output)
     {
         std::cout << "RANSAC: Running for " << this->opts.max_iterations
@@ -47,11 +38,7 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
     for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
     {
         HomographyMatrix homography;
-        this->compute_homography(normalized_matches, &homography);
-        homography /= homography[8];
-        if (!this->opts.already_normalized)
-            homography = invT2 * homography * T1;
-
+        this->compute_homography(matches, &homography);
         this->evaluate_homography(matches, homography, &inliers);
         if (inliers.size() > result->inliers.size())
         {
@@ -88,21 +75,34 @@ RansacHomography::compute_homography (Correspondences const& matches,
     Correspondences four_correspondeces(4);
     std::set<int>::const_iterator iter = result.begin();
     for (std::size_t i = 0; i < 4; ++i, ++iter)
-        four_correspondeces.push_back(matches[*iter]);
+        four_correspondeces[i] = matches[*iter];
+
+    math::Matrix3d T1, T2, invT2;
+    if (!this->opts.already_normalized)
+    {
+        sfm::compute_normalization(four_correspondeces, &T1, &T2);
+        sfm::apply_normalization(T1, T2, &four_correspondeces);
+        invT2 = math::matrix_inverse(T2);
+    }
 
     sfm::homography_dlt(four_correspondeces, homography);
+    *homography /= (*homography)[8];
+
+    if (!this->opts.already_normalized)
+        *homography = invT2 * *homography * T1;
 }
 
 void
 RansacHomography::evaluate_homography (Correspondences const& matches,
     HomographyMatrix const& homography, std::vector<int>* inliers)
 {
+    double const square_threshold = MATH_POW2(this->opts.threshold);
     inliers->resize(0);
     for (std::size_t i = 0; i < matches.size(); i++)
     {
         Correspondence const& match = matches[i];
         double error = sfm::symmetric_transfer_error(homography, match);
-        if (error < this->opts.threshold)
+        if (error < square_threshold)
             inliers->push_back(i);
     }
 }
