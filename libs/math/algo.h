@@ -251,20 +251,19 @@ sinc (T const& x)
 /* --------------------------- Vector tools ----------------------- */
 
 /**
- * Erases all elements from 'vec' that are marked with 'true' in 'dlist'.
- * The remaining elements are kept in order but relocated to an earlier
- * position in the vector. Each element moved over a distance that is
- * equal to the amount of deleted vertices earlier in the vector.
+ * Erases all elements from 'vector' that are marked with 'true'
+ * in 'delete_list'. The remaining elements are kept in order but relocated
+ * to another position in the vector.
  */
 template <typename T>
 void
-vector_clean (std::vector<T>& vec, std::vector<bool> const& dlist)
+vector_clean (std::vector<bool> const& delete_list, std::vector<T>* vector)
 {
-    typename std::vector<T>::iterator vr = vec.begin();
-    typename std::vector<T>::iterator vw = vec.begin();
-    typename std::vector<bool>::const_iterator dr = dlist.begin();
+    typename std::vector<T>::iterator vr = vector->begin();
+    typename std::vector<T>::iterator vw = vector->begin();
+    typename std::vector<bool>::const_iterator dr = delete_list.begin();
 
-    while (vr != vec.end() && dr != dlist.end())
+    while (vr != vector->end() && dr != delete_list.end())
     {
         if (*dr++)
         {
@@ -276,8 +275,7 @@ vector_clean (std::vector<T>& vec, std::vector<bool> const& dlist)
         vw++;
         vr++;
     }
-
-    vec.erase(vw, vec.end());
+    vector->erase(vw, vector->end());
 }
 
 /* ------------------------------ Misc ---------------------------- */

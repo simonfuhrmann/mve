@@ -609,8 +609,8 @@ depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
         return;
 
     TriangleMesh::FaceList& faces(mesh->get_faces());
-    std::vector<bool> dlist;
-    dlist.resize(faces.size(), false);
+    std::vector<bool> delete_list;
+    delete_list.resize(faces.size(), false);
 
     /* Iteratively invalidate triangles at the boundary. */
     for (int iter = 0; iter < iterations; ++iter)
@@ -625,13 +625,13 @@ depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
                     {
                         int fidx = info.faces[j] * 3 + k;
                         faces[fidx] = 0;
-                        dlist[fidx] = true;
+                        delete_list[fidx] = true;
                     }
         }
     }
 
     /* Remove invalidated faces. */
-    math::algo::vector_clean(faces, dlist);
+    math::algo::vector_clean(delete_list, &faces);
 }
 
 MVE_GEOM_NAMESPACE_END
