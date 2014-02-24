@@ -18,6 +18,15 @@ main (int argc, char** argv)
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
 #if 1
+    /* Test EXIF parser. */
+    std::string data;
+    util::fs::read_file_to_string(argv[1], &data);
+
+    mve::image::ExifInfo exif = mve::image::exif_extract(&data[0], data.size(), true);
+    mve::image::exif_debug_print(std::cout, exif);
+#endif
+
+#if 0
     /* Timing test for bilateral filter. */
     mve::ByteImage::Ptr img = mve::image::load_file("/tmp/mouse.jpg");
     util::WallTimer timer;
@@ -59,7 +68,6 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-
     util::fs::Directory dir("/gris/scratch2/bundlertest/citywall/images/");
     for (std::size_t i = 0; i < dir.size(); ++i)
     {
