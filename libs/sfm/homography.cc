@@ -76,7 +76,7 @@ symmetric_transfer_error(HomographyMatrix const& homography,
     result /= result[2];
     error += (result - p2).square_norm();
 
-    return error;
+    return 0.5 * error;
 }
 
 SFM_NAMESPACE_END
