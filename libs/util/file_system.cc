@@ -359,6 +359,40 @@ replace_extension (std::string const& fn, std::string const& ext)
     return fn.substr(0, dotpos) + "." + ext;
 }
 
+/*
+ * ----------------------------- File IO  ----------------------------
+ */
+
+void
+read_file_to_string (std::string const& filename, std::string* data)
+{
+    std::ifstream in(filename.c_str());
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+    in.seekg(0, std::ios::end);
+    std::size_t length = in.tellg();
+    in.seekg(0, std::ios::beg);
+    data->resize(length);
+    in.read(&(*data)[0], length);
+    in.close();
+}
+
+void
+write_string_to_file (std::string const& data, std::string const& filename)
+{
+    write_string_to_file(&data[0], data.size(), filename);
+}
+
+void
+write_string_to_file (char const* data, int len, std::string const& filename)
+{
+    std::ofstream out(filename.c_str());
+    if (!out.good())
+        throw util::FileException(filename, std::strerror(errno));
+    out.write(data, len);
+    out.close();
+}
+
 UTIL_FS_NAMESPACE_END
 UTIL_NAMESPACE_END
 

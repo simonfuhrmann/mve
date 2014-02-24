@@ -52,6 +52,22 @@ bool rename (char const* from, char const* to);
 //bool touch (char const* pathname);
 
 /*
+ * ----------------------------- File IO  ----------------------------
+ */
+
+/* Reads the whole file into a string. */
+void
+read_file_to_string (std::string const& filename, std::string* data);
+
+/* Writes the given data into a file. */
+void
+write_string_to_file (std::string const& data, std::string const& filename);
+
+/* Writes the given data into a file. */
+void
+write_string_to_file (char const* data, int len, std::string const& filename);
+
+/*
  * ------------------------- String processing -----------------------
  */
 
