@@ -155,7 +155,7 @@ VertexInfoList::order_and_classify (TriangleMesh const& mesh,
 /* ---------------------------------------------------------------- */
 
 bool
-VertexInfoList::is_mesh_edge (std::size_t v1, std::size_t v2)
+VertexInfoList::is_mesh_edge (std::size_t v1, std::size_t v2) const
 {
     MeshVertexInfo::VertexRefList const& verts = this->at(v1).verts;
     return std::find(verts.begin(), verts.end(), v2) != verts.end();
@@ -165,7 +165,7 @@ VertexInfoList::is_mesh_edge (std::size_t v1, std::size_t v2)
 
 void
 VertexInfoList::get_faces_for_edge (std::size_t v1, std::size_t v2,
-    std::vector<std::size_t>* afaces)
+    std::vector<std::size_t>* afaces) const
 {
     MeshVertexInfo::FaceRefList const& faces1 = this->at(v1).faces;
     MeshVertexInfo::FaceRefList const& faces2 = this->at(v2).faces;
