@@ -44,7 +44,7 @@ public:
     void set_view (mve::View::Ptr view);
 
     void load_file (std::string const& filename);
-    void reload_shaders (void);
+    void load_shaders (void);
     void reset_scene (void);
 
     virtual bool keyboard_event (ogl::KeyboardEvent const& event);

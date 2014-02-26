@@ -55,6 +55,7 @@ private:
     void create_menus (void);
     bool perform_close_scene (void);
     void enable_scene_actions (bool value);
+    void load_plugins (void);
 
 private slots:
     void on_new_scene (void);

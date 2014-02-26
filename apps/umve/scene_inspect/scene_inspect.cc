@@ -135,8 +135,7 @@ SceneInspect::on_details_toggled (void)
 void
 SceneInspect::on_reload_shaders (void)
 {
-
-    this->addin_manager->reload_shaders();
+    this->addin_manager->load_shaders();
 }
 
 /* ---------------------------------------------------------------- */
