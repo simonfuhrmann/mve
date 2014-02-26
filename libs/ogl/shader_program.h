@@ -30,29 +30,6 @@ public:
     typedef util::RefPtr<ShaderProgram> Ptr;
     typedef util::RefPtr<ShaderProgram const> ConstPtr;
 
-private:
-    GLuint prog_id;
-
-    GLuint vert_id;
-    GLuint geom_id;
-    GLuint frag_id;
-
-private:
-    ShaderProgram (void);
-
-    void load_shader_file (GLuint& shader_id, GLuint shader_type,
-        std::string const& filename);
-    void load_shader_code (GLuint& shader_id, GLuint shader_type,
-        std::string const& code);
-    void unload_shader (GLuint& shader_id);
-    void compile_shader (GLuint shader_id, std::string const& code);
-
-    GLint get_program_property (int pname);
-    GLint get_shader_property (GLuint shader_id, int pname);
-
-    void ensure_linked (void);
-    void link (void) const;
-
 public:
     ~ShaderProgram (void);
     static Ptr create (void);
@@ -70,11 +47,11 @@ public:
     /** Load fragment shader from file. */
     void load_frag_file (std::string const& filename);
 
-    /** Loads a vertex shader from file. */
+    /** Loads a vertex shader from code in memory. */
     void load_vert_code (std::string const& code);
-    /** Loads optional geometry shader from file. */
+    /** Loads optional geometry shader from code in memory. */
     void load_geom_code (std::string const& code);
-    /** Load fragment shader from file. */
+    /** Load fragment shader from code in memory. */
     void load_frag_code (std::string const& code);
 
     /** Unloads vertex shader. */
@@ -114,6 +91,28 @@ public:
 
     /** Deselects the currend shader program. */
     void unbind (void) const;
+
+private:
+    GLuint prog_id;
+    GLuint vert_id;
+    GLuint geom_id;
+    GLuint frag_id;
+
+private:
+    ShaderProgram (void);
+
+    void load_shader_file (GLuint& shader_id, GLuint shader_type,
+        std::string const& filename);
+    void load_shader_code (GLuint& shader_id, GLuint shader_type,
+        std::string const& code);
+    void unload_shader (GLuint& shader_id);
+    void compile_shader (GLuint shader_id, std::string const& code);
+
+    GLint get_program_property (int pname);
+    GLint get_shader_property (GLuint shader_id, int pname);
+
+    void ensure_linked (void);
+    void link (void) const;
 };
 
 /* ---------------------------------------------------------------- */

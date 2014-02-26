@@ -16,28 +16,14 @@ void
 ShaderProgram::load_shader_file (GLuint& shader_id, GLuint shader_type,
     std::string const& filename)
 {
-    /* Load source code. */
-    std::ifstream in(filename.c_str());
-    if (!in.good())
-        throw util::FileException(filename, ::strerror(errno));
-
-    /*
-     * Note that the parentheses around the second parameter are required
-     * to disambiguate between a call to the std::string constructor with
-     * two instances of std::istreambuf_iterator and the declaration of a
-     * function with the following signature:
-     * std::string code(std::istreambuf_iterator<char, std::char_traits<char> >, std::istreambuf_iterator<char, std::char_traits<char> > (*)())
-     */
-    std::string code(std::istreambuf_iterator<char>(in),
-        (std::istreambuf_iterator<char>()));
-
-    in.close();
+    std::string shader_code;
+    util::fs::read_file_to_string(filename, &shader_code);
 
     try
     {
-        this->load_shader_code(shader_id, shader_type, code);
+        this->load_shader_code(shader_id, shader_type, shader_code);
     }
-    catch (util::Exception &e)
+    catch (util::Exception& e)
     {
         throw util::Exception(filename + ": " + e);
     }
@@ -84,11 +70,12 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
     {
         GLint log_size = this->get_shader_property(shader_id, GL_INFO_LOG_LENGTH);
         if (log_size == 0)
-        	   throw util::Exception("Shader compilation failed (no message).");
+               throw util::Exception("Shader compilation failed (no message).");
 
-        std::vector<char> log(log_size + 1, '\0');
+        std::string log;
+        log.append(log_size + 1, '\0');
         glGetShaderInfoLog(shader_id, log_size + 1, NULL, &log[0]);
-		  throw util::Exception(std::string(&log[0], log_size));
+        throw util::Exception(log);
     }
 }
 
