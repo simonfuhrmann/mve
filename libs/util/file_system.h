@@ -55,15 +55,15 @@ bool rename (char const* from, char const* to);
  * ----------------------------- File IO  ----------------------------
  */
 
-/* Reads the whole file into a string. */
+/* Reads the whole file into a string. Throws on error. */
 void
 read_file_to_string (std::string const& filename, std::string* data);
 
-/* Writes the given data into a file. */
+/* Writes the given data into a file. Throws on error. */
 void
 write_string_to_file (std::string const& data, std::string const& filename);
 
-/* Writes the given data into a file. */
+/* Writes the given data into a file. Throws on error. */
 void
 write_string_to_file (char const* data, int len, std::string const& filename);
 

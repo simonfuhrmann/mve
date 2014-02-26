@@ -40,7 +40,7 @@ char home_path[PATH_MAX] = { 0 };
 #ifdef _WIN32
 
 bool
-dir_exists(char const* pathname)
+dir_exists (char const* pathname)
 {
   struct _stat statbuf;
   if (::_stat(pathname, &statbuf) < 0)
@@ -57,7 +57,7 @@ dir_exists(char const* pathname)
 /* ---------------------------------------------------------------- */
 
 bool
-file_exists(char const* pathname)
+file_exists (char const* pathname)
 {
   struct _stat statbuf;
   if (::_stat(pathname, &statbuf) < 0)
@@ -77,7 +77,7 @@ file_exists(char const* pathname)
 // http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
 
 char*
-get_default_home_path(void)
+get_default_home_path (void)
 {
   if (*home_path != 0)
     return home_path;
@@ -94,7 +94,7 @@ get_default_home_path(void)
 /* ---------------------------------------------------------------- */
 
 char*
-get_cwd(char* buf, size_t size)
+get_cwd (char* buf, size_t size)
 {
   return ::_getcwd(buf, size);
 }
@@ -110,7 +110,7 @@ set_cwd (char const* pathname)
 /* ---------------------------------------------------------------- */
 
 bool
-mkdir(char const* pathname/*, mode_t mode*/)
+mkdir (char const* pathname/*, mode_t mode*/)
 {
   if (::_mkdir(pathname) < 0)
     return false;
@@ -121,7 +121,7 @@ mkdir(char const* pathname/*, mode_t mode*/)
 /* ---------------------------------------------------------------- */
 
 bool
-unlink(char const* pathname)
+unlink (char const* pathname)
 {
   return ::_unlink(pathname) >= 0;
 }
@@ -131,7 +131,7 @@ unlink(char const* pathname)
 /* ---------------------------------------------------------------- */
 
 bool
-dir_exists(char const* pathname)
+dir_exists (char const* pathname)
 {
   struct stat statbuf;
   if (::stat(pathname, &statbuf) < 0)
@@ -148,7 +148,7 @@ dir_exists(char const* pathname)
 /* ---------------------------------------------------------------- */
 
 bool
-file_exists(char const* pathname)
+file_exists (char const* pathname)
 {
   struct stat statbuf;
   if (::stat(pathname, &statbuf) < 0)
@@ -165,7 +165,7 @@ file_exists(char const* pathname)
 /* ---------------------------------------------------------------- */
 
 char*
-get_default_home_path(void)
+get_default_home_path (void)
 {
   if (*home_path != 0)
     return home_path;
@@ -187,7 +187,7 @@ get_default_home_path(void)
 /* ---------------------------------------------------------------- */
 
 char*
-get_cwd(char* buf, size_t size)
+get_cwd (char* buf, size_t size)
 {
   return ::getcwd(buf, size);
 }
@@ -203,7 +203,7 @@ set_cwd (char const* pathname)
 /* ---------------------------------------------------------------- */
 
 bool
-mkdir(char const* pathname/*, mode_t mode*/)
+mkdir (char const* pathname/*, mode_t mode*/)
 {
   if (::mkdir(pathname, S_IRWXU | S_IRGRP | S_IXGRP) < 0)
     return false;
@@ -214,7 +214,7 @@ mkdir(char const* pathname/*, mode_t mode*/)
 /* ---------------------------------------------------------------- */
 
 bool
-unlink(char const* pathname)
+unlink (char const* pathname)
 {
   return ::unlink(pathname) >= 0;
 }
