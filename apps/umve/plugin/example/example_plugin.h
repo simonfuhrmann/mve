@@ -5,13 +5,13 @@
 
 #include "mainwindowtab.h"
 
-class HelloWorldTab : public MainWindowTab
+class ExamplePlugin : public MainWindowTab
 {
     Q_OBJECT
 
 public:
-    HelloWorldTab (QWidget* parent = NULL);
-    virtual ~HelloWorldTab (void);
+    ExamplePlugin (QWidget* parent = NULL);
+    virtual ~ExamplePlugin (void);
     virtual QString get_title (void);
 };
 

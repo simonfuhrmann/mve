@@ -88,37 +88,37 @@ MainWindow::MainWindow (void)
 void
 MainWindow::load_plugins (void)
 {
+    // FIXME: Use functionality from util::fs!
+    std::string home_dir = std::string(getenv("HOME"));
     std::string binary_dir =
         util::fs::get_path_component(util::fs::get_binary_path());
 
-    std::string home_local = std::string(getenv("HOME"));
+    std::vector<std::string> plugin_paths;
+    plugin_paths.push_back(binary_dir + "/plugin/");
+    plugin_paths.push_back(home_dir + "/.local/share/umve/plugin");
+    plugin_paths.push_back("/usr/local/share/umve/plugin/");
+    plugin_paths.push_back("/usr/share/umve/plugin/");
+    plugin_paths.push_back(":/plugin/");
 
-    std::vector<std::string> plugins_path;
-    plugins_path.push_back("/usr/share/umve/plugin/");
-    plugins_path.push_back("/usr/local/share/umve/plugin/");
-    plugins_path.push_back(home_local + "/.local/share/umve/plugin");
-    plugins_path.push_back(binary_dir + "/plugin/");
-    plugins_path.push_back(":/plugin/");
-
-    for (std::size_t i = 0; i < plugins_path.size(); ++i)
+    for (std::size_t i = 0; i < plugin_paths.size(); ++i)
     {
-        QDir plugins_dir(QString::fromStdString(plugins_path[i]));
+        QDir plugins_dir(QString::fromStdString(plugin_paths[i]));
         QFileInfoList plugin_files = plugins_dir.entryInfoList(QDir::Files);
 
-        for (std::size_t j = 0; j < plugin_files.size(); ++j)
+        for (int j = 0; j < plugin_files.size(); ++j)
         {
             QString fp = plugin_files[j].absoluteFilePath();
-            std::cout << "Loading " << fp.toStdString() << "... " << std::flush;
+            std::cout << "Loading " << fp.toStdString() << "..." << std::flush;
             QPluginLoader pl(fp, this);
             MainWindowTab *pl_tab = dynamic_cast<MainWindowTab*>(pl.instance());
             if (pl_tab)
             {
                 this->tabs->addTab(pl_tab, pl_tab->get_title());
-                std::cout << "ok." << std::endl;
+                std::cout << " ok." << std::endl;
             }
             else
             {
-                std::cout << "ERROR (skipping)." << std::endl;
+                std::cout << " error (skipping)." << std::endl;
                 std::cout << pl.errorString().toStdString() << std::endl;
             }
         }
