@@ -10,6 +10,7 @@
 #include "sfm/bundler_features.h"
 #include "sfm/bundler_matching.h"
 #include "sfm/bundler_tracks.h"
+#include "sfm/bundler_init_pair.h"
 
 int
 main (int argc, char** argv)
@@ -39,6 +40,8 @@ main (int argc, char** argv)
     sfm::bundler::Features bundler_features(feature_opts);
     bundler_features.compute(scene, sfm::bundler::Features::SIFT_FEATURES,
         &viewports);
+
+    /* TODO Initialize focal length. */
 
     /* Exhaustive matching between all pairs of views. */
     sfm::bundler::PairwiseMatching pairwise_matching;
@@ -78,6 +81,13 @@ main (int argc, char** argv)
 
     std::cout << "Created a total of " << tracks.size()
         << " tracks." << std::endl;
+
+    /* Find initial pair. */
+    sfm::bundler::InitialPair::Options init_pair_opts;
+    init_pair_opts.verbose_output = true;
+    sfm::bundler::InitialPair::Result init_pair_result;
+    sfm::bundler::InitialPair init_pair(init_pair_opts);
+    init_pair.compute(viewports, pairwise_matching, &init_pair_result);
 
 #if 0
     /* Visualizing tracks for debugging. */
