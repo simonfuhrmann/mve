@@ -20,8 +20,14 @@ enum FocalLengthMethod
 {
     FOCAL_LENGTH_AND_DATABASE,
     FOCAL_LENGTH_35MM_EQUIV,
-    FOCAL_LENGTH_DEFAULT_VALUE
+    FOCAL_LENGTH_FALLBACK_VALUE
 };
+
+/**
+ * Datatype for the focal length estimate which reports the normalized
+ * focal length as well as the method used to obtain the value.
+ */
+typedef std::pair<float, FocalLengthMethod> FocalLengthEstimate;
 
 /**
  * Extracts the focal length from the EXIF tags of an image.
@@ -43,7 +49,7 @@ enum FocalLengthMethod
  * of the image focal length by the sensor size. E.g. a photo taken at 70mm
  * with a 35mm sensor size will result in a normalized focal length of 2.
  */
-std::pair<float, FocalLengthMethod>
+FocalLengthEstimate
 extract_focal_length (mve::image::ExifInfo const& exif);
 
 SFM_NAMESPACE_END

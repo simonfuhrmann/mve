@@ -37,6 +37,8 @@ public:
 
         /** The image for which features are to be computed. */
         std::string image_embedding;
+        /** The embedding name in which EXIF tags are stored. */
+        std::string exif_embedding;
         /** The embedding name for saving the features. */
         std::string feature_embedding;
         /** Do not skip views with existing features embedding. */
@@ -75,6 +77,9 @@ private:
 
     template <typename FEATURE>
     FEATURE construct (void) const;
+
+    void estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const;
+    void fallback_focal_length (mve::View::Ptr view, Viewport* viewport) const;
 
 private:
     Options opts;

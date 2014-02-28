@@ -53,8 +53,8 @@ CameraModel const*
 CameraDatabase::lookup (std::string const& maker,
     std::string const& model) const
 {
-    std::string s_maker = simplify_string(maker);
-    std::string s_model = simplify_string(model);
+    std::string const s_maker = simplify_string(maker);
+    std::string const s_model = simplify_string(model);
     for (std::size_t i = 0; i < this->data.size(); ++i)
         if (this->data[i].maker == s_maker && this->data[i].model == s_model)
             return &this->data[i];

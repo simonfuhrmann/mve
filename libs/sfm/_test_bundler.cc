@@ -23,6 +23,7 @@ main (int argc, char** argv)
 
     std::string const image_embedding = "original";
     std::string const feature_embedding = "original-sift";
+    std::string const exif_embedding = "exif";
 
     /* Load scene. */
     mve::Scene::Ptr scene = mve::Scene::create(argv[1]);
@@ -31,6 +32,7 @@ main (int argc, char** argv)
     sfm::bundler::Features::Options feature_opts;
     feature_opts.image_embedding = image_embedding;
     feature_opts.feature_embedding = feature_embedding;
+    feature_opts.exif_embedding = exif_embedding;
     feature_opts.max_image_size = 2000000;
     feature_opts.skip_saving_views = false;
     feature_opts.force_recompute = false;
@@ -40,8 +42,6 @@ main (int argc, char** argv)
     sfm::bundler::Features bundler_features(feature_opts);
     bundler_features.compute(scene, sfm::bundler::Features::SIFT_FEATURES,
         &viewports);
-
-    /* TODO Initialize focal length. */
 
     /* Exhaustive matching between all pairs of views. */
     sfm::bundler::PairwiseMatching pairwise_matching;
@@ -71,6 +71,19 @@ main (int argc, char** argv)
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].descr_data.deallocate();
 
+    /* Find initial pair. */
+    sfm::bundler::InitialPair::Options init_pair_opts;
+    init_pair_opts.verbose_output = true;
+    sfm::bundler::InitialPair::Result init_pair_result;
+    sfm::bundler::InitialPair init_pair(init_pair_opts);
+    init_pair.compute(viewports, pairwise_matching, &init_pair_result);
+
+    if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0)
+    {
+        std::cout << "Error finding initial pair, exiting!" << std::endl;
+        return 1;
+    }
+
     /* Compute connected feature components, i.e. feature tracks. */
     sfm::bundler::Tracks::Options tracks_options;
 
@@ -82,12 +95,8 @@ main (int argc, char** argv)
     std::cout << "Created a total of " << tracks.size()
         << " tracks." << std::endl;
 
-    /* Find initial pair. */
-    sfm::bundler::InitialPair::Options init_pair_opts;
-    init_pair_opts.verbose_output = true;
-    sfm::bundler::InitialPair::Result init_pair_result;
-    sfm::bundler::InitialPair init_pair(init_pair_opts);
-    init_pair.compute(viewports, pairwise_matching, &init_pair_result);
+    /* Clear pairwise matching to save memeory. */
+    pairwise_matching.clear();
 
 #if 0
     /* Visualizing tracks for debugging. */

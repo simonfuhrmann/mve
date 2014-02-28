@@ -36,7 +36,7 @@ extract_focal_length (mve::image::ExifInfo const& exif)
     }
 
     /* Step 3: Fall back to default value. */
-    return std::make_pair(1.0f, FOCAL_LENGTH_DEFAULT_VALUE);
+    return std::make_pair(1.0f, FOCAL_LENGTH_FALLBACK_VALUE);
 }
 
 SFM_NAMESPACE_END
