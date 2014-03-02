@@ -54,6 +54,8 @@ struct Viewport
 /** The list of all viewports considered for bundling. */
 typedef std::vector<Viewport> ViewportList;
 
+/* --------------- Data Structure for Feature Tracks -------------- */
+
 /** References a 2D feature in a specific view. */
 struct FeatureReference
 {

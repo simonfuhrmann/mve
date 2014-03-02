@@ -1,3 +1,8 @@
+/*
+ * Representation and routines for 2D-2D and 2D-3D correspondences.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef SFM_CORRESPONDENCE_HEADER
 #define SFM_CORRESPONDENCE_HEADER
 

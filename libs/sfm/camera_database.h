@@ -1,3 +1,8 @@
+/*
+ * A digital camera database.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef SFM_CAMERA_DATABASE_HEADER
 #define SFM_CAMERA_DATABASE_HEADER
 
@@ -9,15 +14,21 @@
 SFM_NAMESPACE_BEGIN
 
 /**
- * Representation of a camera model.
+ * Representation of a digital camera.
  */
 struct CameraModel
 {
+    /** The manufacturer for the camera. */
     std::string maker;
+    /** The model of the camera. */
     std::string model;
+    /** The width of the sensor in milli meters. */
     float sensor_width_mm;
+    /** The height of the sensor in milli meters. */
     float sensor_height_mm;
+    /** The width of the sensor in pixels. */
     int sensor_width_px;
+    /** The height of the sensor in pixels. */
     int sensor_height_px;
 };
 
@@ -26,12 +37,15 @@ struct CameraModel
 /**
  * Camera database which, given a maker and model string, will look for
  * a camera model in the database and return the model on successful lookup.
- * If the lookup fails, the database returns a NULL pointer.
+ * If the lookup fails, a NULL pointer is returned.
  */
 class CameraDatabase
 {
 public:
+    /** Access to the singleton object. */
     static CameraDatabase* get (void);
+
+    /** Lookup of a camera model. Returns NULL on failure. */
     CameraModel const* lookup (std::string const& maker,
         std::string const& model) const;
 

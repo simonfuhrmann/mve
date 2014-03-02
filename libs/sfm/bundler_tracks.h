@@ -1,3 +1,8 @@
+/*
+ * Bundler component that computes feature tracks from a pairwise matching.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef SFM_BUNDLER_TRACKS_HEADER
 #define SFM_BUNDLER_TRACKS_HEADER
 
@@ -11,8 +16,8 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 /**
  * Bundler Component: Generation of tracks from pairwise matching result.
  *
- * As input this component requires all the pairwise matching results and
- * as well as the 2D coordinates for each match in the images.
+ * As input this component requires all the pairwise matching results.
+ * Additionally, to color the tracks, a color for each feature must be set.
  */
 class Tracks
 {
@@ -32,10 +37,13 @@ public:
      * Computes viewport connectivity information by propagating track IDs.
      * Computation requires feature positions and colors in the viewports.
      * A color for each track is computed as the average color from features.
-     * Viewports are equipped with per-feature track IDs.
+     * Per-feature track IDs are added to the viewports.
      */
     void compute (PairwiseMatching const& matching,
         ViewportList* viewports, TrackList* tracks);
+
+private:
+    int remove_invalid_tracks (ViewportList* viewports, TrackList* tracks);
 
 private:
     Options opts;
@@ -43,12 +51,16 @@ private:
 
 /* ---------------------------------------------------------------- */
 
+/**
+ * Debugging facility to visualize tracks on an image.
+ * Requries per-viewport width, height and positions.
+ */
 mve::ByteImage::Ptr
 visualize_track (Track const& track, ViewportList const& viewports,
     mve::Scene::Ptr scene, std::string const& image_embedding,
     PairwiseMatching const& matching);
 
-/* ---------------------------------------------------------------- */
+/* ------------------------ Implementation ------------------------ */
 
 inline
 Tracks::Options::Options (void)

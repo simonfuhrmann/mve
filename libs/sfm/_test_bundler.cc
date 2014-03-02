@@ -11,6 +11,7 @@
 #include "sfm/bundler_matching.h"
 #include "sfm/bundler_tracks.h"
 #include "sfm/bundler_init_pair.h"
+#include "sfm/bundler_incremental.h"
 
 int
 main (int argc, char** argv)
@@ -80,7 +81,7 @@ main (int argc, char** argv)
 
     if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0)
     {
-        std::cout << "Error finding initial pair, exiting!" << std::endl;
+        std::cerr << "Error finding initial pair, exiting!" << std::endl;
         return 1;
     }
 
@@ -97,6 +98,11 @@ main (int argc, char** argv)
 
     /* Clear pairwise matching to save memeory. */
     pairwise_matching.clear();
+
+    /* Incrementally compute full bundle. */
+    sfm::bundler::Incremental::Options incremental_opts;
+    sfm::bundler::Incremental incremental(incremental_opts);
+    mve::Bundle::Ptr bundle = incremental.compute(viewports, tracks);
 
 #if 0
     /* Visualizing tracks for debugging. */

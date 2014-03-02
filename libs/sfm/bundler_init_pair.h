@@ -1,3 +1,8 @@
+/*
+ * Bundler component that computes the initial pair for reconstruction.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef SFM_BUNDLER_INIT_PAIR_HEADER
 #define SFM_BUNDLER_INIT_PAIR_HEADER
 
@@ -61,7 +66,7 @@ private:
     Options opts;
 };
 
-/* ---------------------------------------------------------------- */
+/* ------------------------ Implementation ------------------------ */
 
 inline
 InitialPair::Options::Options (void)

@@ -85,7 +85,7 @@ private:
     Options opts;
 };
 
-/* ---------------------------------------------------------------- */
+/* ------------------------ Implementation ------------------------ */
 
 inline
 Features::Options::Options (void)

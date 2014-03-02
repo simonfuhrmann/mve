@@ -1,5 +1,5 @@
 /*
- * High-level bundler component that matches between views.
+ * Bundler component that performs pairwise matching between all views.
  * Written by Simon Fuhrmann.
  */
 
@@ -76,7 +76,7 @@ private:
     Options opts;
 };
 
-/* ---------------------------------------------------------------- */
+/* ------------------------ Implementation ------------------------ */
 
 inline
 Matching::Options::Options (void)

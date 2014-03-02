@@ -65,7 +65,7 @@ Tracks::compute (PairwiseMatching const& matching,
 
     /* Create tracks. */
     if (this->opts.verbose_output)
-        std::cout << "  Collecting tracks..." << std::endl;
+        std::cout << "  Creating tracks..." << std::endl;
     tracks->clear();
     tracks->resize(track_counter);
     for (std::size_t i = 0; i < viewports->size(); ++i)
@@ -83,27 +83,12 @@ Tracks::compute (PairwiseMatching const& matching,
         }
     }
 
-    /* Handle conflicts where a track contains one view multiple times. */
+    /* Find and remove tracks with conflicts. */
     if (this->opts.verbose_output)
-        std::cout << "  Validating tracks..." << std::flush;
-    std::size_t num_invalid_tracks = 0;
+        std::cout << "  Removing tracks with conflicts..." << std::flush;
     std::size_t const num_total_tracks = tracks->size();
-    std::vector<bool> delete_tracks(tracks->size());
-    for (std::size_t i = 0; i < tracks->size(); ++i)
-    {
-        std::set<int> view_ids;
-        for (std::size_t j = 0; j < tracks->at(i).features.size(); ++j)
-        {
-            FeatureReference const& ref = tracks->at(i).features[j];
-            if (view_ids.insert(ref.view_id).second == false)
-            {
-                num_invalid_tracks += 1;
-                delete_tracks[i] = true;
-                break;
-            }
-        }
-    }
-    math::algo::vector_clean(delete_tracks, tracks);
+    std::size_t const num_invalid_tracks
+        = this->remove_invalid_tracks(viewports, tracks);
     if (this->opts.verbose_output)
         std::cout << " deleted " << num_invalid_tracks << " of "
             << num_total_tracks << " invalid tracks." << std::endl;
@@ -128,6 +113,79 @@ Tracks::compute (PairwiseMatching const& matching,
         track.color[2] = static_cast<uint8_t>(color[2] / color[3] + 0.5f);
     }
 }
+
+/* ---------------------------------------------------------------- */
+
+int
+Tracks::remove_invalid_tracks (ViewportList* viewports, TrackList* tracks)
+{
+    std::size_t num_invalid_tracks = 0;
+
+    /* Detect invalid tracks where a track contains one view multiple times. */
+    std::vector<bool> delete_tracks(tracks->size());
+    for (std::size_t i = 0; i < tracks->size(); ++i)
+    {
+        std::set<int> view_ids;
+        for (std::size_t j = 0; j < tracks->at(i).features.size(); ++j)
+        {
+            FeatureReference const& ref = tracks->at(i).features[j];
+            if (view_ids.insert(ref.view_id).second == false)
+            {
+                num_invalid_tracks += 1;
+                delete_tracks[i] = true;
+                break;
+            }
+        }
+    }
+
+    /* Create a mapping from old to new track IDs. */
+    std::vector<int> id_mapping(delete_tracks.size(), -1);
+    int valid_track_counter = 0;
+    for (std::size_t i = 0; i < delete_tracks.size(); ++i)
+    {
+        if (delete_tracks[i])
+            continue;
+        id_mapping[i] = valid_track_counter;
+        valid_track_counter += 1;
+    }
+
+    /* Fix track IDs stored in the viewports. */
+    for (std::size_t i = 0; i < viewports->size(); ++i)
+    {
+        std::vector<int>& track_ids = viewports->at(i).track_ids;
+        for (std::size_t j = 0; j < track_ids.size(); ++j)
+            if (track_ids[j] >= 0)
+                track_ids[j] = id_mapping[track_ids[j]];
+    }
+
+    /* Clean the tracks from the vector. */
+    math::algo::vector_clean(delete_tracks, tracks);
+
+    return num_invalid_tracks;
+}
+
+/* ---------------------------------------------------------------- */
+
+#if 0
+    std::cout << std::endl << "Debugging tracks:" << std::endl;
+    for (std::size_t i = 0; i < track_list.size(); ++i)
+    {
+        std::cout << "Track " << i << ":";
+        for (std::size_t j = 0; j < track_list[i].features.size(); ++j)
+            std::cout << " (" << track_list[i].features[j].view_id
+                << "," << track_list[i].features[j].feature_id << ")";
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl << "Debugging viewports:" << std::endl;
+    for (std::size_t i = 0; i < viewports.size(); ++i)
+    {
+        std::cout << "View " << i << ":";
+        for (std::size_t j = 0; j < viewports[i].track_ids.size(); ++j)
+            std::cout << " " << viewports[i].track_ids[j];
+        std::cout << std::endl;
+    }
+#endif
 
 /* ---------------------------------------------------------------- */
 
