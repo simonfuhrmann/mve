@@ -5,6 +5,13 @@
 
 SFM_NAMESPACE_BEGIN
 
+CameraPose::CameraPose (void)
+{
+    this->K.fill(0.0f);
+    this->R.fill(0.0f);
+    this->t.fill(0.0f);
+}
+
 void
 CameraPose::init_canonical_form (void)
 {
@@ -49,6 +56,12 @@ CameraPose::set_from_p_and_known_k (math::Matrix<double, 3, 4> const&  p_matrix)
     pose_from_p_matrix(p_matrix, &pose);
     this->R = pose.R;
     this->t = pose.t;
+}
+
+bool
+CameraPose::is_valid (void) const
+{
+    return this->K[0] != 0.0f;
 }
 
 void

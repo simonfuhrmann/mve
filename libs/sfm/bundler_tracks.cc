@@ -91,7 +91,7 @@ Tracks::compute (PairwiseMatching const& matching,
         = this->remove_invalid_tracks(viewports, tracks);
     if (this->opts.verbose_output)
         std::cout << " deleted " << num_invalid_tracks << " of "
-            << num_total_tracks << " invalid tracks." << std::endl;
+            << num_total_tracks << " tracks." << std::endl;
 
     /* Compute color for every track. */
     if (this->opts.verbose_output)

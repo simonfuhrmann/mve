@@ -12,8 +12,8 @@
 SFM_NAMESPACE_BEGIN
 
 /**
- * The camera pose is P = K [R | t].
- * K is the calibration matrix, R a rotation matrix and t a translation.
+ * The camera pose is the 3x4 matrix P = K [R | t]. K is the 3x3 calibration
+ * matrix, R a 3x3 rotation matrix and t a 3x1 translation vector.
  *
  *       | f  0  px |    The calibration matrix contains the focal length f,
  *   K = | 0  f  py |    and the principal point px and py.
@@ -26,14 +26,22 @@ SFM_NAMESPACE_BEGIN
  */
 struct CameraPose
 {
+    CameraPose (void);
+
     math::Matrix<double, 3, 3> K;
     math::Matrix<double, 3, 3> R;
     math::Vector<double, 3> t;
 
+    /** Initializes R with identity and t with zeros. */
     void init_canonical_form (void);
+    /** Returns the P matrix as the product K [R | t]. */
     void fill_p_matrix (math::Matrix<double, 3, 4>* result) const;
+    /** Initializes the K matrix from focal length and principal point. */
     void set_k_matrix (double flen, double px, double py);
+    /** Initializes the R and t from P and known K (must already be set). */
     void set_from_p_and_known_k (math::Matrix<double, 3, 4> const& p_matrix);
+    /** Returns true if K matrix is valid (non-zero focal length). */
+    bool is_valid (void) const;
 };
 
 /**

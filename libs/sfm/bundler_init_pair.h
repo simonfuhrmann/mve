@@ -40,11 +40,6 @@ public:
         float max_homography_inliers;
 
         /**
-         * Options for computing the fundamental matrix for the initial pair.
-         */
-        RansacFundamental::Options fundamental_opts;
-
-        /**
          * Produce status messages on the console.
          */
         bool verbose_output;

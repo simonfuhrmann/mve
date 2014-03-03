@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 
-#include "sfm/ransac_fundamental.h"
 #include "sfm/ransac_homography.h"
 #include "sfm/bundler_init_pair.h"
 
@@ -67,16 +66,16 @@ InitialPair::compute (ViewportList const& viewports,
         homography_ransac.estimate(correspondences, &ransac_result);
 
         /* Compute homography inliers percentage. */
-        float num_matches = matching[pairs[i]].matches.size();
+        float num_matches = tvm.matches.size();
         float num_inliers = ransac_result.inliers.size();
         float percentage = num_inliers / num_matches;
 
         if (this->opts.verbose_output)
         {
-            std::cout << "Pair " << i
-                << " (" << tvm.view_1_id << "," << tvm.view_2_id << "): "
-                << num_matches << " homography matches, "
-                << num_inliers << " inliers ("
+            std::cout << "  Pair "
+                << "(" << tvm.view_1_id << "," << tvm.view_2_id << "): "
+                << num_matches << " matches, "
+                << num_inliers << " homography inliers ("
                 << util::string::get_fixed(100.0f * percentage, 2)
                 << "%)." << std::endl;
         }
@@ -92,37 +91,6 @@ InitialPair::compute (ViewportList const& viewports,
     /* Check if initial pair is valid. */
     if (result->view_1_id == -1 || result->view_2_id == -1)
         throw std::runtime_error("Initial pair failure");
-
-    if (this->opts.verbose_output)
-    {
-        std::cout << "Computing fundamental matrix for initial pair "
-            << result->view_1_id << " " << result->view_2_id
-            << "..." << std::endl;
-    }
-
-    /* Compute fundamental matrix. */
-    this->opts.fundamental_opts.already_normalized = false;
-    this->opts.fundamental_opts.threshold = 3.0f;
-    RansacFundamental::Result ransac_result;
-    RansacFundamental fundamental_ransac(this->opts.fundamental_opts);
-    fundamental_ransac.estimate(correspondences, &ransac_result);
-
-    /* Build correspondences from inliers only. */
-    std::size_t const num_inliers = ransac_result.inliers.size();
-    Correspondences inliers(num_inliers);
-    for (std::size_t i = 0; i < num_inliers; ++i)
-        inliers[i] = correspondences[ransac_result.inliers[i]];
-
-    /* Find normalization for inliers and re-compute fundamental. */
-    {
-        math::Matrix3d T1, T2;
-        sfm::FundamentalMatrix F;
-        sfm::compute_normalization(inliers, &T1, &T2);
-        sfm::apply_normalization(T1, T2, &inliers);
-        sfm::fundamental_least_squares(inliers, &F);
-        sfm::enforce_fundamental_constraints(&F);
-        result->fundamental = T2.transposed() * F * T1;
-    }
 }
 
 SFM_BUNDLER_NAMESPACE_END

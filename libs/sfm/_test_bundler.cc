@@ -3,6 +3,8 @@
 
 #include "util/file_system.h"
 #include "mve/scene.h"
+#include "mve/bundle.h"
+#include "mve/bundle_io.h"
 #include "mve/image_io.h"
 #include "mve/image_tools.h"
 #include "sfm/sift.h"
@@ -86,9 +88,9 @@ main (int argc, char** argv)
     }
 
     /* Compute connected feature components, i.e. feature tracks. */
-    sfm::bundler::Tracks::Options tracks_options;
-
     std::cout << "Computing feature tracks..." << std::endl;
+    sfm::bundler::Tracks::Options tracks_options;
+    tracks_options.verbose_output = true;
     sfm::bundler::TrackList tracks;
     sfm::bundler::Tracks bundler_tracks(tracks_options);
     bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
@@ -101,8 +103,37 @@ main (int argc, char** argv)
 
     /* Incrementally compute full bundle. */
     sfm::bundler::Incremental::Options incremental_opts;
+    incremental_opts.initial_pair_view_1_id = init_pair_result.view_1_id;
+    incremental_opts.initial_pair_view_2_id = init_pair_result.view_2_id;
+    //incremental_opts.initial_pair_view_1_id = 5;
+    //incremental_opts.initial_pair_view_2_id = 0;
+    incremental_opts.verbose_output = true;
     sfm::bundler::Incremental incremental(incremental_opts);
-    mve::Bundle::Ptr bundle = incremental.compute(viewports, tracks);
+    mve::Bundle::Ptr bundle = incremental.compute(viewports, &tracks);
+
+    /* Save bundle file to scene. */
+    mve::save_mve_bundle(bundle, scene->get_path() + "/synth_0.out");
+
+    /* Apply bundle cameras to views. */
+    mve::Bundle::Cameras const& bundle_cams = bundle->get_cameras();
+    mve::Scene::ViewList const& views = scene->get_views();
+    if (bundle_cams.size() != views.size())
+    {
+        std::cerr << "Error: Invalid number of cameras!" << std::endl;
+        return 1;
+    }
+
+    for (std::size_t i = 0; i < bundle_cams.size(); ++i)
+    {
+        mve::View::Ptr view = views[i];
+        mve::CameraInfo const& cam = bundle_cams[i];
+        if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
+            continue;
+
+        view->set_camera(cam);
+        std::cout << "Saving MVE view " << view->get_filename() << std::endl;
+        view->save_mve_file();
+    }
 
 #if 0
     /* Visualizing tracks for debugging. */

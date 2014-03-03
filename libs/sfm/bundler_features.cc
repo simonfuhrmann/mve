@@ -173,6 +173,7 @@ Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
     mve::ByteImage::Ptr exif_data = view->get_data(this->opts.exif_embedding);
     if (exif_data == NULL)
     {
+#pragma omp critical
         std::cout << "No such embedding: " << this->opts.exif_embedding << std::endl;
         this->fallback_focal_length(view, viewport);
         return;
@@ -184,6 +185,7 @@ Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
     viewport->focal_length = estimate.first;
 
     /* Print warning in case extraction failed. */
+#pragma omp critical
     if (estimate.second == FOCAL_LENGTH_FALLBACK_VALUE)
     {
         std::cout << "Warning: Using fallback focal length for view "
@@ -204,6 +206,7 @@ Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
 void
 Features::fallback_focal_length (mve::View::Ptr view, Viewport* viewport) const
 {
+#pragma omp critical
     std::cout << "Warning: No EXIF information for view "
         << view->get_id() << "!" << std::endl;
 
