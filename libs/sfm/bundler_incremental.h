@@ -27,10 +27,6 @@ public:
     {
         Options (void);
 
-        /** ID of the first initial pair view. */
-        int initial_pair_view_1_id;
-        /** ID of the second initial pair view. */
-        int initial_pair_view_2_id;
         /** Options for computing initial pair fundamental matrix. */
         RansacFundamental::Options fundamental_opts;
         /** Options for computing the pose from 2D-3D correspondences. */
@@ -44,39 +40,48 @@ public:
     Incremental (Options const& options);
 
     /**
-     * Computes a bundle from all viewports and reconstructed tracks.
-     * Requires per-view colors, positions, track IDs and focal length.
-     * Positions of the tracks are modified during reconstruction.
+     * Initializes the incremental bundler and sets required data.
+     *
+     * This componenent requires per-viewport colors, positions, track IDs,
+     * the focal length as well as image width and height. During
+     * reconstruction the positions of the tracks are modified.
      */
-    mve::Bundle::Ptr compute (ViewportList* viewports, TrackList* tracks);
+    void initialize (ViewportList* viewports, TrackList* tracks);
+
+    void reconstruct_initial_pair (int view_1_id, int view_2_id);
+
+    int find_next_view (void) const;
+
+    void reconstruct_next_view (int view_id);
+
+    void triangulate_new_tracks (void);
+
+    void bundle_adjustment (void);
+
+    /**
+     * Computes a bundle from all viewports and reconstructed tracks.
+     */
+    mve::Bundle::Ptr create_bundle (void) const;
 
 private:
-    void compute_pose_for_initial_pair (int view_1_id, int view_2_id,
-        ViewportList const& viewports, TrackList const& tracks);
-    void triangulate_new_tracks (ViewportList const& viewports,
-        TrackList* tracks);
-    void bundle_adjustment (ViewportList* viewports, TrackList* tracks);
-    int find_next_view (TrackList const& tracks);
-    void add_next_view (int view_id, ViewportList const& viewports,
-        TrackList const& tracks);
-
-private:
-    std::vector<CameraPose> cameras;
     Options opts;
+    ViewportList* viewports;
+    TrackList* tracks;
+    std::vector<CameraPose> cameras;
 };
 
 /* ------------------------ Implementation ------------------------ */
 
 inline
 Incremental::Options::Options (void)
-    : initial_pair_view_1_id(-1)
-    , initial_pair_view_2_id(-1)
 {
 }
 
 inline
 Incremental::Incremental (Options const& options)
     : opts(options)
+    , viewports(NULL)
+    , tracks(NULL)
 {
 }
 

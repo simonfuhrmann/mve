@@ -36,7 +36,7 @@ main (int argc, char** argv)
     feature_opts.image_embedding = image_embedding;
     feature_opts.feature_embedding = feature_embedding;
     feature_opts.exif_embedding = exif_embedding;
-    feature_opts.max_image_size = 2000000;
+    feature_opts.max_image_size = 8000000;
     feature_opts.skip_saving_views = false;
     feature_opts.force_recompute = false;
 
@@ -77,6 +77,9 @@ main (int argc, char** argv)
     /* Find initial pair. */
     sfm::bundler::InitialPair::Options init_pair_opts;
     init_pair_opts.verbose_output = true;
+    init_pair_opts.homography_opts.already_normalized = false;
+    init_pair_opts.homography_opts.threshold = 3.0f;
+    init_pair_opts.homography_opts.verbose_output = false;
     sfm::bundler::InitialPair::Result init_pair_result;
     sfm::bundler::InitialPair init_pair(init_pair_opts);
     init_pair.compute(viewports, pairwise_matching, &init_pair_result);
@@ -94,7 +97,6 @@ main (int argc, char** argv)
     sfm::bundler::TrackList tracks;
     sfm::bundler::Tracks bundler_tracks(tracks_options);
     bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
-
     std::cout << "Created a total of " << tracks.size()
         << " tracks." << std::endl;
 
@@ -103,11 +105,55 @@ main (int argc, char** argv)
 
     /* Incrementally compute full bundle. */
     sfm::bundler::Incremental::Options incremental_opts;
-    incremental_opts.initial_pair_view_1_id = init_pair_result.view_1_id;
-    incremental_opts.initial_pair_view_2_id = init_pair_result.view_2_id;
+    incremental_opts.fundamental_opts.already_normalized = false;
+    incremental_opts.fundamental_opts.threshold = 4.0f;
+    incremental_opts.fundamental_opts.max_iterations = 1000;
+    incremental_opts.fundamental_opts.verbose_output = true;
+    incremental_opts.pose_opts.threshold = 4.0f;
+    incremental_opts.pose_opts.max_iterations = 1000;
+    incremental_opts.pose_opts.verbose_output = true;
     incremental_opts.verbose_output = true;
+
     sfm::bundler::Incremental incremental(incremental_opts);
-    mve::Bundle::Ptr bundle = incremental.compute(&viewports, &tracks);
+    incremental.initialize(&viewports, &tracks);
+
+    /* Reconstruct pose for the initial pair. */
+    std::cout << "Starting incremental bundle adjustment." << std::endl;
+    std::cout << "  Computing pose for initial pair..." << std::endl;
+    incremental.reconstruct_initial_pair(init_pair_result.view_1_id,
+        init_pair_result.view_2_id);
+
+    /* Reconstruct track positions with the intial pair. */
+    std::cout << "  Triangulating new tracks..." << std::endl;
+    incremental.triangulate_new_tracks();
+
+    /* Run bundle adjustment. */
+    std::cout << "  Running bundle adjustment..." << std::endl;
+    incremental.bundle_adjustment();
+
+    /* Reconstruct remaining views. */
+    while (true)
+    {
+        static int tmp = 0;
+        if (tmp == 1)
+            break;
+        tmp += 1;
+
+        int next_view_id = incremental.find_next_view();
+        if (next_view_id < 0)
+            break;
+
+        std::cout << "  Adding next view ID " << next_view_id << "..." << std::endl;
+        incremental.reconstruct_next_view(next_view_id);
+
+        //std::cout << "  Running bundle adjustment..." << std::endl;
+        //incremental.bundle_adjustment();
+
+        //std::cout << "  Triangulating new tracks..." << std::endl;
+        //incremental.triangulate_new_tracks();
+    }
+
+    mve::Bundle::Ptr bundle = incremental.create_bundle();
 
     /* Save bundle file to scene. */
     mve::save_mve_bundle(bundle, scene->get_path() + "/synth_0.out");
