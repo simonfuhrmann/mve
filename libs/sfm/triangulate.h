@@ -11,12 +11,20 @@
 SFM_NAMESPACE_BEGIN
 
 /**
- * Given an image correspondence in two views and the corresponding pose,
- * this function computes the 3D point coordinate using the DLT algorithm.
+ * Given an image correspondence in two views and the corresponding poses,
+ * this function triangulates the 3D point coordinate using the DLT algorithm.
  */
 math::Vector<double, 3>
 triangulate_match (Correspondence const& match,
     CameraPose const& pose1, CameraPose const& pose2);
+
+/**
+ * Given any number of 2D image positions and the corresponding camera poses,
+ * this function triangulates the 3D point coordinate using the DLT algorithm.
+ */
+math::Vector<double, 3>
+triangulate_track (std::vector<math::Vec2f> const& pos,
+    std::vector<CameraPose const*> poses);
 
 /**
  * Given a two-view pose configuration and a correspondence, this function

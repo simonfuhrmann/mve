@@ -27,6 +27,34 @@ triangulate_match (Correspondence const& match,
     return math::Vector<double, 3>(x[0] / x[3], x[1] / x[3], x[2] / x[3]);
 }
 
+math::Vector<double, 3>
+triangulate_track (std::vector<math::Vec2f> const& pos,
+    std::vector<CameraPose const*> poses)
+{
+    if (pos.size() != poses.size() || pos.size() < 2)
+        throw std::invalid_argument("Invalid number of positions/poses");
+
+    std::vector<double> A(4 * 2 * poses.size(), 0.0);
+    for (std::size_t i = 0; i < poses.size(); ++i)
+    {
+        CameraPose const& pose = *poses[i];
+        math::Vec2d p = pos[i];
+        math::Matrix<double, 3, 4> p_mat;
+        pose.fill_p_matrix(&p_mat);
+
+        for (int j = 0; j < 4; ++j)
+        {
+            A[(2 * i + 0) * 4 + j] = p[0] * p_mat(2, j) - p_mat(0, j);
+            A[(2 * i + 1) * 4 + j] = p[1] * p_mat(2, j) - p_mat(1, j);
+        }
+    }
+
+    math::Matrix<double, 4, 4> mat_v;
+    math::matrix_svd<double>(&A[0], 2 * poses.size(), 4, NULL, NULL, mat_v.begin());
+    math::Vector<double, 4> x = mat_v.col(3);
+    return math::Vector<double, 3>(x[0] / x[3], x[1] / x[3], x[2] / x[3]);
+}
+
 bool
 is_consistent_pose (Correspondence const& match,
     CameraPose const& pose1, CameraPose const& pose2)

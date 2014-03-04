@@ -105,8 +105,6 @@ main (int argc, char** argv)
     sfm::bundler::Incremental::Options incremental_opts;
     incremental_opts.initial_pair_view_1_id = init_pair_result.view_1_id;
     incremental_opts.initial_pair_view_2_id = init_pair_result.view_2_id;
-    //incremental_opts.initial_pair_view_1_id = 5;
-    //incremental_opts.initial_pair_view_2_id = 0;
     incremental_opts.verbose_output = true;
     sfm::bundler::Incremental incremental(incremental_opts);
     mve::Bundle::Ptr bundle = incremental.compute(viewports, &tracks);

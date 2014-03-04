@@ -1,6 +1,7 @@
 #include <limits>
 #include <iostream>
 
+#include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
 #include "sfm/bundler_incremental.h"
 
@@ -49,10 +50,19 @@ Incremental::compute (ViewportList const& viewports, TrackList* tracks)
     /* Reconstruct remaining views. */
     while (true)
     {
+        static int tmp = 0;
+        if (tmp == 1)
+            break;
+        tmp += 1;
+
         int next_view_id = this->find_next_view(*tracks);
         if (next_view_id < 0)
             break;
-        this->add_next_view(next_view_id, viewports, tracks);
+
+        std::cout << "Adding next view ID " << next_view_id << "..." << std::endl;
+        this->add_next_view(next_view_id, viewports, *tracks);
+
+        std::cout << "Triangulating new tracks..." << std::endl;
         this->triangulate_new_tracks(viewports, tracks);
     }
 
@@ -162,6 +172,7 @@ Incremental::compute_pose_for_initial_pair (int view_1_id, int view_2_id,
         }
 
         /* Use correspondences and compute fundamental matrix using RANSAC. */
+        // FIXME Don't have that here!
         this->opts.fundamental_opts.already_normalized = false;
         this->opts.fundamental_opts.threshold = 3.0f;
         RansacFundamental::Result ransac_result;
@@ -261,6 +272,7 @@ void
 Incremental::triangulate_new_tracks (ViewportList const& viewports,
     TrackList* tracks)
 {
+    std::size_t num_new_tracks = 0;
     for (std::size_t i = 0; i < tracks->size(); ++i)
     {
         Track& track = tracks->at(i);
@@ -269,6 +281,7 @@ Incremental::triangulate_new_tracks (ViewportList const& viewports,
         if (!std::isnan(track.pos[0]))
             continue;
 
+#if 0
         /* Collect up to two valid cameras and 2D feature positions. */
         std::vector<int> valid_cameras;
         std::vector<int> valid_features;
@@ -303,9 +316,42 @@ Incremental::triangulate_new_tracks (ViewportList const& viewports,
         }
         CameraPose const& pose1 = this->cameras[valid_cameras[0]];
         CameraPose const& pose2 = this->cameras[valid_cameras[1]];
+
         track.pos = triangulate_match(match, pose1, pose2);
+        std::cout << "Triangulated OLD: " << track.pos << std::endl;
+#else
+
+        std::vector<math::Vec2f> pos;
+        std::vector<CameraPose const*> poses;
+        std::vector<int> tmp;
+        for (std::size_t j = 0; j < track.features.size(); ++j)
+        {
+            int const view_id = track.features[j].view_id;
+            if (!this->cameras[view_id].is_valid())
+                continue;
+            int const feature_id = track.features[j].feature_id;
+            pos.push_back(viewports[view_id].positions[feature_id]);
+            poses.push_back(&this->cameras[view_id]);
+            tmp.push_back(view_id);
+        }
+
+        if (poses.size() < 2)
+            continue;
+
+        track.pos = triangulate_track(pos, poses);
+        std::cout << "Triangulated NEW with";
+        for (std::size_t i = 0; i < tmp.size(); ++i)
+            std::cout << " " << tmp[i];
+        std::cout << ": " << track.pos << std::endl;
+#endif
+
+        num_new_tracks += 1;
     }
+
+    std::cout << "Reconstructed " << num_new_tracks << " new tracks." << std::endl;
 }
+
+/* ---------------------------------------------------------------- */
 
 void
 Incremental::bundle_adjustment (ViewportList const& viewports,
@@ -314,18 +360,114 @@ Incremental::bundle_adjustment (ViewportList const& viewports,
     // TODO
 }
 
+/* ---------------------------------------------------------------- */
+
 int
 Incremental::find_next_view (TrackList const& tracks)
 {
-    // TODO
-    return -1;
+    /*
+     * The next view is selected by finding the unreconstructed view with
+     * most reconstructed tracks.
+     */
+    std::vector<int> valid_tracks_counter(this->cameras.size(), 0);
+    for (std::size_t i = 0; i < tracks.size(); ++i)
+    {
+        Track const& track = tracks[i];
+        if (std::isnan(track.pos[0]))
+            continue;
+
+        for (std::size_t j = 0; j < track.features.size(); ++j)
+        {
+            int const view_id = track.features[j].view_id;
+            if (this->cameras[view_id].is_valid())
+                continue;
+            valid_tracks_counter[view_id] += 1;
+        }
+    }
+
+
+    std::cout << "Next view candidates:" << std::endl;
+    for (std::size_t i = 0; i < valid_tracks_counter.size(); ++i)
+    {
+        if (valid_tracks_counter[i] > 6)
+            std::cout << "  ID " << i << ": " << valid_tracks_counter[i] << std::endl;
+    }
+
+    std::size_t next_view = math::algo::max_element_id
+        (valid_tracks_counter.begin(), valid_tracks_counter.end());
+
+    return valid_tracks_counter[next_view] > 6 ? next_view : -1;
 }
 
+/* ---------------------------------------------------------------- */
+
 void
-Incremental::add_next_view (int next_view_id, ViewportList const& viewports,
-    TrackList* tracks)
+Incremental::add_next_view (int view_id, ViewportList const& viewports,
+    TrackList const& tracks)
 {
-    // TODO
+    /* Collect all 2D-3D correspondences. */
+    Correspondences2D3D corr;
+    for (std::size_t i = 0; i < tracks.size(); ++i)
+    {
+        Track const& track = tracks[i];
+        if (std::isnan(track.pos[0]))
+            continue;
+
+        for (std::size_t j = 0; j < track.features.size(); ++j)
+        {
+            int const id = track.features[j].view_id;
+            if (view_id != id)
+                continue;
+
+            int const feature_id = track.features[j].feature_id;
+            math::Vec2f f2d = viewports[view_id].positions[feature_id];
+            corr.push_back(Correspondence2D3D());
+            Correspondence2D3D& c = corr.back();
+            std::copy(track.pos.begin(), track.pos.end(), c.p3d);
+            std::copy(f2d.begin(), f2d.end(), c.p2d);
+            break;
+        }
+    }
+
+    std::cout << "  Collected " << corr.size()
+        << " 2D-3D correspondences." << std::endl;
+
+    /* Compute pose from 2D-3D correspondences. */
+
+    // FIXME: Don't have that here.
+    this->opts.pose_opts.threshold = 3.0f;
+    this->opts.pose_opts.max_iterations = 1000;
+    this->opts.pose_opts.verbose_output = true;
+
+    RansacPose::Result ransac_result;
+    RansacPose ransac(this->opts.pose_opts);
+    ransac.estimate(corr, &ransac_result);
+
+    std::cout << "  RANSAC found " << ransac_result.inliers.size()
+        << " inliers." << std::endl;
+
+    /* Re-estimate using inliers only. */
+    Correspondences2D3D inliers(ransac_result.inliers.size());
+    for (std::size_t i = 0; i < ransac_result.inliers.size(); ++i)
+        inliers[i] = corr[ransac_result.inliers[i]];
+
+    math::Matrix<double, 3, 4> p_matrix;
+    {
+        math::Matrix3d T2d;
+        math::Matrix4d T3d;
+        compute_normalization(inliers, &T2d, &T3d);
+        apply_normalization(T2d, T3d, &inliers);
+        pose_from_2d_3d_correspondences(inliers, &p_matrix);
+        p_matrix = math::matrix_inverse(T2d) * p_matrix * T3d;
+    }
+
+    /* Initialize camera. */
+    Viewport const& view = viewports[view_id];
+    float const maxdim = static_cast<float>(std::max(view.width, view.height));
+    this->cameras[view_id].set_k_matrix(view.focal_length * maxdim,
+        static_cast<float>(view.width) / 2.0f,
+        static_cast<float>(view.height) / 2.0f);
+    this->cameras[view_id].set_from_p_and_known_k(p_matrix);
 }
 
 SFM_BUNDLER_NAMESPACE_END

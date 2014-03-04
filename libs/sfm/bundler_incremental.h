@@ -9,6 +9,7 @@
 #include "mve/bundle.h"
 #include "sfm/fundamental.h"
 #include "sfm/ransac_fundamental.h"
+#include "sfm/ransac_pose.h"
 #include "sfm/bundler_common.h"
 #include "sfm/pose.h"
 #include "sfm/defines.h"
@@ -32,6 +33,8 @@ public:
         int initial_pair_view_2_id;
         /** Options for computing initial pair fundamental matrix. */
         RansacFundamental::Options fundamental_opts;
+        /** Options for computing the pose from 2D-3D correspondences. */
+        RansacPose::Options pose_opts;
 
         /** Produce status messages on the console. */
         bool verbose_output;
@@ -55,8 +58,8 @@ private:
     void bundle_adjustment (ViewportList const& viewports,
         TrackList* tracks);
     int find_next_view (TrackList const& tracks);
-    void add_next_view (int next_view_id, ViewportList const& viewports,
-        TrackList* tracks);
+    void add_next_view (int view_id, ViewportList const& viewports,
+        TrackList const& tracks);
 
 private:
     std::vector<CameraPose> cameras;
