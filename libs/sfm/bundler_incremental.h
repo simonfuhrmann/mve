@@ -48,15 +48,14 @@ public:
      * Requires per-view colors, positions, track IDs and focal length.
      * Positions of the tracks are modified during reconstruction.
      */
-    mve::Bundle::Ptr compute (ViewportList const& viewports, TrackList* tracks);
+    mve::Bundle::Ptr compute (ViewportList* viewports, TrackList* tracks);
 
 private:
     void compute_pose_for_initial_pair (int view_1_id, int view_2_id,
         ViewportList const& viewports, TrackList const& tracks);
     void triangulate_new_tracks (ViewportList const& viewports,
         TrackList* tracks);
-    void bundle_adjustment (ViewportList const& viewports,
-        TrackList* tracks);
+    void bundle_adjustment (ViewportList* viewports, TrackList* tracks);
     int find_next_view (TrackList const& tracks);
     void add_next_view (int view_id, ViewportList const& viewports,
         TrackList const& tracks);

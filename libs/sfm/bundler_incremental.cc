@@ -3,13 +3,14 @@
 
 #include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
+#include "sfm/pba.h"
 #include "sfm/bundler_incremental.h"
 
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
 mve::Bundle::Ptr
-Incremental::compute (ViewportList const& viewports, TrackList* tracks)
+Incremental::compute (ViewportList* viewports, TrackList* tracks)
 {
     /*
      * Overall process:
@@ -27,7 +28,7 @@ Incremental::compute (ViewportList const& viewports, TrackList* tracks)
 
     /* Initialize cameras. */
     this->cameras.clear();
-    this->cameras.resize(viewports.size());
+    this->cameras.resize(viewports->size());
 
     /* Set track positions to invalid state. */
     for (std::size_t i = 0; i < tracks->size(); ++i)
@@ -39,12 +40,13 @@ Incremental::compute (ViewportList const& viewports, TrackList* tracks)
 
     /* Reconstruct fundamental matrix for initial pair. */
     this->compute_pose_for_initial_pair(this->opts.initial_pair_view_1_id,
-        this->opts.initial_pair_view_2_id, viewports, *tracks);
+        this->opts.initial_pair_view_2_id, *viewports, *tracks);
 
     /* Reconstruct track positions with the intial pair. */
-    this->triangulate_new_tracks(viewports, tracks);
+    this->triangulate_new_tracks(*viewports, tracks);
 
     /* Run bundle adjustment. */
+    std::cout << "Running bundle adjustment..." << std::endl;
     this->bundle_adjustment(viewports, tracks);
 
     /* Reconstruct remaining views. */
@@ -60,10 +62,13 @@ Incremental::compute (ViewportList const& viewports, TrackList* tracks)
             break;
 
         std::cout << "Adding next view ID " << next_view_id << "..." << std::endl;
-        this->add_next_view(next_view_id, viewports, *tracks);
+        this->add_next_view(next_view_id, *viewports, *tracks);
 
         std::cout << "Triangulating new tracks..." << std::endl;
-        this->triangulate_new_tracks(viewports, tracks);
+        this->triangulate_new_tracks(*viewports, tracks);
+
+        std::cout << "Running bundle adjustment..." << std::endl;
+        this->bundle_adjustment(viewports, tracks);
     }
 
     /* Create bundle data structure. */
@@ -76,7 +81,7 @@ Incremental::compute (ViewportList const& viewports, TrackList* tracks)
         {
             mve::CameraInfo& cam = bundle_cams[i];
             CameraPose const& pose = this->cameras[i];
-            Viewport const& viewport = viewports[i];
+            Viewport const& viewport = viewports->at(i);
             if (!pose.is_valid())
             {
                 cam.flen = 0.0f;
@@ -117,7 +122,7 @@ Incremental::compute (ViewportList const& viewports, TrackList* tracks)
                 f2d.view_id = track.features[j].view_id;
                 f2d.feature_id = track.features[j].feature_id;
 
-                Viewport view = viewports[f2d.view_id];
+                Viewport view = viewports->at(f2d.view_id);
                 math::Vec2f const& f2d_pos = view.positions[f2d.feature_id];
                 std::copy(f2d_pos.begin(), f2d_pos.end(), f2d.pos);
             }
@@ -200,7 +205,7 @@ Incremental::compute_pose_for_initial_pair (int view_1_id, int view_2_id,
             inliers[i] = correspondences[ransac_result.inliers[i]];
     }
 
-    /* Save a test match for later to resolte camera pose ambiguity. */
+    /* Save a test match for later to resolve camera pose ambiguity. */
     Correspondence test_match = inliers[0];
 
     /* Normalize inliers and re-compute fundamental. */
@@ -318,7 +323,6 @@ Incremental::triangulate_new_tracks (ViewportList const& viewports,
         CameraPose const& pose2 = this->cameras[valid_cameras[1]];
 
         track.pos = triangulate_match(match, pose1, pose2);
-        std::cout << "Triangulated OLD: " << track.pos << std::endl;
 #else
 
         std::vector<math::Vec2f> pos;
@@ -339,10 +343,17 @@ Incremental::triangulate_new_tracks (ViewportList const& viewports,
             continue;
 
         track.pos = triangulate_track(pos, poses);
-        std::cout << "Triangulated NEW with";
-        for (std::size_t i = 0; i < tmp.size(); ++i)
-            std::cout << " " << tmp[i];
-        std::cout << ": " << track.pos << std::endl;
+
+        for (std::size_t j = 0; j < poses.size(); ++j)
+        {
+            math::Vec3f local = poses[j]->R * track.pos + poses[j]->t;
+            if (local[2] < 0.0f)
+            {
+                std::cout << "Warning: Point behind camera. Invalidating track." << std::endl;
+                std::fill(track.pos.begin(), track.pos.end(), std::numeric_limits<float>::quiet_NaN());
+            }
+        }
+
 #endif
 
         num_new_tracks += 1;
@@ -354,10 +365,124 @@ Incremental::triangulate_new_tracks (ViewportList const& viewports,
 /* ---------------------------------------------------------------- */
 
 void
-Incremental::bundle_adjustment (ViewportList const& viewports,
-    TrackList* tracks)
+Incremental::bundle_adjustment (ViewportList* viewports, TrackList* tracks)
 {
-    // TODO
+    /* Configure PBA. */
+    ParallelBA pba(ParallelBA::PBA_CPU_DOUBLE);
+    //pba.EnableRadialDistortion(ParallelBA::PBA_MEASUREMENT_DISTORTION);
+    //pba.EnableRadialDistortion(ParallelBA::PBA_PROJECTION_DISTORTION);
+    pba.SetNextBundleMode(ParallelBA::BUNDLE_FULL);
+    pba.SetNextTimeBudget(0);
+
+    //pba.GetInternalConfig()->__verbose_level = verbose;
+    //pba.GetInternalConfig()->__lm_max_iteration = 100;
+    //pba.GetInternalConfig()->__cg_min_iteration = 30;
+    //pba.GetInternalConfig()->__cg_max_iteration = 300;
+    //pba.GetInternalConfig()->__lm_delta_threshold = 1E-7;
+    //pba.GetInternalConfig()->__lm_mse_threshold = 1E-2;
+
+    /* Prepare camera data. */
+    std::vector<CameraT> pba_cams;
+    std::vector<int> pba_cams_mapping(this->cameras.size(), -1);
+    for (std::size_t i = 0; i < this->cameras.size(); ++i)
+    {
+        if (!this->cameras[i].is_valid())
+            continue;
+
+        CameraPose const& pose = this->cameras[i];
+        CameraT cam;
+        cam.f = pose.K[0];
+        std::copy(pose.t.begin(), pose.t.end(), cam.t);
+        std::copy(pose.R.begin(), pose.R.end(), cam.m[0]);
+        cam.radial = viewports->at(i).radial_distortion;
+        //cam.distortion_type = ParallelBA::PBA_MEASUREMENT_DISTORTION;
+        //cam.distortion_type = ParallelBA::PBA_PROJECTION_DISTORTION;
+        pba_cams_mapping[i] = pba_cams.size();
+        pba_cams.push_back(cam);
+    }
+    pba.SetCameraData(pba_cams.size(), &pba_cams[0]);
+
+    /* Prepare tracks data. */
+    std::vector<Point3D> pba_tracks;
+    std::vector<int> pba_tracks_mapping(tracks->size(), -1);
+    for (std::size_t i = 0; i < tracks->size(); ++i)
+    {
+        Track const& track = tracks->at(i);
+        if (std::isnan(track.pos[0]))
+            continue;
+
+        Point3D point;
+        std::copy(track.pos.begin(), track.pos.end(), point.xyz);
+        pba_tracks_mapping[i] = pba_tracks.size();
+        pba_tracks.push_back(point);
+    }
+    pba.SetPointData(pba_tracks.size(), &pba_tracks[0]);
+
+    /* Prepare feature positions in the images. */
+    std::vector<Point2D> pba_2d_points;
+    std::vector<int> pba_track_ids;
+    std::vector<int> pba_cam_ids;
+    for (std::size_t i = 0; i < tracks->size(); ++i)
+    {
+        Track const& track = tracks->at(i);
+        if (std::isnan(track.pos[0]))
+            continue;
+
+        for (std::size_t j = 0; j < track.features.size(); ++j)
+        {
+            int const view_id = track.features[j].view_id;
+            if (!this->cameras[view_id].is_valid())
+                continue;
+
+            int const feature_id = track.features[j].feature_id;
+            Viewport const& view = viewports->at(view_id);
+            math::Vec2f f2d = view.positions[feature_id];
+
+            Point2D point;
+            point.x = f2d[0] - static_cast<float>(view.width) / 2.0f;
+            point.y = f2d[1] - static_cast<float>(view.height) / 2.0f;
+
+            pba_2d_points.push_back(point);
+            pba_track_ids.push_back(pba_tracks_mapping[i]);
+            pba_cam_ids.push_back(pba_cams_mapping[view_id]);
+        }
+    }
+    pba.SetProjection(pba_2d_points.size(),
+        &pba_2d_points[0], &pba_track_ids[0], &pba_cam_ids[0]);
+
+    /* Run bundle adjustment. */
+    pba.RunBundleAdjustment();
+
+    /* Transfer camera info and track positions back. */
+    std::size_t pba_cam_counter = 0;
+    for (std::size_t i = 0; i < this->cameras.size(); ++i)
+    {
+        if (!this->cameras[i].is_valid())
+            continue;
+
+        CameraPose& pose = this->cameras[i];
+        Viewport& view = viewports->at(i);
+        CameraT const& cam = pba_cams[pba_cam_counter];
+        std::copy(cam.t, cam.t + 3, pose.t.begin());
+        std::copy(cam.m[0], cam.m[0] + 9, pose.R.begin());
+        pose.K[0] = cam.f;
+        pose.K[4] = cam.f;
+        view.radial_distortion = cam.radial;
+        pba_cam_counter += 1;
+    }
+
+    std::size_t pba_track_counter = 0;
+    for (std::size_t i = 0; i < tracks->size(); ++i)
+    {
+        Track& track = tracks->at(i);
+        if (std::isnan(track.pos[0]))
+            continue;
+
+        Point3D const& point = pba_tracks[pba_track_counter];
+        std::copy(point.xyz, point.xyz + 3, track.pos.begin());
+
+        pba_track_counter += 1;
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -384,7 +509,6 @@ Incremental::find_next_view (TrackList const& tracks)
             valid_tracks_counter[view_id] += 1;
         }
     }
-
 
     std::cout << "Next view candidates:" << std::endl;
     for (std::size_t i = 0; i < valid_tracks_counter.size(); ++i)

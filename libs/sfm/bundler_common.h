@@ -41,6 +41,8 @@ struct Viewport
     int width, height;
     /** Estimated focal length of the image. */
     float focal_length;
+    /** Radial distortion parameter. */
+    float radial_distortion;
     /** Tightly packed data for the descriptors. */
     util::AlignedMemory<float, 16> descr_data;
     /** Per-feature image position. */
@@ -142,6 +144,7 @@ Viewport::Viewport (void)
     : width(0)
     , height(0)
     , focal_length(0.0f)
+    , radial_distortion(0.0f)
 {
 }
 

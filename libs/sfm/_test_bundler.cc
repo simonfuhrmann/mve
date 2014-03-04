@@ -107,7 +107,7 @@ main (int argc, char** argv)
     incremental_opts.initial_pair_view_2_id = init_pair_result.view_2_id;
     incremental_opts.verbose_output = true;
     sfm::bundler::Incremental incremental(incremental_opts);
-    mve::Bundle::Ptr bundle = incremental.compute(viewports, &tracks);
+    mve::Bundle::Ptr bundle = incremental.compute(&viewports, &tracks);
 
     /* Save bundle file to scene. */
     mve::save_mve_bundle(bundle, scene->get_path() + "/synth_0.out");
