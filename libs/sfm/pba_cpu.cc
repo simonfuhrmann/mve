@@ -1123,6 +1123,10 @@ namespace ProgramCPU
         }
     }
 
+    // Forward declare (sfu).
+    template <class Float>
+    void ComputeProjection(size_t nproj, const Float* camera, const Float* point, const Float* ms,
+                           const int * jmap, Float* pj, int radial, int mt);
 
     DEFINE_THREAD_DATA(ComputeProjection)
             size_t nproj; const Float* camera, *point, * ms;
@@ -1180,6 +1184,11 @@ namespace ProgramCPU
             }
         }
     }
+
+    // forward declare
+    template <class Float>
+    void ComputeProjectionX(size_t nproj, const Float* camera, const Float* point, const Float* ms,
+                           const int * jmap, Float* pj, int radial, int mt);
 
     DEFINE_THREAD_DATA(ComputeProjectionX)
             size_t nproj; const Float* camera, *point, * ms;
@@ -1433,6 +1442,13 @@ namespace ProgramCPU
         }
     }
 
+    // Forward declare
+    template <class Float>
+    void ComputeJacobian(size_t nproj, size_t ncam, const Float* camera, const Float* point, Float*  jc, Float* jp,
+                         const int* jmap, const Float * sj, const Float *  ms, const int * cmlist,
+                         bool intrinsic_fixed , int radial_distortion, bool shuffle, Float* jct,
+                         int mt = 2, int i0 = 0);
+
     DEFINE_THREAD_DATA(ComputeJacobian)
             size_t nproj, ncam; const Float* camera, *point; Float * jc, *jp;
             const int *jmap; const Float* sj, * ms; const int* cmlist;
@@ -1628,6 +1644,11 @@ namespace ProgramCPU
         InvertSymmetricMatrix<T, n, m>( (T (*)[m]) a, (T (*)[m]) ai);
     }
 
+    // Forward declare.
+    template<class Float>
+    void ComputeDiagonalBlockC(size_t ncam,  float lambda1, float lambda2, const Float* jc, const int* cmap,
+                const int* cmlist, Float* di, Float* bi, int vn, bool jc_transpose, bool use_jq, int mt);
+
     DEFINE_THREAD_DATA(ComputeDiagonalBlockC)
         size_t ncam; float lambda1, lambda2; const Float * jc; const int* cmap,* cmlist;
         Float * di, * bi; int vn; bool jc_transpose, use_jq;
@@ -1711,6 +1732,11 @@ namespace ProgramCPU
             }
         }
     }
+
+    // Forward declare.
+    template<class Float>
+    void ComputeDiagonalBlockP(size_t npt, float lambda1, float lambda2,
+                        const Float*  jp, const int* pmap, Float* di, Float* bi, int mt);
 
     DEFINE_THREAD_DATA(ComputeDiagonalBlockP)
         size_t npt; float lambda1, lambda2;  const Float * jp; const int* pmap; Float* di, *bi;
@@ -1992,6 +2018,10 @@ namespace ProgramCPU
         }
     }
 
+    // Forward declare
+    template<class Float>
+    void MultiplyBlockConditionerC(int ncam, const Float* bi, const Float*  x, Float* vx, int vn, int mt = 0);
+
     DEFINE_THREAD_DATA(MultiplyBlockConditionerC)
         int ncam;  const Float * bi, * x;  Float * vx; int vn;
     BEGIN_THREAD_PROC(MultiplyBlockConditionerC)
@@ -2024,6 +2054,9 @@ namespace ProgramCPU
             }
         }
     }
+
+    template<class Float>
+    void MultiplyBlockConditionerP(int npoint, const Float* bi, const Float*  x, Float* vx, int mt = 0);
 
     DEFINE_THREAD_DATA(MultiplyBlockConditionerP)
         int npoint;  const Float * bi, * x;  Float * vx;
@@ -2069,6 +2102,13 @@ namespace ProgramCPU
     }
 
     ////////////////////////////////////////////////////
+
+    // Forward declare.
+    template<class Float>
+    void ComputeJX( size_t nproj, size_t ncam,  const Float* x, const Float*  jc,
+                    const Float* jp, const int* jmap, Float* jx, int mode, int mt = 2);
+
+
     DEFINE_THREAD_DATA(ComputeJX)
         size_t nproj, ncam; const Float* xc, *jc,* jp; const int* jmap; Float* jx; int mode;
     BEGIN_THREAD_PROC(ComputeJX)
@@ -2123,6 +2163,12 @@ namespace ProgramCPU
             }
         }
     }
+
+    // Forward declare.
+    template<class Float>
+    void ComputeJX_(size_t nproj, size_t ncam,  const Float* x, Float* jx, const Float* camera,
+                    const Float* point,  const Float* ms, const Float* sj, const int*  jmap,
+                    bool intrinsic_fixed, int radial_distortion, int mode, int mt = 16);
 
     DEFINE_THREAD_DATA(ComputeJX_)
            size_t nproj, ncam; const Float* x; Float * jx;
@@ -2232,6 +2278,11 @@ namespace ProgramCPU
         }
     }
 
+    // Forward declare.
+    template<class Float>
+    void ComputeJtEC(    size_t ncam, const Float* pe, const Float* jc, const int* cmap,
+                        const int* cmlist,  Float* v, bool jc_transpose, int mt);
+
     DEFINE_THREAD_DATA(ComputeJtEC)
         size_t ncam; const Float* pe, * jc; const int* cmap,* cmlist;  Float* v;bool jc_transpose;
     BEGIN_THREAD_PROC(ComputeJtEC)
@@ -2275,6 +2326,10 @@ namespace ProgramCPU
         }
     }
 
+    // Forward declare.
+    template<class Float>
+    void ComputeJtEP(   size_t npt, const Float* pe, const Float* jp,
+                        const int* pmap, Float* v,  int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEP)
         size_t npt; const Float* pe, * jp; const int* pmap; Float* v;
@@ -2336,6 +2391,12 @@ namespace ProgramCPU
         }
     }
 
+    // Forward declare.
+    template<class Float>
+    void ComputeJtEC_(  size_t ncam, const Float* ee,  Float* jte,
+                        const Float* c, const Float* point, const Float* ms,
+                        const int* jmap, const int* cmap, const int * cmlist,
+                        bool intrinsic_fixed, int radial_distortion, int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEC_)
            size_t ncam; const Float* ee; Float * jte; const Float* c, *point,* ms;
