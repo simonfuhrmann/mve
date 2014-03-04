@@ -2,7 +2,8 @@ MVE_ROOT = ../..
 TARGET := libmve_ogl.a
 include ${MVE_ROOT}/Makefile.inc
 
-CXXFLAGS += -I${MVE_ROOT}/libs
+# Position independent code (-fPIC) is required for the UMVE plugin system.
+CXXFLAGS += -fPIC -I${MVE_ROOT}/libs
 
 SOURCES := $(wildcard [^_]*.cc)
 ${TARGET}: ${SOURCES:.cc=.o}

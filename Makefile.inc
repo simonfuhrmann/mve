@@ -1,13 +1,12 @@
 # Compiler, Flags, Definitions, ...
 CXX ?= g++
-CXXFLAGS ?= -Wall -Wextra -Wundef -ansi -pedantic -g -O3
+CXXFLAGS ?= -Wall -Wextra -Wundef -pedantic -g -O3
 COMPILE.cc = ${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.o = ${CXX} ${LDFLAGS}
 .DEFAULT_GOAL := ${TARGET}
 
 # Always compile programs and libs with multi-threading.
-# Position independent code is required for the UMVE plugin system.
-CXXFLAGS += -pthread -fPIC
+CXXFLAGS += -pthread
 
 # How to link example from example.o and other files:
 %: %.o

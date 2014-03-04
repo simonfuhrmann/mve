@@ -13,34 +13,33 @@
 OGL_NAMESPACE_BEGIN
 
 void
-ShaderProgram::load_shader (GLuint& shader_id, GLuint shader_type,
+ShaderProgram::load_shader_file (GLuint& shader_id, GLuint shader_type,
     std::string const& filename)
 {
-    if (filename.empty())
-        throw std::invalid_argument("Shader: No filename given");
+    std::string shader_code;
+    util::fs::read_file_to_string(filename, &shader_code);
 
+    try
+    {
+        this->load_shader_code(shader_id, shader_type, shader_code);
+    }
+    catch (util::Exception& e)
+    {
+        throw util::Exception(filename + ": " + e);
+    }
+}
+
+void
+ShaderProgram::load_shader_code (GLuint& shader_id, GLuint shader_type,
+    std::string const& code)
+{
     if (shader_id == 0)
     {
         shader_id = glCreateShader(shader_type);
         glAttachShader(this->prog_id, shader_id);
     }
 
-    this->compile_shader(shader_id, filename);
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-ShaderProgram::reload_all (void)
-{
-    this->load_shader(this->vert_id, GL_VERTEX_SHADER, this->vert_filename);
-    if (!this->geom_filename.empty())
-    {
-        this->load_shader(this->geom_id, GL_GEOMETRY_SHADER,
-            this->geom_filename);
-    }
-    this->load_shader(this->frag_id, GL_FRAGMENT_SHADER, this->frag_filename);
-    this->link();
+    this->compile_shader(shader_id, code);
 }
 
 /* ---------------------------------------------------------------- */
@@ -59,81 +58,49 @@ ShaderProgram::unload_shader (GLuint& shader_id)
 /* ---------------------------------------------------------------- */
 
 void
-ShaderProgram::compile_shader (GLuint shader_id, std::string const& filename)
+ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
 {
-    /* Load source code. */
-    std::ifstream in(filename.c_str());
-    if (!in.good())
-        throw util::FileException(filename, ::strerror(errno));
-
-    std::string code(std::istreambuf_iterator<char>(in),
-        (std::istreambuf_iterator<char>()));
-
-    in.close();
-
     /* Pass code to OpenGL. */
-    {
-        char const* data[1];
-        data[0] = code.c_str();
-        glShaderSource(shader_id, 1, data, NULL);
-        code.clear();
-    }
+    char const* data[1] = { code.c_str() };
+    glShaderSource(shader_id, 1, data, NULL);
 
     /* Compile shader. */
     glCompileShader(shader_id);
     if (this->get_shader_property(shader_id, GL_COMPILE_STATUS) == GL_FALSE)
     {
-        std::cout << std::endl;
-        std::cout << "ERROR compiling shader " << filename << std::endl;
-        this->print_shader_log(shader_id);
+        GLint log_size = this->get_shader_property(shader_id, GL_INFO_LOG_LENGTH);
+        if (log_size == 0)
+               throw util::Exception("Shader compilation failed (no message).");
+
+        std::string log;
+        log.append(log_size + 1, '\0');
+        glGetShaderInfoLog(shader_id, log_size + 1, NULL, &log[0]);
+        throw util::Exception(log);
     }
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-ShaderProgram::load_all (std::string const& basename)
+ShaderProgram::try_load_all (std::string const& basename, bool unload)
 {
-    this->vert_filename = basename + ".vert";
-    this->load_vert(this->vert_filename);
+    std::string vert_filename = basename + ".vert";
+    if (util::fs::file_exists(vert_filename.c_str()))
+        this->load_vert_file(vert_filename);
+    else if (unload)
+        this->unload_vert();
 
-    this->geom_filename = basename + ".geom";
-    if (util::fs::file_exists(this->geom_filename.c_str()))
-        this->load_geom(this->geom_filename);
-    else
+    std::string geom_filename = basename + ".geom";
+    if (util::fs::file_exists(geom_filename.c_str()))
+        this->load_geom_file(geom_filename);
+    else if (unload)
         this->unload_geom();
 
-    this->frag_filename = basename + ".frag";
-    this->load_frag(this->frag_filename);
-}
-
-/* ---------------------------------------------------------------- */
-
-GLint
-ShaderProgram::get_uniform_location (char const* name)
-{
-    this->ensure_linked();
-    GLint loc = glGetUniformLocation(this->prog_id, name);
-    //std::cout << "Uniform location for " << name << ": " << loc << std::endl;
-    return loc;
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-ShaderProgram::print_shader_log (GLuint shader_id)
-{
-    GLint log_size = this->get_shader_property(shader_id, GL_INFO_LOG_LENGTH);
-    if (log_size == 0)
-    {
-        std::cout << "Shader compile log is empty!" << std::endl;
-        return;
-    }
-
-    std::vector<char> log;
-    log.resize(log_size + 1, '\0');
-    glGetShaderInfoLog(shader_id, log_size + 1, NULL, &log[0]);
-    std::cout.write(&log[0], log_size);
+    std::string frag_filename = basename + ".frag";
+    if (util::fs::file_exists(frag_filename.c_str()))
+        this->load_frag_file(frag_filename);
+    else if (unload)
+        this->unload_frag();
 }
 
 OGL_NAMESPACE_END

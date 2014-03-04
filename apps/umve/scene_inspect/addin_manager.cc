@@ -4,6 +4,7 @@
 #include <QBoxLayout>
 #include <QColorDialog>
 
+#include "util/exception.h"
 #include "util/file_system.h"
 #include "ogl/render_tools.h"
 
@@ -172,16 +173,89 @@ AddinManager::reset_scene (void)
     this->state.gl_widget->repaint();
 }
 
-void
-AddinManager::reload_shaders (void)
+namespace
 {
-    std::cout << "Reloading shaders..." << std::endl;
-    if (this->state.surface_shader != NULL)
-        this->state.surface_shader->reload_all();
-    if (this->state.wireframe_shader != NULL)
-        this->state.wireframe_shader->reload_all();
-    if (this->state.texture_shader != NULL)
-        this->state.texture_shader->reload_all();
+    static void
+    load_shaders_from_resources (ogl::ShaderProgram::Ptr prog, QString base)
+    {
+        {
+            QFile file(base + ".frag");
+            file.open(QIODevice::ReadOnly | QIODevice::Text);
+            QByteArray code = file.readAll();
+            std::string code_str(code.constData(), code.length());
+            file.close();
+            if (!code_str.empty())
+                prog->load_frag_code(code_str);
+            else
+                prog->unload_frag();
+        }
+
+        {
+            QFile file(base + ".geom");
+            file.open(QIODevice::ReadOnly | QIODevice::Text);
+            QByteArray code = file.readAll();
+            std::string code_str(code.constData(), code.length());
+            file.close();
+            if (!code_str.empty())
+                prog->load_geom_code(code_str);
+            else
+                prog->unload_geom();
+        }
+
+        {
+            QFile file(base + ".vert");
+            file.open(QIODevice::ReadOnly | QIODevice::Text);
+            QByteArray code = file.readAll();
+            std::string code_str(code.constData(), code.length());
+            file.close();
+            if (!code_str.empty())
+                prog->load_vert_code(code_str);
+            else
+                prog->unload_vert();
+        }
+    }
+}  /* namespace */
+
+void
+AddinManager::load_shaders (void)
+{
+    // FIXME: Use functionality from util::fs!
+    std::string home_dir = std::string(getenv("HOME"));
+    std::string binary_dir =
+        util::fs::get_path_component(util::fs::get_binary_path());
+
+    std::vector<std::string> shader_paths;
+    shader_paths.push_back(binary_dir + "/shader/");
+    shader_paths.push_back(home_dir + "/.local/share/umve/shader");
+    shader_paths.push_back("/usr/local/share/umve/shader/");
+    shader_paths.push_back("/usr/share/umve/shader/");
+
+    /*
+     * Shaders loaded later override those loaded earlier, so try
+     * Qt Resources first and files afterwards.
+     */
+    load_shaders_from_resources(this->state.surface_shader, ":/shader/surface_120");
+    load_shaders_from_resources(this->state.wireframe_shader, ":/shader/wireframe_120");
+    load_shaders_from_resources(this->state.texture_shader, ":/shader/texture_120");
+
+    for (std::size_t i = 0; i < shader_paths.size(); ++i)
+    {
+        try
+        {
+            this->state.surface_shader->try_load_all
+                (shader_paths[i] + "surface_120", false);
+            this->state.wireframe_shader->try_load_all
+                (shader_paths[i] + "wireframe_120", false);
+            this->state.texture_shader->try_load_all
+                (shader_paths[i] + "texture_120", false);
+        }
+        catch (util::Exception& e)
+        {
+            std::cout << "Skipping shaders from "
+                << shader_paths[i] << ":" << std::endl;
+            std::cout << e.what() << std::endl;
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -199,14 +273,10 @@ AddinManager::init_impl (void)
             << std::endl;
 
     /* Load shaders. */
-    std::string shader_path = util::fs::get_path_component
-        (util::fs::get_binary_path()) + "/shader/";
     this->state.surface_shader = ogl::ShaderProgram::create();
     this->state.wireframe_shader = ogl::ShaderProgram::create();
     this->state.texture_shader = ogl::ShaderProgram::create();
-    this->state.surface_shader->load_all(shader_path + "surface_120");
-    this->state.wireframe_shader->load_all(shader_path + "wireframe_120");
-    this->state.texture_shader->load_all(shader_path + "texture_120");
+    this->load_shaders();
     this->state.gui_renderer = ogl::create_fullscreen_quad(this->state.texture_shader);
     this->state.gui_texture = ogl::Texture::create();
 

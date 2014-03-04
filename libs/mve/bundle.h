@@ -39,8 +39,11 @@ public:
      */
     struct Feature3D
     {
+        /** 3D Position of the feature (track). */
         float pos[3];
+        /** RGB color of the feature in [0,1]^3. */
         float color[3];
+        /** References to views that see the feature. */
         std::vector<Feature2D> refs;
 
         bool contains_view_id (int id) const;

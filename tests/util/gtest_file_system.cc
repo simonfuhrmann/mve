@@ -37,3 +37,18 @@ TEST(FileSystemTest, ReplaceExtensionTest)
     EXPECT_EQ("/a.b/c.e", util::fs::replace_extension("/a.b/c.d", "e"));
     EXPECT_EQ("/a.b/cd.e", util::fs::replace_extension("/a.b/cd", "e"));
 }
+
+TEST(FileSystemTest, TestFileIO)
+{
+#if defined(_WIN32)
+    std::string tempfile("C:/temp/tempfile.txt");
+#else
+    std::string tempfile("/tmp/tempfile.txt");
+#endif
+
+    std::string data = "This is\na test string\n";
+    util::fs::write_string_to_file(data, tempfile);
+    std::string data2;
+    util::fs::read_file_to_string(tempfile, &data2);
+    EXPECT_EQ(data, data2);
+}
