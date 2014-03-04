@@ -154,7 +154,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
     /* Current offset into data buffer. */
     unsigned offs = 0;
     /* Intel byte alignment. */
-    bool alignIntel = true;
+    bool align_intel = true;
 
     /* Prepare return structure. */
     ExifInfo result;
@@ -200,20 +200,21 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
     /* Get byte alignment (Intel "little endian" or Motorola "big endian"). */
     unsigned int tiff_header_offset = offs;
     if (std::equal(buf + offs, buf + offs + 2, "II"))
-        alignIntel = true;
+        align_intel = true;
     else if (std::equal(buf + offs, buf + offs + 2, "MM"))
-        alignIntel = false;
+        align_intel = false;
     else
         throw std::invalid_argument("Cannot find EXIF byte alignment");
     offs += 2;
 
     /* Check TIFF magic number. */
-    if (buf[offs] != 0x2A && buf[offs + 1] != 0x00)
+    uint16_t tiff_magic_number = parse_u16(buf + offs, align_intel);
+    if (tiff_magic_number != 0x2a)
         throw std::invalid_argument("Cannot find TIFF magic bytes");
     offs += 2;
 
     /* Get offset and jump into first IFD (Image File Directory). */
-    unsigned int first_ifd_offset = parse_u32(buf + offs, alignIntel);
+    unsigned int first_ifd_offset = parse_u32(buf + offs, align_intel);
     offs += first_ifd_offset - 4;  // Why subtract 4?
 
     /*
@@ -223,7 +224,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
      */
     if (offs + 2 > len)
         throw std::invalid_argument("EXIF data corrupt (IFD entries)");
-    int num_entries = parse_u16(buf + offs, alignIntel);
+    int num_entries = parse_u16(buf + offs, align_intel);
     offs += 2;
     if (num_entries < 0 || num_entries > 10000)
         throw std::invalid_argument("EXIF data corrupt (number of IFDs)");
@@ -244,10 +245,10 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
     //unsigned int gps_sub_ifd_offset = 0;
     for (int i = 0; i < num_entries; ++i)
     {
-        unsigned short tag = parse_u16(buf + offs, alignIntel);
-        unsigned short type = parse_u16(buf + offs + 2, alignIntel);
-        unsigned int ncomp = parse_u32(buf + offs + 4, alignIntel);
-        unsigned int coffs = parse_u32(buf + offs + 8, alignIntel);
+        unsigned short tag = parse_u16(buf + offs, align_intel);
+        unsigned short type = parse_u16(buf + offs + 2, align_intel);
+        unsigned int ncomp = parse_u32(buf + offs + 4, align_intel);
+        unsigned int coffs = parse_u32(buf + offs + 8, align_intel);
 
         /*
          * Compute offset to the entry value. Depending on 'type' and 'ncomp'
@@ -272,12 +273,12 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
 
             case 0x102: // Bits per color sample.
                 if (type == EXIF_TYPE_USHORT)
-                    result.bits_per_sample = parse_u16(buf + buf_off, alignIntel);
+                    result.bits_per_sample = parse_u16(buf + buf_off, align_intel);
                 break;
 
             case 0x112: // Image orientation.
                 if (type == EXIF_TYPE_USHORT)
-                    result.orientation = parse_u16(buf + buf_off, alignIntel);
+                    result.orientation = parse_u16(buf + buf_off, align_intel);
                 break;
 
             case 0x10F: // Digicam manufacturer.
@@ -329,7 +330,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
     offs = exif_sub_ifd_offset;
     if (offs + 2 > len)
         throw std::invalid_argument("EXIF data corrupt (SubIFD entries)");
-    num_entries = parse_u16(buf + offs, alignIntel);
+    num_entries = parse_u16(buf + offs, align_intel);
     offs += 2;
     if (num_entries < 0 || num_entries > 10000)
         throw std::invalid_argument("EXIF data corrupt (number of SubIFDs)");
@@ -339,10 +340,10 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
     /* Like with IFD entries, each IFD entry consists of 12 bytes. */
     for (int j = 0; j < num_entries; j++)
     {
-        unsigned short tag = parse_u16(buf + offs, alignIntel);
-        unsigned short type = parse_u16(buf + offs + 2, alignIntel);
-        unsigned int ncomp = parse_u32(buf + offs + 4, alignIntel);
-        unsigned int coffs = parse_u32(buf + offs + 8, alignIntel);
+        unsigned short tag = parse_u16(buf + offs, align_intel);
+        unsigned short type = parse_u16(buf + offs + 2, align_intel);
+        unsigned int ncomp = parse_u32(buf + offs + 4, align_intel);
+        unsigned int coffs = parse_u32(buf + offs + 8, align_intel);
 
         unsigned int buf_off = offs + 8;
         if (ifd_is_offset(type, ncomp))
@@ -359,56 +360,56 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
 
             case 0x8827: // ISO speed ratings.
                 if (type == EXIF_TYPE_USHORT)
-                    result.iso_speed = parse_u16(buf + buf_off, alignIntel);
+                    result.iso_speed = parse_u16(buf + buf_off, align_intel);
                 break;
 
             case 0x920A: // Focal length in mm.
                 if (type == EXIF_TYPE_URATIONAL)
-                    result.focal_length = parse_rational_u64(buf + buf_off, alignIntel);
+                    result.focal_length = parse_rational_u64(buf + buf_off, align_intel);
                 break;
 
             case 0xA405: // Focal length (35 mm equivalent).
                 if (type == EXIF_TYPE_USHORT)
-                    result.focal_length_35mm = (float)parse_u16(buf + buf_off, alignIntel);
+                    result.focal_length_35mm = (float)parse_u16(buf + buf_off, align_intel);
                 break;
 
             case 0x829D: // F-stop number.
                 if (type == EXIF_TYPE_URATIONAL)
-                    result.f_number = parse_rational_u64(buf + buf_off, alignIntel);
+                    result.f_number = parse_rational_u64(buf + buf_off, align_intel);
                 break;
 
             case 0x829A: // Exposure time.
                 if (type == EXIF_TYPE_URATIONAL)
-                    result.exposure_time = parse_rational_u64(buf + buf_off, alignIntel);
+                    result.exposure_time = parse_rational_u64(buf + buf_off, align_intel);
                 break;
 
             case 0x9201: // Shutter speed (in APEX format).
                 if (type == EXIF_TYPE_SRATIONAL)
-                    result.shutter_speed = apex_time_to_exposure(parse_rational_s64(buf + buf_off, alignIntel));
+                    result.shutter_speed = apex_time_to_exposure(parse_rational_s64(buf + buf_off, align_intel));
                 break;
 
             case 0x9204: // Exposure bias.
                 if (type == EXIF_TYPE_URATIONAL)
-                    result.exposure_bias = parse_rational_u64(buf + buf_off, alignIntel);
+                    result.exposure_bias = parse_rational_u64(buf + buf_off, align_intel);
                 break;
 
             case 0x9209: // Flash mode.
                 if (type == EXIF_TYPE_USHORT)
-                    result.flash_mode = parse_u16(buf + buf_off, alignIntel);
+                    result.flash_mode = parse_u16(buf + buf_off, align_intel);
                 break;
 
             case 0xA002: // Image width.
                 if (type == EXIF_TYPE_USHORT)
-                    result.image_width = parse_u16(buf + buf_off, alignIntel);
+                    result.image_width = parse_u16(buf + buf_off, align_intel);
                 if (type == EXIF_TYPE_ULONG)
-                    result.image_width = parse_u32(buf + buf_off, alignIntel);
+                    result.image_width = parse_u32(buf + buf_off, align_intel);
                 break;
 
             case 0xA003: // Image height.
                 if (type == EXIF_TYPE_USHORT)
-                    result.image_height = parse_u16(buf + buf_off, alignIntel);
+                    result.image_height = parse_u16(buf + buf_off, align_intel);
                 if (type == EXIF_TYPE_ULONG)
-                    result.image_height = parse_u32(buf + buf_off, alignIntel);
+                    result.image_height = parse_u32(buf + buf_off, align_intel);
                 break;
 
             default:
