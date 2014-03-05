@@ -1,9 +1,9 @@
 #include <algorithm>
-#include <cstdlib> // for std::rand()
 #include <iostream>
 #include <set>
 #include <stdexcept>
 
+#include "util/system.h"
 #include "math/algo.h"
 #include "math/matrix_tools.h"
 #include "sfm/ransac_homography.h"
@@ -70,7 +70,7 @@ RansacHomography::compute_homography (Correspondences const& matches,
      */
     std::set<int> result;
     while (result.size() < 4)
-        result.insert(std::rand() % matches.size());
+        result.insert(util::system::rand_int() % matches.size());
 
     Correspondences four_correspondeces(4);
     std::set<int>::const_iterator iter = result.begin();

@@ -1,9 +1,9 @@
 #include <algorithm>
-#include <cstdlib> // for std::rand()
 #include <iostream>
 #include <set>
 #include <stdexcept>
 
+#include "util/system.h"
 #include "math/algo.h"
 #include "sfm/ransac_fundamental.h"
 #include "sfm/pose.h"
@@ -69,7 +69,7 @@ RansacFundamental::estimate_8_point (Correspondences const& matches,
      */
     std::set<int> result;
     while (result.size() < 8)
-        result.insert(std::rand() % matches.size());
+        result.insert(util::system::rand_int() % matches.size());
 
     math::Matrix<double, 3, 8> pset1, pset2;
     std::set<int>::const_iterator iter = result.begin();

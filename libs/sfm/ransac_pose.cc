@@ -1,9 +1,9 @@
 #include <algorithm>
-#include <cstdlib> // for std::rand()
 #include <iostream>
 #include <set>
 #include <stdexcept>
 
+#include "util/system.h"
 #include "math/algo.h"
 #include "sfm/ransac_pose.h"
 #include "sfm/pose.h"
@@ -66,7 +66,7 @@ RansacPose::estimate_6_point (Correspondences2D3D const& corresp,
     /* Draw 6 unique random numbers. */
     std::set<int> result;
     while (result.size() < 6)
-        result.insert(std::rand() % corresp.size());
+        result.insert(util::system::rand_int() % corresp.size());
 
     /* Create list of the six selected correspondences. */
     Correspondences2D3D selection;
