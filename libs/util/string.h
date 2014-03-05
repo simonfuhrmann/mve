@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <stdexcept>
 
 #include "util/defines.h"
 
@@ -30,7 +31,7 @@ std::string get_filled (T const& value, int width, char fill = '0');
 
 /** From string to other types conversions. */
 template <typename T>
-T convert (std::string const& str);
+T convert (std::string const& str, bool strict_conversion = true);
 
 /** String representation for types. */
 template <typename T>
@@ -129,11 +130,13 @@ get_filled (T const& value, int width, char fill)
 
 template <typename T>
 inline T
-convert (std::string const& str)
+convert (std::string const& str, bool strict_conversion)
 {
     std::stringstream ss(str);
     T ret = T();
     ss >> ret;
+    if (strict_conversion && (!ss.eof() || ss.fail()))
+        throw std::invalid_argument("Invalid string conversion: " + str);
     return ret;
 }
 
