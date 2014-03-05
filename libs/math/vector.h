@@ -183,7 +183,7 @@ public:
     /** Component-wise multiplication with another vector. */
     Vector<T,N> cw_mult (Vector<T,N> const& other) const;
 
-    /** Component-wise multiplication with another vector. */
+    /** Component-wise division with another vector. */
     Vector<T,N> cw_div (Vector<T,N> const& other) const;
 
     /** Component-wise similarity using epsilon checks. */
