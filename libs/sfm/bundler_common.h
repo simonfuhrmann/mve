@@ -71,6 +71,9 @@ typedef std::vector<FeatureReference> FeatureReferenceList;
 /** Representation of a feature track. */
 struct Track
 {
+    bool is_valid (void) const;
+    void invalidate (void);
+
     math::Vec3f pos;
     math::Vec3uc color;
     FeatureReferenceList features;
@@ -146,6 +149,12 @@ Viewport::Viewport (void)
     , focal_length(0.0f)
     , radial_distortion(0.0f)
 {
+}
+
+inline bool
+Track::is_valid (void) const
+{
+    return !std::isnan(this->pos[0]);
 }
 
 SFM_BUNDLER_NAMESPACE_END

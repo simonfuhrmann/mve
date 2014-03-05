@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "util/system.h"
 #include "util/file_system.h"
 #include "mve/scene.h"
 #include "mve/bundle.h"
@@ -24,6 +25,8 @@ main (int argc, char** argv)
         return 1;
     }
 
+    util::system::rand_seed(2);
+
     std::string const image_embedding = "original";
     std::string const feature_embedding = "original-sift";
     std::string const exif_embedding = "exif";
@@ -45,6 +48,16 @@ main (int argc, char** argv)
     sfm::bundler::Features bundler_features(feature_opts);
     bundler_features.compute(scene, sfm::bundler::Features::SIFT_FEATURES,
         &viewports);
+
+    std::cout << "Viewport statistics:" << std::endl;
+    for (std::size_t i = 0; i < viewports.size(); ++i)
+    {
+        sfm::bundler::Viewport const& view = viewports[i];
+        std::cout << "  View " << i << ": "
+            << view.width << "x" << view.height << ", "
+            << view.positions.size() << " features, "
+            << "focal length: " << view.focal_length << std::endl;
+    }
 
     /* Exhaustive matching between all pairs of views. */
     sfm::bundler::PairwiseMatching pairwise_matching;
@@ -146,8 +159,8 @@ main (int argc, char** argv)
         std::cout << "  Adding next view ID " << next_view_id << "..." << std::endl;
         incremental.reconstruct_next_view(next_view_id);
 
-        //std::cout << "  Running bundle adjustment..." << std::endl;
-        //incremental.bundle_adjustment();
+        std::cout << "  Running bundle adjustment..." << std::endl;
+        incremental.bundle_adjustment();
 
         //std::cout << "  Triangulating new tracks..." << std::endl;
         //incremental.triangulate_new_tracks();

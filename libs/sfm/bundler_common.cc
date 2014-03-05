@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <fstream>
-#include <vector>
+#include <limits>
 #include <sstream>
+#include <vector>
 #include <cstring>
 #include <cerrno>
 
@@ -10,6 +12,12 @@
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
+void
+Track::invalidate (void)
+{
+    std::fill(this->pos.begin(), this->pos.end(),
+        std::numeric_limits<float>::quiet_NaN());
+}
 
 /* ----------------- Serialization of Descriptors ----------------- */
 

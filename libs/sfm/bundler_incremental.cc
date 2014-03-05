@@ -38,8 +38,7 @@ Incremental::initialize (ViewportList* viewports, TrackList* tracks)
     for (std::size_t i = 0; i < tracks->size(); ++i)
     {
         Track& track = tracks->at(i);
-        std::fill(track.pos.begin(), track.pos.end(),
-            std::numeric_limits<float>::quiet_NaN());
+        track.invalidate();
     }
 }
 
@@ -189,7 +188,7 @@ Incremental::find_next_view (void) const
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         Track const& track = this->tracks->at(i);
-        if (std::isnan(track.pos[0]))
+        if (!track.is_valid())
             continue;
 
         for (std::size_t j = 0; j < track.features.size(); ++j)
@@ -219,7 +218,7 @@ Incremental::reconstruct_next_view (int view_id)
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         Track const& track = this->tracks->at(i);
-        if (std::isnan(track.pos[0]))
+        if (!track.is_valid())
             continue;
 
         for (std::size_t j = 0; j < track.features.size(); ++j)
@@ -307,7 +306,7 @@ Incremental::create_bundle (void) const
         for (std::size_t i = 0; i < this->tracks->size(); ++i)
         {
             Track const& track = this->tracks->at(i);
-            if (std::isnan(track.pos[0]))
+            if (!track.is_valid())
                 continue;
 
             /* Copy position and color of the track. */
@@ -343,10 +342,9 @@ Incremental::triangulate_new_tracks (void)
     std::size_t num_new_tracks = 0;
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
-        Track& track = this->tracks->at(i);
-
         /* Skip tracks that have already been reconstructed. */
-        if (!std::isnan(track.pos[0]))
+        Track& track = this->tracks->at(i);
+        if (track.is_valid())
             continue;
 
 #if 0
@@ -387,7 +385,6 @@ Incremental::triangulate_new_tracks (void)
 
         track.pos = triangulate_match(match, pose1, pose2);
 #else
-
         std::vector<math::Vec2f> pos;
         std::vector<CameraPose const*> poses;
         std::vector<int> tmp;
@@ -413,10 +410,9 @@ Incremental::triangulate_new_tracks (void)
             if (local[2] < 0.0f)
             {
                 std::cout << "  Warning: Point behind camera. Invalidating track." << std::endl;
-                std::fill(track.pos.begin(), track.pos.end(), std::numeric_limits<float>::quiet_NaN());
+                track.invalidate();
             }
         }
-
 #endif
 
         num_new_tracks += 1;
@@ -471,7 +467,7 @@ Incremental::bundle_adjustment (void)
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         Track const& track = this->tracks->at(i);
-        if (std::isnan(track.pos[0]))
+        if (!track.is_valid())
             continue;
 
         Point3D point;
@@ -488,7 +484,7 @@ Incremental::bundle_adjustment (void)
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         Track const& track = this->tracks->at(i);
-        if (std::isnan(track.pos[0]))
+        if (!track.is_valid())
             continue;
 
         for (std::size_t j = 0; j < track.features.size(); ++j)
@@ -538,7 +534,7 @@ Incremental::bundle_adjustment (void)
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         Track& track = this->tracks->at(i);
-        if (std::isnan(track.pos[0]))
+        if (!track.is_valid())
             continue;
 
         Point3D const& point = pba_tracks[pba_track_counter];

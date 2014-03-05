@@ -119,6 +119,8 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
         feature.set_image(img);
         feature.process();
         descriptors = feature.get_descriptors();
+        viewport->width = img->width();
+        viewport->height = img->height();
     }
     else
     {
@@ -128,7 +130,7 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
             img = mve::image::rescale_half_size<uint8_t>(img);
         if (img->width() != viewport->width
             || img->height() != viewport->height)
-            throw std::runtime_error("Error rescaling image to match descriptors");
+            throw std::runtime_error("Error rescaling image for descriptors");
     }
 
     /* Update feature embedding if requested. */
@@ -195,11 +197,6 @@ Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
             std::cout << "  Maker: " << exif.camera_maker
                 << ", Model: " << exif.camera_model << std::endl;
         }
-    }
-    else
-    {
-        std::cout << "Extracted focal length " << viewport->focal_length
-            << " from EXIF for view " << view->get_id() << std::endl;
     }
 }
 
