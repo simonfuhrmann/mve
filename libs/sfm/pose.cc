@@ -157,4 +157,23 @@ pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
         pose->K[i] = R[i] / R[8];
 }
 
+math::Matrix<double, 3, 3>
+matrix_optimal_rotation (math::Matrix<double, 3, 3> const& matrix)
+{
+    /* Compute SVD of matrix A. */
+    math::Matrix<double, 3, 3> mat_u, mat_s, mat_v;
+    math::matrix_svd(matrix, &mat_u, &mat_s, &mat_v);
+
+    /* Invert last column of V if input has negative determinant. */
+    if (math::matrix_determinant(matrix) < 0.0)
+    {
+        mat_v[2] = -mat_v[2];
+        mat_v[5] = -mat_v[5];
+        mat_v[8] = -mat_v[8];
+    }
+
+    /* Return U C V^T where C is baked into V. */
+    return mat_u.mult(mat_v.transposed());
+}
+
 SFM_NAMESPACE_END

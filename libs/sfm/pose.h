@@ -65,6 +65,22 @@ void
 pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
     CameraPose* pose);
 
+/**
+ * Computes the optimal rotation matrix R for given matrix A such that the
+ * squared frobenius norm ||A-R||^2 is minimized subject to R R^T = 1
+ * and det(R) = 1. This is equivalent to maximizing tr(A^T R) and yields
+ *
+ *   R = U C V^T
+ *
+ * where U S V^T is the SVD of A and C a matrix that negates the last column
+ * of V if and only if det(A) < 0. The technique is described in the paper
+ *
+ *   On the closed-form solution of the rotation matrix arising in
+ *   computer vision problems, Andriy Myronenko and Xubo Song, 2009.
+ */
+math::Matrix<double, 3, 3>
+matrix_optimal_rotation  (math::Matrix<double, 3, 3> const& matrix);
+
 SFM_NAMESPACE_END
 
 #endif /* SFM_POSE_HEADER */
