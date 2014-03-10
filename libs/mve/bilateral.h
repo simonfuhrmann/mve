@@ -14,6 +14,7 @@
 
 #include "math/vector.h"
 #include "math/accum.h"
+#include "math/functions.h"
 #include "mve/defines.h"
 #include "mve/image.h"
 
@@ -105,7 +106,7 @@ BilateralGeomCloseness::operator() (std::size_t cx, std::size_t cy,
 {
     float dx = (float)cx - (float)x;
     float dy = (float)cy - (float)y;
-    return math::algo::gaussian_xx(dx * dx + dy * dy, this->sigma);
+    return math::gaussian_xx(dx * dx + dy * dy, this->sigma);
 }
 
 template <typename T, int N>
@@ -122,7 +123,7 @@ BilateralPhotoCloseness<T,N>::operator() (math::Vector<T,N> const& cv,
 {
     math::Vector<float,N> cvf(cv);
     math::Vector<float,N> vf(v);
-    return math::algo::gaussian_xx((cvf - vf).square_norm(), this->sigma);
+    return math::gaussian_xx((cvf - vf).square_norm(), this->sigma);
 }
 
 /* ---------------------------------------------------------------- */

@@ -9,7 +9,7 @@
 #include <map>
 
 #include "math/vector.h"
-#include "math/algo.h"
+#include "math/functions.h"
 #include "mve/defines.h"
 #include "mve/mesh.h"
 #include "mve/image.h"
@@ -142,12 +142,12 @@ marching_cubes (T& accessor)
             /* Create new vertex on the edge. */
             float d[2] = { accessor.sdf[ev[0]], accessor.sdf[ev[1]] };
             float w[2] = { d[1] / (d[1] - d[0]), -d[0] / (d[1] - d[0]) };
-            math::Vec3f x = math::algo::interpolate
+            math::Vec3f x = math::interpolate
                 (accessor.pos[ev[0]], accessor.pos[ev[1]], w[0], w[1]);
 
             if (accessor.has_colors())
             {
-                math::Vec3f col = math::algo::interpolate
+                math::Vec3f col = math::interpolate
                     (accessor.color[ev[0]], accessor.color[ev[1]], w[0], w[1]);
                 colors.push_back(math::Vec4f(col, 1.0f));
             }
