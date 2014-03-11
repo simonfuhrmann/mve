@@ -173,6 +173,48 @@ TEST(MatrixTest, MatrixBeginEndTest)
     EXPECT_EQ(vec[6], -1);
 }
 
+TEST(MatrixTest, MatrixDeleteRowTest)
+{
+    math::Matrix<int, 2, 3> m;
+    for (int i = 0; i < 6; ++i)
+        m[i] = i;
+
+    math::Matrix<int, 1, 3> m2 = m.delete_row(0);
+    EXPECT_EQ(3, m2[0]);
+    EXPECT_EQ(4, m2[1]);
+    EXPECT_EQ(5, m2[2]);
+
+    m2 = m.delete_row(1);
+    EXPECT_EQ(0, m2[0]);
+    EXPECT_EQ(1, m2[1]);
+    EXPECT_EQ(2, m2[2]);
+}
+
+TEST(MatrixTest, MatrixDeleteColTest)
+{
+    math::Matrix<int, 2, 3> m;
+    for (int i = 0; i < 6; ++i)
+        m[i] = i;
+
+    math::Matrix<int, 2, 2> m2 = m.delete_col(0);
+    EXPECT_EQ(1, m2[0]);
+    EXPECT_EQ(2, m2[1]);
+    EXPECT_EQ(4, m2[2]);
+    EXPECT_EQ(5, m2[3]);
+
+    m2 = m.delete_col(1);
+    EXPECT_EQ(0, m2[0]);
+    EXPECT_EQ(2, m2[1]);
+    EXPECT_EQ(3, m2[2]);
+    EXPECT_EQ(5, m2[3]);
+
+    m2 = m.delete_col(2);
+    EXPECT_EQ(0, m2[0]);
+    EXPECT_EQ(1, m2[1]);
+    EXPECT_EQ(3, m2[2]);
+    EXPECT_EQ(4, m2[3]);
+}
+
 TEST(MatrixToolsTest, DiagonalMatrixTest)
 {
     using namespace math;
