@@ -49,7 +49,6 @@ public:
     {
         int view_1_id;
         int view_2_id;
-        FundamentalMatrix fundamental;
     };
 
 public:

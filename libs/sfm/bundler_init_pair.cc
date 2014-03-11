@@ -80,7 +80,7 @@ InitialPair::compute (ViewportList const& viewports,
                 << "%)." << std::endl;
         }
 
-        if (percentage < 0.6f)
+        if (percentage < this->opts.max_homography_inliers)
         {
             result->view_1_id = tvm.view_1_id;
             result->view_2_id = tvm.view_2_id;

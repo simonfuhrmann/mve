@@ -69,11 +69,10 @@ RansacPose::estimate_6_point (Correspondences2D3D const& corresp,
         result.insert(util::system::rand_int() % corresp.size());
 
     /* Create list of the six selected correspondences. */
-    Correspondences2D3D selection;
-    selection.reserve(6);
+    Correspondences2D3D selection(6);
     std::set<int>::const_iterator iter = result.begin();
     for (int i = 0; i < 6; ++i, ++iter)
-        selection.push_back(corresp[*iter]);
+        selection[i] = corresp[*iter];
 
     /* Obtain pose from the selection. */
     pose_from_2d_3d_correspondences(selection, p_matrix);
