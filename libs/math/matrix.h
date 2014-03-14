@@ -89,17 +89,23 @@ public:
 
     /** Stacks this (left) and another matrix (right) horizontally. */
     template <int O>
-    Matrix<T,N,M+O> hstack (Matrix<T,N,O> const& other);
+    Matrix<T,N,M+O> hstack (Matrix<T,N,O> const& other) const;
 
     /** Stacks this (top) and another matrix (bottom) vertically. */
     template <int O>
-    Matrix<T,N+O,M> vstack (Matrix<T,O,M> const& other);
+    Matrix<T,N+O,M> vstack (Matrix<T,O,M> const& other) const;
 
     /** Stacks this matrix (left) and another vector (right) horizontally. */
-    Matrix<T,N,M+1> hstack (Vector<T,N> const& other);
+    Matrix<T,N,M+1> hstack (Vector<T,N> const& other) const;
 
     /** Stacks this matrix (top) and another vector (bottom) vertically. */
-    Matrix<T,N+1,M> vstack (Vector<T,M> const& other);
+    Matrix<T,N+1,M> vstack (Vector<T,M> const& other) const;
+
+    /** Returns a new matrix with the specified row deleted. */
+    Matrix<T,N-1,M> delete_row (int index) const;
+
+    /** Returns a new matrix with the specified column deleted. */
+    Matrix<T,N,M-1> delete_col (int index) const;
 
     /* ---------------------- Unary operators --------------------- */
 
@@ -336,7 +342,7 @@ Matrix<T,N,M>::col (int index) const
 template <typename T, int N, int M>
 template <int O>
 inline Matrix<T,N,M+O>
-Matrix<T,N,M>::hstack (Matrix<T,N,O> const& other)
+Matrix<T,N,M>::hstack (Matrix<T,N,O> const& other) const
 {
     math::Matrix<T,N,M+O> ret;
     T const* in1 = m;
@@ -352,7 +358,7 @@ Matrix<T,N,M>::hstack (Matrix<T,N,O> const& other)
 template <typename T, int N, int M>
 template <int O>
 inline Matrix<T,N+O,M>
-Matrix<T,N,M>::vstack (Matrix<T,O,M> const& other)
+Matrix<T,N,M>::vstack (Matrix<T,O,M> const& other) const
 {
     Matrix<T,N+O,M> ret;
     std::copy(m, m + M*N, *ret);
@@ -362,7 +368,7 @@ Matrix<T,N,M>::vstack (Matrix<T,O,M> const& other)
 
 template <typename T, int N, int M>
 inline Matrix<T,N,M+1>
-Matrix<T,N,M>::hstack (Vector<T,N> const& other)
+Matrix<T,N,M>::hstack (Vector<T,N> const& other) const
 {
     Matrix<T,N,M+1> ret;
     T const* in1 = m;
@@ -377,11 +383,43 @@ Matrix<T,N,M>::hstack (Vector<T,N> const& other)
 
 template <typename T, int N, int M>
 inline Matrix<T,N+1,M>
-Matrix<T,N,M>::vstack (Vector<T,M> const& other)
+Matrix<T,N,M>::vstack (Vector<T,M> const& other) const
 {
     Matrix<T,N+1,M> ret;
     std::copy(m, m + M*N, *ret);
     std::copy(*other, *other + M, *ret + M*N);
+    return ret;
+}
+
+template <typename T, int N, int M>
+inline Matrix<T,N-1,M>
+Matrix<T,N,M>::delete_row (int index) const
+{
+    Matrix<T,N-1,M> ret;
+    T const* in_ptr = this->begin();
+    T* out_ptr = ret.begin();
+    for (int i = 0; i < N; ++i, in_ptr += M)
+        if (i != index)
+        {
+            std::copy(in_ptr, in_ptr + M, out_ptr);
+            out_ptr += M;
+        }
+    return ret;
+}
+
+template <typename T, int N, int M>
+inline Matrix<T,N,M-1>
+Matrix<T,N,M>::delete_col (int index) const
+{
+    Matrix<T,N,M-1> ret;
+    T const* in_ptr = this->begin();
+    T* out_ptr = ret.begin();
+    for (int i = 0; i < M*N; ++i, ++in_ptr)
+        if (i % M != index)
+        {
+            *out_ptr = *in_ptr;
+            out_ptr += 1;
+        }
     return ret;
 }
 

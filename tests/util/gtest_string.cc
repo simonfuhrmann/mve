@@ -38,13 +38,27 @@ TEST(StringTest, StringConversionTest)
 
     EXPECT_EQ(10.1234, util::string::convert<double>("10.1234"));
     EXPECT_EQ(10.1234f, util::string::convert<float>("10.1234"));
-    EXPECT_EQ(10.1234, util::string::convert<double>("10.1234asfd"));
-    EXPECT_EQ(10, util::string::convert<int>("10.1234asfd"));
-    EXPECT_EQ('1', util::string::convert<char>("10.1234asfd"));
+
+    // Strict conversion will throw if not all chars are consumed.
+    ASSERT_THROW(util::string::convert<double>("10.1234asfd"), std::invalid_argument);
+    ASSERT_THROW(util::string::convert<int>("10.1234asfd"), std::invalid_argument);
+    ASSERT_THROW(util::string::convert<char>("10.1234asfd"), std::invalid_argument);
     EXPECT_EQ("1.23asfd", util::string::convert<std::string>("1.23asfd"));
-    EXPECT_EQ(0.0f, util::string::convert<float>(""));
-    EXPECT_EQ(0, util::string::convert<int>(""));
-    EXPECT_EQ('\0', util::string::convert<char>(""));
+
+    EXPECT_EQ(10.1234, util::string::convert<double>("10.1234asfd", false));
+    EXPECT_EQ(10, util::string::convert<int>("10.1234asfd", false));
+    EXPECT_EQ('1', util::string::convert<char>("10.1234asfd", false));
+
+    // Strict conversion will always throw on empty argument.
+    ASSERT_THROW(util::string::convert<float>(""), std::invalid_argument);
+    ASSERT_THROW(util::string::convert<int>(""), std::invalid_argument);
+    ASSERT_THROW(util::string::convert<char>(""), std::invalid_argument);
+    ASSERT_THROW(util::string::convert<std::string>(""), std::invalid_argument);
+
+    EXPECT_EQ(0.0f, util::string::convert<float>("", false));
+    EXPECT_EQ(0, util::string::convert<int>("", false));
+    EXPECT_EQ('\0', util::string::convert<char>("", false));
+    EXPECT_EQ("", util::string::convert<std::string>("", false));
 }
 
 TEST(StringTest, LeftRightSubstringTest)
