@@ -5,34 +5,8 @@
 
 #include <gtest/gtest.h>
 
-#include "math/matrix.h"
 #include "math/algo.h"
 #include "math/permute.h"
-
-TEST(AlgoTest, GaussianTest)
-{
-    using namespace math;
-
-    EXPECT_EQ(algo::gaussian(0.0f, 1.0f), 1.0f);
-
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(1.0f, 1.0f),
-        0.606530659712633f, 0.00000000000001f));
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(-1.0f, 1.0f),
-        0.606530659712633f, 0.00000000000001f));
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(2.0f, 1.0f),
-        0.135335283236613f, 0.00000000000001f));
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(-2.0f, 1.0f),
-        0.135335283236613f, 0.00000000000001f));
-
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(1.0f, 2.0f),
-        0.882496902584595f, 0.00000000000001f));
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(-1.0f, 2.0f),
-        0.882496902584595f, 0.00000000000001f));
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(2.0f, 2.0f),
-        0.606530659712633f, 0.00000000000001f));
-    EXPECT_TRUE(MATH_EPSILON_EQ(algo::gaussian(-2.0f, 2.0f),
-        0.606530659712633f, 0.00000000000001f));
-}
 
 TEST(AlgoTest, PermutationTest)
 {
@@ -142,26 +116,6 @@ TEST(AlgoTest, MaxMinElementIdTest)
         id = math::algo::max_element_id(f, f+5);
         EXPECT_EQ(id, 2);
     }
-}
-
-TEST(AlgoTest, FastPowTest)
-{
-    EXPECT_EQ(1, math::algo::fastpow(10, 0));
-    EXPECT_EQ(10, math::algo::fastpow(10, 1));
-    EXPECT_EQ(100, math::algo::fastpow(10, 2));
-    EXPECT_EQ(1000, math::algo::fastpow(10, 3));
-
-    EXPECT_EQ(1, math::algo::fastpow(2, 0));
-    EXPECT_EQ(2, math::algo::fastpow(2, 1));
-    EXPECT_EQ(4, math::algo::fastpow(2, 2));
-    EXPECT_EQ(8, math::algo::fastpow(2, 3));
-    EXPECT_EQ(16, math::algo::fastpow(2, 4));
-    EXPECT_EQ(32, math::algo::fastpow(2, 5));
-    EXPECT_EQ(64, math::algo::fastpow(2, 6));
-    EXPECT_EQ(128, math::algo::fastpow(2, 7));
-    EXPECT_EQ(256, math::algo::fastpow(2, 8));
-    EXPECT_EQ(512, math::algo::fastpow(2, 9));
-    EXPECT_EQ(1024, math::algo::fastpow(2, 10));
 }
 
 TEST(AlgoTest, SortValues)

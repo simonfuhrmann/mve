@@ -94,7 +94,7 @@ int_to_byte_image (IntImage::ConstPtr image)
     img->allocate(image->width(), image->height(), image->channels());
     for (int i = 0; i < image->get_value_amount(); ++i)
     {
-        img->at(i) = math::algo::clamp(std::abs(image->at(i)), 0, 255);
+        img->at(i) = math::clamp(std::abs(image->at(i)), 0, 255);
     }
     return img;
 }

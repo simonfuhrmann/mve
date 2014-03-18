@@ -2,6 +2,7 @@
 
 #include "math/matrix_tools.h"
 #include "math/quaternion.h"
+#include "math/functions.h"
 #include "ogl/opengl.h"
 #include "ogl/camera_trackball.h"
 
@@ -67,7 +68,7 @@ CamTrackball::consume_event (MouseEvent const& event)
             float zoom_speed = this->zoom_tb_radius / 100.0f;
             float cam_diff = (float)mouse_diff * zoom_speed;
             float new_radius = this->zoom_tb_radius + cam_diff;
-            this->tb_radius = math::algo::clamp(new_radius, this->cam->z_near, this->cam->z_far);
+            this->tb_radius = math::clamp(new_radius, this->cam->z_near, this->cam->z_far);
             is_handled = true;
         }
     }
