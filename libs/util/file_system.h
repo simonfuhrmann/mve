@@ -25,7 +25,7 @@ bool dir_exists (char const* pathname);
 bool file_exists (char const* pathname);
 
 /** Determines the home path for the current user. */
-char* get_default_home_path (void);
+char const* get_home_dir (void);
 
 /** Determines the current working directory of the process. */
 char* get_cwd (char* buf, std::size_t size);

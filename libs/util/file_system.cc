@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 #include <cerrno> // errno
 #include <cstring> // std::strerror
 #include <cstdio> // std::rename
@@ -37,19 +38,24 @@ UTIL_FS_NAMESPACE_BEGIN
 // PATH_MAX might be long?
 char home_path[PATH_MAX] = { 0 };
 
+bool
+dir_exists (char const* pathname)
+{
 #ifdef _WIN32
+    struct _stat statbuf;
+    if (::_stat(pathname, &statbuf) < 0)
+        return false;
 
-bool
-dir_exists (char const* pathname)
-{
-  struct _stat statbuf;
-  if (::_stat(pathname, &statbuf) < 0)
-  {
-    return false;
-  }
+    if (!(statbuf.st_mode & _S_IFDIR))
+        return false;
+#else // _WIN32
+    struct stat statbuf;
+    if (::stat(pathname, &statbuf) < 0)
+        return false;
 
-  if (!(statbuf.st_mode & _S_IFDIR))
-    return false;
+    if (!S_ISDIR(statbuf.st_mode))
+        return false;
+#endif // _WIN32
 
   return true;
 }
@@ -59,36 +65,23 @@ dir_exists (char const* pathname)
 bool
 file_exists (char const* pathname)
 {
-  struct _stat statbuf;
-  if (::_stat(pathname, &statbuf) < 0)
-  {
-    return false;
-  }
+#ifdef _WIN32
+    struct _stat statbuf;
+    if (::_stat(pathname, &statbuf) < 0)
+        return false;
 
-  if (!(statbuf.st_mode & _S_IFREG))
-    return false;
+    if (!(statbuf.st_mode & _S_IFREG))
+        return false;
+#else // _WIN32
+    struct stat statbuf;
+    if (::stat(pathname, &statbuf) < 0)
+        return false;
 
-  return true;
-}
+    if (!S_ISREG(statbuf.st_mode))
+        return false;
+#endif // _WIN32
 
-/* ---------------------------------------------------------------- */
-
-// SHGetFolderPathA seems to expect non-wide chars
-// http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
-
-char*
-get_default_home_path (void)
-{
-  if (*home_path != 0)
-    return home_path;
-
-  if (!SUCCEEDED(::SHGetFolderPathA(0, CSIDL_APPDATA, 0, 0, home_path)))
-  {
-    std::cout << "Warning: Couldn't determine home directory!" << std::endl;
-    return 0;
-  }
-
-  return home_path;
+    return true;
 }
 
 /* ---------------------------------------------------------------- */
@@ -96,7 +89,11 @@ get_default_home_path (void)
 char*
 get_cwd (char* buf, size_t size)
 {
+#ifdef _WIN32
   return ::_getcwd(buf, size);
+#else // _WIN32
+  return ::getcwd(buf, size);
+#endif // _WIN32
 }
 
 /* ---------------------------------------------------------------- */
@@ -104,7 +101,11 @@ get_cwd (char* buf, size_t size)
 bool
 set_cwd (char const* pathname)
 {
+#ifdef _WIN32
     return ::_chdir(pathname) >= 0;
+#else // _WIN32
+    return ::chdir(pathname) >= 0;
+#endif // _WIN32
 }
 
 /* ---------------------------------------------------------------- */
@@ -112,8 +113,13 @@ set_cwd (char const* pathname)
 bool
 mkdir (char const* pathname/*, mode_t mode*/)
 {
-  if (::_mkdir(pathname) < 0)
-    return false;
+#ifdef _WIN32
+    if (::_mkdir(pathname) < 0)
+        return false;
+#else // _WIN32
+    if (::mkdir(pathname, S_IRWXU | S_IRGRP | S_IXGRP) < 0)
+        return false;
+#endif // _WIN32
 
   return true;
 }
@@ -123,107 +129,42 @@ mkdir (char const* pathname/*, mode_t mode*/)
 bool
 unlink (char const* pathname)
 {
-  return ::_unlink(pathname) >= 0;
-}
-
-/* ---------------------------------------------------------------- */
-#else /* Not windows, assume POSIX standards. */
-/* ---------------------------------------------------------------- */
-
-bool
-dir_exists (char const* pathname)
-{
-  struct stat statbuf;
-  if (::stat(pathname, &statbuf) < 0)
-  {
-    return false;
-  }
-
-  if (!S_ISDIR(statbuf.st_mode))
-    return false;
-
-  return true;
+#ifdef _WIN32
+    return ::_unlink(pathname) >= 0;
+#else // _WIN32
+    return ::unlink(pathname) >= 0;
+#endif // _WIN32
 }
 
 /* ---------------------------------------------------------------- */
 
-bool
-file_exists (char const* pathname)
+char const*
+get_home_dir (void)
 {
-  struct stat statbuf;
-  if (::stat(pathname, &statbuf) < 0)
-  {
-    return false;
-  }
+    if (*home_path != 0)
+        return home_path;
 
-  if (!S_ISREG(statbuf.st_mode))
-    return false;
+    // TODO: Use HOME environment variable?
 
-  return true;
-}
-
-/* ---------------------------------------------------------------- */
-
-char*
-get_default_home_path (void)
-{
-  if (*home_path != 0)
-    return home_path;
-
-  uid_t user_id = ::geteuid();
-  struct passwd* user_info = ::getpwuid(user_id);
-
-  if (user_info == NULL || user_info->pw_dir == NULL)
-  {
-    std::cout << "Warning: Couldn't determine home directory!" << std::endl;
-    return NULL;
-  }
-
-  std::strncpy(home_path, user_info->pw_dir, PATH_MAX);
+#ifdef _WIN32
+    // SHGetFolderPathA seems to expect non-wide chars
+    // http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
+    // FIXME: Max length of home path?
+    if (!SUCCEEDED(::SHGetFolderPathA(0, CSIDL_APPDATA, 0, 0, home_path)))
+        throw util::Exception("Cannot determine home directory");
+#else // _WIN32
+    uid_t user_id = ::geteuid();
+    struct passwd* user_info = ::getpwuid(user_id);
+    if (user_info == NULL || user_info->pw_dir == NULL)
+        throw util::Exception("Cannot determine home directory");
+    std::strncpy(home_path, user_info->pw_dir, PATH_MAX);
+#endif // _WIN32
 
   return home_path;
 }
 
 /* ---------------------------------------------------------------- */
 
-char*
-get_cwd (char* buf, size_t size)
-{
-  return ::getcwd(buf, size);
-}
-
-/* ---------------------------------------------------------------- */
-
-bool
-set_cwd (char const* pathname)
-{
-    return ::chdir(pathname) >= 0;
-}
-
-/* ---------------------------------------------------------------- */
-
-bool
-mkdir (char const* pathname/*, mode_t mode*/)
-{
-  if (::mkdir(pathname, S_IRWXU | S_IRGRP | S_IXGRP) < 0)
-    return false;
-
-  return true;
-}
-
-/* ---------------------------------------------------------------- */
-
-bool
-unlink (char const* pathname)
-{
-  return ::unlink(pathname) >= 0;
-}
-
-/* ---------------------------------------------------------------- */
-#endif /* os check */
-/* ---------------------------------------------------------------- */
-
-// Availale for POSIX and Win32??
 bool
 rename (char const* from, char const* to)
 {
@@ -407,6 +348,7 @@ std::string
 File::get_absolute_name (void) const
 {
 #ifdef _WIN32
+    // FIXME: Use '/' even on windows?
     return (!path.empty() && *path.rbegin() == '\\'
         ? path + name
         : path + "\\" + name);
