@@ -79,10 +79,10 @@ AddinSelection::redraw_gui (void)
     int sy = std::min(this->rect_start_y, this->rect_current_y);
     int ex = std::max(this->rect_start_x, this->rect_current_x);
     int ey = std::max(this->rect_start_y, this->rect_current_y);
-    sx = math::algo::clamp(sx, 0, w-1);
-    sy = math::algo::clamp(sy, 0, h-1);
-    ex = math::algo::clamp(ex, 0, w-1);
-    ey = math::algo::clamp(ey, 0, h-1);
+    sx = math::clamp(sx, 0, w-1);
+    sy = math::clamp(sy, 0, h-1);
+    ex = math::clamp(ex, 0, w-1);
+    ey = math::clamp(ey, 0, h-1);
 
     for (int y = sy; y <= ey; ++y)
         for (int x = sx; x <= ex; ++x)

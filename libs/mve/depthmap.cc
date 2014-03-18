@@ -129,7 +129,7 @@ struct BilateralDepthCloseness
     float operator() (math::Vec1f const& cv, math::Vec1f const& v)
     {
         return (v[0] <= 0.0f ? 0.0f
-            : math::algo::gaussian(cv[0] - v[0], dc_sigma));
+            : math::gaussian(cv[0] - v[0], dc_sigma));
     }
 };
 

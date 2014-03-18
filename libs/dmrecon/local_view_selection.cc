@@ -1,4 +1,5 @@
 #include "math/defines.h"
+#include "math/functions.h"
 #include "util/ref_ptr.h"
 #include "dmrecon/local_view_selection.h"
 #include "dmrecon/mvs_tools.h"
@@ -98,20 +99,20 @@ LocalViewSelection::performVS()
             }
 
             // parallax w.r.t. reference view
-            float dp = math::algo::clamp(refDir.dot(viewDir[i]), -1.f, 1.f);
+            float dp = math::clamp(refDir.dot(viewDir[i]), -1.f, 1.f);
             float plx = std::acos(dp) * 180.f / pi;
             score *= parallaxToWeight(plx);
             assert(!MATH_ISNAN(score));
 
             for (sel = selected.begin(); sel != selected.end(); ++sel) {
                 // parallax w.r.t. other selected views
-                dp = math::algo::clamp(viewDir[*sel].dot(viewDir[i]), -1.f, 1.f);
+                dp = math::clamp(viewDir[*sel].dot(viewDir[i]), -1.f, 1.f);
                 plx = std::acos(dp) * 180.f / pi;
                 score *= parallaxToWeight(plx);
 
                 // epipolar geometry
                 dp = epipolarPlane[i].dot(epipolarPlane[*sel]);
-                dp = math::algo::clamp(dp, -1.f, 1.f);
+                dp = math::clamp(dp, -1.f, 1.f);
                 float angle = std::abs(std::acos(dp) * 180.f / pi);
                 if (angle > 90.f)
                     angle = 180.f - angle;
