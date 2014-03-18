@@ -158,7 +158,7 @@ TEST(MatrixTest, MatrixStackVector)
     ASSERT_EQ(m4(2,0), 7.0f);  ASSERT_EQ(m4(2,1), 6.0f);
 }
 
-TEST(MatrixTest, MatrixBeginEndTest)
+TEST(MatrixTest, MatrixBeginEnd)
 {
     math::Matrix<int, 2, 3> m;
     for (int i = 0; i < 6; ++i)
@@ -173,7 +173,7 @@ TEST(MatrixTest, MatrixBeginEndTest)
     EXPECT_EQ(vec[6], -1);
 }
 
-TEST(MatrixTest, MatrixDeleteRowTest)
+TEST(MatrixTest, MatrixDeleteRow)
 {
     math::Matrix<int, 2, 3> m;
     for (int i = 0; i < 6; ++i)
@@ -190,7 +190,7 @@ TEST(MatrixTest, MatrixDeleteRowTest)
     EXPECT_EQ(2, m2[2]);
 }
 
-TEST(MatrixTest, MatrixDeleteColTest)
+TEST(MatrixTest, MatrixDeleteCol)
 {
     math::Matrix<int, 2, 3> m;
     for (int i = 0; i < 6; ++i)
@@ -213,55 +213,4 @@ TEST(MatrixTest, MatrixDeleteColTest)
     EXPECT_EQ(1, m2[1]);
     EXPECT_EQ(3, m2[2]);
     EXPECT_EQ(4, m2[3]);
-}
-
-TEST(MatrixToolsTest, DiagonalMatrixTest)
-{
-    using namespace math;
-    /* Matrix init diagonal tests. */
-    Vec3f diag_vector(1, 2, 3);
-    Matrix3f diag_mat = math::matrix_from_diagonal(diag_vector);
-    EXPECT_EQ(diag_mat[0], 1);
-    EXPECT_EQ(diag_mat[1], 0);
-    EXPECT_EQ(diag_mat[2], 0);
-    EXPECT_EQ(diag_mat[3], 0);
-    EXPECT_EQ(diag_mat[4], 2);
-    EXPECT_EQ(diag_mat[5], 0);
-    EXPECT_EQ(diag_mat[6], 0);
-    EXPECT_EQ(diag_mat[7], 0);
-    EXPECT_EQ(diag_mat[8], 3);
-
-    Vec3f diag_vector2(4, 5, 6);
-    math::matrix_set_diagonal(diag_mat, *diag_vector2);
-    EXPECT_EQ(diag_mat[0], 4);
-    EXPECT_EQ(diag_mat[1], 0);
-    EXPECT_EQ(diag_mat[2], 0);
-    EXPECT_EQ(diag_mat[3], 0);
-    EXPECT_EQ(diag_mat[4], 5);
-    EXPECT_EQ(diag_mat[5], 0);
-    EXPECT_EQ(diag_mat[6], 0);
-    EXPECT_EQ(diag_mat[7], 0);
-    EXPECT_EQ(diag_mat[8], 6);
-
-    Vec3f diag_test = math::matrix_get_diagonal(diag_mat);
-    EXPECT_EQ(diag_test, diag_vector2);
-}
-
-TEST(MatrixToolsTest, MatrixIsIdentity)
-{
-    math::Matrix3f mat, mat2;
-    math::matrix_set_identity(&mat);
-    EXPECT_TRUE(math::matrix_is_identity(mat));
-
-    mat2 = mat;
-    mat2[0] = 0.0f;
-    EXPECT_FALSE(math::matrix_is_identity(mat2));
-
-    mat2 = mat;
-    mat2[1] = 1.0f;
-    EXPECT_FALSE(math::matrix_is_identity(mat2));
-
-    mat2 = mat;
-    mat2[3] = 1.0f;
-    EXPECT_FALSE(math::matrix_is_identity(mat2));
 }
