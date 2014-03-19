@@ -35,7 +35,9 @@ public:
 
     /**
      * Representation of a 3D feature with position and color. Every feature
-     * also corresponds to a set of views form which it is seen.
+     * also corresponds to a set of views form which it is seen. In general,
+     * a 3D feature is seen by at least two cameras. However, if cameras are
+     * deleted from the bundle, there may only be one or zero cameras left.
      */
     struct Feature3D
     {
@@ -74,6 +76,8 @@ public:
     std::size_t get_num_valid_cameras (void) const;
     /** Returns all 3D features as colored set of points. */
     TriangleMesh::Ptr get_features_as_mesh (void) const;
+    /** Deletes a camera from the data structure fixing references. */
+    void delete_camera (std::size_t index);
 
 protected:
     Bundle (void);

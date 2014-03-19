@@ -60,4 +60,29 @@ Bundle::get_features_as_mesh (void) const
     return mesh;
 }
 
+/* -------------------------------------------------------------- */
+
+void
+Bundle::delete_camera (std::size_t index)
+{
+    if (index >= this->cameras.size())
+        throw std::invalid_argument("Invalid camera index");
+
+    /* Mark the deleted camera as invalid. */
+    this->cameras[index].flen = 0.0f;
+
+    /* Delete all SIFT features that are visible in this camera. */
+    for (std::size_t i = 0; i < this->features.size(); ++i)
+    {
+        Feature3D& feature = this->features[i];
+        typedef std::vector<Feature2D> FeatureRefs;
+        FeatureRefs& refs = feature.refs;
+        for (FeatureRefs::iterator iter = refs.begin(); iter != refs.end();)
+            if (iter->view_id == static_cast<int>(index))
+                refs.erase(iter);
+            else
+                iter++;
+    }
+}
+
 MVE_NAMESPACE_END
