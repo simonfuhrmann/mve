@@ -86,7 +86,21 @@ matrix_is_identity (Matrix<T,N,N> const& mat);
  */
 template <typename T, int N>
 Matrix<T,N,N>
-matrix_diagonal (math::Vector<T,N> const& v);
+matrix_from_diagonal (math::Vector<T,N> const& v);
+
+/**
+ * Sets the diagonal elements of the given matrix.
+ */
+template <typename T, int N>
+Matrix<T,N,N>&
+matrix_set_diagonal (Matrix<T,N,N>& mat, T const* diag);
+
+/**
+ * Returns the diagonal elements of the matrix as a vector.
+ */
+template <typename T, int N>
+Vector<T,N>
+matrix_get_diagonal (Matrix<T,N,N> const& mat);
 
 /**
  * Calculates the determinant of the given matrix.
