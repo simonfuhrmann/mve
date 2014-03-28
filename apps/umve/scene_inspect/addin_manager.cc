@@ -219,8 +219,7 @@ namespace
 void
 AddinManager::load_shaders (void)
 {
-    // FIXME: Use functionality from util::fs!
-    std::string home_dir = std::string(getenv("HOME"));
+    std::string home_dir = util::fs::get_home_dir();
     std::string binary_dir =
         util::fs::get_path_component(util::fs::get_binary_path());
 
