@@ -89,26 +89,30 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
 
 /* ---------------------------------------------------------------- */
 
-void
-ShaderProgram::try_load_all (std::string const& basename, bool unload)
+bool
+ShaderProgram::try_load_all (std::string const& basename)
 {
     std::string vert_filename = basename + ".vert";
-    if (util::fs::file_exists(vert_filename.c_str()))
-        this->load_vert_file(vert_filename);
-    else if (unload)
-        this->unload_vert();
-
     std::string geom_filename = basename + ".geom";
+    std::string frag_filename = basename + ".frag";
+
+    if (!util::fs::file_exists(vert_filename.c_str())
+     || !util::fs::file_exists(frag_filename.c_str()))
+    {
+        std::cerr << "Skipping shaders from " << basename << ".*" << std::endl;
+        return false;
+    }
+
+    std::cerr << "Loading shaders from " << basename << ".*" << std::endl;
+
+    this->load_vert_file(vert_filename);
+
     if (util::fs::file_exists(geom_filename.c_str()))
         this->load_geom_file(geom_filename);
-    else if (unload)
-        this->unload_geom();
 
-    std::string frag_filename = basename + ".frag";
-    if (util::fs::file_exists(frag_filename.c_str()))
-        this->load_frag_file(frag_filename);
-    else if (unload)
-        this->unload_frag();
+    this->load_frag_file(frag_filename);
+
+    return true;
 }
 
 OGL_NAMESPACE_END

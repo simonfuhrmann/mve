@@ -39,7 +39,7 @@ public:
      * Try loading all shaders by appending ".vert", ".geom"
      * and ".frag" to basename.
      */
-    void try_load_all (std::string const& basename, bool unload = true);
+    bool try_load_all (std::string const& basename);
 
     /** Loads a vertex shader from file. */
     void load_vert_file (std::string const& filename);
