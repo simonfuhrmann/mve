@@ -43,6 +43,7 @@ ShaderProgram::load_shader_code (GLuint& shader_id, GLuint shader_type,
     }
 
     this->compile_shader(shader_id, code);
+    this->need_to_link = true;
 }
 
 /* ---------------------------------------------------------------- */

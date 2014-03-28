@@ -99,6 +99,8 @@ private:
     GLuint geom_id;
     GLuint frag_id;
 
+    bool need_to_link;
+
 private:
     ShaderProgram (void);
 
@@ -113,7 +115,6 @@ private:
     GLint get_shader_property (GLuint shader_id, int pname);
 
     void ensure_linked (void);
-    void link (void) const;
 };
 
 /* ---------------------------------------------------------------- */
@@ -126,6 +127,7 @@ ShaderProgram::ShaderProgram (void)
     this->frag_id = 0;
     this->prog_id = glCreateProgram();
     check_gl_error();
+    this->need_to_link = false;
 }
 
 inline
@@ -295,17 +297,14 @@ ShaderProgram::unbind (void) const
 }
 
 inline void
-ShaderProgram::link (void) const
-{
-    glLinkProgram(this->prog_id);
-    check_gl_error();
-}
-
-inline void
 ShaderProgram::ensure_linked (void)
 {
-    if (this->get_program_property(GL_LINK_STATUS) == GL_FALSE)
-        this->link();
+    if (this->need_to_link)
+    {
+        glLinkProgram(this->prog_id);
+        check_gl_error();
+        this->need_to_link = false;
+    }
 }
 
 inline GLint
