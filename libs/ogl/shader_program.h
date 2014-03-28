@@ -191,6 +191,8 @@ ShaderProgram::unload_vert (void)
 
     glDeleteShader(this->vert_id);
     check_gl_error();
+
+    this->vert_id = 0;
 }
 
 inline void
@@ -201,6 +203,8 @@ ShaderProgram::unload_geom (void)
 
     glDeleteShader(this->geom_id);
     check_gl_error();
+
+    this->geom_id = 0;
 }
 
 inline void
@@ -211,6 +215,8 @@ ShaderProgram::unload_frag (void)
 
     glDeleteShader(this->frag_id);
     check_gl_error();
+
+    this->frag_id = 0;
 }
 
 inline GLint
