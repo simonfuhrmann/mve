@@ -229,31 +229,50 @@ AddinManager::load_shaders (void)
     shader_paths.push_back("/usr/local/share/umve/shader/");
     shader_paths.push_back("/usr/share/umve/shader/");
 
-    /*
-     * Shaders loaded later override those loaded earlier, so try
-     * Qt Resources first and files afterwards.
-     */
-    load_shaders_from_resources(this->state.surface_shader, ":/shader/surface_120");
-    load_shaders_from_resources(this->state.wireframe_shader, ":/shader/wireframe_120");
-    load_shaders_from_resources(this->state.texture_shader, ":/shader/texture_120");
+    bool found_surface = false;
+    bool found_wireframe = false;
+    bool found_texture = false;
 
     for (std::size_t i = 0; i < shader_paths.size(); ++i)
     {
         try
         {
-            this->state.surface_shader->try_load_all
-                (shader_paths[i] + "surface_120", false);
-            this->state.wireframe_shader->try_load_all
-                (shader_paths[i] + "wireframe_120", false);
-            this->state.texture_shader->try_load_all
-                (shader_paths[i] + "texture_120", false);
+            if (!found_surface)
+                found_surface = this->state.surface_shader->try_load_all
+                    (shader_paths[i] + "surface_120");
+            if (!found_wireframe)
+                found_wireframe = this->state.wireframe_shader->try_load_all
+                    (shader_paths[i] + "wireframe_120");
+            if (!found_texture)
+                found_texture = this->state.texture_shader->try_load_all
+                    (shader_paths[i] + "texture_120");
         }
         catch (util::Exception& e)
         {
-            std::cout << "Skipping shaders from "
-                << shader_paths[i] << ":" << std::endl;
-            std::cout << e.what() << std::endl;
+            std::cout << "Error while loading shaders from "
+                << shader_paths[i] << "." << std::endl;
+            throw e;
         }
+    }
+
+    /*
+     * Shaders loaded later override those loaded earlier, so try
+     * Qt Resources first and files afterwards.
+     */
+    if (!found_surface)
+    {
+        std::cout << "Falling back to built-in `surface' shader." << std::endl;
+        load_shaders_from_resources(this->state.surface_shader, ":/shader/surface_120");
+    }
+    if (!found_wireframe)
+    {
+        std::cout << "Falling back to built-in `wireframe' shader." << std::endl;
+        load_shaders_from_resources(this->state.wireframe_shader, ":/shader/wireframe_120");
+    }
+    if (!found_texture)
+    {
+        std::cout << "Falling back to built-in `texture' shader." << std::endl;
+        load_shaders_from_resources(this->state.texture_shader, ":/shader/texture_120");
     }
 }
 
