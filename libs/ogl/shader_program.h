@@ -13,6 +13,7 @@
 #include "math/matrix.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
+#include "ogl/check_gl_error.h"
 
 #define OGL_ATTRIB_POSITION "pos"
 #define OGL_ATTRIB_NORMAL "normal"
@@ -124,15 +125,20 @@ ShaderProgram::ShaderProgram (void)
     this->geom_id = 0;
     this->frag_id = 0;
     this->prog_id = glCreateProgram();
+    check_gl_error();
 }
 
 inline
 ShaderProgram::~ShaderProgram (void)
 {
     glDeleteProgram(this->prog_id);
+    check_gl_error();
     glDeleteShader(this->vert_id);
+    check_gl_error();
     glDeleteShader(this->geom_id);
+    check_gl_error();
     glDeleteShader(this->frag_id);
+    check_gl_error();
 }
 
 inline ShaderProgram::Ptr
@@ -181,21 +187,30 @@ inline void
 ShaderProgram::unload_vert (void)
 {
     glDetachShader(this->prog_id, this->vert_id);
+    check_gl_error();
+
     glDeleteShader(this->vert_id);
+    check_gl_error();
 }
 
 inline void
 ShaderProgram::unload_geom (void)
 {
     glDetachShader(this->prog_id, this->geom_id);
+    check_gl_error();
+
     glDeleteShader(this->geom_id);
+    check_gl_error();
 }
 
 inline void
 ShaderProgram::unload_frag (void)
 {
     glDetachShader(this->prog_id, this->frag_id);
+    check_gl_error();
+
     glDeleteShader(this->frag_id);
+    check_gl_error();
 }
 
 inline GLint
@@ -263,18 +278,21 @@ ShaderProgram::bind (void)
 {
     this->ensure_linked();
     glUseProgram(this->prog_id);
+    check_gl_error();
 }
 
 inline void
 ShaderProgram::unbind (void) const
 {
     glUseProgram(0);
+    check_gl_error();
 }
 
 inline void
 ShaderProgram::link (void) const
 {
     glLinkProgram(this->prog_id);
+    check_gl_error();
 }
 
 inline void
@@ -289,6 +307,7 @@ ShaderProgram::get_program_property (int pname)
 {
     GLint ret;
     glGetProgramiv(this->prog_id, pname, &ret);
+    check_gl_error();
     return ret;
 }
 
@@ -297,6 +316,7 @@ ShaderProgram::get_shader_property (GLuint shader_id, int pname)
 {
     GLint ret;
     glGetShaderiv(shader_id, pname, &ret);
+    check_gl_error();
     return ret;
 }
 

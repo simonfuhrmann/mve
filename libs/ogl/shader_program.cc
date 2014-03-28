@@ -36,7 +36,10 @@ ShaderProgram::load_shader_code (GLuint& shader_id, GLuint shader_type,
     if (shader_id == 0)
     {
         shader_id = glCreateShader(shader_type);
+        check_gl_error();
+
         glAttachShader(this->prog_id, shader_id);
+        check_gl_error();
     }
 
     this->compile_shader(shader_id, code);
@@ -50,7 +53,9 @@ ShaderProgram::unload_shader (GLuint& shader_id)
     if (shader_id != 0)
     {
         glDetachShader(this->prog_id, shader_id);
+        check_gl_error();
         glDeleteShader(shader_id);
+        check_gl_error();
         shader_id = 0;
     }
 }
@@ -63,9 +68,11 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
     /* Pass code to OpenGL. */
     char const* data[1] = { code.c_str() };
     glShaderSource(shader_id, 1, data, NULL);
+    check_gl_error();
 
     /* Compile shader. */
     glCompileShader(shader_id);
+    check_gl_error();
     if (this->get_shader_property(shader_id, GL_COMPILE_STATUS) == GL_FALSE)
     {
         GLint log_size = this->get_shader_property(shader_id, GL_INFO_LOG_LENGTH);
