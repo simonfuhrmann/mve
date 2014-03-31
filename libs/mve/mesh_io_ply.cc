@@ -143,7 +143,7 @@ load_ply_mesh (std::string const& filename)
         throw std::invalid_argument("No filename given");
 
     /* Open file. */
-    std::ifstream input(filename.c_str());
+    std::ifstream input(filename.c_str(), std::ios::binary);
     if (!input.good())
         throw util::FileException(filename, std::strerror(errno));
 
@@ -694,7 +694,7 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
         : "ascii");
 
     /* Open output file. */
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 

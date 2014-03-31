@@ -384,7 +384,7 @@ replace_extension (std::string const& fn, std::string const& ext)
 void
 read_file_to_string (std::string const& filename, std::string* data)
 {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename.c_str(), std::ios::binary);
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
     in.seekg(0, std::ios::end);
@@ -404,7 +404,7 @@ write_string_to_file (std::string const& data, std::string const& filename)
 void
 write_string_to_file (char const* data, int len, std::string const& filename)
 {
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
     out.write(data, len);
