@@ -37,7 +37,7 @@ main (int argc, char** argv)
     conf.outfile = args.get_nth_nonopt(1);
     conf.compute_normals = false;
 
-    for (util::ArgResult const* arg = args.next_result();
+    for (util::ArgResult const* arg = args.next_option();
         arg != NULL; arg = args.next_option())
     {
         switch (arg->opt->sopt)
