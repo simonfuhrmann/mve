@@ -120,6 +120,8 @@ struct InterleavedIter : public std::iterator<std::input_iterator_tag, T>
     InterleavedIter (T const* pos) : pos(pos) {}
     InterleavedIter& operator++ (void) { pos += S; return *this; }
     T const& operator* (void) const { return *pos; }
+    bool operator== (InterleavedIter<T,S> const& other) const
+    { return pos == other.pos; }
     bool operator!= (InterleavedIter<T,S> const& other) const
     { return pos != other.pos; }
 };
