@@ -193,8 +193,8 @@ Image<T>::swap_channels (int c1, int c2)
         || c1 >= this->channels() || c2 >= this->channels())
         return;
 
-    typename std::vector<T>::iterator iter1 = this->data.begin() + c1;
-    typename std::vector<T>::iterator iter2 = this->data.begin() + c2;
+    T* iter1 = &this->data[0] + c1;
+    T* iter2 = &this->data[0] + c2;
     int pixels = this->get_pixel_amount();
     for (int i = 0; i < pixels; ++i, iter1 += this->c, iter2 += this->c)
         std::swap(*iter1, *iter2);
@@ -213,8 +213,8 @@ Image<T>::copy_channel (int src, int dest)
         this->add_channels(1);
     }
 
-    typename std::vector<T>::iterator src_iter = this->data.begin() + src;
-    typename std::vector<T>::iterator dst_iter = this->data.begin() + dest;
+    T const* src_iter = &this->data[0] + src;
+    T* dst_iter = &this->data[0] + dest;
     int pixels = this->get_pixel_amount();
     for (int i = 0; i < pixels; ++i, src_iter += this->c, dst_iter += this->c)
         *dst_iter = *src_iter;
