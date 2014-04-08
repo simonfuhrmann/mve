@@ -24,4 +24,7 @@ public:
     void set_tab_active (bool tab_active);
 };
 
+#define MainWindowTab_iid "de.tu-darmstadt.informatik.gris.UMVE.MainWindowTab"
+Q_DECLARE_INTERFACE(MainWindowTab, MainWindowTab_iid)
+
 #endif // MAIN_WINDOW_TAB_HEADER
