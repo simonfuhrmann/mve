@@ -154,6 +154,7 @@ for_type<int8_t> (void)
     return "sint8";
 }
 
+#ifdef __GNUC__
 /* Note: 'char' is neither recognized as 'int8_t' nor 'uint8_t'. We assume
  * that 'char' is singed, which is not always true:
  * http://www.network-theory.co.uk/docs/gccintro/gccintro_71.html
@@ -164,6 +165,7 @@ for_type<char> (void)
 {
     return "sint8";
 }
+#endif
 
 template <>
 inline char const*
