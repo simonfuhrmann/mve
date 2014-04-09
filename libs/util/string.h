@@ -6,12 +6,12 @@
 #ifndef UTIL_STRING_HEADER
 #define UTIL_STRING_HEADER
 
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <sstream>
 #include <string>
 #include <iomanip>
 #include <stdexcept>
 
+#include "util/stdint_compat.h"
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
