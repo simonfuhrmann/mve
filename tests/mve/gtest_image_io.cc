@@ -95,6 +95,7 @@ namespace
     }
 }
 
+#ifndef MVE_NO_JPEG_SUPPORT
 TEST(ImageFileTest, JPEGSaveLoad)
 {
     TempFile filename("jpegtest");
@@ -110,7 +111,9 @@ TEST(ImageFileTest, JPEGSaveLoad)
     img2 = mve::image::load_jpg_file(filename);
     EXPECT_TRUE(compare_jpeg(img1, img2));
 }
+#endif
 
+#ifndef MVE_NO_PNG_SUPPORT
 TEST(ImageFileTest, PNGSaveLoad)
 {
     TempFile filename("pngtest");
@@ -136,6 +139,7 @@ TEST(ImageFileTest, PNGSaveLoad)
     img2 = mve::image::load_png_file(filename);
     EXPECT_TRUE(compare_exact<uint8_t>(img1, img2));
 }
+#endif
 
 TEST(ImageFileTest, PPMSaveLoad)
 {
@@ -153,6 +157,7 @@ TEST(ImageFileTest, PPMSaveLoad)
     EXPECT_TRUE(compare_exact<uint8_t>(img1, img2));
 }
 
+#ifndef MVE_NO_TIFF_SUPPORT
 TEST(ImageFileTest, TIFFSaveLoad)
 {
     TempFile filename("tifftest");
@@ -183,6 +188,7 @@ TEST(ImageFileTest, TIFFSaveLoad)
     img2 = mve::image::load_tiff_file(filename);
     EXPECT_TRUE(compare_exact<uint8_t>(img1, img2));
 }
+#endif
 
 TEST(ImageFileTest, PFMSaveLoad)
 {
@@ -232,6 +238,7 @@ TEST(ImageFileTest, PPM16SaveLoad)
     EXPECT_TRUE(compare_exact<uint16_t>(img1, img2));
 }
 
+#ifndef MVE_NO_TIFF_SUPPORT
 TEST(ImageFileTest, TIFF16SaveLoad)
 {
     TempFile filename("tiff16test");
@@ -247,3 +254,4 @@ TEST(ImageFileTest, TIFF16SaveLoad)
     img2 = mve::image::load_tiff_16_file(filename);
     EXPECT_TRUE(compare_exact<uint16_t>(img1, img2));
 }
+#endif
