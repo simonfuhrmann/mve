@@ -7,7 +7,6 @@
 #include <algorithm>
 
 #if defined(_WIN32)
-#   include <dirent.h>
 #   include <direct.h>
 #   include <io.h>
 #   include <shlobj.h>
@@ -461,6 +460,27 @@ Directory::scan (std::string const& path)
 {
     this->clear();
 
+#ifdef _WIN32
+    WIN32_FIND_DATA data;
+    HANDLE hf = FindFirstFile((path + "/*").c_str(), &data);
+
+    do
+    {
+        if (!std::strcmp(data.cFileName, "."))
+            continue;
+        if (!std::strcmp(data.cFileName, ".."))
+            continue;
+
+        this->push_back(File());
+        this->back().path = path + "/" + data.cFileName;
+        this->back().name = data.cFileName;
+        this->back().is_dir =
+            (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    }
+    while (FindNextFile(hf, &data) != 0);
+
+    FindClose(hf);
+#else
     DIR *dp = ::opendir(path.c_str());
     if (dp == NULL)
         throw Exception("Cannot open directory: ", std::strerror(errno));
@@ -475,14 +495,11 @@ Directory::scan (std::string const& path)
         this->push_back(File());
         this->back().path = path;
         this->back().name = ep->d_name;
-#ifdef _WIN32
-        std::string fname(this->back().path + "/" + this->back().name);
-        this->back().is_dir = dir_exists(fname.c_str());
-#else
+
         this->back().is_dir = (ep->d_type == DT_DIR);
-#endif
     }
     ::closedir(dp);
+#endif
 }
 
 /*
