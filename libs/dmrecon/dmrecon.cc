@@ -6,6 +6,7 @@
 #include <ctime>
 
 #include "math/vector.h"
+#include "math/algo.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
 #include "util/file_system.h"
@@ -298,8 +299,8 @@ void DMRecon::processFeatures()
             continue;
         }
         math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
-        int x = round(pixPosF[0]);
-        int y = round(pixPosF[1]);
+        int x = math::algo::round(pixPosF[0]);
+        int y = math::algo::round(pixPosF[1]);
         float initDepth = (featPos - refV->camPos).norm();
         PatchOptimization patch(views, settings, x, y, initDepth,
             0.f, 0.f, neighViews, IndexSet());
