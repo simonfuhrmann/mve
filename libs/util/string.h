@@ -478,7 +478,7 @@ get_size_string (std::size_t size)
         size_flt = size / 1048576.0;
         size_str = " MB";
     }
-    else if (size < (std::size_t)1073741824 * 1000) /* 1000 * 1024^3 */
+    else if (size < 1073741824ULL * 1000ULL) /* 1000 * 1024^3 */
     {
         size_flt = size / 1073741824.0;
         size_str = " GB";
