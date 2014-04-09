@@ -38,6 +38,10 @@ public:
     T const* end (void) const;
     T* end (void);
 
+protected:
+    AlignedMemory (AlignedMemory const&);
+    void operator= (AlignedMemory const&);
+
 private:
     unsigned char* raw;
     T* aligned;
