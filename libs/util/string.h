@@ -10,6 +10,7 @@
 #include <string>
 #include <iomanip>
 #include <stdexcept>
+#include <algorithm>
 
 #include "util/stdint_compat.h"
 #include "util/defines.h"
