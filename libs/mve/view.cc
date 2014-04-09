@@ -328,9 +328,9 @@ View::save_mve_file_as (std::string const& filename)
     // TODO: Re-read and merge with file on disc?
     //this->reload_mve_file(true);
 
-    //std::string file_component = util::fs::get_file_component(filename);
+    //std::string basename = util::fs::basename(filename);
     //std::cout << "Saving MVE file as '"
-    //    << file_component << "'..." << std::endl;
+    //    << basename << "'..." << std::endl;
 
     /* Acquire file lock for the view. */
     util::fs::FileLock lock;
@@ -423,7 +423,7 @@ View::save_mve_file_as (std::string const& filename)
     this->cache_cleanup();
 
     //std::cout << "Done saving file as '"
-    //    << file_component << "'." << std::endl;
+    //    << basename << "'." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
@@ -438,7 +438,7 @@ View::save_mve_file (bool force_rebuild)
     //this->reload_mve_file(true);
 
     /* For debugging... */
-    std::string file_component = util::fs::get_file_component(this->filename);
+    std::string basename = util::fs::basename(this->filename);
 
     /*
      * Check if we can write embeddings directly to file instead of creating
@@ -461,7 +461,7 @@ View::save_mve_file (bool force_rebuild)
 
         if (num_dirty == 0)
         {
-            //std::cout << "Nothing changed for '" << file_component
+            //std::cout << "Nothing changed for '" << basename
             //    << "', skipping." << std::endl;
             return;
         }
@@ -478,7 +478,7 @@ View::save_mve_file (bool force_rebuild)
     if (direct)
     {
         //std::cout << "Direct-writing modified data to "
-        //    << file_component << std::endl;
+        //    << basename << std::endl;
         try
         {
             for (std::size_t i = 0; i < this->proxies.size(); ++i)
@@ -488,7 +488,7 @@ View::save_mve_file (bool force_rebuild)
         }
         catch (util::Exception& e)
         {
-            //std::cout << "Error direct-writing to " << file_component
+            //std::cout << "Error direct-writing to " << basename
             //    << ": " << e << std::endl;
         }
     }
@@ -502,7 +502,7 @@ View::save_mve_file (bool force_rebuild)
         this->rename_file(orig_filename);
     }
 
-    //std::cout << "Done saving '" << file_component << "'." << std::endl;
+    //std::cout << "Done saving '" << basename << "'." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
