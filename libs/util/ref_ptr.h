@@ -22,12 +22,16 @@ class RefPtrCounter
 {
 public:
     RefPtrCounter (void);
-    int increment (void);
-    int decrement (void);
-    int use_count (void) const;
+    unsigned int increment (void);
+    unsigned int decrement (void);
+    unsigned int use_count (void) const;
 
 private:
-    Atomic<int> count;
+#ifdef _WIN32
+    Atomic<LONG> count;
+#else
+    Atomic<unsigned int> count;
+#endif
 };
 
 /**
@@ -140,19 +144,19 @@ RefPtrCounter::RefPtrCounter (void)
 {
 }
 
-inline int
+inline unsigned int
 RefPtrCounter::increment (void)
 {
     return count.increment();
 }
 
-inline int
+inline unsigned int
 RefPtrCounter::decrement (void)
 {
     return count.decrement();
 }
 
-inline int
+inline unsigned int
 RefPtrCounter::use_count (void) const
 {
     return *count;
