@@ -4,6 +4,7 @@
 #include <cerrno> // errno
 #include <cstring> // std::strerror
 #include <cstdio> // std::rename
+#include <algorithm>
 
 #if defined(_WIN32)
 #   include <dirent.h>
@@ -37,6 +38,24 @@ UTIL_FS_NAMESPACE_BEGIN
 
 // PATH_MAX might be long?
 char home_path[PATH_MAX] = { 0 };
+
+bool
+exists (char const* pathname)
+{
+#ifdef _WIN32
+    struct _stat statbuf;
+    if (::_stat(pathname, &statbuf) < 0)
+        return false;
+#else // _WIN32
+    struct stat statbuf;
+    if (::stat(pathname, &statbuf) < 0)
+        return false;
+#endif // _WIN32
+
+  return true;
+}
+
+/* ---------------------------------------------------------------- */
 
 bool
 dir_exists (char const* pathname)
@@ -239,49 +258,108 @@ get_binary_path (void)
 }
 
 /* ---------------------------------------------------------------- */
-// FIXME windows path separator ("\") compatible version?
 
-std::string
-get_path_component (std::string const& path)
+bool
+is_absolute (std::string const& path)
 {
-    if (path.empty())
-        return get_cwd_string();
-
-    std::size_t pos1 = path.find_first_of('/');
-    std::size_t pos2 = path.find_last_of('/');
-
-    if (pos1 == 0)
-    {
-        /* Path is absolute. */
-        if (pos2 == 0)
-            return std::string("/");
-        else
-            return path.substr(0, pos2);
-    }
-    else
-    {
-        /* Path is relative. */
-        if (pos2 == std::string::npos)
-            return get_cwd_string();
-        else
-            return get_cwd_string() + "/" + path.substr(0, pos2);
-    }
+#ifdef _WIN32
+    return path.size() >= 2 && std::isalpha(path[0]) && path[1] == ':';
+#else
+    return path.size() >= 1 && path[0] == '/';
+#endif
 }
 
-/* ---------------------------------------------------------------- */
-// FIXME Win32 compatible version
+std::string
+sanitize_path (std::string const& path)
+{
+    if (path.empty())
+        return "";
+
+    std::string result = path;
+
+    /* Replace backslashes. */
+    std::replace(result.begin(), result.end(), '\\', '/');
+
+    /* Remove double slashes. */
+    for (std::size_t i = 0; i < result.size() - 1; )
+    {
+        if (result[i] == '/' && result[i + 1] == '/')
+            result.erase(i, 1);
+        else
+            i += 1;
+    }
+
+    /* Remove trailing slash if result != "/". */
+    if (result.size() > 1 && result[result.size() - 1] == '/')
+        result.erase(result.end() - 1);
+
+    return result;
+}
 
 std::string
-get_file_component (std::string const& path)
+join_path (std::string const& path1, std::string const& path2)
 {
-    if (path.empty() || path[path.size() - 1] == '/')
-        return std::string();
+    std::string p2 = sanitize_path(path2);
 
-    std::size_t pos = path.find_last_of('/');
-    if (pos == std::string::npos)
-        return path;
+    if (is_absolute(p2))
+        return p2;
 
-    return path.substr(pos + 1);
+#ifdef _WIN32
+    if (!p2.empty() && p2[0] == '/')
+        return sanitize_path(path1) + p2;
+#endif
+
+    return sanitize_path(path1) + '/' + p2;
+}
+
+std::string
+abspath (std::string const& path)
+{
+    return join_path(get_cwd_string(), path);
+}
+
+std::string
+dirname (std::string const& path)
+{
+    if (path.empty())
+        return ".";
+
+    /* Skip group of slashes at the end. */
+    std::size_t len = path.size();
+    while (len > 0 && path[len - 1] == '/')
+        len -= 1;
+    if (len == 0)
+        return "/";
+
+    /* Skip basename. */
+    while (len > 0 && path[len - 1] != '/')
+        len -= 1;
+    if (len == 0)
+        return ".";
+
+    /* Skip group of slashes. */
+    while (len > 1 && path[len - 1] == '/')
+        len -= 1;
+
+    return path.substr(0, len);
+}
+
+std::string
+basename (std::string const& path)
+{
+    /* Skip group of slashes at the end. */
+    std::size_t len = path.size();
+    while (len > 0 && path[len - 1] == '/')
+        len -= 1;
+    if (len == 0)
+        return "";
+
+    /* Skip basename. */
+    std::size_t base = len - 1;
+    while (base > 0 && path[base - 1] != '/')
+        base -= 1;
+
+    return path.substr(base, len - base);
 }
 
 /* ---------------------------------------------------------------- */

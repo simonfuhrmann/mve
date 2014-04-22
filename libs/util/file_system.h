@@ -19,6 +19,9 @@ UTIL_FS_NAMESPACE_BEGIN
  */
 
 /** Determines if the given path is a directory. */
+bool exists (char const* pathname);
+
+/** Determines if the given path is a directory. */
 bool dir_exists (char const* pathname);
 
 /** Determines if the given path is a file. */
@@ -77,15 +80,26 @@ std::string get_cwd_string (void);
 /** Returns the path of the binary currently executing. */
 std::string get_binary_path (void);
 
-/**
- * Returns the absolute base path component of 'path'.
- * If the given path is not absolute, it is assumed to be relative to the
- * current working directory.
- */
-std::string get_path_component (std::string const& path);
+/** Checks whether the given path is absolute. */
+bool is_absolute (std::string const& path);
 
-/** Returns the local file component if the given 'path'. */
-std::string get_file_component (std::string const& path);
+/** Canonicalize slashes in the given path. */
+std::string sanitize_path (std::string const& path);
+
+/**
+ * Concatenate and canonicalize two paths. The result is where you would
+ * end up after cd path1; cd path2.
+ */
+std::string join_path (std::string const& path1, std::string const& path2);
+
+/** Returns the absolute representation of the given path. */
+std::string abspath (std::string const& path);
+
+/** Returns the directory name component of the given path. */
+std::string dirname (std::string const& path);
+
+/** Returns the file name component of the given path. */
+std::string basename (std::string const& path);
 
 /**
  * Replaces extension of the given file with 'ext'. If the file name
