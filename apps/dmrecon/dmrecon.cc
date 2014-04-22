@@ -83,8 +83,8 @@ main (int argc, char** argv)
 
     std::string basePath = args.get_nth_nonopt(0);
     bool writeply = false;
-    std::string plyDest("/recon");
-    std::string logDest("/log");
+    std::string plyDest("recon");
+    std::string logDest("log");
     int master_id = -1;
     bool force_recon = false;
     ProgressStyle progress_style;
