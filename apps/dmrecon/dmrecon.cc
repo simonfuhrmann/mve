@@ -11,6 +11,7 @@
 #include "util/arguments.h"
 #include "util/system.h"
 #include "util/tokenizer.h"
+#include "util/file_system.h"
 
 #include "fancy_progress_printer.h"
 
