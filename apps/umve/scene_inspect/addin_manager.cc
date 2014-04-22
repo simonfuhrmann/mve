@@ -8,6 +8,7 @@
 #include "util/file_system.h"
 #include "ogl/render_tools.h"
 
+#include "fshelpers.h"
 #include "guihelpers.h"
 #include "scene_inspect/addin_manager.h"
 
@@ -219,14 +220,8 @@ namespace
 void
 AddinManager::load_shaders (void)
 {
-    std::string home_dir = util::fs::get_home_dir();
-    std::string binary_dir = util::fs::dirname(util::fs::get_binary_path());
-
     std::vector<std::string> shader_paths;
-    shader_paths.push_back(binary_dir + "/shaders/");
-    shader_paths.push_back(home_dir + "/.local/share/umve/shaders");
-    shader_paths.push_back("/usr/local/share/umve/shaders/");
-    shader_paths.push_back("/usr/share/umve/shaders/");
+    get_search_paths(&shader_paths, "shaders");
 
     bool found_surface = false;
     bool found_wireframe = false;
@@ -238,13 +233,13 @@ AddinManager::load_shaders (void)
         {
             if (!found_surface)
                 found_surface = this->state.surface_shader->try_load_all
-                    (shader_paths[i] + "surface_330");
+                    (util::fs::join_path(shader_paths[i], "surface_330"));
             if (!found_wireframe)
                 found_wireframe = this->state.wireframe_shader->try_load_all
-                    (shader_paths[i] + "wireframe_330");
+                    (util::fs::join_path(shader_paths[i], "wireframe_330"));
             if (!found_texture)
                 found_texture = this->state.texture_shader->try_load_all
-                    (shader_paths[i] + "texture_330");
+                    (util::fs::join_path(shader_paths[i], "texture_330"));
         }
         catch (util::Exception& e)
         {
