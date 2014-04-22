@@ -261,7 +261,7 @@ QFileSelector::on_clicked (void)
         return;
 
     this->filename = filename.toStdString();
-    std::string fname = util::fs::get_file_component(this->filename);
+    std::string fname = util::fs::basename(this->filename);
     if (this->ellipsize > 0)
         fname = util::string::ellipsize(fname, this->ellipsize, 1);
 

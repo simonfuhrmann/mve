@@ -83,7 +83,7 @@ AddinMeshesRenderer::load_mesh (std::string const& filename)
         }
     }
 
-    this->add_mesh(util::fs::get_file_component(filename), mesh, filename);
+    this->add_mesh(util::fs::basename(filename), mesh, filename);
 }
 
 void

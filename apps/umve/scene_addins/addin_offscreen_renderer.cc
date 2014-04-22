@@ -321,6 +321,6 @@ AddinOffscreenRenderer::on_display_sequence (void)
         colors.push_back(lookat_color);
     }
 
-    emit this->mesh_generated(util::fs::get_file_component(seq_file), mesh);
+    emit this->mesh_generated(util::fs::basename(seq_file), mesh);
     this->repaint();
 }

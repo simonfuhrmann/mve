@@ -190,7 +190,7 @@ QMeshContextMenu::on_save_mesh (void)
     {
         mve::geom::save_mesh(this->rep->mesh, fname);
         this->rep->filename = fname;
-        this->rep->name = util::fs::get_file_component(fname);
+        this->rep->name = util::fs::basename(fname);
         this->item->setText(this->rep->name.c_str());
     }
     catch (std::exception& e)

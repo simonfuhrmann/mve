@@ -220,8 +220,7 @@ void
 AddinManager::load_shaders (void)
 {
     std::string home_dir = util::fs::get_home_dir();
-    std::string binary_dir =
-        util::fs::get_path_component(util::fs::get_binary_path());
+    std::string binary_dir = util::fs::dirname(util::fs::get_binary_path());
 
     std::vector<std::string> shader_paths;
     shader_paths.push_back(binary_dir + "/shader/");
