@@ -3,7 +3,7 @@
 
 // TODO: use <cstdint> once C++11 is mandatory
 
-#if _MSC_VER && (_MSC_VER < 1600)
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
 typedef __int8 int8_t;
 typedef unsigned __int8 uint8_t;
 typedef __int16 int16_t;
