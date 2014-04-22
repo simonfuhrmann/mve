@@ -34,48 +34,6 @@ class MutexLock
     { this->m->unlock(); this->m = NULL; }
 };
 
-/* ---------------------------------------------------------------- */
-
-/**
- * Exception safe read lock for the reader/writer lock.
- */
-class ReadLock
-{
-  private:
-    ReadWriteLock* rwl;
-
-  public:
-    ReadLock (ReadWriteLock& rwlock)
-    { this->rwl = &rwlock; this->rwl->read_lock(); }
-
-    ~ReadLock (void)
-    { if (this->rwl) this->rwl->unlock(); }
-
-    void unlock (void)
-    { this->rwl->unlock(); this->rwl = NULL; }
-};
-
-/* ---------------------------------------------------------------- */
-
-/**
- * Exception safe write lock for the reader/writer lock.
- */
-class WriteLock
-{
-  private:
-    ReadWriteLock* rwl;
-
-  public:
-    WriteLock (ReadWriteLock& rwlock)
-    { this->rwl = &rwlock; this->rwl->write_lock(); }
-
-    ~WriteLock (void)
-    { if (this->rwl) this->rwl->unlock(); }
-
-    void unlock (void)
-    { this->rwl->unlock(); this->rwl = NULL; }
-};
-
 UTIL_NAMESPACE_END
 
 #endif /* UTIL_THREAD_LOCKS_HEADER */
