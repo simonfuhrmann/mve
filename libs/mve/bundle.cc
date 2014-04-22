@@ -77,9 +77,10 @@ Bundle::delete_camera (std::size_t index)
         Feature3D& feature = this->features[i];
         typedef std::vector<Feature2D> FeatureRefs;
         FeatureRefs& refs = feature.refs;
+
         for (FeatureRefs::iterator iter = refs.begin(); iter != refs.end();)
             if (iter->view_id == static_cast<int>(index))
-                refs.erase(iter);
+                iter = refs.erase(iter);
             else
                 iter++;
     }

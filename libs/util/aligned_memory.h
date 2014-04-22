@@ -7,9 +7,9 @@
 #define UTIL_ALIGNED_MEMORY_HEADER
 
 #include <cstddef>
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 
 #include "util/defines.h"
+#include "util/stdint_compat.h"
 
 UTIL_NAMESPACE_BEGIN
 

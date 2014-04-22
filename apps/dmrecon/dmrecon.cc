@@ -162,14 +162,8 @@ main (int argc, char** argv)
 
     /* Settings for Multi-view stereo */
     mySettings.writePlyFile = writeply; // every time this is set to true, a kitten is killed
-    mySettings.plyPath = basePath;
-    mySettings.plyPath += "/";
-    mySettings.plyPath += plyDest;
-    mySettings.plyPath += "/";
-    mySettings.logPath = basePath;
-    mySettings.plyPath += "/";
-    mySettings.logPath += logDest;
-    mySettings.logPath += "/";
+    mySettings.plyPath = util::fs::join_path(basePath, plyDest);
+    mySettings.logPath = util::fs::join_path(basePath, logDest);
 
     fancyProgressPrinter.setBasePath(basePath);
     fancyProgressPrinter.setNumViews(scene->get_views().size());

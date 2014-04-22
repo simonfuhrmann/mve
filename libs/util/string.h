@@ -6,12 +6,13 @@
 #ifndef UTIL_STRING_HEADER
 #define UTIL_STRING_HEADER
 
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <sstream>
 #include <string>
 #include <iomanip>
 #include <stdexcept>
+#include <algorithm>
 
+#include "util/stdint_compat.h"
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
@@ -154,6 +155,7 @@ for_type<int8_t> (void)
     return "sint8";
 }
 
+#ifdef __GNUC__
 /* Note: 'char' is neither recognized as 'int8_t' nor 'uint8_t'. We assume
  * that 'char' is singed, which is not always true:
  * http://www.network-theory.co.uk/docs/gccintro/gccintro_71.html
@@ -164,6 +166,7 @@ for_type<char> (void)
 {
     return "sint8";
 }
+#endif
 
 template <>
 inline char const*
@@ -475,7 +478,7 @@ get_size_string (std::size_t size)
         size_flt = size / 1048576.0;
         size_str = " MB";
     }
-    else if (size < (std::size_t)1073741824 * 1000) /* 1000 * 1024^3 */
+    else if (size < 1073741824ULL * 1000ULL) /* 1000 * 1024^3 */
     {
         size_flt = size / 1073741824.0;
         size_str = " GB";

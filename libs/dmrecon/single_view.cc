@@ -120,8 +120,8 @@ SingleView::saveReconAsPly(std::string const& path, float scale) const
         util::fs::mkdir(path.c_str());
 
     std::string name(this->createFileName(scale));
-    std::string plyname(path + "/" + name + ".ply");
-    std::string xfname(path + "/" + name + ".xf");
+    std::string plyname = util::fs::join_path(path, name + ".ply");
+    std::string xfname = util::fs::join_path(path, name + ".xf");
 
     mve::geom::save_ply_view(plyname, view->get_camera(),
         this->depthImg, this->confImg, this->target_level.image);

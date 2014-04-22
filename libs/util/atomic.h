@@ -8,10 +8,6 @@
 #ifndef UTIL_ATOMIC_HEADER
 #define UTIL_ATOMIC_HEADER
 
-#if !defined(__GNUG__) && !defined(_WIN64)
-#   error "Atomic operations only supported with GCC or WIN64"
-#endif
-
 #ifdef _WIN32
 #   define NOMINMAX
 #   include "windows.h"
@@ -39,7 +35,7 @@ template <typename T>
 class Atomic
 {
 private:
-    T val;
+    volatile T val;
 
 public:
     /** Creates an atomic variable with initial value 'init'. */
@@ -65,7 +61,7 @@ public:
     void mutex_down (void);
 
     /** Returns the value. */
-    T const& operator* (void) const;
+    volatile T const& operator* (void) const;
 };
 
 /* ---------------------------------------------------------------- */
@@ -101,9 +97,7 @@ inline T
 Atomic<T>::increment (void)
 {
 #ifdef _WIN32
-    // http://msdn.microsoft.com/en-us/library/ms683504(v=vs.85).aspx
-    // "This function is supported only on Itanium-based systems."
-    return InterlockedAdd((LONG volatile*)&this->val, 1);
+    return InterlockedIncrement(&this->val);
 #else
     return __sync_add_and_fetch(&this->val, 1);
 #endif
@@ -114,7 +108,7 @@ inline T
 Atomic<T>::decrement (void)
 {
 #ifdef _WIN32
-    return InterlockedAdd((LONG volatile*)&this->val, -1);
+    return InterlockedDecrement(&this->val);
 #else
     return __sync_sub_and_fetch(&this->val, 1);
 #endif
@@ -155,7 +149,7 @@ Atomic<T>::mutex_down (void)
 }
 
 template <typename T>
-inline T const&
+inline volatile T const&
 Atomic<T>::operator* (void) const
 {
     return this->val;

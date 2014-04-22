@@ -359,7 +359,7 @@ View::save_mve_file_as (std::string const& filename)
     }
 
     /* Open output file. */
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::Exception("Cannot open file: ", filename);
 
