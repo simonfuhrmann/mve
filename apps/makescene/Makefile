@@ -2,8 +2,8 @@ MVE_ROOT := ../..
 TARGET := $(shell basename `pwd`)
 include ${MVE_ROOT}/Makefile.inc
 
-CXXFLAGS += -I${MVE_ROOT}/libs -fopenmp
-LDLIBS += -lpng -ltiff -ljpeg -fopenmp
+CXXFLAGS += -I${MVE_ROOT}/libs ${OPENMP}
+LDLIBS += -lpng -ltiff -ljpeg ${OPENMP}
 
 SOURCES := $(wildcard [^_]*.cc)
 ${TARGET}: ${SOURCES:.cc=.o} libmve.a libmve_util.a

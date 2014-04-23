@@ -9,6 +9,7 @@
 #include "util/ref_ptr.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
+#include "ogl/check_gl_error.h"
 
 OGL_NAMESPACE_BEGIN
 
@@ -88,6 +89,7 @@ inline
 VertexBuffer::~VertexBuffer (void)
 {
     glDeleteBuffers(1, &this->vbo_id);
+    check_gl_error();
 }
 
 inline VertexBuffer::Ptr

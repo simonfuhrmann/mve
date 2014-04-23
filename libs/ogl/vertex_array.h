@@ -15,6 +15,7 @@
 #include "util/ref_ptr.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
+#include "ogl/check_gl_error.h"
 #include "ogl/shader_program.h"
 #include "ogl/vertex_buffer.h"
 
@@ -86,6 +87,7 @@ inline
 VertexArray::VertexArray (void)
 {
     glGenVertexArrays(1, &this->vao_id);
+    check_gl_error();
     this->primitive = GL_TRIANGLES;
 }
 
@@ -93,6 +95,7 @@ inline
 VertexArray::~VertexArray (void)
 {
     glDeleteVertexArrays(1, &this->vao_id);
+    check_gl_error();
 }
 
 inline VertexArray::Ptr
@@ -133,7 +136,9 @@ VertexArray::reset_vertex_array(void)
     this->vbo_list.clear();
     //this->shader.reset();
     glDeleteVertexArrays(1, &this->vao_id);
+    check_gl_error();
     glGenVertexArrays(1, &this->vao_id);
+    check_gl_error();
 }
 
 inline void

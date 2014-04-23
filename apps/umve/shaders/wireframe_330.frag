@@ -1,4 +1,4 @@
-#version 150 core
+#version 330 core
 
 /* Fragment Shader Special Variables
  *
@@ -14,6 +14,8 @@
 
 in vec4 ocolor;
 
+layout(location=0) out vec4 frag_color;
+
 uniform vec4 ccolor = vec4(0.5, 0.5, 0.5, 1.0);
 
 void main(void)
@@ -23,7 +25,7 @@ void main(void)
 
     gl_FragDepth = gl_FragCoord.z;
     if (ccolor.a == 0.0)
-        gl_FragColor = ocolor;
+        frag_color = ocolor;
     else
-        gl_FragColor = ccolor;
+        frag_color = ccolor;
 }

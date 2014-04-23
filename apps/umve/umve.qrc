@@ -40,11 +40,11 @@
         <file>images/icon_video.svg</file>
         <file>images/icon_refresh.svg</file>
         <file>images/icon_new_file.svg</file>
-        <file>shaders/surface_120.frag</file>
-        <file>shaders/surface_120.vert</file>
-        <file>shaders/texture_120.frag</file>
-        <file>shaders/texture_120.vert</file>
-        <file>shaders/wireframe_120.frag</file>
-        <file>shaders/wireframe_120.vert</file>
+        <file>shaders/surface_330.frag</file>
+        <file>shaders/surface_330.vert</file>
+        <file>shaders/texture_330.frag</file>
+        <file>shaders/texture_330.vert</file>
+        <file>shaders/wireframe_330.frag</file>
+        <file>shaders/wireframe_330.vert</file>
     </qresource>
 </RCC>

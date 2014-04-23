@@ -101,10 +101,9 @@ create_fullscreen_quad (ShaderProgram::Ptr shader)
 
     /* Generate the renderer. */
     MeshRenderer::Ptr ret(MeshRenderer::create());
-    ret->set_primitive(GL_QUADS);
+    ret->set_primitive(GL_TRIANGLE_STRIP);
     ret->set_shader(shader);
     ret->set_mesh(mesh);
-
     return ret;
 }
 

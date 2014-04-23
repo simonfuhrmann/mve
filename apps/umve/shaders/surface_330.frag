@@ -1,4 +1,4 @@
-#version 120 
+#version 330 core
 
 /* Fragment Shader Special Variables
  *
@@ -12,8 +12,10 @@
  * in  int   gl_PrimitiveID;
  */
 
-varying vec3 onormal;
-varying vec4 ocolor;
+in vec3 onormal;
+in vec4 ocolor;
+
+layout(location=0) out vec4 frag_color;
 
 uniform mat4 viewmat;
 uniform mat4 projmat;
@@ -29,6 +31,10 @@ void main(void)
     if (ccolor.a == 0.0)
         albedo = ocolor;
 
+    /* Enable backface culling. */
+    //if (!gl_FrontFacing)
+    //    albedo = albedo * 0.2;
+
     gl_FragDepth = gl_FragCoord.z;
     if (lighting == 1)
     {
@@ -38,10 +44,11 @@ void main(void)
         float light_factor = dot(normal, light_vector);
         if (light_factor < 0.0)
             light_factor = -light_factor / 2.0;
-        gl_FragColor = albedo * light_factor;
+        frag_color = albedo * light_factor;
     }
     else
     {
-        gl_FragColor = albedo;
+        frag_color = albedo;
     }
 }
+

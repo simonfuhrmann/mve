@@ -238,13 +238,13 @@ AddinManager::load_shaders (void)
         {
             if (!found_surface)
                 found_surface = this->state.surface_shader->try_load_all
-                    (shader_paths[i] + "surface_120");
+                    (shader_paths[i] + "surface_330");
             if (!found_wireframe)
                 found_wireframe = this->state.wireframe_shader->try_load_all
-                    (shader_paths[i] + "wireframe_120");
+                    (shader_paths[i] + "wireframe_330");
             if (!found_texture)
                 found_texture = this->state.texture_shader->try_load_all
-                    (shader_paths[i] + "texture_120");
+                    (shader_paths[i] + "texture_330");
         }
         catch (util::Exception& e)
         {
@@ -261,17 +261,17 @@ AddinManager::load_shaders (void)
     if (!found_surface)
     {
         std::cout << "Falling back to built-in `surface' shader." << std::endl;
-        load_shaders_from_resources(this->state.surface_shader, ":/shaders/surface_120");
+        load_shaders_from_resources(this->state.surface_shader, ":/shaders/surface_330");
     }
     if (!found_wireframe)
     {
         std::cout << "Falling back to built-in `wireframe' shader." << std::endl;
-        load_shaders_from_resources(this->state.wireframe_shader, ":/shaders/wireframe_120");
+        load_shaders_from_resources(this->state.wireframe_shader, ":/shaders/wireframe_330");
     }
     if (!found_texture)
     {
         std::cout << "Falling back to built-in `texture' shader." << std::endl;
-        load_shaders_from_resources(this->state.texture_shader, ":/shaders/texture_120");
+        load_shaders_from_resources(this->state.texture_shader, ":/shaders/texture_330");
     }
 }
 
@@ -280,20 +280,24 @@ AddinManager::load_shaders (void)
 void
 AddinManager::init_impl (void)
 {
-    std::cout << "Initializing OpenGL..." << std::endl;
-
+#ifdef _WIN32
     /* Initialize GLEW. */
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
     if (err != GLEW_OK)
+    {
         std::cout << "Error initializing GLEW: " << glewGetErrorString(err)
             << std::endl;
+        std::exit(1);
+    }
+#endif
 
     /* Load shaders. */
     this->state.surface_shader = ogl::ShaderProgram::create();
     this->state.wireframe_shader = ogl::ShaderProgram::create();
     this->state.texture_shader = ogl::ShaderProgram::create();
     this->load_shaders();
+
     this->state.gui_renderer = ogl::create_fullscreen_quad(this->state.texture_shader);
     this->state.gui_texture = ogl::Texture::create();
 
