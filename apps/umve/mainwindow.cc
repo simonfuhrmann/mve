@@ -92,11 +92,11 @@ MainWindow::load_plugins (void)
     std::string binary_dir = util::fs::dirname(util::fs::get_binary_path());
 
     std::vector<std::string> plugin_paths;
-    plugin_paths.push_back(binary_dir + "/plugin/");
-    plugin_paths.push_back(home_dir + "/.local/share/umve/plugin");
-    plugin_paths.push_back("/usr/local/share/umve/plugin/");
-    plugin_paths.push_back("/usr/share/umve/plugin/");
-    plugin_paths.push_back(":/plugin/");
+    plugin_paths.push_back(binary_dir + "/plugins/");
+    plugin_paths.push_back(home_dir + "/.local/share/umve/plugins");
+    plugin_paths.push_back("/usr/local/share/umve/plugins/");
+    plugin_paths.push_back("/usr/share/umve/plugins/");
+    plugin_paths.push_back(":/plugins/");
 
     for (std::size_t i = 0; i < plugin_paths.size(); ++i)
     {

@@ -10,7 +10,10 @@ QMAKE_LFLAGS += -rdynamic
 
 SOURCES += [^_]*.cc
 HEADERS += *.h
-TARGET = ../$$qtLibraryTarget(HelloWorldTab)
+TARGET = $$qtLibraryTarget(HelloWorldTab)
+
+target.path = $$(HOME)/.local/share/umve/plugins/
+INSTALLS += target
 
 INCLUDEPATH += $${MVE_ROOT}/libs ../..
 DEPENDPATH += $${MVE_ROOT}/libs

@@ -223,10 +223,10 @@ AddinManager::load_shaders (void)
     std::string binary_dir = util::fs::dirname(util::fs::get_binary_path());
 
     std::vector<std::string> shader_paths;
-    shader_paths.push_back(binary_dir + "/shader/");
-    shader_paths.push_back(home_dir + "/.local/share/umve/shader");
-    shader_paths.push_back("/usr/local/share/umve/shader/");
-    shader_paths.push_back("/usr/share/umve/shader/");
+    shader_paths.push_back(binary_dir + "/shaders/");
+    shader_paths.push_back(home_dir + "/.local/share/umve/shaders");
+    shader_paths.push_back("/usr/local/share/umve/shaders/");
+    shader_paths.push_back("/usr/share/umve/shaders/");
 
     bool found_surface = false;
     bool found_wireframe = false;
@@ -261,17 +261,17 @@ AddinManager::load_shaders (void)
     if (!found_surface)
     {
         std::cout << "Falling back to built-in `surface' shader." << std::endl;
-        load_shaders_from_resources(this->state.surface_shader, ":/shader/surface_120");
+        load_shaders_from_resources(this->state.surface_shader, ":/shaders/surface_120");
     }
     if (!found_wireframe)
     {
         std::cout << "Falling back to built-in `wireframe' shader." << std::endl;
-        load_shaders_from_resources(this->state.wireframe_shader, ":/shader/wireframe_120");
+        load_shaders_from_resources(this->state.wireframe_shader, ":/shaders/wireframe_120");
     }
     if (!found_texture)
     {
         std::cout << "Falling back to built-in `texture' shader." << std::endl;
-        load_shaders_from_resources(this->state.texture_shader, ":/shader/texture_120");
+        load_shaders_from_resources(this->state.texture_shader, ":/shaders/texture_120");
     }
 }
 
