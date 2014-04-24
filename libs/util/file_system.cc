@@ -240,7 +240,16 @@ get_binary_path (void)
     int success = _NSGetExecutablePath(path, &pathmax);
     int n_chars = 0;
     if (success < 0)
-        n_chars = PATH_MAX; // Indicate error
+        throw std::runtime_error(
+            "Could not determine binary path: _NSGetExecutablePath failed!");
+    else
+    {
+        char real[PATH_MAX];
+        if (::realpath(path, real) == NULL)
+            throw std::runtime_error(
+                "Could not determine binary path: realpath failed!");
+        ::strncpy(path, real, PATH_MAX);
+    }
 
 #elif defined(__linux)
 
