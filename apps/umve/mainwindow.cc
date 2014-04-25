@@ -8,13 +8,15 @@
 #include <QStatusBar>
 
 #include "util/exception.h"
-#include "util/filesystem.h"
-#include "mve/plyfile.h"
+#include "util/file_system.h"
+#include "mve/mesh_io_ply.h"
 
 #include "guihelpers.h"
 #include "batchoperations.h"
 #include "scenemanager.h"
 #include "mainwindow.h"
+
+#include <QPluginLoader>
 
 MainWindow::MainWindow (void)
 {
@@ -26,8 +28,9 @@ MainWindow::MainWindow (void)
     this->tab_sceneinspect = new SceneInspect(this);
 
     this->tabs = new QTabWidget(this);
-    this->tabs->addTab(this->tab_viewinspect, tr("View inspect"));
-    this->tabs->addTab(this->tab_sceneinspect, tr("Scene inspect"));
+    this->tabs->addTab(this->tab_viewinspect, this->tab_viewinspect->get_title());
+    this->tabs->addTab(this->tab_sceneinspect, this->tab_sceneinspect->get_title());
+    this->load_plugins();
 
     this->memory_label = new QLabel("Memory: <unknown>");
     this->statusbar = new QStatusBar();
@@ -69,11 +72,55 @@ MainWindow::MainWindow (void)
     /* Connect signals. */
     this->connect(this->update_timer, SIGNAL(timeout()),
         this, SLOT(on_update_memory()));
+    this->connect(this->tabs, SIGNAL(currentChanged(int)),
+        this, SLOT(on_switch_tabs(int)));
 
     /* Trick to get job queue dock widget smaller. */
     this->jobqueue->setMaximumHeight(100); // Dock widget trick
     this->show();
     this->jobqueue->setMaximumHeight(QWIDGETSIZE_MAX); // Dock widget trick
+
+    this->on_switch_tabs(0);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::load_plugins (void)
+{
+    std::string home_dir = util::fs::get_home_dir();
+    std::string binary_dir = util::fs::dirname(util::fs::get_binary_path());
+
+    std::vector<std::string> plugin_paths;
+    plugin_paths.push_back(binary_dir + "/plugins/");
+    plugin_paths.push_back(home_dir + "/.local/share/umve/plugins");
+    plugin_paths.push_back("/usr/local/share/umve/plugins/");
+    plugin_paths.push_back("/usr/share/umve/plugins/");
+    plugin_paths.push_back(":/plugins/");
+
+    for (std::size_t i = 0; i < plugin_paths.size(); ++i)
+    {
+        QDir plugins_dir(QString::fromStdString(plugin_paths[i]));
+        QFileInfoList plugin_files = plugins_dir.entryInfoList(QDir::Files);
+
+        for (int j = 0; j < plugin_files.size(); ++j)
+        {
+            QString fp = plugin_files[j].absoluteFilePath();
+            std::cout << "Loading " << fp.toStdString() << "..." << std::flush;
+            QPluginLoader pl(fp, this);
+            MainWindowTab *pl_tab = dynamic_cast<MainWindowTab*>(pl.instance());
+            if (pl_tab)
+            {
+                this->tabs->addTab(pl_tab, pl_tab->get_title());
+                std::cout << " ok." << std::endl;
+            }
+            else
+            {
+                std::cout << " error (skipping)." << std::endl;
+                std::cout << pl.errorString().toStdString() << std::endl;
+            }
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -185,6 +232,12 @@ MainWindow::create_actions (void)
     this->connect(this->action_batch_delete, SIGNAL(triggered()),
         this, SLOT(on_batch_delete()));
 
+    this->action_generate_thumbs = new QAction(
+        QIcon(":/images/icon_image_inspect.svg"),
+        tr("Generate thumbmails..."), this);
+    this->connect(this->action_generate_thumbs, SIGNAL(triggered()),
+        this, SLOT(on_generate_thumbs()));
+
     this->action_cache_cleanup = new QAction(QIcon(":/images/icon_clean.svg"),
         tr("Cache cleanup"), this);
     this->connect(this->action_cache_cleanup, SIGNAL(triggered()),
@@ -227,6 +280,7 @@ MainWindow::create_menus (void)
     this->menu_scene->addAction(this->action_import_images);
     this->menu_scene->addAction(this->action_recon_export);
     this->menu_scene->addAction(this->action_batch_delete);
+    this->menu_scene->addAction(this->action_generate_thumbs);
     this->menu_scene->addAction(this->action_cache_cleanup);
     this->menu_scene->addSeparator();
     this->menu_scene->addAction(this->action_exit);
@@ -268,7 +322,7 @@ MainWindow::perform_close_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (!scene.get())
+    if (scene == NULL)
         return true;
 
     if (!this->jobqueue->is_empty())
@@ -317,6 +371,7 @@ MainWindow::enable_scene_actions (bool value)
     this->action_import_images->setEnabled(value);
     this->action_recon_export->setEnabled(value);
     this->action_batch_delete->setEnabled(value);
+    this->action_generate_thumbs->setEnabled(value);
     this->action_cache_cleanup->setEnabled(value);
     this->action_refresh_scene->setEnabled(value);
 }
@@ -362,7 +417,7 @@ MainWindow::on_reload_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene.get() == 0 || scene->get_path().empty())
+    if (scene == NULL || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error reloading scene!",
             "There is nothing to reload, rookie.");
@@ -383,7 +438,7 @@ MainWindow::on_save_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene.get() == 0 || scene->get_path().empty())
+    if (scene == NULL || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error saving scene!",
             "There is nothing to save, rookie.");
@@ -434,7 +489,7 @@ MainWindow::on_update_memory (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
     std::size_t mem = 0;
-    if (scene.get())
+    if (scene != NULL)
         mem = scene->get_total_mem_usage();
 
     std::string memstr = util::string::get_size_string(mem);
@@ -447,7 +502,7 @@ void
 MainWindow::on_import_images (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -469,7 +524,7 @@ void
 MainWindow::on_recon_export (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -488,7 +543,7 @@ void
 MainWindow::on_batch_delete (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -504,14 +559,45 @@ MainWindow::on_batch_delete (void)
 /* ---------------------------------------------------------------- */
 
 void
+MainWindow::on_generate_thumbs (void)
+{
+    mve::Scene::Ptr scene = SceneManager::get().get_scene();
+    if (scene == NULL)
+    {
+        QMessageBox::information(this, "Error generating thumbnails!",
+            "No scene is loaded, rookie.");
+        return;
+    }
+
+    BatchGenerateThumbs dialog(this);
+    dialog.setModal(this);
+    dialog.set_scene(scene);
+    dialog.exec();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 MainWindow::on_cache_cleanup (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (!scene.get())
+    if (scene == NULL)
         return;
 
     scene->cache_cleanup();
     this->on_update_memory();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+MainWindow::on_switch_tabs (int tab_id)
+{
+    for (int i = 0; i < this->tabs->count(); ++i)
+    {
+        QWidget *tab = this->tabs->widget(i);
+        dynamic_cast<MainWindowTab&>(*tab).set_tab_active(i == tab_id);
+    }
 }
 
 /* ---------------------------------------------------------------- */

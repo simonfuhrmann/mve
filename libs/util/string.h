@@ -6,11 +6,13 @@
 #ifndef UTIL_STRING_HEADER
 #define UTIL_STRING_HEADER
 
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <stdexcept>
+#include <algorithm>
 
+#include "util/stdint_compat.h"
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
@@ -24,12 +26,13 @@ std::string get (T const& value);
 template <typename T>
 std::string get_fixed (T const& value, int digits);
 
+/** Returns a string filled to the left to a length of 'width' chars. */
 template <typename T>
 std::string get_filled (T const& value, int width, char fill = '0');
 
 /** From string to other types conversions. */
 template <typename T>
-T convert (std::string const& str);
+T convert (std::string const& str, bool strict_conversion = true);
 
 /** String representation for types. */
 template <typename T>
@@ -55,7 +58,7 @@ void clip_whitespaces (std::string* str);
 std::string clipped_whitespaces (std::string const& str);
 
 /** Clips newlines from the end of the string, in-place. */
-void clip_newlines (std::string& str);
+void clip_newlines (std::string* str);
 
 /** Clips newlines from the end of the string. */
 std::string clipped_newlines (std::string const& str);
@@ -128,11 +131,13 @@ get_filled (T const& value, int width, char fill)
 
 template <typename T>
 inline T
-convert (std::string const& str)
+convert (std::string const& str, bool strict_conversion)
 {
     std::stringstream ss(str);
     T ret = T();
     ss >> ret;
+    if (strict_conversion && (!ss.eof() || ss.fail()))
+        throw std::invalid_argument("Invalid string conversion: " + str);
     return ret;
 }
 
@@ -150,6 +155,7 @@ for_type<int8_t> (void)
     return "sint8";
 }
 
+#ifdef __GNUC__
 /* Note: 'char' is neither recognized as 'int8_t' nor 'uint8_t'. We assume
  * that 'char' is singed, which is not always true:
  * http://www.network-theory.co.uk/docs/gccintro/gccintro_71.html
@@ -160,6 +166,7 @@ for_type<char> (void)
 {
     return "sint8";
 }
+#endif
 
 template <>
 inline char const*
@@ -308,7 +315,7 @@ clipped_newlines (std::string const& str)
 inline std::string
 wordwrap (char const* str, int width)
 {
-    if (str == 0)
+    if (str == NULL)
         return std::string();
     if (width <= 0)
         return str;
@@ -376,7 +383,7 @@ ellipsize (std::string const& str, std::size_t chars, int type)
         case 2:
             return "..." + str.substr(str.size() - chars + 3);
         default:
-            return str;
+            break;
     }
     return str;
 }
@@ -471,15 +478,10 @@ get_size_string (std::size_t size)
         size_flt = size / 1048576.0;
         size_str = " MB";
     }
-    else if (size < (std::size_t)1073741824 * 1000) /* 1000 * 1024^3 */
+    else
     {
         size_flt = size / 1073741824.0;
         size_str = " GB";
-    }
-    else
-    {
-        size_flt = size / (1073741824.0 * 1024.0);
-        size_str = " TB";
     }
 
     int digits = 1;

@@ -7,17 +7,17 @@
 
 #include "mve/view.h"
 #include "mve/image.h"
-#include "mve/plyfile.h"
-#include "mve/imageexif.h"
-#include "mve/imagefile.h"
-#include "mve/imagetools.h"
+#include "mve/mesh_io_ply.h"
+#include "mve/image_exif.h"
+#include "mve/image_io.h"
+#include "mve/image_tools.h"
 
 #include "guihelpers.h"
 #include "scenemanager.h"
 #include "viewinspect.h"
 
 ViewInspect::ViewInspect (QWidget* parent)
-    : QWidget(parent)
+    : MainWindowTab(parent)
 {
     this->scroll_image = new ScrollImage();
     this->embeddings = new QComboBox();
@@ -41,6 +41,8 @@ ViewInspect::ViewInspect (QWidget* parent)
     this->connect(this->scroll_image->get_image(),
         SIGNAL(mouse_clicked(int, int, QMouseEvent*)),
         this, SLOT(on_image_clicked(int, int, QMouseEvent*)));
+
+    this->connect(this, SIGNAL(tab_activated()), SLOT(on_tab_activated()));
 
     this->connect(&SceneManager::get(), SIGNAL(scene_selected(mve::Scene::Ptr)),
         this, SLOT(on_scene_selected(mve::Scene::Ptr)));
@@ -89,7 +91,7 @@ ViewInspect::create_detail_frame (void)
     this->connect(this->operations, SIGNAL(signal_select_embedding
         (QString const&)), this, SLOT(on_embedding_selected(QString const&)));
 
-    this->image_details = new QTabWidget();//tr("Details"));
+    this->image_details = new QTabWidget();
     this->image_details->setTabPosition(QTabWidget::East);
     this->image_details->addTab(this->operations, tr("Operations"));
     this->image_details->addTab(this->inspector, tr("Image Inspector"));
@@ -215,7 +217,7 @@ ViewInspect::show_details (bool show)
 void
 ViewInspect::update_actions (void)
 {
-    bool active = this->scroll_image->get_pixmap() != 0;
+    bool active = this->scroll_image->get_pixmap() != NULL;
     bool fit = this->action_zoom_fit->isChecked();
     this->action_zoom_fit->setEnabled(active);
     this->action_zoom_in->setEnabled(active && !fit);
@@ -316,9 +318,15 @@ ViewInspect::load_ply_file (QString filename)
 void
 ViewInspect::on_view_selected (mve::View::Ptr view)
 {
+    if (!this->is_tab_active) {
+        this->next_view = view;
+        return;
+    }
+
     this->reset();
     this->view = view;
-    if (!this->view.get())
+    this->next_view = NULL;
+    if (this->view == NULL)
         return;
 
     this->load_recent_embedding();
@@ -338,9 +346,18 @@ ViewInspect::on_scene_selected (mve::Scene::Ptr /*scene*/)
 /* ---------------------------------------------------------------- */
 
 void
+ViewInspect::on_tab_activated (void)
+{
+    if (this->next_view != NULL)
+        this->on_view_selected(this->next_view);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 ViewInspect::set_embedding (std::string const& name)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"), tr("No view loaded!"));
         return;
@@ -348,7 +365,7 @@ ViewInspect::set_embedding (std::string const& name)
 
     /* Request the embedding. */
     mve::ImageBase::Ptr img(this->view->get_image(name));
-    if (img.get() == 0)
+    if (img == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("Embedding not available: %1").arg(QString(name.c_str())));
@@ -441,7 +458,7 @@ void
 ViewInspect::populate_embeddings (void)
 {
     this->embeddings->clear();
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     std::vector<std::string> vec;
@@ -470,11 +487,11 @@ ViewInspect::populate_exif_viewer (void)
 {
     this->exif_viewer->setHtml("<i>No EXIF data available</i>");
 
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     mve::ByteImage::Ptr exif = this->view->get_data("exif");
-    if (!exif.get())
+    if (exif == NULL)
         return;
 
     mve::image::ExifInfo info;
@@ -533,8 +550,13 @@ ViewInspect::on_fit_to_window (void)
 void
 ViewInspect::on_open (void)
 {
-    QString filename = QFileDialog::getOpenFileName(this,
-        tr("Open File"), QDir::currentPath());
+    QFileDialog dialog(this, tr("Open File"), last_image_dir);
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    if (!dialog.exec())
+        return;
+
+    last_image_dir = dialog.directory().path();
+    QString filename = dialog.selectedFiles()[0];
 
     if (filename.isEmpty())
         return;
@@ -547,7 +569,7 @@ ViewInspect::on_open (void)
 void
 ViewInspect::on_view_reload (void)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     QMessageBox::StandardButton answer = QMessageBox::question(this,
@@ -618,7 +640,7 @@ ViewInspect::on_tone_mapping_changed (void)
 void
 ViewInspect::on_ply_export (void)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
     {
         QMessageBox::information(this, tr("Export PLY"),
             tr("No view assigned!"));
@@ -690,7 +712,7 @@ ViewInspect::on_image_export (void)
 void
 ViewInspect::on_copy_embedding (void)
 {
-    if (!this->image.get() || !this->view.get())
+    if (this->image == NULL || this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("No embedding selected!"));
@@ -736,7 +758,7 @@ ViewInspect::on_copy_embedding (void)
 void
 ViewInspect::on_del_embedding (void)
 {
-    if (!this->image.get() || !this->view.get())
+    if (this->image == NULL || this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("No embedding selected!"));
@@ -761,7 +783,7 @@ ViewInspect::on_del_embedding (void)
 void
 ViewInspect::on_save_view (void)
 {
-    if (!this->view.get())
+    if (this->view == NULL)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
             tr("No view selected!"));
@@ -791,4 +813,12 @@ ViewInspect::reset (void)
     this->inspector->reset();
     this->scroll_image->get_image()->setPixmap(QPixmap());
     this->embeddings->clear();
+}
+
+/* ---------------------------------------------------------------- */
+
+QString
+ViewInspect::get_title (void)
+{
+    return tr("View inspect");
 }

@@ -6,6 +6,13 @@
 #ifndef MATH_VECTOR_HEADER
 #define MATH_VECTOR_HEADER
 
+#include <algorithm>
+#include <functional>
+#include <stdexcept>
+#include <numeric>
+#include <cmath>
+#include <ostream>
+
 #include "math/defines.h"
 #include "math/algo.h"
 
@@ -74,7 +81,7 @@ public:
     /** Default ctor. */
     Vector (void);
     /** Ctor taking a pointer to initialize values. */
-    Vector (T const* values);
+    explicit Vector (T const* values);
     /** Ctor that initializes ALL elements. */
     explicit Vector (T const& value);
     /** Ctor that initializes the first two elements. */
@@ -176,11 +183,18 @@ public:
     /** Component-wise multiplication with another vector. */
     Vector<T,N> cw_mult (Vector<T,N> const& other) const;
 
-    /** Component-wise multiplication with another vector. */
+    /** Component-wise division with another vector. */
     Vector<T,N> cw_div (Vector<T,N> const& other) const;
 
     /** Component-wise similarity using epsilon checks. */
     bool is_similar (Vector<T,N> const& other, T const& epsilon) const;
+
+    /* --------------------- Value iterators ---------------------- */
+
+    T* begin (void);
+    T const* begin (void) const;
+    T* end (void);
+    T const* end (void) const;
 
     /* --------------------- Object operators --------------------- */
 
@@ -550,6 +564,36 @@ inline bool
 Vector<T,N>::is_similar (Vector<T,N> const& other, T const& eps) const
 {
     return std::equal(v, v + N, *other, algo::predicate_epsilon_equal<T>(eps));
+}
+
+/* ------------------------ Value iterators ----------------------- */
+
+template <typename T, int N>
+inline T*
+Vector<T,N>::begin (void)
+{
+    return v;
+}
+
+template <typename T, int N>
+inline T const*
+Vector<T,N>::begin (void) const
+{
+    return v;
+}
+
+template <typename T, int N>
+inline T*
+Vector<T,N>::end (void)
+{
+    return v + N;
+}
+
+template <typename T, int N>
+inline T const*
+Vector<T,N>::end (void) const
+{
+    return v + N;
 }
 
 /* ------------------------ Object operators ---------------------- */

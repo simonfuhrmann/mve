@@ -2,7 +2,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 #include "mve/camera.h"
 
 MVE_NAMESPACE_BEGIN

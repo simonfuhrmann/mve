@@ -6,7 +6,7 @@
 #include <vector>
 #include <queue>
 
-#include "mve/bundlefile.h"
+#include "mve/bundle.h"
 #include "mve/image.h"
 #include "mve/scene.h"
 #include "dmrecon/defines.h"
@@ -48,7 +48,7 @@ public:
 
 private:
     mve::Scene::Ptr scene;
-    mve::BundleFile::ConstPtr bundle;
+    mve::Bundle::ConstPtr bundle;
     std::vector<SingleView::Ptr> views;
 
     Settings settings;

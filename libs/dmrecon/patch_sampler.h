@@ -4,7 +4,7 @@
 #include <map>
 
 #include "math/vector.h"
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "dmrecon/defines.h"
 #include "dmrecon/settings.h"
 #include "dmrecon/single_view.h"

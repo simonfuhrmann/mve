@@ -1,7 +1,9 @@
 #include <iostream> // cout
 #include <cstdlib> // ::exit
 #include <csignal>
-#include <execinfo.h> // ::backtrace
+#ifdef __GNUC__
+#   include <execinfo.h> // ::backtrace
+#endif
 
 #include "util/system.h"
 
@@ -22,6 +24,7 @@ signal_segfault_handler (int code)
 void
 print_stack_trace (void)
 {
+#ifdef __GNUC__
     /* Get stack pointers for all frames on the stack. */
     void *array[32];
     std::size_t size = ::backtrace(array, 32);
@@ -34,6 +37,7 @@ print_stack_trace (void)
 
     /* Print out human readable representation to stderr. */
     ::backtrace_symbols_fd(array, size, 2); // 2 = stderr
+#endif
     std::cerr << "Segmentation fault" << std::endl;
     ::exit(1);
 }

@@ -5,11 +5,13 @@ all:
 doc:
 	$(MAKE) -C docs
 
-clean:
-	$(MAKE) -C apps clean
-	$(MAKE) -C libs clean
-	#$(MAKE) -C docs clean
+test:
+	$(MAKE) -C tests
 
-depend:
-	$(MAKE) -C libs depend
-	$(MAKE) -C apps depend
+clean:
+	$(MAKE) -C apps $@
+	$(MAKE) -C libs $@
+	#$(MAKE) -C docs $@
+	$(MAKE) -C tests $@
+
+.PHONY: all doc test clean

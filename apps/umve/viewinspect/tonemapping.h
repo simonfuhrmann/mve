@@ -75,16 +75,19 @@ private slots:
     void on_mapping_area_changed (float start, float end);
     void on_channels_changed (int mask);
     void on_update_tone_mapping (void);
+    void on_ignore_zeroes_changed (void);
 
 private:
     float gamma_from_slider (void) const;
     float highlight_from_slider (void) const;
     void setup_histogram (mve::FloatImage::ConstPtr img);
     void setup_histogram (mve::ByteImage::ConstPtr img);
+    void find_min_max (void);
 
 private:
     QTimer timer;
     ToneMappingHistogram* histogram;
+    QCheckBox *ignore_zeros_checkbox;
     QSlider* gamma_slider;
     QLabel* gamma_label;
     QCheckBox* highlight_checkbox;
@@ -93,6 +96,7 @@ private:
     QGridLayout* channel_grid;
     QSignalMapper* channel_mapper;
 
+    bool ignore_zeros;
     mve::ImageBase::ConstPtr image;
     float image_vmin;
     float image_vmax;

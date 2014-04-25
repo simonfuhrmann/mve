@@ -1,3 +1,8 @@
+/*
+ * Representation of a plane in 3D.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef MATH_PLANE_HEADER
 #define MATH_PLANE_HEADER
 

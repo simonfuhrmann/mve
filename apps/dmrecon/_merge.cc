@@ -7,11 +7,11 @@
 #include "math/vector.h"
 #include "mve/camera.h"
 #include "mve/depthmap.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
 #include "mve/scene.h"
-#include "mve/trianglemesh.h"
+#include "mve/mesh.h"
 #include "mve/bilateral.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 
 int
 main (int argc, char** argv)
@@ -40,7 +40,7 @@ main (int argc, char** argv)
 
     /* Check if master image exists */
     if (masterImgNr > views.size() ||
-        (mview.get() == NULL) ||
+        (mview == NULL) ||
         (!mview->is_camera_valid()))
     {
         std::cerr<<"ERROR: Master view is invalid."<<std::endl;

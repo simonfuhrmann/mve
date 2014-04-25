@@ -7,12 +7,11 @@ MVS_NAMESPACE_BEGIN
 
 GlobalViewSelection::GlobalViewSelection(
     std::vector<SingleView::Ptr> const& views,
-    mve::BundleFile::FeaturePoints const& features,
+    mve::Bundle::Features const& features,
     Settings const& settings)
-    :
-    ViewSelection(settings),
-    views(views),
-    features(features)
+    : ViewSelection(settings)
+    , views(views)
+    , features(features)
 {
     available.clear();
     available.resize(views.size(), true);
@@ -50,7 +49,6 @@ GlobalViewSelection::performVS()
         }
     }
 }
-
 
 float
 GlobalViewSelection::benefitFromView(std::size_t i)

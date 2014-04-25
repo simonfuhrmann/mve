@@ -1,6 +1,7 @@
 #include "dmrecon/image_pyramid.h"
 
-#include "mve/imagetools.h"
+#include "mve/image_tools.h"
+#include <cassert>
 
 MVS_NAMESPACE_BEGIN
 
@@ -16,6 +17,8 @@ namespace
 
         mve::MVEFileProxy const* proxy = view->get_proxy(embeddingName);
         mve::CameraInfo cam = view->get_camera();
+
+        assert(proxy != NULL);
 
         int curr_width = proxy->width;
         int curr_height = proxy->height;
@@ -42,7 +45,7 @@ namespace
 
     void
     ensureImages(ImagePyramid& levels, mve::View::Ptr view,
-               std::string embeddingName, int minLevel)
+        std::string embeddingName, int minLevel)
     {
         if (levels[minLevel].image != NULL)
             return;
@@ -112,11 +115,11 @@ namespace
 
 ImagePyramid::ConstPtr
 ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
-                     std::string embeddingName, int minLevel)
+    std::string embeddingName, int minLevel)
 {
     util::MutexLock lock(ImagePyramidCache::metadataMutex);
 
-    /* initialize on first access */
+    /* Initialize on first access. */
     if (ImagePyramidCache::cachedScene == NULL)
     {
         ImagePyramidCache::cachedScene = scene;
@@ -128,10 +131,12 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
     if (scene != ImagePyramidCache::cachedScene
         || embeddingName != ImagePyramidCache::cachedEmbedding)
     {
+        /* create own pyramid because shared pyramid is incompatible. */
         pyramid = buildPyramid(view, embeddingName);
     }
     else
     {
+        /* Either re-recreate or use cached entry. */
         pyramid = ImagePyramidCache::entries[view->get_id()];
         if (pyramid == NULL)
         {

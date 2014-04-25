@@ -1,3 +1,8 @@
+/*
+ * Representation of a line in 3D.
+ * Written by Simon Fuhrmann.
+ */
+
 #ifndef MATH_LINE_HEADER
 #define MATH_LINE_HEADER
 

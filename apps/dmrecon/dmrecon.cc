@@ -7,9 +7,11 @@
 #include "dmrecon/dmrecon.h"
 #include "mve/scene.h"
 #include "mve/view.h"
+#include "util/timer.h"
 #include "util/arguments.h"
 #include "util/system.h"
 #include "util/tokenizer.h"
+#include "util/file_system.h"
 
 #include "fancy_progress_printer.h"
 
@@ -25,27 +27,16 @@ FancyProgressPrinter fancyProgressPrinter;
 void
 reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
 {
-    if (settings.scale == -1.f)
-    {
-        for (unsigned int s = 0; s <= 4; ++s)
-        {
-            std::cout << "Reconstructing at scale " << s << std::endl;
-
-            /* Start MVS reconstruction */
-            settings.scale = float(s);
-            mvs::DMRecon recon(scene, settings);
-            fancyProgressPrinter.insertRecon(&recon);
-            recon.start();
-            fancyProgressPrinter.eraseRecon(&recon);
-        }
-    }
-    else
-    {
-        mvs::DMRecon recon(scene, settings);
-        fancyProgressPrinter.insertRecon(&recon);
-        recon.start();
-        fancyProgressPrinter.eraseRecon(&recon);
-    }
+    /*
+     * Note: destructor of ProgressHandle sets status to failed
+     * if setDone() is not called (this happens when an exception
+     * is thrown in mvs::DMRecon)
+     */
+    ProgressHandle handle(fancyProgressPrinter, settings);
+    mvs::DMRecon recon(scene, settings);
+    handle.setRecon(recon);
+    recon.start();
+    handle.setDone();
 }
 
 int
@@ -90,10 +81,10 @@ main (int argc, char** argv)
     args.add_option('\0', "force", false, "Re-reconstruct existing depthmaps");
     args.parse(argc, argv);
 
-    std::string basePath;
+    std::string basePath = args.get_nth_nonopt(0);
     bool writeply = false;
-    std::string plyDest("/recon");
-    std::string logDest("/log");
+    std::string plyDest("recon");
+    std::string logDest("log");
     int master_id = -1;
     bool force_recon = false;
     ProgressStyle progress_style;
@@ -108,28 +99,16 @@ main (int argc, char** argv)
     std::vector<int> listIDs;
 
     util::ArgResult const * arg;
-    while ((arg = args.next_result()))
+    while ((arg = args.next_option()))
     {
-        if (arg->opt == 0)
-        {
-            basePath = arg->arg;
-            continue;
-        }
-
         if (arg->opt->lopt == "neighbors")
-        {
-            mySettings.globalVSMax =
-                util::string::convert<std::size_t>(arg->arg);
-            std::cout << "global view selection uses "
-                      << mySettings.globalVSMax
-                      << " neighbors" << std::endl;
-        }
+            mySettings.globalVSMax = arg->get_arg<std::size_t>();
         else if (arg->opt->lopt == "nocolorscale")
             mySettings.useColorScale = false;
         else if (arg->opt->lopt == "master-view")
             master_id = arg->get_arg<int>();
         else if (arg->opt->lopt == "list-view")
-            args.get_ids_from_string(arg->arg, listIDs);
+            args.get_ids_from_string(arg->arg, &listIDs);
         else if (arg->opt->lopt == "scale")
             mySettings.scale = arg->get_arg<int>();
         else if (arg->opt->lopt == "filter-width")
@@ -157,10 +136,11 @@ main (int argc, char** argv)
             else if (arg->arg == "fancy")
                 progress_style = PROGRESS_FANCY;
             else
-                std::cout << "WARNING: unrecognized progress style" << std::endl;
+                std::cerr << "WARNING: unrecognized progress style" << std::endl;
         }
-        else {
-            std::cout << "WARNING: unrecognized option" << std::endl;
+        else
+        {
+            std::cerr << "WARNING: unrecognized option" << std::endl;
         }
     }
 
@@ -170,25 +150,21 @@ main (int argc, char** argv)
 
     /* Load MVE scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
-    try {
+    try
+    {
         scene->load_scene(basePath);
         scene->get_bundle();
     }
-    catch (std::exception& e) {
-        std::cout<<"Error loading scene: "<<e.what()<<std::endl;
+    catch (std::exception& e)
+    {
+        std::cerr << "Error loading scene: " << e.what() << std::endl;
         return 1;
     }
 
     /* Settings for Multi-view stereo */
     mySettings.writePlyFile = writeply; // every time this is set to true, a kitten is killed
-    mySettings.plyPath = basePath;
-    mySettings.plyPath += "/";
-    mySettings.plyPath += plyDest;
-    mySettings.plyPath += "/";
-    mySettings.logPath = basePath;
-    mySettings.plyPath += "/";
-    mySettings.logPath += logDest;
-    mySettings.logPath += "/";
+    mySettings.plyPath = util::fs::join_path(basePath, plyDest);
+    mySettings.logPath = util::fs::join_path(basePath, logDest);
 
     fancyProgressPrinter.setBasePath(basePath);
     fancyProgressPrinter.setNumViews(scene->get_views().size());
@@ -196,23 +172,34 @@ main (int argc, char** argv)
     if (progress_style == PROGRESS_FANCY)
         fancyProgressPrinter.pt_create();
 
-    if (master_id >= 0) {
+    util::WallTimer timer;
+    if (master_id >= 0)
+    {
         std::cout << "Reconstructing view with ID " << master_id << std::endl;
         mySettings.refViewNr = (std::size_t)master_id;
         fancyProgressPrinter.addRefView(master_id);
-        reconstruct(scene, mySettings);
+        try
+        {
+            reconstruct(scene, mySettings);
+        }
+        catch (std::exception &err)
+        {
+            std::cerr << err.what() << std::endl;
+        }
     }
     else
     {
         mve::Scene::ViewList& views(scene->get_views());
         std::string embedding_name = "depth-L" +
             util::string::get(mySettings.scale);
-        if (listIDs.empty()) {
+        if (listIDs.empty())
+        {
+            std::cout << "Reconstructing all views..." << std::endl;
             for(std::size_t i = 0; i < views.size(); ++i)
                 listIDs.push_back(i);
-            std::cout << "Reconstructing all views..." << std::endl;
         }
-        else {
+        else
+        {
             std::cout << "Reconstructing views from list..." << std::endl;
         }
         fancyProgressPrinter.addRefViews(listIDs);
@@ -221,24 +208,26 @@ main (int argc, char** argv)
         for (std::size_t i = 0; i < listIDs.size(); ++i)
         {
             std::size_t id = listIDs[i];
-            if (id >= views.size()){
-                std::cout << "ID: " << id << " is too large! Skipping..."
-                << std::endl;
+            if (id >= views.size())
+            {
+                std::cout << "Invalid ID " << id << ", skipping!" << std::endl;
                 continue;
             }
-            if (!views[id].get() || !views[id]->is_camera_valid())
+            if (views[id] == NULL || !views[id]->is_camera_valid())
                 continue;
             if (!force_recon && views[id]->has_embedding(embedding_name))
                 continue;
 
             mvs::Settings settings(mySettings);
             settings.refViewNr = id;
-            reconstruct(scene, settings);
-
-#pragma omp critical
+            try
             {
+                reconstruct(scene, settings);
                 views[id]->save_mve_file();
-                //scene->cache_cleanup();
+            }
+            catch (std::exception &err)
+            {
+                std::cerr << err.what() << std::endl;
             }
         }
     }
@@ -248,6 +237,9 @@ main (int argc, char** argv)
         fancyProgressPrinter.stop();
         fancyProgressPrinter.pt_join();
     }
+
+    std::cout << "Reconstruction took "
+        << timer.get_elapsed() << "ms." << std::endl;
 
     /* Save scene */
     std::cout << "Saving views back to disc..." << std::endl;

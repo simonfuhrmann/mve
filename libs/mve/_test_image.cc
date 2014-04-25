@@ -4,12 +4,12 @@
 
 #include "util/timer.h"
 #include "util/system.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "math/vector.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
-#include "mve/imageexif.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
+#include "mve/image_exif.h"
 #include "mve/bilateral.h"
 
 int
@@ -18,6 +18,15 @@ main (int argc, char** argv)
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
 #if 1
+    /* Test EXIF parser. */
+    std::string data;
+    util::fs::read_file_to_string(argv[1], &data);
+
+    mve::image::ExifInfo exif = mve::image::exif_extract(&data[0], data.size(), true);
+    mve::image::exif_debug_print(std::cout, exif);
+#endif
+
+#if 0
     /* Timing test for bilateral filter. */
     mve::ByteImage::Ptr img = mve::image::load_file("/tmp/mouse.jpg");
     util::WallTimer timer;
@@ -40,47 +49,6 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-    /* Test new linear interpolation. */
-    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/warped-mve.png");
-    float w = (float)img->width();
-    float h = (float)img->height();
-    int num = 0;
-    util::ClockTimer timer;
-
-    float x = 0.0f;
-    float y = 0.0f;
-    {
-        uint8_t px[3];
-        for (int i = 0; i < 10000000; ++i, ++num)
-        {
-            x += 0.00002f;
-            y += 0.00002f;
-            img->linear_at(x, y, px);
-        }
-    }
-    std::cout << "Performed uint8 " << num << " lookups in "
-        << timer.get_elapsed() << "ms." << std::endl;
-
-    mve::FloatImage::Ptr fimg = mve::image::byte_to_float_image(img);
-    timer.reset();
-    num = 0;
-
-    x = 0.0f;
-    y = 0.0f;
-    {
-        float px[3];
-        for (int i = 0; i < 10000000; ++i, ++num)
-        {
-            x += 0.00002f;
-            y += 0.00002f;
-            fimg->linear_at(x, y, px);
-        }
-    }
-    std::cout << "Performed float " << num << " lookups in "
-        << timer.get_elapsed() << "ms." << std::endl;
-#endif
-
-#if 0
     /* Test blur_boxfilter function. */
     std::cout << "Loading image..." << std::endl;
     mve::ByteImage::Ptr img = mve::image::load_file
@@ -100,7 +68,6 @@ main (int argc, char** argv)
 #endif
 
 #if 0
-
     util::fs::Directory dir("/gris/scratch2/bundlertest/citywall/images/");
     for (std::size_t i = 0; i < dir.size(); ++i)
     {
@@ -140,92 +107,6 @@ main (int argc, char** argv)
 
     std::cout << "Img: " << img->width() << "x" << img->height() << std::endl;
     std::cout << "took " << timer.get_elapsed() << "ms" << std::endl;
-
-#endif
-
-#if 0
-    /* Test integral images. */
-    mve::ByteImage::Ptr img(mve::image::load_file("/tmp/orig.png"));
-    mve::FloatImage::Ptr fimg = mve::image::integral_image<uint8_t,float>(img);
-    //img = mve::image::integral_image<uint8_t,uint8_t>(img);
-    img = mve::image::float_to_byte_image(fimg, 0, 255);
-    mve::image::save_file(img, "/tmp/integral.png");
-#endif
-
-#if 0
-    /* Test image difference / subtract. */
-    mve::ByteImage::Ptr i1(mve::image::load_file("/tmp/grad1.png"));
-    mve::ByteImage::Ptr i2(mve::image::load_file("/tmp/grad2.png"));
-
-    mve::ByteImage::Ptr out(mve::image::subtract<uint8_t>(i2, i1));
-    mve::image::save_file(out, "/tmp/grad-out.png");
-
-#endif
-
-#if 0
-    /* Test image half size subsampling. */
-    mve::ByteImage::Ptr img(mve::image::load_file
-        //("../../data/testimages/test_scaling_rings.png"));
-        //("../../data/testimages/lenna_gray.png"));
-        ("../../data/testimages/lenna_color.png"));
-        //("../../data/testimages/test_scaling_5x5.png"));
-
-    util::ClockTimer t;
-    mve::ByteImage::Ptr out(mve::image::rescale_half_size_subsample<uint8_t>(img));
-    std::cout << "took " << t.get_elapsed() << "ms." << std::endl;
-    mve::image::save_file(out, "/tmp/halfsize.png");
-#endif
-
-#if 0
-    /* Test double size of image. */
-    mve::ByteImage::Ptr img(mve::image::load_file
-        //("../../data/testimages/test_scaling_rings.png"));
-        //("../../data/testimages/lenna_color.png"));
-        //("../../data/testimages/color_pattern_5x5.png"));
-        ("/tmp/img.png"));
-    util::ClockTimer t;
-    //mve::ByteImage::Ptr out(mve::image::rescale_double_size_supersample<uint8_t>(img));
-    //std::cout << "took " << t.get_elapsed() << "ms." << std::endl;
-    //mve::image::save_file(out, "/tmp/doubled.png");
-
-    //t.reset();
-    mve::ByteImage::Ptr out = mve::ByteImage::create(img->width() * 2, img->height() * 2, img->channels());
-    mve::image::rescale_linear<uint8_t>(img, out);
-    std::cout << "took " << t.get_elapsed() << "ms." << std::endl;
-    mve::image::save_file(out, "/tmp/doubled2.png");
-
-#endif
-
-#if 0
-    /* Test blurring of images. */
-    mve::ByteImage::Ptr img(mve::image::load_file
-        //("../../data/testimages/test_scaling_rings.png"));
-        ("../../data/testimages/lenna_color.png"));
-        //("/tmp/dot.png"));
-
-    std::size_t w(img->width());
-    std::size_t h(img->height());
-    util::ClockTimer timer;
-
-
-    for (int i = 0; i < 50; ++i)
-    {
-        std::cout << i << " Blurring..." << std::flush;
-        timer.reset();
-        mve::ByteImage::Ptr out(mve::image::blur_gaussian<uint8_t>(img, (float)i * 0.1f));
-        std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
-        mve::image::save_file(out, "/tmp/blur-" + util::string::get_filled(i, 2, '0') + ".png");
-    }
-
-
-    std::cout << "Resizing..." << std::flush;
-    mve::ByteImage::Ptr out = mve::ByteImage::create(w, h, img->channels());
-    timer.reset();
-    mve::image::rescale_gaussian<uint8_t>(img, out, 1.0f);
-    std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
-    mve::image::save_file(out, "/tmp/scaling_blur.png");
-
-    return 0;
 
 #endif
 
@@ -345,23 +226,6 @@ main (int argc, char** argv)
     mve::image::save_file(out, "/tmp/out-swap.png");
 
     return 0;
-#endif
-
-#if 0
-    /* Test image type conversion. */
-
-    mve::ByteImage::Ptr img(mve::image::load_file
-        ("../../data/testimages/lenna_color.png"));
-
-    mve::FloatImage::Ptr fi(mve::image::byte_to_float_image(img));
-    mve::ByteImage::Ptr bi(mve::image::float_to_byte_image(fi, 0.0f, 0.5f));
-
-    mve::image::save_file(bi, "/tmp/testimg.png");
-
-    //for (std::size_t i = 0; i < bi->get_value_amount(); ++i)
-    //    if (bi->at(i) != img->at(i))
-    //        std::cout << "Different value at " << i << std::endl;
-
 #endif
 
 #if 0

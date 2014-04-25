@@ -2,8 +2,8 @@
 
 #include "util/system.h"
 
-#include "mve/imagefile.h"
-#include "mve/imageexif.h"
+#include "mve/image_io.h"
+#include "mve/image_exif.h"
 #include "mve/view.h"
 
 int
@@ -135,7 +135,7 @@ main (int argc, char** argv)
     if (std::string(argv[1]) == "export")
     {
         mve::ByteImage::Ptr img(view->get_byte_image("color-pattern"));
-        if (img.get() == 0)
+        if (img == NULL)
             std::cout << "Warning: Image was not properly loaded" << std::endl;
         else
         {

@@ -1,25 +1,16 @@
-include ../../Makefile.inc
+MVE_ROOT = ../..
+TARGET := libmve_dmrecon.a
+include ${MVE_ROOT}/Makefile.inc
+
+# Position independent code (-fPIC) is required for the UMVE plugin system.
+CXXFLAGS += -fPIC -I${MVE_ROOT}/libs
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-LIBRARY := libdmrecon.a
+${TARGET}: ${SOURCES:.cc=.o}
+	$(AR) rcs $@ $^
 
-EXT_INCL := -I..
-EXT_LIBS := -L../util -L../mve -lmve -lutil -lpng -ljpeg -ltiff
+clean:
+	${RM} ${TARGET} *.o Makefile.dep
 
-libmve: ${OBJECTS}
-	ar rcs ${LIBRARY} ${OBJECTS}
-	chmod a+x ${LIBRARY}
+.PHONY: clean
 
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
-
-depend:
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
-
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
-
-FORCE:
-
--include Makefile.dep

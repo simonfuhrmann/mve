@@ -1,25 +1,15 @@
-include ../../Makefile.inc
+MVE_ROOT = ../..
+TARGET := libmve_ogl.a
+include ${MVE_ROOT}/Makefile.inc
+
+# Position independent code (-fPIC) is required for the UMVE plugin system.
+CXXFLAGS += -fPIC -I${MVE_ROOT}/libs
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-LIBRARY := libogl.a
+${TARGET}: ${SOURCES:.cc=.o}
+	$(AR) rcs $@ $^
 
-EXT_INCL := -I..
-EXT_LIBS := -L../util -L. -lutil
+clean:
+	${RM} ${TARGET} *.o Makefile.dep
 
-libmve: ${OBJECTS}
-	ar rcs ${LIBRARY} ${OBJECTS}
-	chmod a+x ${LIBRARY}
-
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
-
-depend:
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
-
-clean: FORCE
-	${RM} ${OBJECTS} ${LIBRARY} ${TESTBIN}
-
-FORCE:
-
--include Makefile.dep
+.PHONY: clean

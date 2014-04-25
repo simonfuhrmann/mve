@@ -1,6 +1,3 @@
-#include <iostream> // RM
-#include <stdexcept>
-
 #include <QVBoxLayout>
 
 #include "selectedview.h"
@@ -36,7 +33,7 @@ SelectedView::SelectedView (void)
 void
 SelectedView::set_view (mve::View::Ptr view)
 {
-    if (!view.get())
+    if (view == NULL)
     {
         this->reset_view();
         return;
@@ -48,10 +45,10 @@ SelectedView::set_view (mve::View::Ptr view)
         (view->num_embeddings()) + " embeddings").c_str());
 
     mve::ByteImage::Ptr img(view->get_byte_image("thumbnail"));
-    if (img.get())
+    if (img != NULL)
     {
         std::size_t iw(img->width());
-        std::size_t ih(img->width());
+        std::size_t ih(img->height());
         QImage qimg(iw, ih, QImage::Format_RGB32);
         for (std::size_t y = 0; y < ih; ++y)
             for (std::size_t x = 0; x < iw; ++x)
@@ -65,6 +62,8 @@ SelectedView::set_view (mve::View::Ptr view)
 
         this->image->setPixmap(QPixmap::fromImage(qimg));
     }
+
+    emit this->view_selected(this->view);
 }
 
 /* ---------------------------------------------------------------- */
@@ -73,7 +72,7 @@ void
 SelectedView::fill_embeddings (QComboBox& cb, mve::ImageType type,
     std::string const& default_name) const
 {
-    if (!this->view.get())
+    if (this->view == NULL)
         return;
 
     cb.clear();
@@ -111,4 +110,5 @@ SelectedView::reset_view (void)
     this->viewname->setText("<no view selected>");
     this->viewinfo->setText("");
     this->image->setPixmap(QPixmap(":/images/icon_broken.svg"));
+    emit this->view_selected(this->view);
 }

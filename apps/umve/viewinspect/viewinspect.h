@@ -7,12 +7,13 @@
 
 #include "mve/view.h"
 
+#include "mainwindowtab.h"
 #include "scrollimage.h"
 #include "imageinspector.h"
 #include "imageoperations.h"
 #include "tonemapping.h"
 
-class ViewInspect : public QWidget
+class ViewInspect : public MainWindowTab
 {
     Q_OBJECT
 
@@ -21,20 +22,13 @@ private:
     QComboBox* embeddings;
     QToolBar* toolbar;
     QTabWidget* image_details;
-
     QLabel* label_name;
     QLabel* label_dimension;
     QLabel* label_memory;
-
     ImageInspectorWidget* inspector;
     ImageOperationsWidget* operations;
     ToneMapping* tone_mapping;
     QTextEdit* exif_viewer;
-
-    mve::View::Ptr view;
-    mve::ImageBase::ConstPtr image;
-    std::string recent_embedding;
-
     QAction* action_open;
     QAction* action_reload;
     QAction* action_save_view;
@@ -47,6 +41,12 @@ private:
     QAction* action_show_details;
     QAction* action_copy_embedding;
     QAction* action_del_embedding;
+    QString last_image_dir;
+
+    mve::View::Ptr view;
+    mve::View::Ptr next_view;
+    mve::ImageBase::ConstPtr image;
+    std::string recent_embedding;
 
 private slots:
     void on_open (void);
@@ -68,6 +68,7 @@ private slots:
 
     void on_scene_selected (mve::Scene::Ptr scene);
     void on_view_selected (mve::View::Ptr view);
+    void on_tab_activated (void);
 
 private:
     void create_detail_frame (void);
@@ -81,7 +82,7 @@ private:
     void display_byte_image (mve::ByteImage::ConstPtr img);
 
 public:
-    ViewInspect (QWidget* parent = 0);
+    ViewInspect (QWidget* parent = NULL);
 
     void set_image (mve::ImageBase::ConstPtr img);
     void show_details (bool show);
@@ -89,8 +90,8 @@ public:
     void load_image_file (QString filename);
     void load_mve_file (QString filename);
     void load_ply_file (QString filename);
-
     void reset (void);
+    virtual QString get_title (void);
 };
 
 #endif /* VIEW_INSPECT_HEADER */

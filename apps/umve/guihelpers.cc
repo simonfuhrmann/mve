@@ -4,7 +4,7 @@
 #include <QPainter>
 #include <QStyleFactory>
 
-#include "util/filesystem.h"
+#include "util/file_system.h"
 
 #include "guihelpers.h"
 
@@ -80,7 +80,7 @@ set_qt_style (char const* style_name)
 #endif
 
     QStyle* style = QStyleFactory::create(style_name);
-    if (style != 0)
+    if (style != NULL)
         QApplication::setStyle(style);
 }
 
@@ -261,7 +261,7 @@ QFileSelector::on_clicked (void)
         return;
 
     this->filename = filename.toStdString();
-    std::string fname = util::fs::get_file_component(this->filename);
+    std::string fname = util::fs::basename(this->filename);
     if (this->ellipsize > 0)
         fname = util::string::ellipsize(fname, this->ellipsize, 1);
 

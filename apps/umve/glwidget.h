@@ -11,12 +11,22 @@ class GLWidget : public QGLWidget
 {
     Q_OBJECT
 
-private:
-    ogl::Context* context;
-    int gl_width;
-    int gl_height;
-    bool cx_init;
-    std::set<ogl::Context*> init_set;
+public:
+    GLWidget(QWidget* parent = NULL);
+    ~GLWidget();
+
+    void set_context (ogl::Context* context);
+
+    QSize minimumSizeHint() const;
+    QSize sizeHint() const;
+
+public slots:
+    void repaint_gl (void);
+    void gl_context (void);
+
+public:
+    static void debug_event (ogl::MouseEvent const& event);
+    static void debug_event (ogl::KeyboardEvent const& event);
 
 protected:
     void initializeGL (void);
@@ -30,22 +40,12 @@ protected:
     void keyReleaseEvent (QKeyEvent* event);
     void wheelEvent (QWheelEvent* event);
 
-public:
-    static void debug_event (ogl::MouseEvent const& event);
-    static void debug_event (ogl::KeyboardEvent const& event);
-
-public:
-    GLWidget(QWidget *parent = 0);
-    ~GLWidget();
-
-    void set_context (ogl::Context* context);
-
-    QSize minimumSizeHint() const;
-    QSize sizeHint() const;
-
-public slots:
-    void repaint_gl (void);
-    void gl_context (void);
+private:
+    ogl::Context* context;
+    int gl_width;
+    int gl_height;
+    bool cx_init;
+    std::set<ogl::Context*> init_set;
 };
 
 /* ---------------------------------------------------------------- */
@@ -65,8 +65,8 @@ GLWidget::sizeHint() const
 inline void
 GLWidget::repaint_gl (void)
 {
-    //this->paintGL();
-    this->repaint();
+    this->updateGL();
+    //this->repaint();
 }
 
 inline void

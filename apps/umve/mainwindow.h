@@ -9,7 +9,7 @@
 #include "mve/view.h"
 
 #include "viewinspect/viewinspect.h"
-#include "sceneinspect/sceneinspect.h"
+#include "scene_inspect/scene_inspect.h"
 #include "jobqueue.h"
 #include "sceneoverview.h"
 
@@ -40,6 +40,7 @@ private:
     QAction* action_import_images;
     QAction* action_recon_export;
     QAction* action_batch_delete;
+    QAction* action_generate_thumbs;
     QAction* action_cache_cleanup;
     QAction* action_refresh_scene;
     QAction* action_exit;
@@ -54,6 +55,7 @@ private:
     void create_menus (void);
     bool perform_close_scene (void);
     void enable_scene_actions (bool value);
+    void load_plugins (void);
 
 private slots:
     void on_new_scene (void);
@@ -68,6 +70,8 @@ private slots:
     void on_cache_cleanup (void);
     void on_recon_export (void);
     void on_batch_delete (void);
+    void on_generate_thumbs (void);
+    void on_switch_tabs (int tab_id);
 
     void closeEvent (QCloseEvent* event);
 

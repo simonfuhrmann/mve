@@ -6,9 +6,10 @@
 #include <ctime>
 
 #include "math/vector.h"
+#include "math/algo.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "util/filesystem.h"
+#include "mve/image_tools.h"
+#include "util/file_system.h"
 #include "util/string.h"
 #include "dmrecon/settings.h"
 #include "dmrecon/dmrecon.h"
@@ -16,27 +17,25 @@
 
 MVS_NAMESPACE_BEGIN
 
-
 DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
-    :
-    scene(_scene),
-    settings(_settings)
+    : scene(_scene)
+    , settings(_settings)
 {
     mve::Scene::ViewList const& mve_views(scene->get_views());
-    std::size_t refViewNr = settings.refViewNr;
 
     /* Check if master image exists */
-    if (refViewNr >= mve_views.size() ||
-        (mve_views[refViewNr] == NULL) ||
-        (!mve_views[refViewNr]->is_camera_valid()))
-    {
-        std::cerr<<"ERROR: Invalid master view."<<std::endl;
-        throw std::invalid_argument("Invalid master view");
-    }
+    if (settings.refViewNr >= mve_views.size())
+        throw std::invalid_argument("Master view index out of bounds");
 
     /* Check for meaningful scale factor */
     if (settings.scale < 0.f)
-        throw std::invalid_argument("Invalid scale factor.");
+        throw std::invalid_argument("Invalid scale factor");
+
+    /* Check if image embedding is set. */
+    if (settings.imageEmbedding.empty())
+        throw std::invalid_argument("Invalid image embedding");
+
+    // TODO: Implement more sanity checks on the settings!
 
     /* Fetch bundle file. */
     try
@@ -49,20 +48,24 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
               + e.what());
     }
 
-    /* Create SingleView Pointer List from mve views */
+    /* Create list of SingleView pointers from MVE views. */
     views.resize(mve_views.size());
     for (std::size_t i = 0; i < mve_views.size(); ++i)
     {
-        if ((mve_views[i] == NULL) || !mve_views[i]->is_camera_valid())
+        if (mve_views[i] == NULL || !mve_views[i]->is_camera_valid() ||
+            mve_views[i]->get_proxy(this->settings.imageEmbedding) == NULL)
             continue;
-        mvs::SingleView::Ptr sView(new mvs::SingleView(scene, mve_views[i]));
-        views[i] = sView;
+        views[i] = mvs::SingleView::create(scene, mve_views[i],
+            this->settings.imageEmbedding);
     }
-    SingleView::Ptr refV = views[refViewNr];
+
+    SingleView::Ptr refV = views[settings.refViewNr];
+    if (refV == NULL)
+        throw std::invalid_argument("Invalid master view");
 
     /* Prepare reconstruction */
-    refV->loadColorImage(this->settings.imageEmbedding, settings.scale);
-    refV->prepareRecon(settings.scale);
+    refV->loadColorImage(this->settings.scale);
+    refV->prepareMasterView(settings.scale);
     mve::ImageBase::ConstPtr scaled_img = refV->getScaledImg();
     this->width = scaled_img->width();
     this->height = scaled_img->height();
@@ -72,21 +75,18 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
                   << this->height << std::endl;
 
     /* Create log file and write out some general MVS information */
-    if (!settings.logPath.empty()) {
+    if (!settings.logPath.empty())
+    {
         // Create directory if necessary
-        std::string logfn(settings.logPath);
-        std::size_t pos = logfn.find_last_of("/");
-        if (pos != logfn.length() - 1)
-            logfn += "/";
-        if (!util::fs::dir_exists(logfn.c_str()))
-            if (!util::fs::mkdir(logfn.c_str()))
-                if (!util::fs::dir_exists(logfn.c_str()))
-                    throw std::runtime_error("Error creating directory: " + logfn);
+        if (!util::fs::dir_exists(settings.logPath.c_str()))
+            if (!util::fs::mkdir(settings.logPath.c_str()))
+                if (!util::fs::dir_exists(settings.logPath.c_str()))
+                    throw std::runtime_error("Error creating directory: "
+                        + settings.logPath);
 
         /* Build log file name and open file */
-        std::string name(refV->createFileName(settings.scale));
-        name += ".log";
-        logfn += name;
+        std::string logfn = util::fs::join_path(settings.logPath,
+            refV->createFileName(settings.scale) + ".log");
         if (!settings.quiet)
             std::cout << "Creating log file at " << logfn
                       << std::endl;
@@ -94,6 +94,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
         if (!log.good())
             throw std::runtime_error("Cannot open log file");
     }
+
     log << "MULTI-VIEW STEREO LOG FILE" << std::endl;
     log << "--------------------------" << std::endl;
     log << std::endl;
@@ -116,8 +117,9 @@ DMRecon::~DMRecon()
 
 void DMRecon::start()
 {
-    try {
-        progress.start_time = std::time(0);
+    try
+    {
+        progress.start_time = std::time(NULL);
 
         analyzeFeatures();
         globalViewSelection();
@@ -179,7 +181,7 @@ void DMRecon::start()
 
         /* Output required time to process the image */
         {
-            size_t mvs_time = std::time(0) - progress.start_time;
+            size_t mvs_time = std::time(NULL) - progress.start_time;
             if (!settings.quiet)
                 std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
             log << "MVS took " << mvs_time << " seconds." << std::endl;
@@ -195,28 +197,33 @@ void DMRecon::start()
     }
 }
 
-/**  Attach features visible in reference view to other views where
-     they are visible */
+/*
+ * Attach features that are visible in the reference view (according to
+ * the bundle) to all other views if inside the frustum.
+ */
 void DMRecon::analyzeFeatures()
 {
     progress.status = RECON_FEATURES;
 
-    SingleView::Ptr refV = views[settings.refViewNr];
-
-    mve::BundleFile::FeaturePoints const & features = bundle->get_points();
-
+    SingleView::ConstPtr refV = views[settings.refViewNr];
+    mve::Bundle::Features const& features = bundle->get_features();
     for (std::size_t i = 0; i < features.size() && !progress.cancelled; ++i)
     {
         if (!features[i].contains_view_id(settings.refViewNr))
             continue;
+
         math::Vec3f featurePos(features[i].pos);
         if (!refV->pointInFrustum(featurePos))
             continue;
+
         for (std::size_t j = 0; j < features[i].refs.size(); ++j)
         {
-            std::size_t id = features[i].refs[j].img_id;
-            if (views[id] != NULL && views[id]->pointInFrustum(featurePos))
-                views[id]->addFeature(i);
+            int view_id = features[i].refs[j].view_id;
+            if (view_id < 0 || view_id >= static_cast<int>(views.size())
+                || views[view_id] == NULL)
+                continue;
+            if (views[view_id]->pointInFrustum(featurePos))
+                views[view_id]->addFeature(i);
         }
     }
 }
@@ -224,29 +231,32 @@ void DMRecon::analyzeFeatures()
 void DMRecon::globalViewSelection()
 {
     progress.status = RECON_GLOBALVS;
+    if (progress.cancelled)
+        return;
 
-    if (progress.cancelled)  return;
-    // Initialize global view selection
-    GlobalViewSelection globalVS(views, bundle->get_points(), settings);
-
-    // Perform global view selection
+    /* Perform global view selection. */
+    GlobalViewSelection globalVS(views, bundle->get_features(), settings);
     globalVS.performVS();
-
-    // Load selected images + logging and output
     neighViews = globalVS.getSelectedIDs();
+
+    if (neighViews.empty())
+        throw std::runtime_error("Global View Selection failed");
+
+    /* Logging and output. */
     std::stringstream ss;
-    ss << "Global view selection took the following views: " << std::endl;
-    IndexSet::const_iterator citID;
-    for (citID = neighViews.begin(); citID != neighViews.end()
-         && !progress.cancelled; ++citID)
-    {
-        ss << *citID << " ";
-        views[*citID]->loadColorImage(this->settings.imageEmbedding, 0);
-    }
+    ss << "Global View Selection:";
+    for (IndexSet::const_iterator iter = neighViews.begin();
+        iter != neighViews.end(); ++iter)
+        ss << " " << *iter;
     ss << std::endl;
     if (!settings.quiet)
         std::cout << ss.str();
     log << ss.str();
+
+    /* Load selected images. */
+    for (IndexSet::const_iterator iter = neighViews.begin();
+        iter != neighViews.end() && !progress.cancelled; ++iter)
+        views[*iter]->loadColorImage(0);
 }
 
 void DMRecon::processFeatures()
@@ -254,7 +264,7 @@ void DMRecon::processFeatures()
     progress.status = RECON_FEATURES;
     if (progress.cancelled)  return;
     SingleView::Ptr refV = views[settings.refViewNr];
-    mve::BundleFile::FeaturePoints const & features = bundle->get_points();
+    mve::Bundle::Features const& features = bundle->get_features();
 
     /* select features that should be processed:
        take features only from master view for the moment */
@@ -285,8 +295,8 @@ void DMRecon::processFeatures()
             continue;
         }
         math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
-        int x = round(pixPosF[0]);
-        int y = round(pixPosF[1]);
+        int x = math::algo::round(pixPosF[0]);
+        int y = math::algo::round(pixPosF[1]);
         float initDepth = (featPos - refV->camPos).norm();
         PatchOptimization patch(views, settings, x, y, initDepth,
             0.f, 0.f, neighViews, IndexSet());

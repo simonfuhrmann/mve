@@ -1,5 +1,5 @@
 /*
- * Camera representations.
+ * The MVE camera representation.
  * Written by Simon Fuhrmann.
  */
 

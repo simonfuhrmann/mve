@@ -10,7 +10,10 @@
  * are load only once.
  *
  * Current limitations:
- * - The following data types are supported: uint8, uint16, float, double, sint32
+ * - The following data types are supported:
+ *   uint8, uint16, float, double, sint32
+ * - Unexpected behavior occures if a process changes the structure of an
+ *   MVE file while another process relies on the previously read header.
  *
  * TODO: New Features
  * - Merging
@@ -23,19 +26,19 @@
 #include <string>
 #include <vector>
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "util/atomic.h"
 #include "mve/defines.h"
 #include "mve/camera.h"
-#include "mve/imagebase.h"
+#include "mve/image_base.h"
 #include "mve/image.h"
 
 MVE_NAMESPACE_BEGIN
 
 /**
  * Proxy class for image and data proxies.
- * For image proxies, width, height and channels is set.
- * For data proxies, width, height and channels is set to 0.
+ * For data proxies, 'is_image' is set to false, width is set to the
+ * byte size of the embedding, height and channels is set to 1.
  */
 struct MVEFileProxy
 {
@@ -47,8 +50,8 @@ struct MVEFileProxy
 
     /* Image/data properties as present in file. */
     int width; ///< Width of image (or length of data).
-    int height; ///< Height of image (or 0 for data).
-    int channels; ///< Channels of image (or 0 for data).
+    int height; ///< Height of image (or 1 for data).
+    int channels; ///< Channels of image (or 1 for data).
     std::string datatype; ///< String rep. of image datatype.
 
     /* Properties that links the embedding to a storage location. */
@@ -109,13 +112,12 @@ private:
     CameraInfo camera; ///< Per-view camera information
     Proxies proxies; ///< Proxies for all embeddings
     bool needs_rebuild; ///< Disables direct-writing when saving
-    util::Atomic<int> mutex; ///< Mutex to guard file access
+    util::Atomic<int> loading_mutex; ///< Mutex to guard file access
 
 private:
     void parse_header_line (std::string const& header_line);
     void direct_write (MVEFileProxy& proxy);
-    void load_embedding (MVEFileProxy& proxy); // NOT Thread safe!
-    void ensure_embedding (MVEFileProxy& proxy); // Thread safe wrapper.
+    ImageBase::Ptr get_image_for_proxy (MVEFileProxy& proxy);
     MVEFileProxy* get_proxy_intern (std::string const& name);
     void update_camera (void);
 
@@ -329,14 +331,14 @@ MVEFileMeta::MVEFileMeta (void)
 inline
 View::View (void)
     : needs_rebuild(false)
-    , mutex(0)
+    , loading_mutex(0)
 {
 }
 
 inline
 View::View (std::string const& fname)
     : needs_rebuild(false)
-    , mutex(0)
+    , loading_mutex(0)
 {
     this->load_mve_file(fname);
 }
@@ -412,7 +414,7 @@ View::clear (void)
 inline bool
 View::has_embedding (std::string const& name) const
 {
-    return this->get_proxy(name) != 0;
+    return this->get_proxy(name) != NULL;
 }
 
 inline std::size_t
@@ -425,7 +427,9 @@ inline bool
 View::mark_as_dirty (std::string const& name)
 {
     MVEFileProxy* p(this->get_proxy_intern(name));
-    return p != 0 && (p->is_dirty = true);
+    if (p != NULL)
+        p->is_dirty = true;
+    return p != NULL;
 }
 
 inline void

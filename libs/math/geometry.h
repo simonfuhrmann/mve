@@ -2,13 +2,14 @@
  * Geometric tools for trianges, tetrahedra, etc.
  * Written by Simon Fuhrmann
  */
+
 #ifndef MATH_GEOMETRY_HEADER
 #define MATH_GEOMETRY_HEADER
 
 #include "math/defines.h"
 #include "math/vector.h"
 #include "math/matrix.h"
-#include "math/matrixtools.h"
+#include "math/matrix_tools.h"
 
 MATH_NAMESPACE_BEGIN
 MATH_GEOM_NAMESPACE_BEGIN

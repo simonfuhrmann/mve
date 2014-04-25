@@ -1,25 +1,15 @@
-include ../../Makefile.inc
+MVE_ROOT := ../..
+TARGET := $(shell basename `pwd`)
+include ${MVE_ROOT}/Makefile.inc
+
+CXXFLAGS += -I${MVE_ROOT}/libs -fopenmp
+LDLIBS += -lpng -ltiff -ljpeg -fopenmp
 
 SOURCES := $(wildcard [^_]*.cc)
-OBJECTS := $(foreach file,$(SOURCES),$(subst .cc,.o,$(file)))
-BINARY := bundle2ply
-LIBDIR := ../../libs
+${TARGET}: ${SOURCES:.cc=.o} libmve.a libmve_util.a
+	$(LINK.o) $^ $(LDLIBS) -o $@
 
-EXT_INCL := -I../../libs
-EXT_LIBS := -L${LIBDIR}/util -L${LIBDIR}/mve -lmve -lutil -lpng -ljpeg -ltiff
+clean:
+	${RM} ${TARGET} *.o Makefile.dep
 
-all: ${OBJECTS}
-	${CXX} -o ${BINARY} ${OBJECTS} ${EXT_LIBS}
-
-%.o: %.cc
-	${CXX} -c -o $@ $< ${CXXFLAGS} ${EXT_INCL}
-
-depend:
-	${CXX} -MM ${SOURCES} ${EXT_INCL} > Makefile.dep
-
-clean: FORCE
-	${RM} ${OBJECTS} ${BINARY} ${TESTBIN}
-
-FORCE:
-
--include Makefile.dep
+.PHONY: clean

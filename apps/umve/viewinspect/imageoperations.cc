@@ -16,7 +16,8 @@
 #include "mve/view.h"
 #include "mve/depthmap.h"
 #include "mve/bilateral.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
+#include "util/exception.h"
 
 #include "jobqueue.h"
 #include "guihelpers.h"
@@ -27,9 +28,8 @@ ImageOperationsWidget::ImageOperationsWidget (void)
 {
     this->selected_view = new SelectedView();
 
-    const mvs::Settings default_settings;
-
-    /* Depthmap recon layout. */
+    /* MVS layout. */
+    mvs::Settings const default_settings;
     this->mvs_color_scale.setText("Enable Color Scale");
     this->mvs_color_scale.setChecked(default_settings.useColorScale);
     this->mvs_write_ply.setText("Write PLY after recon");
@@ -145,7 +145,7 @@ void
 ImageOperationsWidget::exec_bilateral (void)
 {
     mve::View::Ptr view = SceneManager::get().get_view();
-    if (view.get() == 0)
+    if (view == NULL)
     {
         std::cout << "No view set!" << std::endl;
         return;
@@ -163,7 +163,7 @@ ImageOperationsWidget::exec_bilateral (void)
     }
 
     mve::FloatImage::Ptr img = view->get_float_image(src_img);
-    if (!img.get())
+    if (img == NULL)
     {
         std::cout << "Cannot request image: " << src_img << std::endl;
         return;
@@ -197,7 +197,7 @@ struct JobDMRecon : public JobProgress
     mvs::Progress* progress;
     bool thread_started;
 
-    JobDMRecon (void) : progress(0), thread_started(false) {}
+    JobDMRecon (void) : progress(NULL), thread_started(false) {}
     char const* get_name (void) { return name.c_str(); }
     bool is_completed (void) { return future.isFinished(); }
     bool has_progress (void) { return false; }
@@ -206,9 +206,9 @@ struct JobDMRecon : public JobProgress
     {
         if (!this->thread_started)
             return "Waiting for slot";
-        if (this->message.empty() && this->progress == 0)
+        if (this->message.empty() && this->progress == NULL)
             return "Waiting...";
-        if (!this->message.empty() && this->progress == 0)
+        if (!this->message.empty() && this->progress == NULL)
             return this->message.c_str();
         if (this->progress && this->progress->cancelled)
             return "Cancelling...";
@@ -231,6 +231,10 @@ struct JobDMRecon : public JobProgress
     }
     void cancel_job (void)
     {
+        /* don't cancel twice */
+        if (this->progress == NULL)
+            return;
+
         this->progress->cancelled = true;
         std::cout << "Should cancel job \"" << name << "\"" << std::endl;
         std::cout << "  Running: " << this->future.isRunning() << std::endl
@@ -254,20 +258,42 @@ void
 ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene.get() == 0)
+    if (scene == NULL)
     {
         std::cout << "No scene set!" << std::endl;
         return;
     }
-    if (view.get() == 0)
+
+    if (view == NULL)
     {
         std::cout << "No view set!" << std::endl;
         return;
     }
 
-    if (!view.get() || !view->is_camera_valid())
+    mvs::Settings mvs_settings;
+    mvs_settings.refViewNr = view->get_id();
+    mvs_settings.imageEmbedding = this->mvs_color_image.currentText().toStdString();
+    mvs_settings.globalVSMax = this->mvs_amount_gvs.value();
+    mvs_settings.useColorScale = this->mvs_color_scale.isChecked();
+    mvs_settings.scale = this->mvs_scale.value();
+    mvs_settings.writePlyFile = this->mvs_write_ply.isChecked();
+    mvs_settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
+    mvs_settings.keepDzMap = this->mvs_dz_map.isChecked();
+    mvs_settings.plyPath = scene->get_path();
+    mvs_settings.plyPath += "/recon/";
+    mvs_settings.logPath = scene->get_path();
+    mvs_settings.logPath += "/log/";
+    mvs_settings.quiet = true;
+
+    if (mvs_settings.imageEmbedding.empty())
     {
-        std::cout << "Invalid view selected" << std::endl;
+        QMessageBox::warning(this, tr("MVS reconstruct"),
+            tr("No color image embedding name has been entered!"));
+        return;
+    }
+
+    if (!view->is_camera_valid())
+    {
         QMessageBox::warning(this, tr("MVS reconstruct"),
             tr("View invalid or master view has invalid camera!"));
         return;
@@ -279,20 +305,7 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     job->scene = scene;
     job->view = view;
     job->auto_save = this->mvs_auto_save.isChecked();
-
-    job->settings.refViewNr = view->get_id();
-    job->settings.imageEmbedding = this->mvs_color_image.currentText().toStdString();
-    job->settings.globalVSMax = this->mvs_amount_gvs.value();
-    job->settings.useColorScale = this->mvs_color_scale.isChecked();
-    job->settings.scale = this->mvs_scale.value();
-    job->settings.writePlyFile = this->mvs_write_ply.isChecked();
-    job->settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
-    job->settings.keepDzMap = this->mvs_dz_map.isChecked();
-    job->settings.plyPath = scene->get_path();
-    job->settings.plyPath += "/recon/";
-    job->settings.logPath = scene->get_path();
-    job->settings.logPath += "/log/";
-    job->settings.quiet = true;
+    job->settings = mvs_settings;
 
     /* Launch and register job. */
     job->future = QtConcurrent::run(this,
@@ -319,13 +332,13 @@ ImageOperationsWidget::threaded_dmrecon (JobDMRecon* job)
         else
             job->message = "Finished.";
 
-        job->progress = 0;
+        job->progress = NULL;
         std::cout << "Reconstruction finished!" << std::endl;
 
     }
     catch (std::exception& e)
     {
-        job->progress = 0;
+        job->progress = NULL;
         job->message = "Failed!";
         std::cout << "Reconstruction failed: " << e.what() << std::endl;
         return;
@@ -355,9 +368,17 @@ void
 ImageOperationsWidget::exec_dmrecon_batch (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene.get() == 0)
+    if (scene == NULL)
     {
-        std::cout << "No scene set!" << std::endl;
+        QMessageBox::warning(this, tr("MVS reconstruct"),
+            tr("No scene is loaded!"));
+        return;
+    }
+
+    if (this->mvs_color_image.currentText().size() == 0)
+    {
+        QMessageBox::warning(this, tr("MVS reconstruct"),
+            tr("No color image embedding name has been entered!"));
         return;
     }
 
@@ -370,8 +391,17 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     if (ret != QMessageBox::Yes)
         return;
 
-    /* Prefetch bundle file. */
-    scene->get_bundle();
+    try {
+        /* Prefetch bundle file. */
+        scene->get_bundle();
+    }
+    catch (util::Exception &exc)
+    {
+        QMessageBox::warning(this, tr("MVS batch reconstruct"),
+            tr("Could not load bundle file, reconstruction cancelled."));
+
+        return;
+    }
 
     std::string dmname("depth-L" + util::string::get(scale));
 
@@ -379,7 +409,7 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     mve::Scene::ViewList& views(scene->get_views());
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-        if (!views[i].get() || !views[i]->is_camera_valid())
+        if (views[i] == NULL || !views[i]->is_camera_valid())
             continue;
         if (views[i]->has_embedding(dmname))
             continue;
@@ -400,7 +430,7 @@ void
 ImageOperationsWidget::exec_dmclean (void)
 {
     mve::View::Ptr view = SceneManager::get().get_view();
-    if (view.get() == 0)
+    if (view == NULL)
     {
         std::cout << "No view set!" << std::endl;
         return;
@@ -417,7 +447,7 @@ ImageOperationsWidget::exec_dmclean (void)
     }
 
     mve::FloatImage::Ptr img = view->get_float_image(src_img);
-    if (!img.get())
+    if (img == NULL)
     {
         std::cout << "Cannot request image: " << src_img << std::endl;
         return;

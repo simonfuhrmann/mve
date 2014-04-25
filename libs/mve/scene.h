@@ -9,10 +9,10 @@
 #include <vector>
 #include <string>
 
-#include "util/refptr.h"
+#include "util/ref_ptr.h"
 #include "mve/defines.h"
 #include "mve/view.h"
-#include "mve/bundlefile.h"
+#include "mve/bundle.h"
 
 #define MVE_SCENE_VIEWS_DIR "views/"
 #define MVE_SCENE_BUNDLE_FILE "synth_0.out"
@@ -50,9 +50,9 @@ public:
     /** Returns the list of views. */
     ViewList& get_views (void);
     /** Returns the bundle structure. */
-    BundleFile::ConstPtr get_bundle (void);
+    Bundle::ConstPtr get_bundle (void);
     /** Sets a new bundle structure. */
-    void set_bundle (BundleFile::Ptr bundle);
+    void set_bundle (Bundle::Ptr bundle);
     /** Resets the bundle file such that it is re-read on get_bundle. */
     void reset_bundle (void);
 
@@ -70,7 +70,7 @@ public:
     /** Forces rewriting of all views. Can take a long time. */
     void rewrite_all_views (void);
 
-    /** Checks if one of the views is dirty. */
+    /** Returns true if one of the views or the bundle file is dirty. */
     bool is_dirty (void) const;
 
     /** Returns the base path of the scene. */
@@ -89,7 +89,7 @@ public:
 private:
     std::string basedir;
     ViewList views;
-    BundleFile::Ptr bundle;
+    Bundle::Ptr bundle;
     bool bundle_dirty;
 
 private:
@@ -143,7 +143,7 @@ Scene::get_path (void) const
 }
 
 inline void
-Scene::set_bundle (BundleFile::Ptr bundle)
+Scene::set_bundle (Bundle::Ptr bundle)
 {
     this->bundle_dirty = true;
     this->bundle = bundle;

@@ -2,6 +2,7 @@
  * Algorithms that deal with depth maps.
  * Written by Simon Fuhrmann.
  */
+
 #ifndef MVE_DEPTHMAP_HEADER
 #define MVE_DEPTHMAP_HEADER
 
@@ -10,7 +11,7 @@
 #include "mve/defines.h"
 #include "mve/camera.h"
 #include "mve/image.h"
-#include "mve/trianglemesh.h"
+#include "mve/mesh.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
@@ -98,7 +99,7 @@ pixel_3dpos (std::size_t x, std::size_t y, float depth,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
-    float dd_factor = 5.0f, mve::Image<unsigned int>* vids = 0);
+    float dd_factor = 5.0f, mve::Image<unsigned int>* vids = NULL);
 
 /**
  * A helper function that triangulates the given depth map with optional

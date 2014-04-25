@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "mve/bundlefile.h"
+#include "mve/bundle.h"
 #include "dmrecon/single_view.h"
 #include "dmrecon/view_selection.h"
 
@@ -13,7 +13,7 @@ class GlobalViewSelection : public ViewSelection
 {
 public:
     GlobalViewSelection(std::vector<SingleView::Ptr> const& views,
-        mve::BundleFile::FeaturePoints const& features,
+        mve::Bundle::Features const& features,
         Settings const& settings);
     void performVS();
 
@@ -21,7 +21,7 @@ private:
     float benefitFromView(std::size_t i);
 
     std::vector<SingleView::Ptr> const& views;
-    mve::BundleFile::FeaturePoints const& features;
+    mve::Bundle::Features const& features;
 };
 
 MVS_NAMESPACE_END

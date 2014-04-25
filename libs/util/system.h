@@ -10,6 +10,12 @@
 
 #include "util/defines.h"
 
+#ifdef _WIN32
+#   define WIN32_LEAN_AND_MEAN
+#   define VC_EXTRALEAN
+#   include <Windows.h>
+#endif
+
 UTIL_NAMESPACE_BEGIN
 UTIL_SYSTEM_NAMESPACE_BEGIN
 
@@ -51,12 +57,12 @@ inline void
 sleep (std::size_t msec)
 {
 #ifdef _WIN32
-        ::Sleep((long)msec);
+    Sleep((long)msec);
 #else
-        struct timespec rt, rm;
-        rt.tv_sec = msec / 1000l;
-        rt.tv_nsec = (msec - 1000l * rt.tv_sec) * 1000000l;
-        ::nanosleep(&rt, &rm);
+    struct timespec rt, rm;
+    rt.tv_sec = msec / 1000l;
+    rt.tv_nsec = (msec - 1000l * rt.tv_sec) * 1000000l;
+    ::nanosleep(&rt, &rm);
 #endif
 }
 
@@ -69,7 +75,7 @@ sleep_sec (float secs)
 inline void
 rand_init (void)
 {
-    std::srand(std::time(0));
+    std::srand(std::time(NULL));
 }
 
 inline void

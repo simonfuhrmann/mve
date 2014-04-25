@@ -4,6 +4,7 @@
  *
  * The app supports:
  * - Import of calibrated images from Photosynther and Noah bundler
+ * - Import of calibrated images from VisualSfM
  * - Import of uncalibrated 8 bit, 16 bit or float images from a directory
  *   8 bit formats: JPEG, PNG, TIFF, PPM
  *   16 bit formats: TIFF, PPM
@@ -19,21 +20,22 @@
 #include <string>
 #include <algorithm>
 
-#include "math/matrix.h" // for rot matrix determinant
-#include "math/matrixtools.h" // for rot matrix determinant
+#include "math/matrix.h"
+#include "math/matrix_tools.h"
 #include "math/algo.h"
 #include "util/arguments.h"
 #include "util/string.h"
-#include "util/filesystem.h"
+#include "util/file_system.h"
 #include "util/tokenizer.h"
-#include "mve/bundlefile.h"
+#include "mve/bundle.h"
+#include "mve/bundle_io.h"
 #include "mve/view.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
-#include "mve/imageexif.h" // extract EXIF for JPEG images
-#include "mve/trianglemesh.h"
-#include "mve/meshtools.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
+#include "mve/image_exif.h"
+#include "mve/mesh.h"
+#include "mve/mesh_tools.h"
 
 #define THUMBNAIL_SIZE 50
 
@@ -41,8 +43,8 @@
 #define PS_BUNDLE_LOG "coll.log"
 #define PS_IMAGE_DIR "images/"
 #define PS_UNDIST_DIR "undistorted/"
-#define NOAH_BUNDLE_LIST "list.txt"
-#define NOAH_IMAGE_DIR ""
+#define BUNDLER_FILE_LIST "list.txt"
+#define BUNDLER_IMAGE_DIR ""
 #define VIEWS_DIR "views/"
 
 typedef std::vector<std::string> StringVector;
@@ -53,13 +55,14 @@ typedef FileVector::iterator FileIterator;
 
 struct AppSettings
 {
-    std::string input_dir;
-    std::string output_dir;
+    std::string input_path;
+    std::string output_path;
     int bundle_id;
     bool import_orig;
     bool skip_invalid;
     bool images_only;
     bool append_images;
+    int max_pixels;
 
     /* Computed values. */
     std::string bundle_path;
@@ -69,62 +72,14 @@ struct AppSettings
 /* ---------------------------------------------------------------- */
 
 void
-read_photosynther_log (std::string const& filename,
-    int bundle_id, StringVector& files)
+wait_for_user_confirmation (void)
 {
-    std::string from_line = "Synth " + util::string::get(bundle_id);
-
-    /*
-     * The list of original images is read from the coll.log file.
-     */
-    std::ifstream in(filename.c_str());
-    if (!in.good())
-    {
-        std::cerr << "Error: Cannot read bundler log file!" << std::endl;
-        std::cerr << "File: " << filename << std::endl;
-        std::exit(1);
-    }
-
-    /* Find starting line. */
+    std::cerr << "-> Press ENTER to continue, or CTRL-C to exit." << std::endl;
     std::string line;
-    while (!in.eof())
-    {
-        std::getline(in, line);
-        if (line.substr(0, from_line.size()) == from_line)
-            break;
-    }
-
-    if (in.eof())
-    {
-        std::cerr << "Error: Parsing bundler log file failed!" << std::endl;
-        std::cerr << "File: " << filename << std::endl;
-        std::exit(1);
-    }
-
-    /* Find number of images. */
-    util::Tokenizer tok;
-    tok.split(line);
-    if (tok.size() != 7)
-    {
-        std::cerr << "Error: Parsing bundler log file failed!" << std::endl;
-        std::cerr << "File: " << filename << std::endl;
-        std::exit(1);
-    }
-    std::size_t num = util::string::convert<std::size_t>(tok[3]);
-
-    /* Find file names. */
-    for (std::size_t i = 0; i < num && !in.eof(); ++i)
-    {
-        std::getline(in, line);
-        util::string::clip_newlines(&line);
-        std::size_t pos = line.find_last_of('\\');
-        std::string fname = line.substr(pos + 1, line.size() - pos - 2);
-        files.push_back(fname);
-    }
-
-    in.close();
-    return;
+    std::getline(std::cin, line);
 }
+
+/* ---------------------------------------------------------------- */
 
 void
 read_noah_imagelist (std::string const& filename, StringVector& files)
@@ -220,18 +175,18 @@ mve::ImageBase::Ptr
 load_any_image (std::string const& fname, std::string* exif)
 {
     mve::ByteImage::Ptr img_8 = load_8bit_image(fname, exif);
-    if (img_8.get())
+    if (img_8 != NULL)
         return img_8;
 
     mve::RawImage::Ptr img_16 = load_16bit_image(fname);
-    if (img_16.get())
+    if (img_16 != NULL)
         return img_16;
 
     mve::FloatImage::Ptr img_float = load_float_image(fname);
-    if (img_float.get())
+    if (img_float != NULL)
         return img_float;
 
-    std::cerr << "Skipping file " << util::fs::get_file_component(fname)
+    std::cerr << "Skipping file " << util::fs::basename(fname)
         << ", cannot load image." << std::endl;
     return mve::ImageBase::Ptr();
 }
@@ -247,6 +202,19 @@ find_min_max_percentile (typename mve::Image<T>::ConstPtr image,
     std::sort(copy->begin(), copy->end());
     *vmin = copy->at(copy->get_value_amount() / 10);
     *vmax = copy->at(9 * copy->get_value_amount() / 10);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+add_exif_to_view (mve::View::Ptr view, std::string const& exif)
+{
+    if (exif.empty())
+        return;
+
+    mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
+    std::copy(exif.begin(), exif.end(), exif_image->begin());
+    view->add_data("exif", exif_image);
 }
 
 /* ---------------------------------------------------------------- */
@@ -291,306 +259,176 @@ create_thumbnail (mve::ImageBase::ConstPtr img)
 
 /* ---------------------------------------------------------------- */
 
-/*
- * The VisualSFM tool saves bundles in NVM format. Docs are here:
- * http://homes.cs.washington.edu/~ccwu/vsfm/doc.html#nvm
- */
-
-struct NVMView
+template <class T>
+typename mve::Image<T>::Ptr
+limit_image_size (typename mve::Image<T>::Ptr img, int max_pixels)
 {
-    std::string filename;
-    double focal_length;
-    double quaternion[4];
-    double camera_center[3];
-    double radial_distortion;
-};
-
-struct NVMRef
-{
-    int image_id;
-    int feature_id;
-    float pos[2];
-};
-
-struct NVMPoint
-{
-    double pos[3];
-    unsigned char color[3];
-    std::vector<NVMRef> refs;
-};
-
-math::Matrix3f
-get_rot_from_quaternion(double const* values)
-{
-    math::Vec4f q(values);
-    q.normalize();
-
-    math::Matrix3f rot;
-    rot[0] = 1.0f - 2.0f * q[2]*q[2] - 2.0f * q[3]*q[3];
-    rot[1] = 2.0f * q[1]*q[2] - 2.0f * q[3]*q[0];
-    rot[2] = 2.0f * q[1]*q[3] + 2.0f * q[2]*q[0];
-
-    rot[3] = 2.0f * q[1]*q[2] + 2.0f * q[3]*q[0];
-    rot[4] = 1.0f - 2.0f * q[1]*q[1] - 2.0f * q[3]*q[3];
-    rot[5] = 2.0f * q[2]*q[3] - 2.0f * q[1]*q[0];
-
-    rot[6] = 2.0f * q[1]*q[3] - 2.0f * q[2]*q[0];
-    rot[7] = 2.0f * q[2]*q[3] + 2.0f * q[1]*q[0];
-    rot[8] = 1.0f - 2.0f * q[1]*q[1] - 2.0f * q[2]*q[2];
-    return rot;
-}
-
-std::string
-get_relative_path_component (std::string const& full_path)
-{
-    std::size_t pos = full_path.find_last_of('/');
-    if (pos == std::string::npos)
-        return "./";
-    else if (pos == 0)
-        return "/.";
-    else
-        return full_path.substr(0, pos);
-}
-
-void
-import_bundle_nvm (AppSettings const& conf)
-{
-    std::ifstream in(conf.input_dir.c_str());
-    if (!in.good())
-    {
-        std::cerr << "Error: Cannot open NVM file" << std::endl;
-        return;
-    }
-
-    /* Check NVM file signature. */
-    std::cout << "Start parsing NVM file..." << std::endl;
-    std::string signature;
-    in >> signature;
-    if (signature != "NVM_V3")
-    {
-        std::cerr << "Error: Invalid NVM signature" << std::endl;
-        in.close();
-        return;
-    }
-
-    // TODO: Handle multiple models.
-
-    /* Read number of views. */
-    int num_views = 0;
-    in >> num_views;
-    if (num_views < 0 || num_views > 10000)
-    {
-        std::cerr << "Error: Invalid number of views: "
-            << num_views << std::endl;
-        in.close();
-        return;
-    }
-    std::cout << "Number of views: " << num_views << std::endl;
-
-    /* Read views. */
-    std::string nvm_path = get_relative_path_component(conf.input_dir);
-    std::vector<NVMView> views;
-    for (int i = 0; i < num_views; ++i)
-    {
-        NVMView view;
-        in >> view.filename;
-        in >> view.focal_length;
-        for (int j = 0; j < 4; ++j)
-            in >> view.quaternion[j];
-        for (int j = 0; j < 3; ++j)
-            in >> view.camera_center[j];
-        in >> view.radial_distortion;
-        if (in.eof())
-        {
-            std::cerr << "Error: Premature end of NVM file." << std::endl;
-            in.close();
-            return;
-        }
-
-        /* If the filename is not absolute, make relative to NVM. */
-        if (view.filename[0] != '/')
-            view.filename = nvm_path + "/" + view.filename;
-
-        views.push_back(view);
-
-        int temp;
-        in >> temp;
-    }
-
-    /* Read number of points. */
-    int num_points = 0;
-    in >> num_points;
-    if (num_points < 0 || num_points > 1000000000)
-    {
-        std::cerr << "Error: Invalid number of SfM points: "
-            << num_points << std::endl;
-        in.close();
-        return;
-    }
-    std::cout << "Number of points: " << num_points << std::endl;
-
-    /* Read points. */
-    std::vector<NVMPoint> points;
-    for (int i = 0; i < num_points; ++i)
-    {
-        NVMPoint point;
-
-        /* Read position and color. */
-        for (int j = 0; j < 3; ++j)
-            in >> point.pos[j];
-        int color_tmp[3];
-        for (int j = 0; j < 3; ++j)
-            in >> color_tmp[j];
-        std::copy(color_tmp, color_tmp + 3, point.color);
-
-        /* Read number of refs. */
-        int num_refs = 0;
-        in >> num_refs;
-        if (num_refs < 2 || num_refs > 1000)
-        {
-            std::cerr << "Error: Invalid number of feature refs: "
-                << num_refs << std::endl;
-            in.close();
-            return;
-        }
-
-        /* Read refs. */
-        for (int j = 0; j < num_refs; ++j)
-        {
-            NVMRef ref;
-            in >> ref.image_id >> ref.feature_id >> ref.pos[0] >> ref.pos[1];
-            point.refs.push_back(ref);
-        }
-        points.push_back(point);
-    }
-    in.close();
-
-    /* Create output directories. */
-    std::cout << "Creating output directories..." << std::endl;
-    util::fs::mkdir(conf.output_dir.c_str());
-    util::fs::mkdir(conf.views_path.c_str());
-
-    /* Write output bundle file for MVE. */
-    std::cout << "Writing bundle file..." << std::endl;
-    std::ofstream out((conf.output_dir + "/synth_0.out").c_str());
-    if (!out.good())
-    {
-        std::cerr << "Error: Cannot open output bundle file" << std::endl;
-        in.close();
-        return;
-    }
-    out << "drews 1.0" << std::endl;
-    out << num_views << " " << num_points << std::endl;
-    for (std::size_t i = 0; i < views.size(); ++i)
-    {
-        NVMView const& view = views[i];
-        math::Matrix3f rot = get_rot_from_quaternion(view.quaternion);
-        math::Vec3f trans = rot * -math::Vec3f(view.camera_center);
-
-        out << view.focal_length << " " << views[i].radial_distortion
-            << " 0" << std::endl;
-        out << rot[0] << " " << rot[1] << " " << rot[2] << std::endl;
-        out << rot[3] << " " << rot[4] << " " << rot[5] << std::endl;
-        out << rot[6] << " " << rot[7] << " " << rot[8] << std::endl;
-        out << trans[0] << " " << trans[1] << " " << trans[2] << std::endl;
-    }
-    for (std::size_t i = 0; i < points.size(); ++i)
-    {
-        NVMPoint const& point = points[i];
-        out << point.pos[0] << " " << point.pos[1] << " " << point.pos[2] << std::endl;
-        out << static_cast<int>(point.color[0]) << " "
-            << static_cast<int>(point.color[1]) << " "
-            << static_cast<int>(point.color[2]) << std::endl;
-        out << point.refs.size();
-        for (std::size_t j = 0; j < point.refs.size(); ++j)
-            out << " " << point.refs[j].image_id << " "
-                << point.refs[j].feature_id << " 0";
-        out << std::endl;
-    }
-    out.close();
-
-    /* Create and write views. */
-    std::cout << "Writing MVE files..." << std::endl;
-#pragma omp parallel for schedule(dynamic, 1)
-    for (std::size_t i = 0; i < views.size(); ++i)
-    {
-        mve::View::Ptr view = mve::View::create();
-        view->set_id(i);
-        view->set_name(util::string::get_filled(i, 4, '0'));
-
-        mve::ByteImage::Ptr image;
-        try
-        { image = mve::image::load_file(views[i].filename); }
-        catch (...)
-        {
-            std::cout << "Error loading: " << views[i].filename << std::endl;
-            continue;
-        }
-
-        int const maxdim = std::max(image->width(), image->height());
-        view->add_image("original", image);
-        view->add_image("thumbnail", create_thumbnail(image));
-
-        mve::CameraInfo cam;
-        cam.flen = views[i].focal_length / static_cast<float>(maxdim);
-        cam.dist[0] = views[i].radial_distortion;
-        cam.dist[1] = 0.0f;
-        math::Matrix3f rot = get_rot_from_quaternion(views[i].quaternion);
-        math::Vec3f trans = rot * -math::Vec3f(views[i].camera_center);
-        std::copy(*rot, *rot + 9, cam.rot);
-        std::copy(*trans, *trans + 3, cam.trans);
-
-        mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
-            (image, cam.flen, views[i].radial_distortion);
-        view->add_image("undistorted", undist);
-
-        view->set_camera(cam);
-        view->save_mve_file_as(conf.views_path + "view_"
-            + util::string::get_filled(i, 4, '0') + ".mve");
-    }
-    std::cout << std::endl << "Done importing NVM file!" << std::endl;
+    while (img->get_pixel_amount() > max_pixels)
+        img = mve::image::rescale_half_size<uint8_t>(img);
+    return img;
 }
 
 /* ---------------------------------------------------------------- */
 
 void
+import_bundle_nvm (AppSettings const& conf)
+{
+    std::vector<mve::NVMCameraInfo> nvm_cams;
+    mve::Bundle::Ptr bundle = mve::load_nvm_bundle(conf.input_path, &nvm_cams);
+    mve::Bundle::Cameras& cameras = bundle->get_cameras();
+    mve::Bundle::Features const& features = bundle->get_features();
+
+    if (nvm_cams.size() != cameras.size())
+    {
+        std::cerr << "Error: NVM info inconsistent with bundle!" << std::endl;
+        return;
+    }
+
+    /* Create output directories. */
+    std::cout << "Creating output directories..." << std::endl;
+    util::fs::mkdir(conf.output_path.c_str());
+    util::fs::mkdir(conf.views_path.c_str());
+
+    /* Create and write views. */
+    std::cout << "Writing MVE files..." << std::endl;
+#pragma omp parallel for schedule(dynamic, 1)
+    for (std::size_t i = 0; i < cameras.size(); ++i)
+    {
+        mve::CameraInfo& mve_cam = cameras[i];
+        mve::NVMCameraInfo const& nvm_cam = nvm_cams[i];
+        std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
+
+        mve::View::Ptr view = mve::View::create();
+        view->set_id(i);
+        view->set_name(util::string::get_filled(i, 4, '0'));
+
+        std::string exif;
+        mve::ByteImage::Ptr image = load_8bit_image(nvm_cam.filename, &exif);
+        if (image == NULL)
+        {
+            std::cout << "Error loading: " << nvm_cam.filename
+                << " (skipping " << fname << ")" << std::endl;
+            continue;
+        }
+
+        if (conf.import_orig)
+            view->add_image("original", image);
+        view->add_image("thumbnail", create_thumbnail(image));
+        add_exif_to_view(view, exif);
+
+        int const maxdim = std::max(image->width(), image->height());
+        mve_cam.flen = mve_cam.flen / static_cast<float>(maxdim);
+
+        mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
+            (image, mve_cam.flen, nvm_cam.radial_distortion);
+        undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
+        view->add_image("undistorted", undist);
+        view->set_camera(mve_cam);
+
+#pragma omp critical
+        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
+        view->save_mve_file_as(conf.views_path + fname);
+    }
+
+    // TODO: Use MVE to write MVE bundle file.
+
+    /* Write output bundle file for MVE. */
+    std::cout << "Writing bundle file..." << std::endl;
+    std::ofstream out((conf.output_path + "/synth_0.out").c_str());
+    if (!out.good())
+    {
+        std::cerr << "Error: Cannot open output bundle file" << std::endl;
+        return;
+    }
+
+    out << "drews 1.0" << std::endl;
+    out << cameras.size() << " " << features.size() << std::endl;
+    for (std::size_t i = 0; i < cameras.size(); ++i)
+    {
+        mve::CameraInfo const& mve_cam = cameras[i];
+        mve::NVMCameraInfo const& nvm_cam = nvm_cams[i];
+
+        out << mve_cam.flen << " "
+            << nvm_cam.radial_distortion << " 0" << std::endl;
+
+        float const* rot = mve_cam.rot;
+        out << rot[0] << " " << rot[1] << " " << rot[2] << std::endl;
+        out << rot[3] << " " << rot[4] << " " << rot[5] << std::endl;
+        out << rot[6] << " " << rot[7] << " " << rot[8] << std::endl;
+        float const* trans = mve_cam.trans;
+        out << trans[0] << " " << trans[1] << " " << trans[2] << std::endl;
+    }
+    for (std::size_t i = 0; i < features.size(); ++i)
+    {
+        mve::Bundle::Feature3D const& feature = features[i];
+        out << feature.pos[0] << " " << feature.pos[1]
+            << " " << feature.pos[2] << std::endl;
+        out << static_cast<int>(feature.color[0] * 255.0f + 0.5f) << " "
+            << static_cast<int>(feature.color[1] * 255.0f + 0.5f) << " "
+            << static_cast<int>(feature.color[2] * 255.0f + 0.5f) << std::endl;
+        out << feature.refs.size();
+        for (std::size_t j = 0; j < feature.refs.size(); ++j)
+            out << " " << feature.refs[j].view_id << " "
+                << feature.refs[j].feature_id << " 0";
+        out << std::endl;
+    }
+    out.close();
+
+    std::cout << std::endl << "Done importing NVM file!" << std::endl;
+}
+
+/* ---------------------------------------------------------------- */
+
+namespace
+{
+    enum BundleFormat
+    {
+        BUNDLE_FORMAT_NOAH_BUNDLER,
+        BUNDLE_FORMAT_PHOTOSYNTHER,
+        BUNDLE_FORMAT_UNKNOWN
+    };
+}
+
+void
 import_bundle (AppSettings const& conf)
 {
+    /**
+     * Try to detect VisualSFM bundle format.
+     * In this case the input is a file with extension ".nvm".
+     */
+    if (util::string::right(conf.input_path, 4) == ".nvm"
+        && util::fs::file_exists(conf.input_path.c_str()))
+    {
+        std::cout << "Info: Detected VisualSFM bundle format." << std::endl;
+        import_bundle_nvm(conf);
+        return;
+    }
+
     /* Build some paths. */
     std::string bundle_fname;
     std::string imagelist_file;
     std::string image_path;
     std::string undist_path;
-    mve::BundleFormat bundler_fmt = mve::BUNDELR_UNKNOWN;
-
-    /**
-     * Try to detect VisualSFM bundle format. This is detected if the input
-     * is a file with extension "nmv".
-     */
-    if (bundler_fmt == mve::BUNDELR_UNKNOWN)
-    {
-        if (util::string::right(conf.input_dir, 4) == ".nvm"
-            && util::fs::file_exists(conf.input_dir.c_str()))
-        {
-            import_bundle_nvm(conf);
-            return;
-        }
-    }
+    BundleFormat bundler_fmt = BUNDLE_FORMAT_UNKNOWN;
+    bool import_original = conf.import_orig;
 
     /*
      * Try to detect Photosynther software. This is detected if the
      * file synth_N.out (for bundle N) is present in the bundler dir.
      */
-    if (bundler_fmt == mve::BUNDELR_UNKNOWN)
+    if (bundler_fmt == BUNDLE_FORMAT_UNKNOWN)
     {
         bundle_fname = "synth_" + util::string::get(conf.bundle_id) + ".out";
         bundle_fname = conf.bundle_path + bundle_fname;
-        imagelist_file = conf.input_dir + "/" PS_BUNDLE_LOG;
-        image_path = conf.input_dir + "/" PS_IMAGE_DIR;
-        undist_path = conf.input_dir + "/" PS_UNDIST_DIR;
+        imagelist_file = conf.input_path + "/" PS_BUNDLE_LOG;
+        image_path = conf.input_path + "/" PS_IMAGE_DIR;
+        undist_path = conf.input_path + "/" PS_UNDIST_DIR;
 
         if (util::fs::file_exists(bundle_fname.c_str()))
-            bundler_fmt = mve::BUNDLER_PHOTOSYNTHER;
+        {
+            std::cout << "Info: Detected Photosynther format." << std::endl;
+            bundler_fmt = BUNDLE_FORMAT_PHOTOSYNTHER;
+        }
     }
 
     /*
@@ -598,7 +436,7 @@ import_bundle (AppSettings const& conf)
      * file bundle.out (for bundle 0) or bundle_%03d.out (for bundle > 0)
      * is present in the bundler directory.
      */
-    if (bundler_fmt == mve::BUNDELR_UNKNOWN)
+    if (bundler_fmt == BUNDLE_FORMAT_UNKNOWN)
     {
         if (conf.bundle_id > 0)
             bundle_fname = "bundle_" + util::string::get_filled
@@ -607,143 +445,127 @@ import_bundle (AppSettings const& conf)
             bundle_fname = "bundle.out";
 
         bundle_fname = conf.bundle_path + bundle_fname;
-        imagelist_file = conf.input_dir + "/" NOAH_BUNDLE_LIST;
-        image_path = conf.input_dir + "/" NOAH_IMAGE_DIR;
+        imagelist_file = conf.input_path + "/" BUNDLER_FILE_LIST;
+        image_path = conf.input_path + "/" BUNDLER_IMAGE_DIR;
 
         if (util::fs::file_exists(bundle_fname.c_str()))
-            bundler_fmt = mve::BUNDLER_NOAHBUNDLER;
-    }
-
-    /* Bundle file still not detected? */
-    if (bundler_fmt == mve::BUNDELR_UNKNOWN)
-    {
-        std::cerr << "Error: Cannot find bundle file." << std::endl;
-        std::exit(1);
+        {
+            std::cout << "Info: Detected Noah's Bundler format." << std::endl;
+            bundler_fmt = BUNDLE_FORMAT_NOAH_BUNDLER;
+        }
     }
 
     /* Read bundle file. */
-    mve::BundleFile bf;
+    mve::Bundle::Ptr bundle;
     try
-    { bf.read_bundle(bundle_fname); }
+    {
+        if (bundler_fmt == BUNDLE_FORMAT_NOAH_BUNDLER)
+            bundle = mve::load_bundler_bundle(bundle_fname);
+        else if (bundler_fmt == BUNDLE_FORMAT_PHOTOSYNTHER)
+            bundle = mve::load_photosynther_bundle(bundle_fname);
+        else
+        {
+            std::cerr << "Error: Could not detect bundle format." << std::endl;
+            std::exit(1);
+        }
+    }
     catch (std::exception& e)
     {
-        std::cerr << "Error: Cannot read bundle file." << std::endl
-            << "  Message: " << e.what() << std::endl;
+        std::cerr << "Error reading bundle: " << e.what() << std::endl;
         std::exit(1);
     }
 
-    /* Consistency check. */
-    if (bf.get_format() != bundler_fmt)
-    {
-        std::cerr << "Error: Bundle format and directory layout don't match!"
-            << std::endl;
-        std::exit(1);
-    }
-
-    /*
-     * Read the list of original images filenames.
-     * For the Noah bundler, this is always required because it does not
-     * create the undistorted images. For the Photosynther, this is only
-     * required if importing the original images is requested (otherwise
-     * it just takes the undistorted images).
-     */
+    /* Read the list of original images filenames. */
     StringVector orig_files;
-    if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER && conf.import_orig)
+    if (bundler_fmt == BUNDLE_FORMAT_PHOTOSYNTHER && import_original)
     {
-        read_photosynther_log(imagelist_file, conf.bundle_id, orig_files);
-        if (orig_files.empty())
-        {
-            std::cerr << "Error: Empty list of original images." << std::endl;
-            std::exit(1);
-        }
-        if (orig_files.size() != bf.get_num_valid_cameras())
-        {
-            std::cerr << "Error: Invalid amount of original images." << std::endl;
-            std::cerr << "Cameras: " << bf.get_num_valid_cameras()
-                << ", image list: " << orig_files.size() << std::endl;
-            std::exit(1);
-        }
-        std::cout << "Recognized " << orig_files.size()
-            << " original images in Photosynther log." << std::endl;
+        std::cerr << std::endl << "** Warning: Original images cannot be "
+            << "imported from Photosynther." << std::endl;
+        wait_for_user_confirmation();
+        import_original = false;
     }
-    else if (bundler_fmt == mve::BUNDLER_NOAHBUNDLER)
+    else if (bundler_fmt == BUNDLE_FORMAT_NOAH_BUNDLER)
     {
+        /*
+         * Each camera in the bundle file corresponds to the ordered list of
+         * input images. Some cameras are set to zero, which means the input
+         * image was not registered. The paths of original images is required
+         * because Bundler does not compute the undistorted images.
+         */
         read_noah_imagelist(imagelist_file, orig_files);
         if (orig_files.empty())
         {
             std::cerr << "Error: Empty list of original images." << std::endl;
             std::exit(1);
         }
-        if (orig_files.size() != bf.get_num_cameras())
+        if (orig_files.size() != bundle->get_num_cameras())
         {
             std::cerr << "Error: Invalid amount of original images." << std::endl;
             std::exit(1);
         }
         std::cout << "Recognized " << orig_files.size()
-            << " original image file names in Noah bundler." << std::endl;
+            << " original images from Noah's Bundler." << std::endl;
     }
 
     /* ------------------ Start importing views ------------------- */
 
-    /* Create destination dir. */
+    /* Create destination directories. */
     std::cout << "Creating output directories..." << std::endl;
-    util::fs::mkdir(conf.output_dir.c_str());
+    util::fs::mkdir(conf.output_path.c_str());
     util::fs::mkdir(conf.views_path.c_str());
 
     /* Save bundle file. */
     std::cout << "Saving bundle file..." << std::endl;
-    bf.write_bundle(conf.output_dir + "/synth_0.out");
+    mve::save_photosynther_bundle(bundle, conf.output_path + "/synth_0.out");
 
-    std::size_t valid_cnt = 0;
-    std::size_t undist_imported = 0;
-    mve::BundleFile::BundleCameras const& cams(bf.get_cameras());
+    /* Save MVE views. */
+    int num_valid_cams = 0;
+    int undist_imported = 0;
+    mve::Bundle::Cameras const& cams = bundle->get_cameras();
     for (std::size_t i = 0; i < cams.size(); ++i)
     {
         /*
          * For each camera in the bundle file, a new view is created.
-         * Views are populated with id, name, camera information,
-         * undistorted RGB image, and eventually the original RGB image.
+         * Views are populated with ID, name, camera information,
+         * undistorted RGB image, and optionally the original RGB image.
          */
         std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
-
-        std::cout << std::endl;
         std::cout << "Processing view " << fname << "..." << std::endl;
 
         /* Skip invalid cameras... */
-        mve::CameraInfo cam(cams[i]);
+        mve::CameraInfo cam = cams[i];
         if (cam.flen == 0.0f && (conf.skip_invalid
-            || bundler_fmt == mve::BUNDLER_PHOTOSYNTHER))
+            || bundler_fmt == BUNDLE_FORMAT_PHOTOSYNTHER))
         {
-            std::cerr << "Skipping view '" << fname
-                << "' (invalid camera)" << std::endl;
+            std::cerr << "  Skipping " << fname
+                << ": Invalid camera." << std::endl;
             continue;
         }
 
         /* Extract name of view from original image or sequentially. */
-        std::string viewname = (conf.import_orig
-            ? util::fs::get_file_component(orig_files[i])
-            : util::string::get_filled(i, 4));
+        std::string view_name = (import_original
+            ? util::fs::basename(orig_files[i])
+            : util::string::get_filled(i, 4, '0'));
 
         /* Throw away extension if present. */
         std::string name_ext = util::string::lowercase
-            (util::string::right(viewname, 4));
+            (util::string::right(view_name, 4));
         if (name_ext == ".jpg" || name_ext == ".png")
-            viewname = util::string::left(viewname, viewname.size() - 4);
+            view_name = util::string::left(view_name, view_name.size() - 4);
 
         /* Convert from Photosynther camera conventions. */
-        if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER)
+        if (bundler_fmt == BUNDLE_FORMAT_PHOTOSYNTHER)
         {
             /* Nothing to do here. */
         }
 
         /* Fix issues with Noah Bundler camera specification. */
-        if (bundler_fmt == mve::BUNDLER_NOAHBUNDLER)
+        if (bundler_fmt == BUNDLE_FORMAT_NOAH_BUNDLER)
         {
             /* Check focal length of camera, fix negative focal length. */
             if (cam.flen < 0.0f)
             {
-                std::cout << "Fixing focal length for view '"
-                    << fname << "'" << std::endl;
+                std::cout << "  Fixing focal length for " << fname << std::endl;
                 cam.flen = -cam.flen;
                 std::for_each(cam.rot, cam.rot + 9,
                     math::algo::foreach_negate_value<float>);
@@ -762,8 +584,8 @@ import_bundle (AppSettings const& conf)
             float rmatdet = math::matrix_determinant(rmat);
             if (rmatdet < 0.0f)
             {
-                std::cerr << "Skipping view '" << fname
-                    << "' (bad rotation matrix)" << std::endl;
+                std::cerr << "  Skipping " << fname
+                    << ": Bad rotation matrix." << std::endl;
                 continue;
             }
         }
@@ -771,22 +593,22 @@ import_bundle (AppSettings const& conf)
         /* Create view and set headers. */
         mve::View::Ptr view = mve::View::create();
         view->set_id(i);
-        view->set_name(viewname);
+        view->set_name(view_name);
         view->set_camera(cam);
 
-        /* FIXME: Handle exceptions, i.e. while loading images? */
+        /* FIXME: Handle exceptions while loading images? */
 
         /* Load undistorted and original image, create thumbnail. */
         mve::ByteImage::Ptr original, undist, thumb;
         std::string exif;
-        if (bundler_fmt == mve::BUNDLER_NOAHBUNDLER)
+        if (bundler_fmt == BUNDLE_FORMAT_NOAH_BUNDLER)
         {
             /* For Noah datasets, load original image and undistort it. */
             std::string orig_filename = image_path + orig_files[i];
             original = load_8bit_image(orig_filename, &exif);
             thumb = create_thumbnail(original);
 
-            /* Convert Noah focal length to MVE focal length. */
+            /* Convert Bundler's focal length to MVE focal length. */
             cam.flen /= (float)std::max(original->width(), original->height());
             view->set_camera(cam);
 
@@ -794,79 +616,67 @@ import_bundle (AppSettings const& conf)
                 undist = mve::image::image_undistort_bundler<uint8_t>
                     (original, cam.flen, cam.dist[0], cam.dist[1]);
 
-            if (!conf.import_orig)
+            if (!import_original)
                 original.reset();
         }
-        else if (bundler_fmt == mve::BUNDLER_PHOTOSYNTHER)
+        else if (bundler_fmt == BUNDLE_FORMAT_PHOTOSYNTHER)
         {
             /*
-             * With the Photosynther, load undistorted and original.
-             * The new version uses "forStereo_xxxx_yyyy.png" as file
-             * name and the older version uses "undistorted_xxxx_yyyy.jpg".
+             * Depending on the version, try to load two file names:
+             * New version: forStereo_xxxx_yyyy.png
+             * Old version: undistorted_xxxx_yyyy.jpg
              */
             std::string undist_new_filename = undist_path + "forStereo_"
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(valid_cnt, 4) + ".png";
+                + util::string::get_filled(num_valid_cams, 4) + ".png";
             std::string undist_old_filename = undist_path + "undistorted_"
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(valid_cnt, 4) + ".jpg";
+                + util::string::get_filled(num_valid_cams, 4) + ".jpg";
+
             /* Try the newer file name and fall back if not existing. */
             if (util::fs::file_exists(undist_new_filename.c_str()))
                 undist = mve::image::load_file(undist_new_filename);
             else
                 undist = mve::image::load_file(undist_old_filename);
 
-            if (conf.import_orig)
-            {
-                std::string orig_filename(image_path + orig_files[valid_cnt]);
-                original = load_8bit_image(orig_filename, &exif);
-                /* Overwrite undistorted images with manually undistorted
-                 * original images. This reduces JPEG artifacts. */
-                undist = mve::image::image_undistort_msps<uint8_t>
-                    (original, cam.dist[0], cam.dist[1]);
-            }
+            /* Create thumbnail. */
             thumb = create_thumbnail(undist);
         }
 
         /* Add images to view. */
-        if (thumb.get())
+        if (thumb != NULL)
             view->add_image("thumbnail", thumb);
 
-        if (undist.get())
+        if (undist != NULL)
+        {
+            undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
             view->add_image("undistorted", undist);
-        else if (cam.flen != 0.0f && !undist.get())
+        }
+        else if (cam.flen != 0.0f && undist == NULL)
             std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
-        if (original.get())
+        if (original != NULL)
             view->add_image("original", original);
-        else if (conf.import_orig && undist.get())
+        if (original == NULL && import_original)
             std::cerr << "Warning: Original image missing!" << std::endl;
 
         /* Add EXIF data to view if available. */
-        if (!exif.empty())
-        {
-            mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
-            std::copy(exif.begin(), exif.end(), exif_image->begin());
-            view->add_data("exif", exif_image);
-        }
+        add_exif_to_view(view, exif);
 
         /* Save MVE file. */
-        {
-            std::string view_filename = conf.views_path + fname;
-            view->save_mve_file_as(view_filename);
-        }
+        view->save_mve_file_as(conf.views_path + fname);
 
-        if (cam.flen != 0)
-            valid_cnt += 1;
-        if (undist.get())
+        if (cam.flen != 0.0f)
+            num_valid_cams += 1;
+        if (undist != NULL)
             undist_imported += 1;
     }
 
     std::cout << std::endl;
     std::cout << "Created " << cams.size() << " views with "
-        << valid_cnt << " valid cameras." << std::endl
-        << "Imported " << undist_imported << " undistorted images."
-        << std::endl;
+        << num_valid_cams << " valid cameras." << std::endl;
+    std::cout << "Imported " << undist_imported
+        << " undistorted images." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
@@ -907,7 +717,7 @@ void
 import_images (AppSettings const& conf)
 {
     util::fs::Directory dir;
-    try { dir.scan(conf.input_dir); }
+    try { dir.scan(conf.input_path); }
     catch (std::exception& e)
     {
         std::cerr << "Error scanning input dir: " << e.what() << std::endl;
@@ -921,7 +731,7 @@ import_images (AppSettings const& conf)
     if (!conf.append_images)
     {
         std::cout << "Creating output directories..." << std::endl;
-        util::fs::mkdir(conf.output_dir.c_str());
+        util::fs::mkdir(conf.output_path.c_str());
         util::fs::mkdir(conf.views_path.c_str());
     }
 
@@ -954,7 +764,7 @@ import_images (AppSettings const& conf)
         std::string exif;
         mve::ByteImage::Ptr image = load_any_image
             (dir[i].get_absolute_name(), &exif);
-        if (!image.get())
+        if (image == NULL)
             continue;
 
         /* Generate view name. */
@@ -973,19 +783,15 @@ import_images (AppSettings const& conf)
 
         /* Add thumbnail for byte images. */
         mve::ByteImage::Ptr thumb = create_thumbnail(image);
-        if (thumb.get())
+        if (thumb != NULL)
             view->add_image("thumbnail", thumb);
 
         /* Add EXIF data to view if available. */
-        if (!exif.empty())
-        {
-            mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
-            std::copy(exif.begin(), exif.end(), exif_image->begin());
-            view->add_data("exif", exif_image);
-        }
+        add_exif_to_view(view, exif);
 
         /* Save view to disc. */
         fname = "view_" + util::string::get_filled(id_cnt, 4) + ".mve";
+        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
         view->save_mve_file_as(conf.views_path + fname);
 
         /* Advance ID of successfully imported images. */
@@ -1003,31 +809,36 @@ main (int argc, char** argv)
 {
     /* Setup argument parser. */
     util::Arguments args;
+    args.set_usage(argv[0], "[ OPTIONS ] INPUT OUT_SCENE");
+    args.set_exit_on_error(true);
+    args.set_nonopt_maxnum(2);
+    args.set_nonopt_minnum(2);
+    args.set_helptext_indent(22);
+    args.set_description("This utility creates MVE scenes by importing "
+        "from an external SfM software. Supported are Noah's Bundler, "
+        "Photosynther, and VisualSfM's compact .nvm file.\n\n"
+
+        "For VisualSfM, makescene expects the .nvm file as INPUT. "
+        "With VisualSfM, it is not possible to keep invalid views.\n\n"
+
+        "For Noah's Bundler, makescene expects the bundle directory as INPUT, "
+        "a file \"list.txt\" in INPUT and the bundle file in the "
+        "\"bundle\" directory.\n\n"
+
+        "For Photosynther, makescene expects the bundle directory as INPUT, "
+        "and an \"undistorted\" directory in INPUT with the bundled images. "
+        "With the Photosynther, it is not possible to keep invalid views "
+        "or import original images.\n\n"
+
+        "With the \"images-only\" option, all images in the INPUT directory "
+        "are imported without camera information. If \"append-images\" is "
+        "specified, images are added to an existing scene.");
     args.add_option('o', "original", false, "Import original images");
     args.add_option('b', "bundle-id", true, "ID of the bundle [0]");
     args.add_option('k', "keep-invalid", false, "Keeps images with invalid cameras");
     args.add_option('i', "images-only", false, "Imports images from INPUT_DIR only");
     args.add_option('a', "append-images", false, "Appends images to an existing scene");
-    args.set_description("This utility creates MVE scenes by importing "
-        "from a Photosynther or Noah format bundle directory INPUT_DIR. "
-        "Images corresponding to invalid cameras are ignored by default. "
-
-        "For Photosynther, makescene expects an \"undistorted\" directory "
-        "with the bundled images, and an \"images\" directory with the "
-        "original images, if requested. This also requires coll.log. "
-        "For Photosynther, it is not possible to keep invalid views. "
-
-        "For Noah bundles, makescene expects \"list.txt\" in INPUT_DIR "
-        "and the bundle file in the \"bundle\" directory. "
-
-        "With the \"images-only\" option, all images in INPUT_DIR "
-        "are directly imported without camera information. If "
-        "\"append-images\" is specified, images are added to the scene.");
-    args.set_exit_on_error(true);
-    args.set_nonopt_maxnum(2);
-    args.set_nonopt_minnum(2);
-    args.set_helptext_indent(22);
-    args.set_usage(argv[0], "[ OPTIONS ] INPUT_DIR OUT_SCENE");
+    args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -1036,27 +847,33 @@ main (int argc, char** argv)
     conf.skip_invalid = true;
     conf.images_only = false;
     conf.append_images = false;
-    conf.input_dir = args.get_nth_nonopt(0);
-    conf.output_dir = args.get_nth_nonopt(1);
+    conf.input_path = args.get_nth_nonopt(0);
+    conf.output_path = args.get_nth_nonopt(1);
     conf.bundle_id = 0;
+    conf.max_pixels = std::numeric_limits<int>::max();
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
-        i != 0; i = args.next_option())
+        i != NULL; i = args.next_option())
     {
-        switch (i->opt->sopt)
-        {
-            case 'o': conf.import_orig = true; break;
-            case 'b': conf.bundle_id = i->get_arg<int>(); break;
-            case 'k': conf.skip_invalid = false; break;
-            case 'i': conf.images_only = true; break;
-            case 'a': conf.append_images = true; break;
-            default: throw std::invalid_argument("Unexpected option");
-        }
+        if (i->opt->lopt == "original")
+            conf.import_orig = true;
+        else if (i->opt->lopt == "bundle-id")
+            conf.bundle_id = i->get_arg<int>();
+        else if (i->opt->lopt == "keep-invalid")
+            conf.skip_invalid = false;
+        else if (i->opt->lopt == "images-only")
+            conf.images_only = true;
+        else if (i->opt->lopt == "append-images")
+            conf.append_images = true;
+        else if (i->opt->lopt == "max-pixels")
+            conf.max_pixels = i->get_arg<int>();
+        else
+            throw std::invalid_argument("Unexpected option");
     }
 
     /* Check command line arguments. */
-    if (conf.input_dir.empty() || conf.output_dir.empty())
+    if (conf.input_path.empty() || conf.output_path.empty())
     {
         args.generate_helptext(std::cerr);
         return 1;
@@ -1070,22 +887,19 @@ main (int argc, char** argv)
     }
 
     /* Build some paths. */
-    conf.views_path = conf.output_dir + "/" VIEWS_DIR;
-    conf.bundle_path = conf.input_dir + "/" BUNDLE_PATH;
+    conf.views_path = conf.output_path + "/" VIEWS_DIR;
+    conf.bundle_path = conf.input_path + "/" BUNDLE_PATH;
 
     /* Check if output dir exists. */
-    bool output_dir_exists = util::fs::dir_exists(conf.output_dir.c_str());
-    if (output_dir_exists && !conf.append_images)
+    bool output_path_exists = util::fs::dir_exists(conf.output_path.c_str());
+    if (output_path_exists && !conf.append_images)
     {
         std::cerr << std::endl;
-        std::cerr << "** WARNING: Output dir already exists." << std::endl;
+        std::cerr << "** Warning: Output dir already exists." << std::endl;
         std::cerr << "** This may leave old views in your scene." << std::endl;
-        std::cerr << std::endl;
-        std::cerr << "Press ENTER to continue, or CTRL-C to exit." << std::endl;
-        std::string line;
-        std::getline(std::cin, line);
+        wait_for_user_confirmation();
     }
-    else if (!output_dir_exists && conf.append_images)
+    else if (!output_path_exists && conf.append_images)
     {
         std::cerr << "Error: Output dir does not exist. Cannot append images."
             << std::endl;

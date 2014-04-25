@@ -3,18 +3,20 @@
 
 #include <QComboBox>
 #include <QLabel>
+#include <QFrame>
 
 #include "mve/view.h"
 
 class SelectedView : public QFrame
 {
+    Q_OBJECT
+
 private:
     mve::View::Ptr view;
 
     QLabel* viewname;
     QLabel* image;
     QLabel* viewinfo;
-    //QComboBox* embeddings;
 
 private:
     void reset_view (void);
@@ -24,10 +26,12 @@ public:
 
     void set_view (mve::View::Ptr view);
     mve::View::Ptr get_view (void) const;
-    std::string selected_embedding (void) const;
 
     void fill_embeddings (QComboBox& cb, mve::ImageType type,
         std::string const& default_name = "") const;
+
+signals:
+    void view_selected (mve::View::Ptr view);
 };
 
 /* ---------------------------------------------------------------- */

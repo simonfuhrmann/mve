@@ -10,19 +10,19 @@
 #include "math/algo.h"
 #include "mve/defines.h"
 #include "mve/image.h"
-#include "mve/imagetools.h"
-#include "mve/imagefile.h"
+#include "mve/image_tools.h"
+#include "mve/image_io.h"
 #include "mve/view.h"
 #include "mve/scene.h"
-#include "mve/plyfile.h"
+#include "mve/mesh_io_ply.h"
 #include "mve/bilateral.h"
-#include "mve/trianglemesh.h"
-#include "mve/vertexinfo.h"
-#include "mve/offfile.h"
+#include "mve/mesh.h"
+#include "mve/mesh_info.h"
+#include "mve/mesh_io_off.h"
 #include "mve/depthmap.h"
-#include "mve/meshtools.h"
+#include "mve/mesh_tools.h"
 #include "mve/volume.h"
-#include "mve/marchingcubes.h"
+#include "mve/marching_cubes.h"
 
 /* ---------------------------------------------------------------- */
 
@@ -51,7 +51,7 @@ int main (int argc, char** argv)
     mve::View::Ptr view = mve::View::create("/gris/scratch/home/sfuhrman/q3scene_mve/views/view_0000.mve");
     mve::FloatImage::Ptr dm = view->get_float_image("depthmap");
     mve::ByteImage::Ptr ci = view->get_byte_image("undistorted");
-    if (!dm.get())
+    if (dm == NULL)
     {
         std::cout << "No such embedding!" << std::endl;
         return 1;
