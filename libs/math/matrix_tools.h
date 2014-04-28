@@ -150,6 +150,14 @@ void
 matrix_multiply (T const* mat_a, int rows_a, int cols_a,
     T const* mat_b, int cols_b, T* mat_res);
 
+/**
+ * Checks whether the input matrix is a diagonal matrix. This is done by
+ * testing if all non-diagonal entries are zero (up to some epsilon).
+ */
+template <typename T>
+bool
+matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon);
+
 MATH_NAMESPACE_END
 
 /* ------------------------ Implementation ------------------------ */
@@ -513,6 +521,22 @@ matrix_multiply (T const* mat_a, int rows_a, int cols_a,
                 mat_res[icb + j] += mat_a[ica + k] * mat_b[k * cols_b + j];
         }
     }
+}
+
+template <typename T>
+bool
+matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon)
+{
+    for (int y = 0; y < rows; ++y)
+    {
+        for (int x = 0; x < y && x < cols; ++x)
+            if (!MATH_EPSILON_EQ(T(0), mat[y * cols + x], epsilon))
+                return false;
+        for (int x = y + 1; x < cols; ++x)
+            if (!MATH_EPSILON_EQ(T(0), mat[y * cols + x], epsilon))
+                return false;
+    }
+    return true;
 }
 
 MATH_NAMESPACE_END
