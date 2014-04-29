@@ -162,8 +162,6 @@ get_home_dir (void)
     if (*home_path != 0)
         return home_path;
 
-    // TODO: Use HOME environment variable?
-
 #ifdef _WIN32
     // SHGetFolderPathA seems to expect non-wide chars
     // http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
@@ -171,14 +169,13 @@ get_home_dir (void)
     if (!SUCCEEDED(::SHGetFolderPathA(0, CSIDL_APPDATA, 0, 0, home_path)))
         throw util::Exception("Cannot determine home directory");
 #else // _WIN32
-    uid_t user_id = ::geteuid();
-    struct passwd* user_info = ::getpwuid(user_id);
-    if (user_info == NULL || user_info->pw_dir == NULL)
+    char const*  home = ::getenv("HOME");
+    if (home == NULL)
         throw util::Exception("Cannot determine home directory");
-    std::strncpy(home_path, user_info->pw_dir, PATH_MAX);
+    std::strncpy(home_path, home, PATH_MAX);
 #endif // _WIN32
 
-  return home_path;
+    return home_path;
 }
 
 /* ---------------------------------------------------------------- */
