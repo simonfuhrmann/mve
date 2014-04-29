@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "util/file_system.h"
+
 #include "guihelpers.h"
 #include "scenemanager.h"
 #include "scene_inspect/scene_inspect.h"
@@ -48,6 +50,7 @@ void
 SceneInspect::load_file (std::string const& filename)
 {
     this->addin_manager->load_file(filename);
+    this->last_mesh_dir = util::fs::dirname(filename);
 }
 
 /* ---------------------------------------------------------------- */
@@ -107,12 +110,11 @@ SceneInspect::create_actions (QToolBar* toolbar)
 void
 SceneInspect::on_open_mesh (void)
 {
-    QFileDialog dialog(this, tr("Open Mesh"), last_mesh_dir);
+    QFileDialog dialog(this, tr("Open Mesh"), this->last_mesh_dir.c_str());
     dialog.setFileMode(QFileDialog::ExistingFiles);
     if (!dialog.exec())
         return;
 
-    last_mesh_dir = dialog.directory().path();
     QStringList filenames = dialog.selectedFiles();
     for (QStringList::iterator it = filenames.begin();
          it != filenames.end(); ++it)
