@@ -67,12 +67,6 @@ namespace
         return intel ? util::system::letoh(value) : util::system::betoh(value);
     }
 
-    uint8_t
-    parse_u8 (unsigned char const* buf)
-    {
-        return buf[0];
-    }
-
     float
     parse_rational_u64 (unsigned char const* buf, bool intel)
     {

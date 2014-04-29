@@ -6,9 +6,9 @@
 #ifndef MVE_IMAGE_BASE_HEADER
 #define MVE_IMAGE_BASE_HEADER
 
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <vector>
 
+#include "util/stdint_compat.h"
 #include "util/string.h"
 #include "util/ref_ptr.h"
 #include "mve/defines.h"
@@ -486,6 +486,8 @@ template <typename T>
 inline T const*
 TypedImageBase<T>::get_data_pointer (void) const
 {
+    if (this->data.empty())
+        return NULL;
     return &this->data[0];
 }
 
@@ -493,6 +495,8 @@ template <typename T>
 inline T*
 TypedImageBase<T>::get_data_pointer (void)
 {
+    if (this->data.empty())
+        return NULL;
     return &this->data[0];
 }
 
@@ -549,14 +553,14 @@ template <typename T>
 inline char const*
 TypedImageBase<T>::get_byte_pointer (void) const
 {
-    return (char const*)&this->data[0];
+    return reinterpret_cast<char const*>(this->get_data_pointer());
 }
 
 template <typename T>
 inline char*
 TypedImageBase<T>::get_byte_pointer (void)
 {
-    return (char*)&this->data[0];
+    return reinterpret_cast<char*>(this->get_data_pointer());
 }
 
 MVE_NAMESPACE_END

@@ -6,6 +6,13 @@ QT += opengl
 QMAKE_LFLAGS += -rdynamic
 QMAKE_CXXFLAGS += -fPIC
 
+# some convenience options for OS X
+macx {
+    CONFIG -= app_bundle
+    QMAKE_LFLAGS += -L/usr/local/lib
+    INCLUDEPATH += /usr/local/include
+}
+
 SOURCES += [^_]*.cc viewinspect/*.cc scene_inspect/*.cc scene_addins/*.cc
 HEADERS += *.h viewinspect/*.h scene_inspect/*.h scene_addins/*.h
 RESOURCES = umve.qrc

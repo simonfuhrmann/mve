@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "util/ref_ptr.h"
-#include "math/algo.h"
+#include "math/functions.h"
 #include "mve/defines.h"
 #include "mve/image_base.h"
 
@@ -193,8 +193,8 @@ Image<T>::swap_channels (int c1, int c2)
         || c1 >= this->channels() || c2 >= this->channels())
         return;
 
-    typename std::vector<T>::iterator iter1 = this->data.begin() + c1;
-    typename std::vector<T>::iterator iter2 = this->data.begin() + c2;
+    T* iter1 = &this->data[0] + c1;
+    T* iter2 = &this->data[0] + c2;
     int pixels = this->get_pixel_amount();
     for (int i = 0; i < pixels; ++i, iter1 += this->c, iter2 += this->c)
         std::swap(*iter1, *iter2);
@@ -213,8 +213,8 @@ Image<T>::copy_channel (int src, int dest)
         this->add_channels(1);
     }
 
-    typename std::vector<T>::iterator src_iter = this->data.begin() + src;
-    typename std::vector<T>::iterator dst_iter = this->data.begin() + dest;
+    T const* src_iter = &this->data[0] + src;
+    T* dst_iter = &this->data[0] + dest;
     int pixels = this->get_pixel_amount();
     for (int i = 0; i < pixels; ++i, src_iter += this->c, dst_iter += this->c)
         *dst_iter = *src_iter;
@@ -364,7 +364,7 @@ Image<T>::linear_at (float x, float y, int channel) const
     int const col1 = floor_x * this->c;
     const int col2 = floor_xp1 * this->c;
 
-    return math::algo::interpolate<T>
+    return math::interpolate<T>
         (this->at(row1 + col1 + channel), this->at(row1 + col2 + channel),
         this->at(row2 + col1 + channel), this->at(row2 + col2 + channel),
         w0 * w2, w1 * w2, w0 * w3, w1 * w3);
@@ -396,7 +396,7 @@ Image<T>::linear_at (float x, float y, T* px) const
     /* Copy interpolated channel values to output buffer. */
     for (int cc = 0; cc < this->c; ++cc)
     {
-        px[cc] = math::algo::interpolate<T>
+        px[cc] = math::interpolate<T>
             (this->at(row1 + col1 + cc), this->at(row1 + col2 + cc),
             this->at(row2 + col1 + cc), this->at(row2 + col2 + cc),
             w0 * w2, w1 * w2, w0 * w3, w1 * w3);

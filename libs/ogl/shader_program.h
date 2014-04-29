@@ -13,6 +13,7 @@
 #include "math/matrix.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
+#include "ogl/check_gl_error.h"
 
 #define OGL_ATTRIB_POSITION "pos"
 #define OGL_ATTRIB_NORMAL "normal"
@@ -38,7 +39,7 @@ public:
      * Try loading all shaders by appending ".vert", ".geom"
      * and ".frag" to basename.
      */
-    void try_load_all (std::string const& basename, bool unload = true);
+    bool try_load_all (std::string const& basename);
 
     /** Loads a vertex shader from file. */
     void load_vert_file (std::string const& filename);
@@ -98,6 +99,8 @@ private:
     GLuint geom_id;
     GLuint frag_id;
 
+    bool need_to_link;
+
 private:
     ShaderProgram (void);
 
@@ -112,7 +115,6 @@ private:
     GLint get_shader_property (GLuint shader_id, int pname);
 
     void ensure_linked (void);
-    void link (void) const;
 };
 
 /* ---------------------------------------------------------------- */
@@ -124,15 +126,21 @@ ShaderProgram::ShaderProgram (void)
     this->geom_id = 0;
     this->frag_id = 0;
     this->prog_id = glCreateProgram();
+    check_gl_error();
+    this->need_to_link = false;
 }
 
 inline
 ShaderProgram::~ShaderProgram (void)
 {
     glDeleteProgram(this->prog_id);
+    check_gl_error();
     glDeleteShader(this->vert_id);
+    check_gl_error();
     glDeleteShader(this->geom_id);
+    check_gl_error();
     glDeleteShader(this->frag_id);
+    check_gl_error();
 }
 
 inline ShaderProgram::Ptr
@@ -181,21 +189,36 @@ inline void
 ShaderProgram::unload_vert (void)
 {
     glDetachShader(this->prog_id, this->vert_id);
+    check_gl_error();
+
     glDeleteShader(this->vert_id);
+    check_gl_error();
+
+    this->vert_id = 0;
 }
 
 inline void
 ShaderProgram::unload_geom (void)
 {
     glDetachShader(this->prog_id, this->geom_id);
+    check_gl_error();
+
     glDeleteShader(this->geom_id);
+    check_gl_error();
+
+    this->geom_id = 0;
 }
 
 inline void
 ShaderProgram::unload_frag (void)
 {
     glDetachShader(this->prog_id, this->frag_id);
+    check_gl_error();
+
     glDeleteShader(this->frag_id);
+    check_gl_error();
+
+    this->frag_id = 0;
 }
 
 inline GLint
@@ -263,25 +286,25 @@ ShaderProgram::bind (void)
 {
     this->ensure_linked();
     glUseProgram(this->prog_id);
+    check_gl_error();
 }
 
 inline void
 ShaderProgram::unbind (void) const
 {
     glUseProgram(0);
-}
-
-inline void
-ShaderProgram::link (void) const
-{
-    glLinkProgram(this->prog_id);
+    check_gl_error();
 }
 
 inline void
 ShaderProgram::ensure_linked (void)
 {
-    if (this->get_program_property(GL_LINK_STATUS) == GL_FALSE)
-        this->link();
+    if (this->need_to_link)
+    {
+        glLinkProgram(this->prog_id);
+        check_gl_error();
+        this->need_to_link = false;
+    }
 }
 
 inline GLint
@@ -289,6 +312,7 @@ ShaderProgram::get_program_property (int pname)
 {
     GLint ret;
     glGetProgramiv(this->prog_id, pname, &ret);
+    check_gl_error();
     return ret;
 }
 
@@ -297,6 +321,7 @@ ShaderProgram::get_shader_property (GLuint shader_id, int pname)
 {
     GLint ret;
     glGetShaderiv(shader_id, pname, &ret);
+    check_gl_error();
     return ret;
 }
 

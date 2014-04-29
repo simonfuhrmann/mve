@@ -9,7 +9,6 @@ LDLIBS += -lpng -ltiff -ljpeg
 
 test: ${SOURCES:.cc=.o} gtest_main.a libmve_sfm.a libmve.a libmve_util.a
 	${LINK.cc} -o $@ $^ ${LDLIBS}
-	./test
 
 clean:
 	${RM} ${TARGET} mve/*.o util/*.o math/*.o Makefile.dep

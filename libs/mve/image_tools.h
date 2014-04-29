@@ -12,7 +12,7 @@
 
 #include "util/exception.h"
 #include "math/accum.h"
-#include "math/algo.h"
+#include "math/functions.h"
 #include "mve/defines.h"
 #include "mve/image.h"
 
@@ -598,7 +598,7 @@ rescale_half_size (typename Image<T>::ConstPtr img)
             int hasnext = (x * 2 + 1 < iw);
 
             for (int c = 0; c < ic; ++c)
-                out->at(outpos++) = math::algo::interpolate<T>(
+                out->at(outpos++) = math::interpolate<T>(
                     img->at(ipix1 + c), img->at(ipix1 + ic * hasnext + c),
                     img->at(ipix2 + c), img->at(ipix2 + ic * hasnext + c),
                     0.25f, 0.25f, 0.25f, 0.25f);
@@ -770,7 +770,7 @@ rescale_double_size (typename Image<T>::ConstPtr img)
             }
 
             for (int c = 0; c < ic; ++c, ++i)
-                out->at(i) = math::algo::interpolate
+                out->at(i) = math::interpolate
                     (px[0][c], px[1][c], px[2][c], px[3][c],
                     w[0], w[1], w[2], w[3]);
         }
@@ -812,7 +812,7 @@ rescale_double_size_supersample (typename Image<T>::ConstPtr img)
             };
 
             for (int c = 0; c < ic; ++c, ++witer)
-                out->at(witer) = math::algo::interpolate
+                out->at(witer) = math::interpolate
                     (val[0][c], val[1][c], val[2][c], val[3][c],
                     0.25f, 0.25f, 0.25f, 0.25f);
         }
@@ -921,7 +921,7 @@ gaussian_kernel (typename Image<T>::ConstPtr img,
             weight *= (yi == kyi_max ? wy_end : 1.0f);
             float dx = static_cast<float>(xi) + 0.5f - x;
             float dy = static_cast<float>(yi) + 0.5f - y;
-            weight *= math::algo::gaussian_xx(dx * dx + dy * dy, sigma);
+            weight *= math::gaussian_xx(dx * dx + dy * dy, sigma);
 
             accum.add(img->at(xi, yi, c), weight);
         }
@@ -1021,7 +1021,7 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
 
     /* Fill kernel values. */
     for (int i = 0; i < ks + 1; ++i)
-        kernel[i] = math::algo::gaussian((float)i, sigma);
+        kernel[i] = math::gaussian((float)i, sigma);
 
 #if 1 // Separated kernel implementation
 
@@ -1035,7 +1035,7 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
                 math::Accum<T> accum(T(0));
                 for (int i = -ks; i <= ks; ++i)
                 {
-                    int idx = math::algo::clamp(x + i, 0, (int)w - 1);
+                    int idx = math::clamp(x + i, 0, (int)w - 1);
                     accum.add(in->at(y * w + idx, cc), kernel[std::abs(i)]);
                 }
                 sep->at(px, cc) = accum.normalized();
@@ -1051,7 +1051,7 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
                 math::Accum<T> accum(T(0));
                 for (int i = -ks; i <= ks; ++i)
                 {
-                    int idx = math::algo::clamp(y + i, 0, (int)h - 1);
+                    int idx = math::clamp(y + i, 0, (int)h - 1);
                     accum.add(sep->at(idx * w + x, cc), kernel[std::abs(i)]);
                 }
                 out->at(px, cc) = accum.normalized();
@@ -1070,8 +1070,8 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
                 for (int ky = -ks; ky <= ks; ++ky)
                     for (int kx = -ks; kx <= ks; ++kx)
                     {
-                        int idx_x = math::algo::clamp(x + kx, 0, (int)w - 1);
-                        int idx_y = math::algo::clamp(y + ky, 0, (int)h - 1);
+                        int idx_x = math::clamp(x + kx, 0, (int)w - 1);
+                        int idx_y = math::clamp(y + ky, 0, (int)h - 1);
                         accum.add(in->at(idx_y * w + idx_x, cc),
                             kernel[std::abs(kx)] * kernel[std::abs(ky)]);
                     }
@@ -1166,8 +1166,8 @@ blur_boxfilter (typename Image<T>::ConstPtr in, int ks)
                 for (int ky = -ks; ky <= ks; ++ky)
                     for (int kx = -ks; kx <= ks; ++kx)
                     {
-                        int idx_x = math::algo::clamp(x + kx, 0, (int)w - 1);
-                        int idx_y = math::algo::clamp(y + ky, 0, (int)h - 1);
+                        int idx_x = math::clamp(x + kx, 0, (int)w - 1);
+                        int idx_y = math::clamp(y + ky, 0, (int)h - 1);
                         accum.add(in->at(idx_x, idx_y, cc), 1.0f);
                     }
                 out->at(x, y, cc) = accum.normalized();
@@ -1296,21 +1296,21 @@ desaturate_lightness (T const* v)
 {
     T const* max = std::max_element(v, v + 3);
     T const* min = std::min_element(v, v + 3);
-    return math::algo::interpolate(*max, *min, 0.5f, 0.5f);
+    return math::interpolate(*max, *min, 0.5f, 0.5f);
 }
 
 template <typename T>
 inline T
 desaturate_luminosity (T const* v)
 {
-    return math::algo::interpolate(v[0], v[1], v[2], 0.21f, 0.72f, 0.07f);
+    return math::interpolate(v[0], v[1], v[2], 0.21f, 0.72f, 0.07f);
 }
 
 template <typename T>
 inline T
 desaturate_luminance (T const* v)
 {
-    return math::algo::interpolate(v[0], v[1], v[2], 0.30f, 0.59f, 0.11f);
+    return math::interpolate(v[0], v[1], v[2], 0.30f, 0.59f, 0.11f);
 }
 
 template <typename T>
@@ -1318,7 +1318,7 @@ inline T
 desaturate_average (T const* v)
 {
     float third(1.0f / 3.0f);
-    return math::algo::interpolate(v[0], v[1], v[2], third, third, third);
+    return math::interpolate(v[0], v[1], v[2], third, third, third);
 }
 
 /* ---------------------------------------------------------------- */

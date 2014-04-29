@@ -186,7 +186,7 @@ load_any_image (std::string const& fname, std::string* exif)
     if (img_float != NULL)
         return img_float;
 
-    std::cerr << "Skipping file " << util::fs::get_file_component(fname)
+    std::cerr << "Skipping file " << util::fs::basename(fname)
         << ", cannot load image." << std::endl;
     return mve::ImageBase::Ptr();
 }
@@ -544,7 +544,7 @@ import_bundle (AppSettings const& conf)
 
         /* Extract name of view from original image or sequentially. */
         std::string view_name = (import_original
-            ? util::fs::get_file_component(orig_files[i])
+            ? util::fs::basename(orig_files[i])
             : util::string::get_filled(i, 4, '0'));
 
         /* Throw away extension if present. */

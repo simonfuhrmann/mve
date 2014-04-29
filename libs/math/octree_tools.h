@@ -12,6 +12,7 @@
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
+#include "math/functions.h"
 
 MATH_NAMESPACE_BEGIN
 MATH_GEOM_NAMESPACE_BEGIN
@@ -154,8 +155,8 @@ triangle_box_overlap (math::Vector<T,3> const& boxcenter,
 
     for (int i = 0; i < 3; ++i)
     {
-        T min = math::algo::min(v[0][i], v[1][i], v[2][i]);
-        T max = math::algo::max(v[0][i], v[1][i], v[2][i]);
+        T min = math::min(v[0][i], v[1][i], v[2][i]);
+        T max = math::max(v[0][i], v[1][i], v[2][i]);
         if (min > boxhalfsize[i] || max < -boxhalfsize[i])
             return false;
     }

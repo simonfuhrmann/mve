@@ -5,28 +5,77 @@
 
 #include "util/file_system.h"
 
-TEST(FileSystemTest, GetFileComponentTest)
+TEST(FileSystemTest, BasenameTest)
 {
-    EXPECT_EQ("file.txt", util::fs::get_file_component("/tmp/file.txt"));
-    EXPECT_EQ("file", util::fs::get_file_component("/tmp/file"));
-    EXPECT_EQ("", util::fs::get_file_component("/tmp/file/"));
-    EXPECT_EQ("file.txt", util::fs::get_file_component("test/file.txt"));
-    EXPECT_EQ("", util::fs::get_file_component(""));
+    EXPECT_EQ("", util::fs::basename("/"));
+    EXPECT_EQ("asdf", util::fs::basename("/asdf"));
+    EXPECT_EQ("asdf", util::fs::basename("/asdf/"));
+    EXPECT_EQ("asdf", util::fs::basename("/asdf/////"));
+    EXPECT_EQ("ghjk", util::fs::basename("/asdf/ghjk"));
+
+    EXPECT_EQ("", util::fs::basename(""));
+    EXPECT_EQ("asdf", util::fs::basename("asdf"));
+    EXPECT_EQ("asdf", util::fs::basename("asdf/"));
+    EXPECT_EQ("asdf", util::fs::basename("asdf/////"));
+    EXPECT_EQ("ghjk", util::fs::basename("asdf/ghjk"));
 }
 
-TEST(FileSystemTest, GetPathComponentTest)
+TEST(FileSystemTest, DirnameTest)
 {
-    EXPECT_EQ("/", util::fs::get_path_component("/test"));
-    EXPECT_EQ("/test", util::fs::get_path_component("/test/file.txt"));
-    EXPECT_EQ(util::fs::get_cwd_string() + "/../dir", util::fs::get_path_component("../dir/file"));
-    EXPECT_EQ(util::fs::get_cwd_string(), util::fs::get_path_component(".."));
-    EXPECT_EQ(util::fs::get_cwd_string(), util::fs::get_path_component("."));
+    EXPECT_EQ("/", util::fs::dirname("/"));
+    EXPECT_EQ("/", util::fs::dirname("/asdf"));
+    EXPECT_EQ("/", util::fs::dirname("/asdf/"));
+    EXPECT_EQ("/", util::fs::dirname("/asdf/////"));
+    EXPECT_EQ("/asdf", util::fs::dirname("/asdf/ghjk"));
 
+    EXPECT_EQ(".", util::fs::dirname(""));
+    EXPECT_EQ(".", util::fs::dirname("asdf"));
+    EXPECT_EQ(".", util::fs::dirname("asdf/"));
+    EXPECT_EQ(".", util::fs::dirname("asdf/////"));
+    EXPECT_EQ("asdf", util::fs::dirname("asdf/ghjk"));
+
+#ifndef _WIN32
     // The following tests don't work on OSX and Windows.
     //util::fs::set_cwd("/tmp");
-    //EXPECT_EQ("/tmp", util::fs::get_path_component("test.txt"));
-    //EXPECT_EQ("/tmp", util::fs::get_path_component(""));
-    //EXPECT_EQ("/tmp/blah", util::fs::get_path_component("blah/test.txt"));
+    //EXPECT_EQ("/tmp", util::fs::dirname("test.txt"));
+    //EXPECT_EQ("/tmp", util::fs::dirname(""));
+    //EXPECT_EQ("/tmp/blah", util::fs::dirname("blah/test.txt"));
+#endif
+}
+
+TEST(FileSystemTest, AbspathTest)
+{
+    EXPECT_EQ(util::fs::get_cwd_string() + "/.", util::fs::abspath("."));
+    EXPECT_EQ(util::fs::get_cwd_string() + "/../dir", util::fs::abspath(util::fs::dirname("../dir/file")));
+}
+
+TEST(FileSystemTest, IsAbsoluteTest)
+{
+#ifdef _WIN32
+    EXPECT_TRUE(util::fs::is_absolute("C:/Windows"));
+#else
+    EXPECT_TRUE(util::fs::is_absolute("/boot"));
+#endif
+
+    EXPECT_FALSE(util::fs::is_absolute("../debug.log"));
+}
+
+TEST(FileSystemTest, SanitizePathTest)
+{
+    EXPECT_EQ("", util::fs::sanitize_path(""));
+    EXPECT_EQ("/", util::fs::sanitize_path("/////"));
+    EXPECT_EQ("C:/Windows/System32/drivers/etc/hosts.txt", util::fs::sanitize_path("C:\\Windows\\System32\\drivers\\/etc/hosts.txt"));
+    EXPECT_EQ("/usr/local/../../var/tmp", util::fs::sanitize_path("/usr/local/../..//var/tmp/"));
+}
+
+TEST(FileSystemTest, JoinPathTest)
+{
+#ifdef _WIN32
+    EXPECT_EQ("C:/Windows/System32/drivers/etc/hosts.txt", util::fs::join_path("C:\\Windows\\System32\\drivers\\", "/etc/hosts.txt"));
+#else
+    EXPECT_EQ("/usr/local/share/ca-certificates", util::fs::join_path("/usr/local", "share/ca-certificates"));
+    EXPECT_EQ("/var/spool/mail", util::fs::join_path("/usr/local", "/var/spool/mail"));
+#endif
 }
 
 TEST(FileSystemTest, ReplaceExtensionTest)

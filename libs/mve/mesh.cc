@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "math/defines.h"
+#include "math/functions.h"
 #include "mve/mesh.h"
 
 /*
@@ -86,9 +87,9 @@ TriangleMesh::recalc_normals (bool face, bool vertex)
             float ratio1 = (ab / abl).dot(-ca / cal);
             float ratio2 = (-ab / abl).dot(bc / bcl);
             float ratio3 = (ca / cal).dot(-bc / bcl);
-            float angle1 = std::acos(math::algo::clamp(ratio1, -1.0f, 1.0f));
-            float angle2 = std::acos(math::algo::clamp(ratio2, -1.0f, 1.0f));
-            float angle3 = std::acos(math::algo::clamp(ratio3, -1.0f, 1.0f));
+            float angle1 = std::acos(math::clamp(ratio1, -1.0f, 1.0f));
+            float angle2 = std::acos(math::clamp(ratio2, -1.0f, 1.0f));
+            float angle3 = std::acos(math::clamp(ratio3, -1.0f, 1.0f));
 
             //float angle1 = std::acos(ab.dot(-ca) / (abl * cal));
             //float angle2 = std::acos((-ab).dot(bc) / (abl * bcl));

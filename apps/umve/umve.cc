@@ -1,3 +1,5 @@
+#include <vector>
+#include <string>
 #include <iostream>
 #include <cstdlib>
 
@@ -14,8 +16,8 @@
 struct AppSettings
 {
     bool gl_mode;
-    bool no_open;
-    std::string filename;
+    bool open_dialog;
+    std::vector<std::string> filenames;
 };
 
 void
@@ -30,19 +32,18 @@ main (int argc, char** argv)
 {
     /* Parse arguments. */
     util::Arguments args;
-    args.set_usage("Syntax: umve [ OPTIONS ] [ FILE | SCENEDIR ]");
+    args.set_usage("Syntax: umve [ OPTIONS ] [ FILES | SCENEDIR ]");
     args.set_helptext_indent(14);
-    args.set_nonopt_maxnum(1);
     args.set_exit_on_error(true);
     args.add_option('h', "help", false, "Prints this help text and exits");
+    args.add_option('o', "open-dialog", "Raises scene open dialog on startup");
     args.add_option('\0', "gl", false, "Switches to GL window on startup");
-    args.add_option('\0', "no-open", false, "Does not raise an open dialog");
     args.parse(argc, argv);
 
     /* Set default startup config. */
     AppSettings conf;
     conf.gl_mode = false;
-    conf.no_open = false;
+    conf.open_dialog = false;
 
     /* Handle arguments. */
     util::ArgResult const* arg;
@@ -50,27 +51,16 @@ main (int argc, char** argv)
     {
         if (arg->opt == NULL)
         {
-            conf.filename = arg->arg;
+            conf.filenames.push_back(arg->arg);
             continue;
         }
 
-        switch (arg->opt->sopt)
-        {
-            default:
-            case 'h': print_help_and_exit(args);
-            case '\0': break;
-        }
-
-        if (!arg->opt->sopt)
-        {
-            std::string const& lopt = arg->opt->lopt;
-            if (lopt == "gl")
-                conf.gl_mode = true;
-            else if (lopt == "no-open")
-                conf.no_open = true;
-            else
-                print_help_and_exit(args);
-        }
+        if (arg->opt->lopt == "gl")
+            conf.gl_mode = true;
+        else if (arg->opt->lopt == "open-dialog")
+            conf.open_dialog = true;
+        else
+            print_help_and_exit(args);
     }
 
     /* Create application. */
@@ -84,17 +74,28 @@ main (int argc, char** argv)
     if (conf.gl_mode)
         win.open_scene_inspect();
 
-    bool sth_opened = false;
-    if (!conf.filename.empty())
+    bool scene_opened = false;
+    for (std::size_t i = 0; i < conf.filenames.size(); ++i)
     {
-        if (util::fs::file_exists(conf.filename.c_str()))
-            win.load_file(conf.filename);
+        std::string const& filename = conf.filenames[i];
+        if (util::fs::file_exists(filename.c_str()))
+        {
+            win.load_file(filename);
+        }
+        else if (!scene_opened)
+        {
+            win.load_scene(filename);
+            scene_opened = true;
+        }
         else
-            win.load_scene(conf.filename);
-        sth_opened = true;
+        {
+            std::cerr << "Ignoring extra directory argument: "
+                << filename << std::endl;
+            continue;
+        }
     }
 
-    if (!sth_opened && !conf.no_open)
+    if (!scene_opened && conf.open_dialog)
         win.raise_open_scene_dialog();
 
     return app.exec();

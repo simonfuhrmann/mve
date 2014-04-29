@@ -6,6 +6,7 @@
 #include <ctime>
 
 #include "math/vector.h"
+#include "math/algo.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
 #include "util/file_system.h"
@@ -77,19 +78,15 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     if (!settings.logPath.empty())
     {
         // Create directory if necessary
-        std::string logfn(settings.logPath);
-        std::size_t pos = logfn.find_last_of("/");
-        if (pos != logfn.length() - 1)
-            logfn += "/";
-        if (!util::fs::dir_exists(logfn.c_str()))
-            if (!util::fs::mkdir(logfn.c_str()))
-                if (!util::fs::dir_exists(logfn.c_str()))
-                    throw std::runtime_error("Error creating directory: " + logfn);
+        if (!util::fs::dir_exists(settings.logPath.c_str()))
+            if (!util::fs::mkdir(settings.logPath.c_str()))
+                if (!util::fs::dir_exists(settings.logPath.c_str()))
+                    throw std::runtime_error("Error creating directory: "
+                        + settings.logPath);
 
         /* Build log file name and open file */
-        std::string name(refV->createFileName(settings.scale));
-        name += ".log";
-        logfn += name;
+        std::string logfn = util::fs::join_path(settings.logPath,
+            refV->createFileName(settings.scale) + ".log");
         if (!settings.quiet)
             std::cout << "Creating log file at " << logfn
                       << std::endl;
@@ -298,8 +295,8 @@ void DMRecon::processFeatures()
             continue;
         }
         math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
-        int x = round(pixPosF[0]);
-        int y = round(pixPosF[1]);
+        int x = math::algo::round(pixPosF[0]);
+        int y = math::algo::round(pixPosF[1]);
         float initDepth = (featPos - refV->camPos).norm();
         PatchOptimization patch(views, settings, x, y, initDepth,
             0.f, 0.f, neighViews, IndexSet());

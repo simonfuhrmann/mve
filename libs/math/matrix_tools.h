@@ -3,8 +3,10 @@
  * Written by Simon Fuhrmann.
  */
 
-#ifndef MATH_MATRIXTOOLS_HEADER
-#define MATH_MATRIXTOOLS_HEADER
+#ifndef MATH_MATRIX_TOOLS_HEADER
+#define MATH_MATRIX_TOOLS_HEADER
+
+#include <algorithm>
 
 #include "math/defines.h"
 #include "math/matrix.h"
@@ -84,7 +86,21 @@ matrix_is_identity (Matrix<T,N,N> const& mat);
  */
 template <typename T, int N>
 Matrix<T,N,N>
-matrix_diagonal (math::Vector<T,N> const& v);
+matrix_from_diagonal (math::Vector<T,N> const& v);
+
+/**
+ * Sets the diagonal elements of the given matrix.
+ */
+template <typename T, int N>
+Matrix<T,N,N>&
+matrix_set_diagonal (Matrix<T,N,N>& mat, T const* diag);
+
+/**
+ * Returns the diagonal elements of the matrix as a vector.
+ */
+template <typename T, int N>
+Vector<T,N>
+matrix_get_diagonal (Matrix<T,N,N> const& mat);
 
 /**
  * Calculates the determinant of the given matrix.
@@ -116,6 +132,31 @@ matrix_inverse (Matrix<T,N,N> const& mat, T const& det);
 template <typename T>
 Matrix<T,3,3>
 matrix_rotation_from_axis_angle (Vector<T,3> const& axis, T const& angle);
+
+/**
+ * In-place transpose of a dynamically sized dense matrix.
+ * The resulting matrix has number of rows and columns exchanged.
+ */
+template <typename T>
+void
+matrix_transpose (T const* mat, int rows, int cols);
+
+/**
+ * Matrix multiplication of dynamically sized dense matrices.
+ * R = A * B where A is MxN, B is NxL and R is MxL. Compexity: O(n*n*n).
+ */
+template <typename T>
+void
+matrix_multiply (T const* mat_a, int rows_a, int cols_a,
+    T const* mat_b, int cols_b, T* mat_res);
+
+/**
+ * Checks whether the input matrix is a diagonal matrix. This is done by
+ * testing if all non-diagonal entries are zero (up to some epsilon).
+ */
+template <typename T>
+bool
+matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon);
 
 MATH_NAMESPACE_END
 
@@ -448,6 +489,56 @@ matrix_rotation_from_axis_angle (Vector<T,3> const& axis, T const& angle)
     return rot;
 }
 
+template <typename T>
+void
+matrix_transpose (T* mat, int rows, int cols)
+{
+    /* Create a temporary copy of the matrix. */
+    T* tmp = new T[rows * cols];
+    std::copy(mat, mat + rows * cols, tmp);
+
+    /* Transpose matrix elements. */
+    for (int iter = 0, col = 0; col < cols; ++col)
+        for (int row = 0; row < rows; ++row, ++iter)
+            mat[iter] = tmp[row * cols + col];
+
+    delete[] tmp;
+}
+
+template <typename T>
+void
+matrix_multiply (T const* mat_a, int rows_a, int cols_a,
+    T const* mat_b, int cols_b, T* mat_res)
+{
+    std::fill(mat_res, mat_res + rows_a * cols_b, T(0));
+    for (int j = 0; j < cols_b; ++j)
+    {
+        for (int i = 0; i < rows_a; ++i)
+        {
+            int const ica = i * cols_a;
+            int const icb = i * cols_b;
+            for (int k = 0; k < cols_a; ++k)
+                mat_res[icb + j] += mat_a[ica + k] * mat_b[k * cols_b + j];
+        }
+    }
+}
+
+template <typename T>
+bool
+matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon)
+{
+    for (int y = 0; y < rows; ++y)
+    {
+        for (int x = 0; x < y && x < cols; ++x)
+            if (!MATH_EPSILON_EQ(T(0), mat[y * cols + x], epsilon))
+                return false;
+        for (int x = y + 1; x < cols; ++x)
+            if (!MATH_EPSILON_EQ(T(0), mat[y * cols + x], epsilon))
+                return false;
+    }
+    return true;
+}
+
 MATH_NAMESPACE_END
 
-#endif /* MATH_MATRIXTOOLS_HEADER */
+#endif /* MATH_MATRIX_TOOLS_HEADER */

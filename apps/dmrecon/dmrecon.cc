@@ -11,6 +11,7 @@
 #include "util/arguments.h"
 #include "util/system.h"
 #include "util/tokenizer.h"
+#include "util/file_system.h"
 
 #include "fancy_progress_printer.h"
 
@@ -82,8 +83,8 @@ main (int argc, char** argv)
 
     std::string basePath = args.get_nth_nonopt(0);
     bool writeply = false;
-    std::string plyDest("/recon");
-    std::string logDest("/log");
+    std::string plyDest("recon");
+    std::string logDest("log");
     int master_id = -1;
     bool force_recon = false;
     ProgressStyle progress_style;
@@ -162,14 +163,8 @@ main (int argc, char** argv)
 
     /* Settings for Multi-view stereo */
     mySettings.writePlyFile = writeply; // every time this is set to true, a kitten is killed
-    mySettings.plyPath = basePath;
-    mySettings.plyPath += "/";
-    mySettings.plyPath += plyDest;
-    mySettings.plyPath += "/";
-    mySettings.logPath = basePath;
-    mySettings.plyPath += "/";
-    mySettings.logPath += logDest;
-    mySettings.logPath += "/";
+    mySettings.plyPath = util::fs::join_path(basePath, plyDest);
+    mySettings.logPath = util::fs::join_path(basePath, logDest);
 
     fancyProgressPrinter.setBasePath(basePath);
     fancyProgressPrinter.setNumViews(scene->get_views().size());

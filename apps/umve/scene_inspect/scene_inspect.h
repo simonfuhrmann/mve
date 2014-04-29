@@ -46,7 +46,7 @@ private slots:
     void on_tab_activated (void);
 
 private:
-    QString last_mesh_dir;
+    std::string last_mesh_dir;
     mve::View::Ptr next_view;
 
     QTabWidget* tab_widget;
