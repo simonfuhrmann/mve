@@ -16,8 +16,9 @@ UTIL_NAMESPACE_BEGIN
 /**
  * Class that manages allocation and deletion of aligned heap memory.
  * The byte alignment size needs to be known at compile time.
- * The implementation allocates a little more memory and shifts the aligned
- * data pointer to correct in case the memory is not already aligned.
+ * The implementation allocates a little more memory (if necessary) and
+ * shifts the aligned data pointer to correct in case the memory is not
+ * already aligned. Copying the object will copy the memory.
  */
 template <typename T, uintptr_t MODULO = 16>
 class AlignedMemory
@@ -25,22 +26,24 @@ class AlignedMemory
 public:
     AlignedMemory (void);
     AlignedMemory (std::size_t size);
+    AlignedMemory (AlignedMemory const& other);
     ~AlignedMemory (void);
 
     void allocate (std::size_t size);
     void deallocate (void);
 
+    void operator= (AlignedMemory const& rhs);
+
     T const& operator[] (std::size_t index) const;
     T& operator[] (std::size_t index);
+
+    T const& at (std::size_t index) const;
+    T& at (std::size_t index);
 
     T const* begin (void) const;
     T* begin (void);
     T const* end (void) const;
     T* end (void);
-
-protected:
-    AlignedMemory (AlignedMemory const&);
-    void operator= (AlignedMemory const&);
 
 private:
     unsigned char* raw;
@@ -63,6 +66,17 @@ AlignedMemory<T, MODULO>::AlignedMemory (std::size_t size)
     : raw(NULL), aligned(NULL), size(0)
 {
     this->allocate(size);
+}
+
+template <typename T, uintptr_t MODULO>
+inline
+AlignedMemory<T, MODULO>::AlignedMemory (AlignedMemory const& other)
+    : raw(NULL), aligned(NULL), size(0)
+{
+    if (other.raw == NULL)
+        return;
+    this->allocate(other.size);
+    std::copy(other.begin(), other.end(), this->aligned);
 }
 
 template <typename T, uintptr_t MODULO>
@@ -96,6 +110,17 @@ AlignedMemory<T, MODULO>::deallocate (void)
 }
 
 template <typename T, uintptr_t MODULO>
+inline void
+AlignedMemory<T, MODULO>::operator= (AlignedMemory const& rhs)
+{
+    this->deallocate();
+    if (rhs.raw == NULL)
+        return;
+    this->allocate(rhs.size);
+    std::copy(rhs.begin(), rhs.end(), this->aligned);
+}
+
+template <typename T, uintptr_t MODULO>
 inline T const&
 AlignedMemory<T, MODULO>::operator[] (std::size_t index) const
 {
@@ -105,6 +130,20 @@ AlignedMemory<T, MODULO>::operator[] (std::size_t index) const
 template <typename T, uintptr_t MODULO>
 inline T&
 AlignedMemory<T, MODULO>::operator[] (std::size_t index)
+{
+    return this->aligned[index];
+}
+
+template <typename T, uintptr_t MODULO>
+inline T const&
+AlignedMemory<T, MODULO>::at (std::size_t index) const
+{
+    return this->aligned[index];
+}
+
+template <typename T, uintptr_t MODULO>
+inline T&
+AlignedMemory<T, MODULO>::at (std::size_t index)
 {
     return this->aligned[index];
 }

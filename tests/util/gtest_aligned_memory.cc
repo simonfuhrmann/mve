@@ -80,3 +80,24 @@ TEST(AlignedMemoryTest, AccessTest)
     EXPECT_EQ(1.0f, mem[1]);
     EXPECT_EQ(2.0f, mem[2]);
 }
+
+TEST(AlignedMemoryTest, CopyAndAssignTest)
+{
+    util::AlignedMemory<float, 16> mem(10);
+    for (int i = 0; i < 10; ++i)
+        mem[i] = static_cast<float>(i);
+
+    // Make sure it's not the same memory but the same content.
+    // Test copy constructor.
+    util::AlignedMemory<float, 16> mem2(mem);
+    EXPECT_NE(mem.begin(), mem2.begin());
+    for (int i = 0; i < 10; ++i)
+        EXPECT_EQ(mem[i], mem2[i]);
+
+    // Test assignment operator.
+    util::AlignedMemory<float, 16> mem3;
+    mem3 = mem;
+    EXPECT_NE(mem.begin(), mem3.begin());
+    for (int i = 0; i < 10; ++i)
+        EXPECT_EQ(mem[i], mem3[i]);
+}
