@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "util/timer.h"
+#include "math/functions.h"
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
 #include "mve/image_io.h"
@@ -639,9 +640,9 @@ Sift::orientation_assignment (Keypoint const& kp,
 
             float gm = grad->at(center + yoff + dx); // gradient magnitude
             float go = ori->at(center + yoff + dx); // gradient orientation
-            float weight = math::algo::gaussian_xx(dist, sigma * sigma_factor);
+            float weight = math::gaussian_xx(dist, sigma * sigma_factor);
             int bin = static_cast<int>(nbinsf * go / (2.0f * MATH_PI));
-            bin = math::algo::clamp(bin, 0, nbins - 1);
+            bin = math::clamp(bin, 0, nbins - 1);
             hist[bin] += gm * weight;
         }
     }
@@ -772,7 +773,7 @@ Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
 
             /* Compute circular window weight for the sample. */
             float gaussian_sigma = 0.5f * (float)PXB;
-            float gaussian_weight = math::algo::gaussian_xx
+            float gaussian_weight = math::gaussian_xx
                 (MATH_POW2(binx - binoff) + MATH_POW2(biny - binoff),
                 gaussian_sigma);
 

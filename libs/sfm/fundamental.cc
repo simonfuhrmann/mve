@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include "math/matrix_tools.h"
+#include "math/functions.h"
 #include "sfm/fundamental.h"
 #include "sfm/matrixsvd.h"
 
@@ -241,10 +242,10 @@ sampson_distance (FundamentalMatrix const& F, Correspondence const& m)
     p2_F_p1 *= p2_F_p1;
 
     double sum = 0.0;
-    sum += math::algo::fastpow(m.p1[0] * F[0] + m.p1[1] * F[1] + F[2], 2);
-    sum += math::algo::fastpow(m.p1[0] * F[3] + m.p1[1] * F[4] + F[5], 2);
-    sum += math::algo::fastpow(m.p2[0] * F[0] + m.p2[1] * F[3] + F[6], 2);
-    sum += math::algo::fastpow(m.p2[0] * F[1] + m.p2[1] * F[4] + F[7], 2);
+    sum += math::fastpow(m.p1[0] * F[0] + m.p1[1] * F[1] + F[2], 2);
+    sum += math::fastpow(m.p1[0] * F[3] + m.p1[1] * F[4] + F[5], 2);
+    sum += math::fastpow(m.p2[0] * F[0] + m.p2[1] * F[3] + F[6], 2);
+    sum += math::fastpow(m.p2[0] * F[1] + m.p2[1] * F[4] + F[7], 2);
 
     return p2_F_p1 / sum;
 }

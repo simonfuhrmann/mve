@@ -162,7 +162,7 @@ Surf::create_response_map (int o, int k)
     /* Filter size. The actual kernel side length is 3 * fs. */
     int const fs = kernel_sizes[o][k];
     /* The sample spacing for the octaves. */
-    int const step = math::algo::fastpow(2, o);
+    int const step = math::fastpow(2, o);
     /* Weight to balance between real gaussian kernel and approximated one. */
     RespType const weight = 0.912;  // See SURF 3.3 (4).
     /* NormalizationKernel width is 3 * fs, height is 2 * fs - 1. */
@@ -445,7 +445,7 @@ Surf::keypoint_localization (Keypoint* kp)
     }
 
     /* Update keypoint. */
-    float sampling = static_cast<float>(math::algo::fastpow(2, kp->octave));
+    float sampling = static_cast<float>(math::fastpow(2, kp->octave));
     kp->x = (kp->x + vec_x[0]) * sampling;
     kp->y = (kp->y + vec_x[1]) * sampling;
     // OpenSURF code: ipt.scale = static_cast<float>((0.1333f) * (m->filter + xi * filterStep));
@@ -699,7 +699,7 @@ Surf::descriptor_computation (Descriptor* descr, bool upright)
 
             /* Keypoints are weighted with a Gaussian, sigma = 3.3*s. */
             float weight = std::exp(-static_cast<float>(x * x + y * y)
-                / math::algo::fastpow(2.0f * 3.3f, 2));
+                / math::fastpow(2.0f * 3.3f, 2));
             *(descr_iter++) += weight * ori_dx;
             *(descr_iter++) += weight * ori_dy;
             *(descr_iter++) += weight * std::abs(ori_dx);
