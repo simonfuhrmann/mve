@@ -102,17 +102,8 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
             << ")..." << std::endl;
 
         /* Rescale image until maximum image size is met. */
-        bool was_scaled = false;
         while (img->width() * img->height() > this->opts.max_image_size)
-        {
-            was_scaled = true;
             img = mve::image::rescale_half_size<uint8_t>(img);
-        }
-        if (was_scaled)
-        {
-            std::cout << "  scaled to " << img->width() << "x" << img->height()
-                << " pixels." << std::endl;
-        }
 
         /* Compute features. */
         FEATURE feature = this->construct<FEATURE>();

@@ -23,8 +23,7 @@ RansacPose::RansacPose (Options const& options)
 }
 
 void
-RansacPose::estimate (Correspondences2D3D const& corresp,
-    Result* result)
+RansacPose::estimate (Correspondences2D3D const& corresp, Result* result)
 {
     if (this->opts.verbose_output)
     {

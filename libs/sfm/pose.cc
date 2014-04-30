@@ -1,3 +1,5 @@
+#include <iostream> // TMP
+
 #include "math/matrix_tools.h"
 #include "sfm/pose.h"
 #include "sfm/matrixsvd.h"
@@ -39,23 +41,79 @@ CameraPose::set_k_matrix (double flen, double px, double py)
 void
 CameraPose::set_from_p_and_known_k (math::Matrix<double, 3, 4> const&  p_matrix)
 {
+    /* There are several ways to obtain [R t] from P with known K. */
+
+#if 0
     /*
-     * There are two ways to obtain [R t] from known P and K.
-     *
-     * The first method is to compute K^-1 * P to get [R' t'] with
-     * non-orthogonal R' and inaccurate t'. This can be fixed using
-     * SVD on R and setting the eigenvalues to 1.
-     *
-     * The second method is to do QR decomposition on P and obtain
-     * K' [R t] to then replace K' with known K. This introduces
-     * inaccuracies when computing the final P = K [R t].
-     *
-     * Here, for simplicity, the second approach is performed.
+     * This method computes K^-1 * P to get [R' t'] with non-orthogonal R'
+     * and inaccurate t'. R' can then be constrained to an optimal rotation R,
+     * and t = R * R'^-1 * t'. (FIXME is this updated t correct?)
+     */
+    math::Matrix3d K_inv = math::matrix_inverse(this->K);
+    math::Matrix<double, 3, 4> Rt_bad = K_inv * p_matrix;
+    math::Matrix<double, 3, 3> R_bad = Rt_bad.delete_col(3);
+    this->R = matrix_optimal_rotation(R_bad);
+    this->t = this->R * math::matrix_inverse(R_bad) * Rt_bad.col(3);
+#endif
+
+#if 0
+    /*
+     * This method computes QR decomposition of P and obtains K' [R t].
+     * K' is then replaced with known K. This introduces inaccuracies when
+     * computing the final P = K [R t].
      */
     CameraPose pose;
     pose_from_p_matrix(p_matrix, &pose);
     this->R = pose.R;
     this->t = pose.t;
+#endif
+
+#if 1
+    /*
+     * This method computes QR decomposition of P and obtains K' [R t].
+     * Instead of using known K, K' is constrained to a valid K matrix.
+     * The advantage is that this method does not need known focal length.
+     */
+    CameraPose pose;
+    pose_from_p_matrix(p_matrix, &pose);
+    this->R = pose.R;
+    this->t = pose.t;
+
+    pose.K /= pose.K[8];
+    pose.K[2] = this->K[2];
+    pose.K[5] = this->K[5];
+    this->K = pose.K;
+    this->K[0] = this->K[4] = (this->K[0] + this->K[4]) / 2.0;
+    this->K[1] = this->K[3] = this->K[6] = this->K[7] = 0.0;
+#endif
+
+#if 0
+    /*
+     * This method computes the camera center c as the right zero-vector
+     * of the projection P * c = 0. The rotation is recovered using known
+     * calibration R' = K^-1 * M where M is the left 3x3 matrix of P.
+     * The translation is then computed as t = -R * c.
+     */
+    math::Vector<double, 3> c;
+    c[0] = math::matrix_determinant(p_matrix.delete_col(0));
+    c[1] = -math::matrix_determinant(p_matrix.delete_col(1));
+    c[2] = math::matrix_determinant(p_matrix.delete_col(2));
+    c /= -math::matrix_determinant(p_matrix.delete_col(3));
+
+    math::Matrix3d K_inv = math::matrix_inverse(this->K);
+    math::Matrix<double, 3, 4> Rt_bad = K_inv * p_matrix;
+    math::Matrix<double, 3, 3> R_bad = Rt_bad.delete_col(3);
+    this->R = matrix_optimal_rotation(R_bad);
+    this->t = -(this->R * c);
+#endif
+
+#if 0
+    std::cout << "K-Matrix: " << std::endl;
+    std::cout << this->K << std::endl;
+    std::cout << "R-Matrix: " << std::endl;
+    std::cout << this->R << std::endl;
+    std::cout << "t-Vector: " << this->t << std::endl;
+#endif
 }
 
 bool
@@ -64,11 +122,16 @@ CameraPose::is_valid (void) const
     return this->K[0] != 0.0f;
 }
 
+/* ---------------------------------------------------------------- */
+
 void
 pose_from_2d_3d_correspondences (Correspondences2D3D const& corresp,
     math::Matrix<double, 3, 4>* p_matrix)
 {
-    std::vector<double> A(corresp.size() * 2 * 12);
+    if (corresp.size() < 6)
+        throw std::invalid_argument("At least 6 correspondences required");
+
+    std::vector<double> A(corresp.size() * 2 * 12, 0.0f);
     for (std::size_t i = 0; i < corresp.size(); ++i)
     {
         std::size_t const row_off_1 = (i * 2 + 0) * 12;
@@ -110,9 +173,9 @@ pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
     std::copy(*p_matrix + 8, *p_matrix + 8 + 3, *p_sub + 6);
 
     /*
-     * Perform RQ decomposition of submatrix of P. This is done using QR and
-     * applying a permutation matrix P such that the following holds:
-     *   A = QR  <=>  PA = PR PQ
+     * Perform RQ decomposition of the upper left 3x3 submatrix of P.
+     * This is done using QR and applying a permutation matrix X:
+     *   A = QR  <=>  XA = XR XQ
      * The permutation performed is a combination of transpose and rotate.
      */
     p_sub.transpose();
