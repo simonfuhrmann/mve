@@ -1,6 +1,11 @@
 #include <limits>
 #include <iostream>
 
+//#include "mve/image_io.h"  // TMP
+//#include "mve/image_tools.h"  // TMP
+//#include "mve/image_drawing.h"  // TMP
+//#include "sfm/ransac_p3p.h" // TMP
+
 #include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
 #include "sfm/pba.h"
@@ -239,6 +244,15 @@ Incremental::reconstruct_next_view (int view_id)
     std::cout << "  Collected " << corr.size()
         << " 2D-3D correspondences." << std::endl;
 
+    /* Initialize camera. */
+    float const maxdim = static_cast<float>
+        (std::max(viewport.width, viewport.height));
+    this->cameras[view_id].set_k_matrix(viewport.focal_length * maxdim,
+        static_cast<float>(viewport.width) / 2.0f,
+        static_cast<float>(viewport.height) / 2.0f);
+
+#if 1 // MVE solution
+
     /* Compute pose from 2D-3D correspondences. */
     RansacPose ransac(this->opts.pose_opts);
     RansacPose::Result ransac_result;
@@ -261,13 +275,50 @@ Incremental::reconstruct_next_view (int view_id)
         p_matrix = math::matrix_inverse(T2d) * p_matrix * T3d;
     }
 
-    /* Initialize camera. */
-    float const maxdim = static_cast<float>
-        (std::max(viewport.width, viewport.height));
-    this->cameras[view_id].set_k_matrix(viewport.focal_length * maxdim,
-        static_cast<float>(viewport.width) / 2.0f,
-        static_cast<float>(viewport.height) / 2.0f);
+    /* Set pose. */
     this->cameras[view_id].set_from_p_and_known_k(p_matrix);
+
+#else // External code temp solution
+
+    RansacP3P::Options ransac_options;
+    ransac_options.threshold = 3.0f;
+    ransac_options.verbose_output = true;
+    RansacP3P ransac(ransac_options, this->cameras[view_id].K);
+    RansacP3P::Result ransac_result;
+    ransac.estimate(corr, &ransac_result);
+    std::cout << "  RANSAC found " << ransac_result.inliers.size()
+        << " inliers." << std::endl;
+
+    this->cameras[view_id].R = ransac_result.rot;
+    this->cameras[view_id].t = ransac_result.trans;
+
+#endif
+
+#if 0
+    mve::ByteImage::Ptr orig = mve::image::load_file("/tmp/dataset/images/IMG_20140304_212125.jpg");
+    orig = mve::image::rescale_half_size<uint8_t>(orig);
+
+    // DEBUG: Write image with reprojected features.
+    {
+        mve::ByteImage::Ptr img = mve::image::desaturate<uint8_t>(orig, mve::image::DESATURATE_AVERAGE);
+        img = mve::image::expand_grayscale<uint8_t>(img);
+        for (std::size_t i = 0; i < corr.size(); ++i)
+        {
+            math::Vec4f p3d(corr[i].p3d[0], corr[i].p3d[1], corr[i].p3d[2], 1.0f);
+            math::Vec3f p2d = p_matrix * p3d;
+            p2d /= p2d[2];
+
+            uint8_t color_red[3] = { 255, 0, 0 };
+            uint8_t color_green[3] = { 0, 255, 0 };
+            mve::image::draw_circle(*img, corr[i].p2d[0], corr[i].p2d[1], 2, color_red);
+            mve::image::draw_circle(*img, p2d[0], p2d[1], 2, color_green);
+            img->at(corr[i].p2d[0], corr[i].p2d[1], 0) = 255;
+            img->at(p2d[0], p2d[1], 1) = 255;
+        }
+        std::cout << "Writing test-2.png" << std::endl;
+        mve::image::save_file(img, "/tmp/test-pmatrix.png");
+    }
+#endif
 }
 
 mve::Bundle::Ptr
@@ -347,7 +398,8 @@ Incremental::triangulate_new_tracks (void)
         if (track.is_valid())
             continue;
 
-#if 0
+#if 1  // Triangulate a new track using two cameras.
+
         /* Collect up to two valid cameras and 2D feature positions. */
         std::vector<int> valid_cameras;
         std::vector<int> valid_features;
@@ -370,7 +422,7 @@ Incremental::triangulate_new_tracks (void)
         if (valid_cameras.size() < 2)
             continue;
 
-        /* Triangulate track using valid cameras. */
+        /* Triangulate track using the first two valid cameras. */
         Correspondence match;
         {
             Viewport const& view1 = this->viewports->at(valid_cameras[0]);
@@ -384,10 +436,11 @@ Incremental::triangulate_new_tracks (void)
         CameraPose const& pose2 = this->cameras[valid_cameras[1]];
 
         track.pos = triangulate_match(match, pose1, pose2);
-#else
+
+#else  // Triangulate a new track using all cameras. Is there ever more than two cameras?
+
         std::vector<math::Vec2f> pos;
         std::vector<CameraPose const*> poses;
-        std::vector<int> tmp;
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             int const view_id = track.features[j].view_id;
@@ -396,9 +449,9 @@ Incremental::triangulate_new_tracks (void)
             int const feature_id = track.features[j].feature_id;
             pos.push_back(this->viewports->at(view_id).positions[feature_id]);
             poses.push_back(&this->cameras[view_id]);
-            tmp.push_back(view_id);
         }
 
+        /* Skip tracks with too few valid cameras. */
         if (poses.size() < 2)
             continue;
 
@@ -411,8 +464,12 @@ Incremental::triangulate_new_tracks (void)
             {
                 std::cout << "  Warning: Point behind camera. Invalidating track." << std::endl;
                 track.invalidate();
+                break;
             }
         }
+
+        if (!track.is_valid())
+            continue;
 #endif
 
         num_new_tracks += 1;
@@ -423,16 +480,23 @@ Incremental::triangulate_new_tracks (void)
 
 /* ---------------------------------------------------------------- */
 
+//#define PBA_DISTORTION_TYPE ParallelBA::PBA_PROJECTION_DISTORTION
+//#define PBA_DISTORTION_TYPE ParallelBA::PBA_MEASUREMENT_DISTORTION
+#define PBA_DISTORTION_TYPE ParallelBA::PBA_NO_DISTORTION
+
 void
-Incremental::bundle_adjustment (void)
+Incremental::bundle_adjustment_intern (int single_camera_ba)
 {
     /* Configure PBA. */
     ParallelBA pba(ParallelBA::PBA_CPU_DOUBLE);
-    //pba.EnableRadialDistortion(ParallelBA::PBA_MEASUREMENT_DISTORTION);
-    //pba.EnableRadialDistortion(ParallelBA::PBA_PROJECTION_DISTORTION);
-    pba.SetNextBundleMode(ParallelBA::BUNDLE_FULL);
+    pba.EnableRadialDistortion(PBA_DISTORTION_TYPE);
+    if (single_camera_ba >= 0)
+        pba.SetNextBundleMode(ParallelBA::BUNDLE_ONLY_MOTION);
+    else
+        pba.SetNextBundleMode(ParallelBA::BUNDLE_FULL);
     pba.SetNextTimeBudget(0);
 
+    //pba.GetInternalConfig()->__verbose_cg_iteration = true;
     //pba.GetInternalConfig()->__verbose_level = verbose;
     //pba.GetInternalConfig()->__lm_max_iteration = 100;
     //pba.GetInternalConfig()->__cg_min_iteration = 30;
@@ -450,13 +514,16 @@ Incremental::bundle_adjustment (void)
 
         CameraPose const& pose = this->cameras[i];
         CameraT cam;
-        cam.f = pose.K[0];
+        cam.f = (pose.K[0] + pose.K[4]) / 2.0;
         std::copy(pose.t.begin(), pose.t.end(), cam.t);
         std::copy(pose.R.begin(), pose.R.end(), cam.m[0]);
         cam.radial = this->viewports->at(i).radial_distortion;
-        //cam.distortion_type = ParallelBA::PBA_MEASUREMENT_DISTORTION;
-        //cam.distortion_type = ParallelBA::PBA_PROJECTION_DISTORTION;
+        cam.distortion_type = PBA_DISTORTION_TYPE;
         pba_cams_mapping[i] = pba_cams.size();
+
+        if (single_camera_ba >= 0 && (int)i != single_camera_ba)
+            cam.SetConstantCamera();
+
         pba_cams.push_back(cam);
     }
     pba.SetCameraData(pba_cams.size(), &pba_cams[0]);
@@ -545,6 +612,20 @@ Incremental::bundle_adjustment (void)
 }
 
 /* ---------------------------------------------------------------- */
+
+void
+Incremental::bundle_adjustment_full (void)
+{
+    this->bundle_adjustment_intern(-1);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Incremental::bundle_adjustment_single_cam (int view_id)
+{
+    this->bundle_adjustment_intern(view_id);
+}
 
 SFM_BUNDLER_NAMESPACE_END
 SFM_NAMESPACE_END
