@@ -97,13 +97,13 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
     mve::ByteImage::Ptr img = view->get_byte_image(this->opts.image_embedding);
     if (descriptors.empty())
     {
-        std::cout << "Computing features for view ID " << view->get_id()
-            << " (" << img->width() << "x" << img->height()
-            << ")..." << std::endl;
-
         /* Rescale image until maximum image size is met. */
         while (img->width() * img->height() > this->opts.max_image_size)
             img = mve::image::rescale_half_size<uint8_t>(img);
+
+        std::cout << "Computing features for view ID " << view->get_id()
+            << " (" << img->width() << "x" << img->height()
+            << ")..." << std::endl;
 
         /* Compute features. */
         FEATURE feature = this->construct<FEATURE>();

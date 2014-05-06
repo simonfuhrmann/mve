@@ -19,7 +19,7 @@
 int
 main (int argc, char** argv)
 {
-    if (argc != 2)
+    if (argc < 2)
     {
         std::cerr << "Syntax: " << argv[0] << " <scene>" << std::endl;
         return 1;
@@ -39,7 +39,7 @@ main (int argc, char** argv)
     feature_opts.image_embedding = image_embedding;
     feature_opts.feature_embedding = feature_embedding;
     feature_opts.exif_embedding = exif_embedding;
-    feature_opts.max_image_size = 4000000;
+    feature_opts.max_image_size = 5000000;
     feature_opts.skip_saving_views = false;
     feature_opts.force_recompute = false;
 
@@ -90,7 +90,7 @@ main (int argc, char** argv)
     /* Find initial pair. */
     sfm::bundler::InitialPair::Options init_pair_opts;
     init_pair_opts.verbose_output = true;
-    init_pair_opts.max_homography_inliers = 0.4f;
+    init_pair_opts.max_homography_inliers = 0.5f;
     init_pair_opts.homography_opts.max_iterations = 1000;
     init_pair_opts.homography_opts.already_normalized = false;
     init_pair_opts.homography_opts.threshold = 3.0f;
@@ -105,7 +105,7 @@ main (int argc, char** argv)
         return 1;
     }
 
-    std::cout << "  Using views " << init_pair_result.view_1_id
+    std::cout << "Using views " << init_pair_result.view_1_id
         << " and " << init_pair_result.view_2_id
         << " as initial pair." << std::endl;
 
@@ -125,9 +125,9 @@ main (int argc, char** argv)
     /* Incrementally compute full bundle. */
     sfm::bundler::Incremental::Options incremental_opts;
     incremental_opts.fundamental_opts.already_normalized = false;
-    incremental_opts.fundamental_opts.threshold = 4.0f;
+    incremental_opts.fundamental_opts.threshold = 3.0f;
     incremental_opts.fundamental_opts.max_iterations = 1000;
-    incremental_opts.fundamental_opts.verbose_output = false;
+    incremental_opts.fundamental_opts.verbose_output = true;
     incremental_opts.pose_opts.threshold = 4.0f;
     incremental_opts.pose_opts.max_iterations = 1000;
     incremental_opts.pose_opts.verbose_output = true;
@@ -137,43 +137,61 @@ main (int argc, char** argv)
     incremental.initialize(&viewports, &tracks);
 
     /* Reconstruct pose for the initial pair. */
-    std::cout << "Starting incremental bundle adjustment." << std::endl;
-    std::cout << "  Computing pose for initial pair..." << std::endl;
+    std::cout << "Computing pose for initial pair..." << std::endl;
     incremental.reconstruct_initial_pair(init_pair_result.view_1_id,
         init_pair_result.view_2_id);
 
     /* Reconstruct track positions with the intial pair. */
-    std::cout << "  Triangulating new tracks..." << std::endl;
+    std::cout << "Triangulating new tracks..." << std::endl;
     incremental.triangulate_new_tracks();
 
+    /* Remove tracks with large errors. */
+    incremental.delete_large_error_tracks(5.0);
+
     /* Run bundle adjustment. */
-    std::cout << "  Running full bundle adjustment..." << std::endl;
+    std::cout << "Running full bundle adjustment..." << std::endl;
     incremental.bundle_adjustment_full();
 
     /* Reconstruct remaining views. */
     while (true)
     {
-#if 1
+#if 0
         static int tmp = 0;
         if (tmp == 1)
             break;
         tmp += 1;
 #endif
 
-        int next_view_id = incremental.find_next_view();
+        std::vector<int> next_views;
+        incremental.find_next_views(&next_views);
+        int next_view_id = -1;
+        for (std::size_t i = 0; i < next_views.size(); ++i)
+        {
+            std::cout << std::endl;
+            std::cout << "Adding next view ID " << next_views[i] << "..." << std::endl;
+            if (incremental.reconstruct_next_view(next_views[i]))
+            {
+                next_view_id = next_views[i];
+                break;
+            }
+        }
+
         if (next_view_id < 0)
+        {
+            std::cout << "No more views to reconstruct. Exiting." << std::endl;
             break;
+        }
 
-        std::cout << "  Adding next view ID " << next_view_id << "..." << std::endl;
-        incremental.reconstruct_next_view(next_view_id);
+        std::cout << "Running single camera bundle adjustment..." << std::endl;
+        incremental.bundle_adjustment_single_cam(next_view_id);
 
-        //std::cout << "  Running single camera bundle adjustment..." << std::endl;
-        //incremental.bundle_adjustment_single_cam(next_view_id);
-
-        std::cout << "  Triangulating new tracks..." << std::endl;
+        std::cout << "Triangulating new tracks..." << std::endl;
         incremental.triangulate_new_tracks();
 
-        std::cout << "  Running full bundle adjustment..." << std::endl;
+        /* Remove tracks with large errors. */
+        incremental.delete_large_error_tracks(5.0);
+
+        std::cout << "Running full bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_full();
     }
 

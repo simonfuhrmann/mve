@@ -1,5 +1,5 @@
 /*
- * Pose estimation from matches between two views in a RANSAC framework.
+ * RANSAC pose estimation using the six-point algorithm.
  * Written by Simon Fuhrmann.
  */
 

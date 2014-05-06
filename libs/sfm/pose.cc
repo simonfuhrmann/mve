@@ -116,6 +116,12 @@ CameraPose::set_from_p_and_known_k (math::Matrix<double, 3, 4> const&  p_matrix)
 #endif
 }
 
+double
+CameraPose::get_focal_length (void) const
+{
+    return (this->K[0] + this->K[4]) / 2.0;
+}
+
 bool
 CameraPose::is_valid (void) const
 {

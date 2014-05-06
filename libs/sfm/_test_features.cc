@@ -101,9 +101,9 @@ main (int argc, char** argv)
 
     /* Save the two images for SIFT and SURF. */
     std::string surf_out_fname = "/tmp/" + util::fs::replace_extension
-        (util::fs::get_file_component(image_filename), "surf.png");
+        (util::fs::basename(image_filename), "surf.png");
     std::string sift_out_fname = "/tmp/" + util::fs::replace_extension
-        (util::fs::get_file_component(image_filename), "sift.png");
+        (util::fs::basename(image_filename), "sift.png");
 
     std::cout << "Writing output file: " << surf_out_fname << std::endl;
     mve::image::save_file(surf_image, surf_out_fname);

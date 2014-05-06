@@ -27,7 +27,7 @@ RansacPose::estimate (Correspondences2D3D const& corresp, Result* result)
 {
     if (this->opts.verbose_output)
     {
-        std::cout << "RANSAC: Running for " << this->opts.max_iterations
+        std::cout << "RANSAC-6: Running for " << this->opts.max_iterations
             << " iterations..." << std::endl;
     }
 
@@ -42,7 +42,7 @@ RansacPose::estimate (Correspondences2D3D const& corresp, Result* result)
         {
             if (this->opts.verbose_output)
             {
-                std::cout << "RANASC: Iteration " << iteration
+                std::cout << "RANSAC-6: Iteration " << iteration
                     << ", inliers " << inliers.size() << " ("
                     << (100.0 * inliers.size() / corresp.size())
                     << "%)" << std::endl;

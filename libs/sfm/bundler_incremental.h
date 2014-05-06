@@ -47,20 +47,29 @@ public:
      */
     void initialize (ViewportList* viewports, TrackList* tracks);
 
+    /** Reconstructs the initial pose between the two given views. */
     void reconstruct_initial_pair (int view_1_id, int view_2_id);
+    /** Returns a suitable next view ID or -1 on failure. */
     int find_next_view (void) const;
-    void reconstruct_next_view (int view_id);
+    /** Returns a list of suitable view ID or emtpy list on failure. */
+    void find_next_views (std::vector<int>* next_views);
+    /** Incrementally adds the given view to the bundle. */
+    bool reconstruct_next_view (int view_id);
+    /** Triangulates tracks without 3D position and at least 2 views. */
     void triangulate_new_tracks (void);
+    /** Runs bundle adjustment on both, structure and motion. */
     void bundle_adjustment_full (void);
+    /** Runs bundle adjustment on a single camera without structure. */
     void bundle_adjustment_single_cam (int view_id);
-
-    /**
-     * Computes a bundle from all viewports and reconstructed tracks.
-     */
+    /** Computes a bundle from all viewports and reconstructed tracks. */
     mve::Bundle::Ptr create_bundle (void) const;
+
+    /** Deletes tracks with a large reprojection error. */
+    void delete_large_error_tracks (double threshold);
 
 private:
     void bundle_adjustment_intern (int single_camera_ba);
+    void delete_track (int track_id);
 
 private:
     Options opts;

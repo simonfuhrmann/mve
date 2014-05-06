@@ -29,7 +29,7 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
 {
     if (this->opts.verbose_output)
     {
-        std::cout << "RANSAC: Running for " << this->opts.max_iterations
+        std::cout << "RANSAC-H: Running for " << this->opts.max_iterations
             << " iterations..." << std::endl;
     }
 
@@ -44,7 +44,7 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
         {
             if (this->opts.verbose_output)
             {
-                std::cout << "RANSAC: Iteration " << iteration
+                std::cout << "RANSAC-H: Iteration " << iteration
                     << ", inliers " << inliers.size() << " ("
                     << (100.0 * inliers.size() / matches.size())
                     << "%)" << std::endl;

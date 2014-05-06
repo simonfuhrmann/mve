@@ -1,3 +1,4 @@
+#include <iostream> //tmp
 #include <algorithm>
 #include <fstream>
 #include <limits>
@@ -17,6 +18,19 @@ Track::invalidate (void)
 {
     std::fill(this->pos.begin(), this->pos.end(),
         std::numeric_limits<float>::quiet_NaN());
+}
+
+void
+Track::remove_view (int view_id)
+{
+    for (FeatureReferenceList::iterator iter = this->features.begin();
+        iter != this->features.end();)
+    {
+        if (iter->view_id == view_id)
+            iter = this->features.erase(iter);
+        else
+            iter++;
+    }
 }
 
 /* ----------------- Serialization of Descriptors ----------------- */

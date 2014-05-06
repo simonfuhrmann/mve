@@ -73,6 +73,7 @@ struct Track
 {
     bool is_valid (void) const;
     void invalidate (void);
+    void remove_view (int view_id);
 
     math::Vec3f pos;
     math::Vec3uc color;

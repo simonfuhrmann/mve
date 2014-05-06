@@ -28,7 +28,7 @@ RansacFundamental::estimate (Correspondences const& matches, Result* result)
 {
     if (this->opts.verbose_output)
     {
-        std::cout << "RANSAC: Running for " << this->opts.max_iterations
+        std::cout << "RANSAC-F: Running for " << this->opts.max_iterations
             << " iterations..." << std::endl;
     }
 
@@ -43,7 +43,7 @@ RansacFundamental::estimate (Correspondences const& matches, Result* result)
         {
             if (this->opts.verbose_output)
             {
-                std::cout << "RANASC: Iteration " << iteration
+                std::cout << "RANSAC-F: Iteration " << iteration
                     << ", inliers " << inliers.size() << " ("
                     << (100.0 * inliers.size() / matches.size())
                     << "%)" << std::endl;

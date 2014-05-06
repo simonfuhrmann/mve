@@ -40,6 +40,8 @@ struct CameraPose
     void set_k_matrix (double flen, double px, double py);
     /** Initializes the R and t from P and known K (must already be set). */
     void set_from_p_and_known_k (math::Matrix<double, 3, 4> const& p_matrix);
+    /** Returns the focal length as average of x and y focal length. */
+    double get_focal_length (void) const;
     /** Returns true if K matrix is valid (non-zero focal length). */
     bool is_valid (void) const;
 };
