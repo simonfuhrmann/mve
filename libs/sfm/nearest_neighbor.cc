@@ -31,7 +31,8 @@
  */
 #include <limits>
 #include <iostream>
-#include <emmintrin.h>
+#include <emmintrin.h> // SSE2
+#include <pmmintrin.h> // SSE3
 
 #include "sfm/nearest_neighbor.h"
 
@@ -52,7 +53,7 @@ NearestNeighbor<short>::find (short const* query,
     /*
      * SSE inner product implementation.
      * Note that query and result should be 16 byte aligned.
-     * Otherwise loading and storing values into/from registerns is slow.
+     * Otherwise loading and storing values into/from registers is slow.
      * The dimension size must be divisible by 8, each __m128i register
      * can load 8 shorts = 16 bytes = 128 bit.
      */
@@ -144,6 +145,47 @@ NearestNeighbor<float>::find (float const* query,
     result->index_1st_best = 0;
     result->index_2nd_best = 0;
 
+#if ENABLE_SSE3 && defined(__SSE3__)
+    /*
+    * SSE inner product implementation.
+    * Note that query and result should be 16 byte aligned.
+    * Otherwise loading and storing values into/from registers is slow.
+    * The dimension size must be divisible by 4, each __m128 register
+    * can load 4 floats = 16 bytes = 128 bit.
+    */
+
+    __m128 const* descr_ptr = reinterpret_cast<__m128 const*>(this->elements);
+    int const dim_4 = this->dimensions / 4;
+    for (int descr_iter = 0; descr_iter < this->num_elements; ++descr_iter)
+    {
+        /* Compute dot product between query and candidate. */
+        __m128 const* query_ptr = reinterpret_cast<__m128 const*>(query);
+        __m128 sum = _mm_setzero_ps();
+        for (int i = 0; i < dim_4; ++i, ++query_ptr, ++descr_ptr)
+            sum = _mm_add_ps(sum, _mm_mul_ps(*query_ptr, *descr_ptr));
+        sum = _mm_hadd_ps(sum, sum);
+        sum = _mm_hadd_ps(sum, sum);
+
+        /* Check if new largest inner product has been found. */
+        float inner_product = _mm_cvtss_f32(sum);
+        if (inner_product > result->dist_2nd_best)
+        {
+            if (inner_product > result->dist_1st_best)
+            {
+                result->index_2nd_best = result->index_1st_best;
+                result->dist_2nd_best = result->dist_1st_best;
+                result->index_1st_best = descr_iter;
+                result->dist_1st_best = inner_product;
+            }
+            else
+            {
+                result->index_2nd_best = descr_iter;
+                result->dist_2nd_best = inner_product;
+            }
+        }
+    }
+
+#else
     float const* descr_ptr = this->elements;
     for (int i = 0; i < this->num_elements; ++i)
     {
@@ -168,6 +210,7 @@ NearestNeighbor<float>::find (float const* query,
             }
         }
     }
+#endif
 
     /*
      * Compute actual (square) distances.
