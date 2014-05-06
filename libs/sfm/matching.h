@@ -10,7 +10,7 @@
 #include <limits>
 
 #include "sfm/defines.h"
-#include "sfm/nearestneighbor.h"
+#include "sfm/nearest_neighbor.h"
 
 SFM_NAMESPACE_BEGIN
 

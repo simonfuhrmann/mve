@@ -3,8 +3,8 @@
  * Written by Simon Fuhrmann.
  */
 
-#ifndef SFM_NEARESTNEIGHBOR_HEADER
-#define SFM_NEARESTNEIGHBOR_HEADER
+#ifndef SFM_NEAREST_NEIGHBOR_HEADER
+#define SFM_NEAREST_NEIGHBOR_HEADER
 
 #include "sfm/defines.h"
 
@@ -100,4 +100,4 @@ NearestNeighbor<T>::get_element_dimensions (void) const
 
 SFM_NAMESPACE_END
 
-#endif  /* SFM_NEARESTNEIGHBOR_HEADER */
+#endif  /* SFM_NEAREST_NEIGHBOR_HEADER */
