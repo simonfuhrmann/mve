@@ -72,6 +72,11 @@ main (int argc, char** argv)
 
     /* Create application. */
     set_qt_style("Cleanlooks");
+#if defined(_WIN32)
+    QCoreApplication::addLibraryPath(QString::fromStdString(
+        util::fs::join_path(util::fs::dirname(util::fs::get_binary_path()),
+        "qt_plugins")));
+#endif
     QApplication app(argc, argv);
 
     /* Create main window. */
