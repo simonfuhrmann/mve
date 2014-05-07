@@ -12,11 +12,15 @@
 #ifndef OGL_OPEN_GL_HEADER
 #define OGL_OPEN_GL_HEADER
 
-#ifdef OGL_USE_OSMESA
+#if defined(OGL_USE_OSMESA)
 #  define GL_GLEXT_PROTOTYPES
 #  include <GL/osmesa.h>
+#elif defined(__APPLE__)
+#  include <OpenGL/gl3.h>
 #else
-#  include <GL/glew.h>
+#  define GL_GLEXT_PROTOTYPES
+#  include <GL/gl.h>
+#  include <GL/glext.h>
 #endif
 
 #endif /* OGL_OPEN_GL_HEADER */

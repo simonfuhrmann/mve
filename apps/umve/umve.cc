@@ -6,6 +6,7 @@
 #include "ogl/opengl.h"
 
 #include <QApplication>
+#include <QGLFormat>
 
 #include "util/file_system.h"
 #include "util/arguments.h"
@@ -62,6 +63,12 @@ main (int argc, char** argv)
         else
             print_help_and_exit(args);
     }
+
+    /* Set OpenGL version that Qt should use when creating a context.*/
+    QGLFormat fmt;
+    fmt.setVersion(3, 3);
+    fmt.setProfile(QGLFormat::CoreProfile);
+    QGLFormat::setDefaultFormat(fmt);
 
     /* Create application. */
     set_qt_style("Cleanlooks");

@@ -1,9 +1,9 @@
-#version 120 
+#version 330 core
 
-attribute vec4 pos;
-attribute vec4 color;
+in vec4 pos;
+in vec4 color;
 
-varying vec4 ocolor;
+out vec4 ocolor;
 
 uniform mat4 viewmat;
 uniform mat4 projmat;
