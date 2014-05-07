@@ -174,6 +174,9 @@ main (int argc, char** argv)
 #ifdef __SSE2__
     std::cout << "SSE2 is enabled!" << std::endl;
 #endif
+#ifdef __SSE3__
+    std::cout << "SSE3 is enabled!" << std::endl;
+#endif
 
     /* Regular two-view matching. */
     mve::ByteImage::Ptr image1, image2;

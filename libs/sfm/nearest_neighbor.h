@@ -10,6 +10,7 @@
 
 /* Whether to use SSE optimizations. */
 #define ENABLE_SSE2 1
+#define ENABLE_SSE3 1
 
 SFM_NAMESPACE_BEGIN
 
