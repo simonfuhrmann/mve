@@ -1,14 +1,15 @@
-/* Nearest Neighbor implementation using exhaustive search.
- * Written by Simon Fuhrmann.
+/*
+ * Nearest Neighbor implementation using exhaustive search.
+ * Written by Simon Fuhrmann and Stepan Konrad.
  *
  * A helpful SSE/MMX overview.
  * Taken from: http://www.linuxjournal.com/content/
  *         ... introduction-gcc-compiler-intrinsics-vector-processing
  *
  * Compiler Options:
- * - X86/MMX/SSE1/SSE2	-mfpmath=sse -mmmx -msse -msse2
+ * - X86/MMX/SSE1/2/3   -mfpmath=sse -mmmx -msse -msse2 -msse3
  * - ARM Neon           -mfpu=neon -mfloat-abi=softfp
- * - Freescale Altivec	-maltivec -mabi=altivec
+ * - Freescale Altivec  -maltivec -mabi=altivec
  *
  * Include Files:
  * - arm_neon.h      ARM Neon types & intrinsics
@@ -16,6 +17,7 @@
  * - mmintrin.h      X86 MMX
  * - xmmintrin.h     X86 SSE1
  * - emmintrin.h     X86 SSE2
+ * - pmmintrin.h     X86 SSE3
  *
  * MMX/SSE Data Types:
  * - MMX:  __m64 64 bits of integers.
@@ -26,9 +28,11 @@
  * - X86 MMX            __MMX__
  * - X86 SSE            __SSE__
  * - X86 SSE2           __SSE2__
+ * - X86 SSE3           __SSE3__
  * - altivec functions  __VEC__
  * - neon functions     __ARM_NEON__
  */
+
 #include <limits>
 #include <iostream>
 #include <emmintrin.h> // SSE2
@@ -147,12 +151,12 @@ NearestNeighbor<float>::find (float const* query,
 
 #if ENABLE_SSE3 && defined(__SSE3__)
     /*
-    * SSE inner product implementation.
-    * Note that query and result should be 16 byte aligned.
-    * Otherwise loading and storing values into/from registers is slow.
-    * The dimension size must be divisible by 4, each __m128 register
-    * can load 4 floats = 16 bytes = 128 bit.
-    */
+     * SSE inner product implementation.
+     * Note that query and result should be 16 byte aligned.
+     * Otherwise loading and storing values into/from registers is slow.
+     * The dimension size must be divisible by 4, each __m128 register
+     * can load 4 floats = 16 bytes = 128 bit.
+     */
 
     __m128 const* descr_ptr = reinterpret_cast<__m128 const*>(this->elements);
     int const dim_4 = this->dimensions / 4;
@@ -184,7 +188,6 @@ NearestNeighbor<float>::find (float const* query,
             }
         }
     }
-
 #else
     float const* descr_ptr = this->elements;
     for (int i = 0; i < this->num_elements; ++i)
