@@ -20,7 +20,8 @@ RansacPoseP3P::estimate (Correspondences2D3D const& corresp,
     if (this->opts.verbose_output)
     {
         std::cout << "RANSAC-3: Running for " << this->opts.max_iterations
-            << " iterations..." << std::endl;
+            << " iterations, threshold " << this->opts.threshold
+            << "..." << std::endl;
     }
 
     /* Pre-compute inverse K matrix to compute directions from corresp. */
@@ -51,8 +52,8 @@ RansacPoseP3P::estimate (Correspondences2D3D const& corresp,
         if (found_better_solution && this->opts.verbose_output)
         {
             std::cout << "RANSAC-3: Iteration " << iteration
-                << ", inliers " << inliers.size() << " ("
-                << (100.0 * inliers.size() / corresp.size())
+                << ", inliers " << result->inliers.size() << " ("
+                << (100.0 * result->inliers.size() / corresp.size())
                 << "%)" << std::endl;
         }
     }

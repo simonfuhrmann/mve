@@ -89,6 +89,17 @@ private:
     Options opts;
 };
 
+/* ------------------------ Implementation ------------------------ */
+
+inline
+RansacFundamental::Options::Options (void)
+    : max_iterations(1000)
+    , threshold(1e-3)
+    , already_normalized(true)
+    , verbose_output(false)
+{
+}
+
 SFM_NAMESPACE_END
 
 #endif /* SFM_RANSAC_FUNDAMENTAL_HEADER */

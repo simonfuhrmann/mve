@@ -8,9 +8,8 @@
 
 #include "sfm/defines.h"
 
-/* Whether to use SSE optimizations. */
-#define ENABLE_SSE2 1
-#define ENABLE_SSE3 1
+#define ENABLE_SSE2_NN_SEARCH 1
+#define ENABLE_SSE3_NN_SEARCH 1
 
 SFM_NAMESPACE_BEGIN
 
@@ -27,14 +26,13 @@ SFM_NAMESPACE_BEGIN
  * Thus, we want to quickly compute and find the largest inner product <Q, Ci>
  * corresponding to the smallest distance.
  *
- * A few IMPORTANT notes:
+ * Notes: For SSE accellerated dot products, vector dimension must be a factor
+ * of 8 (i.e. 128 bit registers for SSE). Query and elements must be 16 byte
+ * aligned for efficient memory access.
  *
- * - SSE2 accellerated dot product is implemented for:
- *   - short: vector dimension must be a factor of 8 (128 bit SSE2).
- *   - provide 16 byte aligned elements and query memory for SSE2.
- *
- * - Unaccellerated implementations:
- *   - float: No constraints.
+ * The following types are supported:
+ *   - short using SSE2
+ *   - float using SSE3
  */
 template <typename T>
 class NearestNeighbor

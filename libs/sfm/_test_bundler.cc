@@ -131,6 +131,10 @@ main (int argc, char** argv)
     incremental_opts.pose_opts.threshold = 4.0f;
     incremental_opts.pose_opts.max_iterations = 1000;
     incremental_opts.pose_opts.verbose_output = true;
+    incremental_opts.pose_p3p_opts.threshold = 5.0f;
+    incremental_opts.pose_p3p_opts.max_iterations = 1000;
+    incremental_opts.pose_p3p_opts.verbose_output = true;
+    incremental_opts.track_error_threshold = 20.0;
     incremental_opts.verbose_output = true;
 
     sfm::bundler::Incremental incremental(incremental_opts);
@@ -146,7 +150,7 @@ main (int argc, char** argv)
     incremental.triangulate_new_tracks();
 
     /* Remove tracks with large errors. */
-    incremental.delete_large_error_tracks(5.0);
+    incremental.delete_large_error_tracks();
 
     /* Run bundle adjustment. */
     std::cout << "Running full bundle adjustment..." << std::endl;
@@ -189,12 +193,13 @@ main (int argc, char** argv)
         incremental.triangulate_new_tracks();
 
         /* Remove tracks with large errors. */
-        incremental.delete_large_error_tracks(5.0);
+        incremental.delete_large_error_tracks();
 
         std::cout << "Running full bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_full();
     }
 
+    std::cout << "Creating bundle data structure..." << std::endl;
     mve::Bundle::Ptr bundle = incremental.create_bundle();
 
     /* Save bundle file to scene. */

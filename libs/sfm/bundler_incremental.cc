@@ -251,15 +251,49 @@ bool Incremental::reconstruct_next_view (int view_id)
         feature_ids.push_back(i);
     }
 
-    std::cout << "Collected " << corr.size()
-        << " 2D-3D correspondences." << std::endl;
+    if (this->opts.verbose_output)
+    {
+        std::cout << "Collected " << corr.size()
+            << " 2D-3D correspondences." << std::endl;
+    }
 
-    /* Compute pose from 2D-3D correspondences. */
+    /*
+     * Given correspondences, use either P3P or 6-point algorithm.
+     * 6-point, delete tracks threshold 10: 24134 features
+     * 3-point, delete tracks threshold 10: 25828 features
+     * 6-point, delete tracks threshold 20: 41018 features
+     * 3-point, delete tracks threshold 20: 42048 features
+     */
+#define USE_P3P_FOR_POSE 1
+
+#if USE_P3P_FOR_POSE
+    /* Initialize a temporary camera. */
+    float const maxdim = static_cast<float>
+        (std::max(viewport.width, viewport.height));
+    CameraPose temp_camera;
+    temp_camera.set_k_matrix(viewport.focal_length * maxdim,
+        static_cast<float>(viewport.width) / 2.0f,
+        static_cast<float>(viewport.height) / 2.0f);
+
+    /* Compute pose from 2D-3D correspondences using P3P. */
+    RansacPoseP3P ransac(this->opts.pose_p3p_opts);
+    RansacPoseP3P::Result ransac_result;
+    ransac.estimate(corr, temp_camera.K, &ransac_result);
+
+    if (this->opts.verbose_output)
+    {
+        std::cout << "RANSAC found " << ransac_result.inliers.size()
+            << " inliers." << std::endl;
+    }
+
+#else
+    /* Compute pose from 2D-3D correspondences using 6-point. */
     RansacPose ransac(this->opts.pose_opts);
     RansacPose::Result ransac_result;
     ransac.estimate(corr, &ransac_result);
     std::cout << "RANSAC found " << ransac_result.inliers.size()
         << " inliers." << std::endl;
+#endif
 
     /* Cancel if inliers are below a threshold. */
     if (2 * ransac_result.inliers.size() < corr.size())
@@ -280,7 +314,13 @@ bool Incremental::reconstruct_next_view (int view_id)
     track_ids.clear();
     feature_ids.clear();
 
-#if 0
+#if USE_P3P_FOR_POSE
+    /* In the P3P case, just use the known K and computed R and t. */
+    this->cameras[view_id] = temp_camera;
+    this->cameras[view_id].R = ransac_result.pose.delete_col(3);
+    this->cameras[view_id].t = ransac_result.pose.col(3);
+#else
+#   if 0
     /* Re-estimate using inliers only. */
     Correspondences2D3D inliers(ransac_result.inliers.size());
     for (std::size_t i = 0; i < ransac_result.inliers.size(); ++i)
@@ -295,9 +335,9 @@ bool Incremental::reconstruct_next_view (int view_id)
         pose_from_2d_3d_correspondences(inliers, &p_matrix);
         p_matrix = math::matrix_inverse(T2d) * p_matrix * T3d;
     }
-#else
+#   else
     math::Matrix<double, 3, 4> p_matrix = ransac_result.p_matrix;
-#endif
+#   endif
 
     /* Initialize camera. */
     float const maxdim = static_cast<float>
@@ -308,8 +348,13 @@ bool Incremental::reconstruct_next_view (int view_id)
 
     /* Set pose. */
     this->cameras[view_id].set_from_p_and_known_k(p_matrix);
-    std::cout << "Reconstructed camera with focal length: "
-        << this->cameras[view_id].get_focal_length() << std::endl;
+#endif
+
+    if (this->opts.verbose_output)
+    {
+        std::cout << "Reconstructed new camera with focal length: "
+            << this->cameras[view_id].get_focal_length() << std::endl;
+    }
 
     return true;
 }
@@ -468,7 +513,11 @@ Incremental::triangulate_new_tracks (void)
         num_new_tracks += 1;
     }
 
-    std::cout << "Reconstructed " << num_new_tracks << " new tracks." << std::endl;
+    if (this->opts.verbose_output)
+    {
+        std::cout << "Reconstructed " << num_new_tracks
+            << " new tracks." << std::endl;
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -604,9 +653,12 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         std::copy(cam.t, cam.t + 3, pose.t.begin());
         std::copy(cam.m[0], cam.m[0] + 9, pose.R.begin());
 
-        std::cout << "Camera " << i << ", focal length: "
-            << pose.get_focal_length() << " -> " << cam.f
-            << ", radial distortion: " << cam.radial << std::endl;
+        if (this->opts.verbose_output)
+        {
+            std::cout << "Camera " << i << ", focal length: "
+                << pose.get_focal_length() << " -> " << cam.f
+                << ", radial distortion: " << cam.radial << std::endl;
+        }
 
         pose.K[0] = cam.f;
         pose.K[4] = cam.f;
@@ -631,9 +683,10 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 /* ---------------------------------------------------------------- */
 
 void
-Incremental::delete_large_error_tracks (double threshold)
+Incremental::delete_large_error_tracks (void)
 {
     /* Iterate over all tracks and sum reprojection error. */
+    double square_threshold = MATH_POW2(this->opts.track_error_threshold);
     int num_deleted_tracks = 0;
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
@@ -671,15 +724,19 @@ Incremental::delete_large_error_tracks (double threshold)
         //std::cout << ", total error: " << total_error << std::endl;
 
         /* Delete tracks with errors above a threshold. */
-        if (total_error > MATH_POW2(threshold))
+        if (total_error > square_threshold)
         {
             this->delete_track(i);
             num_deleted_tracks += 1;
         }
     }
 
-    std::cout << "Deleted " << num_deleted_tracks
-        << " tracks above a threshold of " << threshold << std::endl;
+    if (this->opts.verbose_output)
+    {
+        std::cout << "Deleted " << num_deleted_tracks
+            << " tracks above a threshold of "
+            << this->opts.track_error_threshold << std::endl;
+    }
 }
 
 /* ---------------------------------------------------------------- */

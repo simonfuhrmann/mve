@@ -10,13 +10,6 @@
 
 SFM_NAMESPACE_BEGIN
 
-RansacPose::Options::Options (void)
-    : max_iterations(100)
-    , threshold(1e-3)
-    , verbose_output(false)
-{
-}
-
 RansacPose::RansacPose (Options const& options)
     : opts(options)
 {
@@ -28,7 +21,8 @@ RansacPose::estimate (Correspondences2D3D const& corresp, Result* result)
     if (this->opts.verbose_output)
     {
         std::cout << "RANSAC-6: Running for " << this->opts.max_iterations
-            << " iterations..." << std::endl;
+            << " iterations, threshold " << this->opts.threshold
+            << "..." << std::endl;
     }
 
     std::vector<int> inliers;
@@ -67,7 +61,7 @@ RansacPose::estimate_6_point (Correspondences2D3D const& corresp,
     while (result.size() < 6)
         result.insert(util::system::rand_int() % corresp.size());
 
-    /* Create list of the six selected correspondences. */
+    /* Create list of the selected correspondences. */
     Correspondences2D3D selection(6);
     std::set<int>::const_iterator iter = result.begin();
     for (int i = 0; i < 6; ++i, ++iter)

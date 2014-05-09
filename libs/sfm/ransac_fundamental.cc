@@ -10,14 +10,6 @@
 
 SFM_NAMESPACE_BEGIN
 
-RansacFundamental::Options::Options (void)
-    : max_iterations(1000)
-    , threshold(1e-3)
-    , already_normalized(true)
-    , verbose_output(false)
-{
-}
-
 RansacFundamental::RansacFundamental (Options const& options)
     : opts(options)
 {
@@ -29,7 +21,8 @@ RansacFundamental::estimate (Correspondences const& matches, Result* result)
     if (this->opts.verbose_output)
     {
         std::cout << "RANSAC-F: Running for " << this->opts.max_iterations
-            << " iterations..." << std::endl;
+            << " iterations, threshold " << this->opts.threshold
+            << "..." << std::endl;
     }
 
     std::vector<int> inliers;

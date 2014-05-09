@@ -10,6 +10,7 @@
 #include "sfm/fundamental.h"
 #include "sfm/ransac_fundamental.h"
 #include "sfm/ransac_pose.h"
+#include "sfm/ransac_pose_p3p.h"
 #include "sfm/bundler_common.h"
 #include "sfm/pose.h"
 #include "sfm/defines.h"
@@ -31,6 +32,10 @@ public:
         RansacFundamental::Options fundamental_opts;
         /** Options for computing pose from 2D-3D correspondences. */
         RansacPose::Options pose_opts;
+        /** Options for computing pose from 2D-3D correspondences. */
+        RansacPoseP3P::Options pose_p3p_opts;
+        /** Threshold for large error tracks. */
+        double track_error_threshold;
         /** Produce status messages on the console. */
         bool verbose_output;
     };
@@ -65,7 +70,7 @@ public:
     mve::Bundle::Ptr create_bundle (void) const;
 
     /** Deletes tracks with a large reprojection error. */
-    void delete_large_error_tracks (double threshold);
+    void delete_large_error_tracks (void);
 
 private:
     void bundle_adjustment_intern (int single_camera_ba);
@@ -82,6 +87,8 @@ private:
 
 inline
 Incremental::Options::Options (void)
+    : track_error_threshold(10.0)
+    , verbose_output(false)
 {
 }
 

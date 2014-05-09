@@ -6,6 +6,8 @@
 #ifndef SFM_RANSAC_POSE_HEADER
 #define SFM_RANSAC_POSE_HEADER
 
+#include <vector>
+
 #include "math/matrix.h"
 #include "sfm/defines.h"
 #include "sfm/correspondence.h"
@@ -55,10 +57,7 @@ public:
          */
         math::Matrix<double, 3, 4> p_matrix;
 
-        /**
-         * The indices of inliers in the correspondences which led to the
-         * homography matrix.
-         */
+        /** The indices of inliers which led to the result. */
         std::vector<int> inliers;
     };
 
@@ -76,6 +75,16 @@ private:
 private:
     Options opts;
 };
+
+/* ------------------------ Implementation ------------------------ */
+
+inline
+RansacPose::Options::Options (void)
+    : max_iterations(100)
+    , threshold(1e-3)
+    , verbose_output(false)
+{
+}
 
 SFM_NAMESPACE_END
 

@@ -91,6 +91,7 @@ private:
 
 /* ------------------------ Implementation ------------------------ */
 
+inline
 RansacPoseP3P::Options::Options (void)
     : max_iterations(1000)
     , threshold(0.01)

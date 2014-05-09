@@ -1,6 +1,8 @@
 #ifndef SFM_RANSAC_HOMOGRAPHY_HEADER
 #define SFM_RANSAC_HOMOGRAPHY_HEADER
 
+#include <vector>
+
 #include "sfm/homography.h"
 
 SFM_NAMESPACE_BEGIN
@@ -78,6 +80,17 @@ private:
 private:
     Options opts;
 };
+
+/* ------------------------ Implementation ------------------------ */
+
+inline
+RansacHomography::Options::Options (void)
+    : max_iterations(1000)
+    , threshold(0.01)
+    , already_normalized(true)
+    , verbose_output(false)
+{
+}
 
 SFM_NAMESPACE_END
 

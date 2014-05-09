@@ -11,14 +11,6 @@
 
 SFM_NAMESPACE_BEGIN
 
-RansacHomography::Options::Options (void)
-    : max_iterations(1000)
-    , threshold(0.01)
-    , already_normalized(true)
-    , verbose_output(false)
-{
-}
-
 RansacHomography::RansacHomography (Options const& options)
     : opts(options)
 {
@@ -30,7 +22,8 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
     if (this->opts.verbose_output)
     {
         std::cout << "RANSAC-H: Running for " << this->opts.max_iterations
-            << " iterations..." << std::endl;
+            << " iterations, threshold " << this->opts.threshold
+            << "..." << std::endl;
     }
 
     std::vector<int> inliers;

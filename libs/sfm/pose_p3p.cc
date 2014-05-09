@@ -75,6 +75,15 @@ pose_p3p_kneip (
         return;
     }
 
+    /* Normalize directions if necessary. */
+    double const normalize_epsilon = 1e-10;
+    if (!MATH_EPSILON_EQ(f1.square_norm(), 1.0, normalize_epsilon))
+        f1.normalize();
+    if (!MATH_EPSILON_EQ(f2.square_norm(), 1.0, normalize_epsilon))
+        f2.normalize();
+    if (!MATH_EPSILON_EQ(f3.square_norm(), 1.0, normalize_epsilon))
+        f3.normalize();
+
     /* Create camera frame. */
     math::Matrix3d T;
     {

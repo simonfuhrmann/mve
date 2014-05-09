@@ -53,7 +53,7 @@ NearestNeighbor<short>::find (short const* query,
     result->index_1st_best = 0;
     result->index_2nd_best = 0;
 
-#if ENABLE_SSE2 && defined(__SSE2__)
+#if ENABLE_SSE2_NN_SEARCH && defined(__SSE2__)
     /*
      * SSE inner product implementation.
      * Note that query and result should be 16 byte aligned.
@@ -149,7 +149,7 @@ NearestNeighbor<float>::find (float const* query,
     result->index_1st_best = 0;
     result->index_2nd_best = 0;
 
-#if ENABLE_SSE3 && defined(__SSE3__)
+#if ENABLE_SSE3_NN_SEARCH && defined(__SSE3__)
     /*
      * SSE inner product implementation.
      * Note that query and result should be 16 byte aligned.
