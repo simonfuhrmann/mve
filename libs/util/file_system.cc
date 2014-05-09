@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <cctype>
 #include <cerrno> // errno
 #include <cstring> // std::strerror
 #include <cstdio> // std::rename
