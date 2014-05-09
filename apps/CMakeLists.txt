@@ -1,0 +1,7 @@
+add_subdirectory(bundle2ply)
+add_subdirectory(dmrecon)
+add_subdirectory(makescene)
+add_subdirectory(meshconvert)
+#add_subdirectory(mveshell)
+add_subdirectory(scene2pset)
+add_subdirectory(umve)
