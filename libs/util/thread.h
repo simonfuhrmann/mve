@@ -71,13 +71,26 @@ class Thread
 
 /**
  * Mutual exclusion thread lock abstraction for POSIX and Win32.
- * TODO: Win32 mutex abstraction not yet implemented.
  */
 class Mutex
 {
   private:
 #ifdef _WIN32
-    // TODO
+    /* On Windows there are two ways for mutual exclusion:
+     * - Critical sections
+     * - Mutexes
+     * Critical sections only work for mutual exclusion for threads which are
+     * in the same process.
+     * Mutexes also work across different processes.
+     * Pthreads mutexes can work for both single and multiple processes but
+     * defaults to single process. (see pthread_mutexattr_{get,set}pshared())
+     * According to MSDN, critical section objects are slightly faster and
+     * more efficient than mutex objects. I'm assuming that using mutexes
+     * across processes is rare and thus prefer the slightly more efficient
+     * critical section over the mutex object.
+     * (see http://msdn.microsoft.com/en-us/library/ms682530%28v=vs.85%29.aspx)
+     */
+    CRITICAL_SECTION mutex;
 #elif defined(_POSIX_THREADS)
     pthread_mutex_t mutex;
 #endif
@@ -201,7 +214,43 @@ Thread::pt_join (void)
 
 #ifdef _WIN32
 
-// TODO
+inline
+Mutex::Mutex (void)
+{
+    InitializeCriticalSection(&this->mutex);
+}
+
+inline
+Mutex::~Mutex (void)
+{
+    DeleteCriticalSection(&this->mutex);
+}
+
+inline int
+Mutex::lock (void)
+{
+    EnterCriticalSection(&this->mutex);
+    return 0;
+}
+
+inline int
+Mutex::trylock (void)
+{
+    /*
+     * retval is nonzero on success, zero otherwise. pthread_mutex_trylock()
+     * has opposite return values. Thus, we transform the return value to
+     * match pthreads.
+     */
+    BOOL retval = TryEnterCriticalSection(&this->mutex);
+    return (retval == 0);
+}
+
+inline int
+Mutex::unlock (void)
+{
+    LeaveCriticalSection(&this->mutex);
+    return 0;
+}
 
 #elif defined(_POSIX_THREADS)
 
@@ -233,17 +282,6 @@ inline int
 Mutex::unlock (void)
 {
     return pthread_mutex_unlock(&this->mutex);
-}
-
-inline Mutex&
-Mutex::operator= (Mutex const& /*rhs*/)
-{
-    return *this;
-}
-
-inline
-Mutex::Mutex (Mutex const& /*rhs*/)
-{
 }
 
 #endif /* OS check */
