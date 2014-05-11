@@ -42,6 +42,8 @@ SceneInspect::SceneInspect (QWidget* parent)
     QHBoxLayout* main_layout = new QHBoxLayout(this);
     main_layout->addLayout(vbox, 1);
     main_layout->addWidget(this->tab_widget);
+
+    //this->gl_widget->repaint_gl();
 }
 
 /* ---------------------------------------------------------------- */

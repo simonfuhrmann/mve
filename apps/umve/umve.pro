@@ -13,8 +13,8 @@ macx {
     INCLUDEPATH += /usr/local/include
 }
 
-SOURCES += [^_]*.cc viewinspect/*.cc scene_inspect/*.cc scene_addins/*.cc
-HEADERS += *.h viewinspect/*.h scene_inspect/*.h scene_addins/*.h
+SOURCES += [^_]*.cc viewinspect/*.cc scene_inspect/*.cc scene_addins/*.cc sfm_reconstruct/*.cc
+HEADERS += *.h viewinspect/*.h scene_inspect/*.h scene_addins/*.h sfm_reconstruct/*.h
 RESOURCES = umve.qrc
 TARGET = umve
 

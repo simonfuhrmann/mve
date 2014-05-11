@@ -1,5 +1,5 @@
-#ifndef UMVE_SCENE_ADDINS_HEADER
-#define UMVE_SCENE_ADDINS_HEADER
+#ifndef UMVE_SCENE_ADDIN_MANAGER_HEADER
+#define UMVE_SCENE_ADDIN_MANAGER_HEADER
 
 #include "ogl/opengl.h"
 
@@ -62,7 +62,7 @@ protected slots:
         mve::TriangleMesh::Ptr mesh);
 
 private:
-    AddinBase::State state;
+    AddinState state;
     std::vector<AddinBase*> addins;
 
     /* Addins. */
@@ -86,4 +86,4 @@ private:
     QCheckBox* clear_color_cb;
 };
 
-#endif /* UMVE_SCENE_ADDINS_HEADER */
+#endif /* UMVE_SCENE_ADDIN_MANAGER_HEADER */
