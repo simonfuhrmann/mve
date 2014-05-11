@@ -264,9 +264,8 @@ bool Incremental::reconstruct_next_view (int view_id)
      * 6-point, delete tracks threshold 20: 41018 features
      * 3-point, delete tracks threshold 20: 42048 features
      */
-#define USE_P3P_FOR_POSE 1
+#define USE_P3P_FOR_POSE 0
 
-#if USE_P3P_FOR_POSE
     /* Initialize a temporary camera. */
     float const maxdim = static_cast<float>
         (std::max(viewport.width, viewport.height));
@@ -275,6 +274,7 @@ bool Incremental::reconstruct_next_view (int view_id)
         static_cast<float>(viewport.width) / 2.0f,
         static_cast<float>(viewport.height) / 2.0f);
 
+#if USE_P3P_FOR_POSE
     /* Compute pose from 2D-3D correspondences using P3P. */
     RansacPoseP3P ransac(this->opts.pose_p3p_opts);
     RansacPoseP3P::Result ransac_result;
@@ -291,8 +291,12 @@ bool Incremental::reconstruct_next_view (int view_id)
     RansacPose ransac(this->opts.pose_opts);
     RansacPose::Result ransac_result;
     ransac.estimate(corr, &ransac_result);
-    std::cout << "RANSAC found " << ransac_result.inliers.size()
-        << " inliers." << std::endl;
+
+    if (this->opts.verbose_output)
+    {
+        std::cout << "RANSAC found " << ransac_result.inliers.size()
+            << " inliers." << std::endl;
+    }
 #endif
 
     /* Cancel if inliers are below a threshold. */
@@ -320,33 +324,9 @@ bool Incremental::reconstruct_next_view (int view_id)
     this->cameras[view_id].R = ransac_result.pose.delete_col(3);
     this->cameras[view_id].t = ransac_result.pose.col(3);
 #else
-#   if 0
-    /* Re-estimate using inliers only. */
-    Correspondences2D3D inliers(ransac_result.inliers.size());
-    for (std::size_t i = 0; i < ransac_result.inliers.size(); ++i)
-        inliers[i] = corr[ransac_result.inliers[i]];
-
-    math::Matrix<double, 3, 4> p_matrix;
-    {
-        math::Matrix3d T2d;
-        math::Matrix4d T3d;
-        compute_normalization(inliers, &T2d, &T3d);
-        apply_normalization(T2d, T3d, &inliers);
-        pose_from_2d_3d_correspondences(inliers, &p_matrix);
-        p_matrix = math::matrix_inverse(T2d) * p_matrix * T3d;
-    }
-#   else
+    /* With 6-point, set full pose recovering R and t using known K. */
     math::Matrix<double, 3, 4> p_matrix = ransac_result.p_matrix;
-#   endif
-
-    /* Initialize camera. */
-    float const maxdim = static_cast<float>
-        (std::max(viewport.width, viewport.height));
-    this->cameras[view_id].set_k_matrix(viewport.focal_length * maxdim,
-        static_cast<float>(viewport.width) / 2.0f,
-        static_cast<float>(viewport.height) / 2.0f);
-
-    /* Set pose. */
+    this->cameras[view_id] = temp_camera;
     this->cameras[view_id].set_from_p_and_known_k(p_matrix);
 #endif
 
@@ -428,7 +408,10 @@ Incremental::create_bundle (void) const
 void
 Incremental::triangulate_new_tracks (void)
 {
+    double const square_thres = MATH_POW2(this->opts.track_error_threshold);
     std::size_t num_new_tracks = 0;
+    std::size_t num_large_error_tracks = 0;
+    std::size_t num_behind_camera_tracks = 0;
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         /* Skip tracks that have already been reconstructed. */
@@ -436,47 +419,11 @@ Incremental::triangulate_new_tracks (void)
         if (track.is_valid())
             continue;
 
-#if 1  // Triangulate a new track using two cameras.
-
-        /* Collect up to two valid cameras and 2D feature positions. */
-        std::vector<int> valid_cameras;
-        std::vector<int> valid_features;
-        valid_cameras.reserve(2);
-        valid_features.reserve(2);
-        for (std::size_t j = 0; j < track.features.size(); ++j)
-        {
-            int const view_id = track.features[j].view_id;
-            if (!this->cameras[view_id].is_valid())
-                continue;
-
-            int const feature_id = track.features[j].feature_id;
-            valid_cameras.push_back(view_id);
-            valid_features.push_back(feature_id);
-            if (valid_cameras.size() == 2)
-                break;
-        }
-
-        /* Skip tracks with too few valid cameras. */
-        if (valid_cameras.size() < 2)
-            continue;
-
-        /* Triangulate track using the first two valid cameras. */
-        Correspondence match;
-        {
-            Viewport const& view1 = this->viewports->at(valid_cameras[0]);
-            Viewport const& view2 = this->viewports->at(valid_cameras[1]);
-            math::Vec2f const& pos1 = view1.positions[valid_features[0]];
-            math::Vec2f const& pos2 = view2.positions[valid_features[1]];
-            std::copy(pos1.begin(), pos1.end(), match.p1);
-            std::copy(pos2.begin(), pos2.end(), match.p2);
-        }
-        CameraPose const& pose1 = this->cameras[valid_cameras[0]];
-        CameraPose const& pose2 = this->cameras[valid_cameras[1]];
-
-        track.pos = triangulate_match(match, pose1, pose2);
-
-#else  // Triangulate a new track using all cameras. Is there ever more than two cameras?
-
+        /*
+         * Triangulate a new track using all cameras.
+         * There can be more than two cameras if the track has been rejected
+         * in previous attempts to triangulate the track.
+         */
         std::vector<math::Vec2f> pos;
         std::vector<CameraPose const*> poses;
         for (std::size_t j = 0; j < track.features.size(); ++j)
@@ -493,30 +440,54 @@ Incremental::triangulate_new_tracks (void)
         if (poses.size() < 2)
             continue;
 
-        track.pos = triangulate_track(pos, poses);
+        /* Triangulate track. */
+        math::Vec3d track_position = triangulate_track(pos, poses);
 
+        /* Compute reprojection error of the track. */
+        double square_error = 0.0;
+        bool track_behind_camera = false;
         for (std::size_t j = 0; j < poses.size(); ++j)
         {
-            math::Vec3f local = poses[j]->R * track.pos + poses[j]->t;
-            if (local[2] < 0.0f)
+            math::Vec3d x = poses[j]->R * track_position + poses[j]->t;
+            if (x[2] < 0.0)
             {
-                std::cout << "Warning: Point behind camera. Invalidating track." << std::endl;
-                track.invalidate();
+                track_behind_camera = true;
                 break;
             }
+
+            x = poses[j]->K * x;
+            math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
+            square_error += (pos[j] - x2d).square_norm();
+        }
+        square_error /= static_cast<double>(poses.size());
+
+        /*
+         * Reject track if the reprojection error is large, or the track
+         * appears behind the camera. In the latter case, delete it.
+         */
+        if (track_behind_camera)
+        {
+            num_behind_camera_tracks += 1;
+            delete_track(i);
+            continue;
+        }
+        else if (square_error > square_thres)
+        {
+            num_large_error_tracks += 1;
+            continue;
         }
 
-        if (!track.is_valid())
-            continue;
-#endif
-
+        track.pos = track_position;
         num_new_tracks += 1;
     }
 
     if (this->opts.verbose_output)
     {
-        std::cout << "Reconstructed " << num_new_tracks
-            << " new tracks." << std::endl;
+        std::cout << "Triangulated " << num_new_tracks
+            << " new tracks, rejected "
+            << num_large_error_tracks << " (large error), "
+            << num_behind_camera_tracks << " (behind camera)."
+            << std::endl;
     }
 }
 
@@ -555,7 +526,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     pba.SetNextTimeBudget(0);
 
     pba.GetInternalConfig()->__verbose_cg_iteration = false;
-    pba.GetInternalConfig()->__verbose_level = 1;
+    pba.GetInternalConfig()->__verbose_level = -1;
     pba.GetInternalConfig()->__verbose_function_time = false;
     pba.GetInternalConfig()->__verbose_allocation = false;
     pba.GetInternalConfig()->__verbose_sse = false;
@@ -657,7 +628,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         {
             std::cout << "Camera " << i << ", focal length: "
                 << pose.get_focal_length() << " -> " << cam.f
-                << ", radial distortion: " << cam.radial << std::endl;
+                << ", distortion: " << cam.radial << std::endl;
         }
 
         pose.K[0] = cam.f;
@@ -735,7 +706,8 @@ Incremental::delete_large_error_tracks (void)
     {
         std::cout << "Deleted " << num_deleted_tracks
             << " tracks above a threshold of "
-            << this->opts.track_error_threshold << std::endl;
+            << this->opts.track_error_threshold
+            << "." << std::endl;
     }
 }
 

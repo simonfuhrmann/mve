@@ -131,10 +131,10 @@ main (int argc, char** argv)
     incremental_opts.pose_opts.threshold = 4.0f;
     incremental_opts.pose_opts.max_iterations = 1000;
     incremental_opts.pose_opts.verbose_output = true;
-    incremental_opts.pose_p3p_opts.threshold = 5.0f;
+    incremental_opts.pose_p3p_opts.threshold = 4.0f;
     incremental_opts.pose_p3p_opts.max_iterations = 1000;
     incremental_opts.pose_p3p_opts.verbose_output = true;
-    incremental_opts.track_error_threshold = 20.0;
+    incremental_opts.track_error_threshold = 10.0;
     incremental_opts.verbose_output = true;
 
     sfm::bundler::Incremental incremental(incremental_opts);

@@ -27,7 +27,7 @@
 // - Remove using directives
 // - Reorganize classes (public, protected, private)
 // - Remove Cuda implementation artifacts
-// - Remove specialization for float or double?
+// - Remove specialization for float, always use double?
 
 #ifndef PARALLEL_BA_H
 #define PARALLEL_BA_H

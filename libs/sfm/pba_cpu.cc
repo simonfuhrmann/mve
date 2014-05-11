@@ -926,13 +926,13 @@ namespace ProgramCPU
     {
         const bool auto_multi_thread = true;
         if(auto_multi_thread && mt == 0) {  mt = AUTO_MT_NUM( result.size() * 2);  }
-        if(mt > 1 && result.size() >= mt * 4)
+        if(mt > 1 && result.size() >= static_cast<std::size_t>(mt * 4))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
             const Float* p1 = vec1.begin(), * p2 = vec2.begin();
             Float* p3 = result.begin();
-            for(size_t i = 0; i < thread_num; ++i)
+            for (int i = 0; i < thread_num; ++i)
             {
                 size_t first = (result.size() * i / thread_num + FLOAT_ALIGN - 1 ) / FLOAT_ALIGN  * FLOAT_ALIGN ;
                 size_t last_ = (result.size() * (i + 1) / thread_num + FLOAT_ALIGN - 1) / FLOAT_ALIGN * FLOAT_ALIGN;
@@ -957,13 +957,13 @@ namespace ProgramCPU
     {
         const bool auto_multi_thread = true;
         if(auto_multi_thread && mt == 0) {  mt = AUTO_MT_NUM(vec.size());  }
-        if(mt > 1 && vec.size() >= mt * 4)
+        if(mt > 1 && vec.size() >= static_cast<std::size_t>(mt * 4))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             double sumv[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
             const Float * p = vec;
-            for(size_t i = 0; i < thread_num; ++i)
+            for (int i = 0; i < thread_num; ++i)
             {
                 size_t first = (vec.size() * i / thread_num + FLOAT_ALIGN - 1 ) / FLOAT_ALIGN  * FLOAT_ALIGN ;
                 size_t last_ = (vec.size() * (i + 1) / thread_num + FLOAT_ALIGN - 1) / FLOAT_ALIGN * FLOAT_ALIGN;
@@ -972,7 +972,8 @@ namespace ProgramCPU
             }
             WAIT_THREAD(threads, thread_num);
             double sum = 0;
-            for(size_t i = 0; i < thread_num; ++i) sum += sumv[i];
+            for(int i = 0; i < thread_num; ++i)
+                sum += sumv[i];
             return sum;
         }else
         {
@@ -982,7 +983,8 @@ namespace ProgramCPU
         }
     }
 
-    template <class Float>     void GetRodriguesRotation(const Float m[3][3], Float r[3])
+    template <class Float>
+    void GetRodriguesRotation(const Float m[3][3], Float r[3])
     {
         //http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/index.htm
         double a = (m[0][0]+m[1][1]+m[2][2]-1.0)/2.0;
@@ -1139,11 +1141,11 @@ namespace ProgramCPU
     void ComputeProjection(size_t nproj, const Float* camera, const Float* point, const Float* ms,
                            const int * jmap, Float* pj, int radial, int mt)
     {
-        if(mt > 1 && nproj >= mt)
+        if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
                 size_t first = nproj * i / thread_num;
                 size_t last_ = nproj * (i + 1) / thread_num;
@@ -1202,15 +1204,15 @@ namespace ProgramCPU
     void ComputeProjectionX(size_t nproj, const Float* camera, const Float* point, const Float* ms,
                            const int * jmap, Float* pj, int radial, int mt)
     {
-        if(mt > 1 && nproj >= mt)
+        if (mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
-                size_t first = nproj * i / thread_num;
-                size_t last_ = nproj * (i + 1) / thread_num;
-                size_t last  = std::min(last_, nproj);
+                int first = nproj * i / thread_num;
+                int last_ = nproj * (i + 1) / thread_num;
+                int last  = std::min(last_, (int)nproj);
                 RUN_THREAD(ComputeProjectionX, threads[i],
                     last - first, camera, point, ms + 2 * first, jmap + 2 * first, pj + 2 * first, radial);
             }
@@ -1466,15 +1468,15 @@ namespace ProgramCPU
                          int mt = 2, int i0 = 0)
     {
 
-        if(mt > 1 && nproj >= mt)
+        if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
-                size_t first = nproj * i / thread_num;
-                size_t last_ = nproj * (i + 1) / thread_num;
-                size_t last  = std::min(last_, nproj);
+                int first = nproj * i / thread_num;
+                int last_ = nproj * (i + 1) / thread_num;
+                int last  = std::min(last_, (int)nproj);
                 RUN_THREAD(ComputeJacobian, threads[i],
                     last, ncam, camera, point, jc, jp, jmap + 2 * first, sj, ms + 2 * first, cmlist + first,
                     intrinsic_fixed, radial_distortion, shuffle, jct, first);
@@ -1666,12 +1668,12 @@ namespace ProgramCPU
         if(mt > 1 && ncam >= (size_t) mt)
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
-                size_t first = ncam * i / thread_num;
-                size_t last_ = ncam * (i + 1) / thread_num;
-                size_t last  = std::min(last_, ncam);
+                int first = ncam * i / thread_num;
+                int last_ = ncam * (i + 1) / thread_num;
+                int last  = std::min(last_, (int)ncam);
                 RUN_THREAD(ComputeDiagonalBlockC, threads[i],
                     (last - first), lambda1, lambda2, jc, cmap + first,
                      cmlist, di + 8 * first, bi + bc * first, vn, jc_transpose, use_jq);
@@ -1751,12 +1753,12 @@ namespace ProgramCPU
         if(mt > 1)
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
-                size_t first = npt * i / thread_num;
-                size_t last_ = npt * (i + 1) / thread_num;
-                size_t last  = std::min(last_, npt);
+                int first = npt * i / thread_num;
+                int last_ = npt * (i + 1) / thread_num;
+                int last  = std::min(last_, (int)npt);
                 RUN_THREAD(ComputeDiagonalBlockP, threads[i],
                     (last - first), lambda1, lambda2, jp, pmap + first,
                     di + POINT_ALIGN * first, bi + 6 * first);
@@ -2119,11 +2121,11 @@ namespace ProgramCPU
     void ComputeJX( size_t nproj, size_t ncam,  const Float* x, const Float*  jc,
                     const Float* jp, const int* jmap, Float* jx, int mode, int mt = 2)
     {
-        if(mt > 1 && nproj >= mt)
+        if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
                 size_t first = nproj * i / thread_num;
                 size_t last_ = nproj * (i + 1) / thread_num;
@@ -2184,11 +2186,11 @@ namespace ProgramCPU
                     const Float* point,  const Float* ms, const Float* sj, const int*  jmap,
                     bool intrinsic_fixed, int radial_distortion, int mode, int mt = 16)
     {
-        if(mt > 1 && nproj >= mt)
+        if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for (int i = 0; i < thread_num; ++i)
             {
                 size_t first = nproj * i / thread_num;
                 size_t last_ = nproj * (i + 1) / thread_num;
@@ -2293,15 +2295,15 @@ namespace ProgramCPU
     void ComputeJtEC(    size_t ncam, const Float* pe, const Float* jc, const int* cmap,
                         const int* cmlist,  Float* v, bool jc_transpose, int mt)
     {
-        if(mt > 1 && ncam >= mt)
+        if(mt > 1 && ncam >= static_cast<size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX]; //if(ncam < mt) mt = ncam;
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
-                size_t first = ncam * i / thread_num;
-                size_t last_ = ncam * (i + 1) / thread_num;
-                size_t last  = std::min(last_, ncam);
+                int first = ncam * i / thread_num;
+                int last_ = ncam * (i + 1) / thread_num;
+                int last  = std::min(last_, (int)ncam);
                 RUN_THREAD(ComputeJtEC, threads[i],
                     (last - first), pe, jc, cmap + first, cmlist,
                     v + 8 * first, jc_transpose);
@@ -2341,15 +2343,15 @@ namespace ProgramCPU
     void ComputeJtEP(   size_t npt, const Float* pe, const Float* jp,
                         const int* pmap, Float* v,  int mt)
     {
-        if(mt > 1 && npt >= mt)
+        if(mt > 1 && npt >= static_cast<size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
-                size_t first = npt * i / thread_num;
-                size_t last_ = npt * (i + 1) / thread_num;
-                size_t last  = std::min(last_, npt);
+                int first = npt * i / thread_num;
+                int last_ = npt * (i + 1) / thread_num;
+                int last  = std::min(last_, (int)npt);
                 RUN_THREAD(ComputeJtEP, threads[i],
                     (last - first), pe, jp, pmap + first, v + POINT_ALIGN * first);
             }
@@ -2412,16 +2414,16 @@ namespace ProgramCPU
                         const int* jmap, const int* cmap, const int * cmlist,
                         bool intrinsic_fixed, int radial_distortion, int mt)
     {
-        if(mt > 1 && ncam >= mt)
+        if(mt > 1 && ncam >= static_cast<std::size_t>(mt))
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             //if(ncam < mt) mt = ncam;
-            const size_t thread_num = std::min(mt, THREAD_NUM_MAX);
-            for(size_t i = 0; i < thread_num; ++i)
+            const int thread_num = std::min(mt, THREAD_NUM_MAX);
+            for(int i = 0; i < thread_num; ++i)
             {
-                size_t first = ncam * i / thread_num;
-                size_t last_ = ncam * (i + 1) / thread_num;
-                size_t last  = std::min(last_, ncam);
+                int first = ncam * i / thread_num;
+                int last_ = ncam * (i + 1) / thread_num;
+                int last  = std::min(last_, (int)ncam);
                 RUN_THREAD(ComputeJtEC_, threads[i],
                     (last - first), ee, jte + 8 * first, c + first * 16, point, ms, jmap,
                     cmap + first, cmlist, intrinsic_fixed, radial_distortion);
@@ -2456,7 +2458,7 @@ namespace ProgramCPU
     }
 
     template<class Float>
-    void ComputeJtE_(   size_t nproj, size_t ncam, size_t npt, const Float* ee,  Float* jte,
+    void ComputeJtE_(   size_t /*nproj*/, size_t ncam, size_t npt, const Float* ee,  Float* jte,
                         const Float* camera, const Float* point, const Float* ms, const int* jmap,
                         const int* cmap, const int* cmlist, const int* pmap, const Float* jp,
                         bool intrinsic_fixed, int radial_distortion, int mode, int mt)
@@ -2528,9 +2530,18 @@ namespace ProgramCPU
 using namespace ProgramCPU;
 
 template<class Float>
-SparseBundleCPU<Float>:: SparseBundleCPU() : ParallelBA(PBA_INVALID_DEVICE),_num_camera(0), _num_point(0),
-                _num_imgpt(0), _num_imgpt_q(0), _camera_data(NULL), _point_data(NULL), _imgpt_data(NULL),
-                _camera_idx(NULL), _point_idx(NULL),  _projection_sse(0)
+SparseBundleCPU<Float>:: SparseBundleCPU()
+    : ParallelBA(PBA_INVALID_DEVICE)
+    , _num_camera(0)
+    , _num_point(0)
+    , _num_imgpt(0)
+    , _camera_data(NULL)
+    , _point_data(NULL)
+    , _imgpt_data(NULL)
+    , _camera_idx(NULL)
+    , _point_idx(NULL)
+    , _projection_sse(0)
+    , _num_imgpt_q(0)
 {
     __cpu_data_precision = sizeof(Float);
     if(__num_cpu_cores == 0)	__num_cpu_cores = FindProcessorCoreNum();
@@ -2984,7 +2995,7 @@ void SparseBundleCPU<Float>::EvaluateJacobians()
     if(__no_jacobian_store) return;
     if(__bundle_current_mode == BUNDLE_ONLY_MOTION && !__jc_store_original && !__jc_store_transpose) return;
 
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JJ, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JJ);
 
     if(__jc_store_original || !__jc_store_transpose)
     {
@@ -3010,7 +3021,7 @@ void SparseBundleCPU<Float>::EvaluateJacobians()
 template<class Float>
 void SparseBundleCPU<Float>::ComputeJtE(VectorF& E, VectorF& JtE, int mode)
 {
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JTE, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JTE);
     if(mode == 0) mode = __bundle_current_mode;
 
     if(__no_jacobian_store ||  (!__jc_store_original && !__jc_store_transpose))
@@ -3072,7 +3083,7 @@ template<class Float>
 float SparseBundleCPU<Float>::EvaluateProjection(VectorF& cam, VectorF&point, VectorF& proj)
 {
     ++__num_projection_eval;
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_PJ, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_PJ);
     ComputeProjection(_num_imgpt, cam.begin(), point.begin(), _cuMeasurements.begin(),
         &_cuProjectionMap.front(), proj.begin(), __use_radial_distortion, __num_cpu_thread[FUNC_PJ]);
     if(_num_imgpt_q > 0) ComputeProjectionQ(_num_imgpt_q, cam.begin(), &_cuCameraQMap.front(),
@@ -3084,7 +3095,7 @@ template<class Float>
 float SparseBundleCPU<Float>::EvaluateProjectionX(VectorF& cam, VectorF&point, VectorF& proj)
 {
     ++__num_projection_eval;
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_PJ, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_PJ);
     ComputeProjectionX(_num_imgpt, cam.begin(), point.begin(), _cuMeasurements.begin(),
         &_cuProjectionMap.front(), proj.begin(), __use_radial_distortion, __num_cpu_thread[FUNC_PJ]);
     if(_num_imgpt_q > 0) ComputeProjectionQ(_num_imgpt_q, cam.begin(), &_cuCameraQMap.front(),
@@ -3095,7 +3106,7 @@ float SparseBundleCPU<Float>::EvaluateProjectionX(VectorF& cam, VectorF&point, V
 template<class Float>
 void SparseBundleCPU<Float>::ComputeJX(VectorF& X, VectorF& JX, int mode)
 {
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JX, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JX);
     if(__no_jacobian_store || (__multiply_jx_usenoj && mode != 2) || !__jc_store_original)
     {
         ProgramCPU::ComputeJX_(_num_imgpt, _num_camera, X.begin(), JX.begin(), _cuCameraData.begin(), _cuPointData.begin(),
@@ -3118,7 +3129,7 @@ void SparseBundleCPU<Float>::ComputeJX(VectorF& X, VectorF& JX, int mode)
 template<class Float>
 void SparseBundleCPU<Float>::ComputeBlockPC(float lambda, bool dampd)
 {
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_BC, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_BC);
 
     if(__no_jacobian_store ||  (!__jc_store_original && !__jc_store_transpose && __bundle_current_mode != 2))
     {
@@ -3146,7 +3157,7 @@ void SparseBundleCPU<Float>::ComputeBlockPC(float lambda, bool dampd)
 template<class Float>
 void SparseBundleCPU<Float>::ApplyBlockPC(VectorF& v, VectorF& pv, int mode)
 {
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_MP, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_MP);
     MultiplyBlockConditioner(_num_camera, _num_point,
         _cuBlockPC.begin(), v.begin(), pv.begin(),  __use_radial_distortion, mode,
         __num_cpu_thread[FUNC_MPC], __num_cpu_thread[FUNC_MPP]);
@@ -3155,7 +3166,7 @@ void SparseBundleCPU<Float>::ApplyBlockPC(VectorF& v, VectorF& pv, int mode)
 template<class Float>
 void SparseBundleCPU<Float>::ComputeDiagonal(VectorF& JJ)
 {
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_DD, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_DD);
     if(__no_jacobian_store)
     {
 
@@ -3713,7 +3724,7 @@ void SparseBundleCPU<Float>::RunTestIterationLM(bool reduced)
 template<class Float>
 float SparseBundleCPU<Float>::UpdateCameraPoint(VectorF& dx, VectorF& cuImageTempProj)
 {
-    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_UP, true);
+    ConfigBA::TimerBA timer (this, TIMER_FUNCTION_UP);
 
     if(__bundle_current_mode == BUNDLE_ONLY_MOTION)
     {
@@ -3849,7 +3860,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
     EvaluateJacobians();
     ComputeJtE(_cuImageProj, _cuVectorJtE);
     ///////////////////////////////////////////////////////////////
-    if(__verbose_level)
+    if(__verbose_level > 0)
         std::cout    << "Initial " << (__verbose_sse ? "sumed" : "mean" )<<  " squared error = "
                     <<  __initial_mse  * error_display_ratio
                     << "\n----------------------------------------------\n";
@@ -3873,7 +3884,8 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
         //there must be NaN somewhere
         if(num_cg_iteration == 0)
         {
-            if(__verbose_level) std::cout << "#" << std::setw(3) << i <<" quit on numeric errors\n";
+            if(__verbose_level > 0)
+                std::cout << "#" << std::setw(3) << i <<" quit on numeric errors\n";
             __pba_return_code = 'E';
             break;
         }

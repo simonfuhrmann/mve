@@ -210,7 +210,8 @@ void ConfigBA::SaveBundleStatistics(int ncam, int npt, int nproj)
 
         if(__matlab_format_stat) out << "];\n\n";
 
-        if(__verbose_level) std::cout    << "\n---------------------------------------\n" << filenamebuf;
+        if(__verbose_level > 0)
+            std::cout    << "\n---------------------------------------\n" << filenamebuf;
     }
 }
 
@@ -223,7 +224,7 @@ void ConfigBA::PrintBundleStatistics()
 {
     if(__profile_pba) return;
 
-    if(__verbose_level) std::cout
+    if(__verbose_level > 0) std::cout
         << "\n---------------------------------------\n"
         << std::setw(10) <<  __num_lm_success << "\t successful iterations;\n"
         << std::setw(10) << __num_lm_iteration << "\t linear systems solved;\n"
@@ -233,7 +234,7 @@ void ConfigBA::PrintBundleStatistics()
         << std::setw(10) << BundleTimerGet(TIMER_PREPROCESSING) << "\t seconds on pre-processing;\n"
         << std::setw(10) << BundleTimerGet(TIMER_GPU_UPLOAD) << "\t seconds on upload;\n"
         << std::setw(10) << BundleTimerGet(TIMER_OPTIMIZATION) << "\t seconds on optimization;\n";
-    if(__verbose_level && __cpu_data_precision) std::cout
+    if(__verbose_level > 0 && __cpu_data_precision) std::cout
         << REPORT_FUNCTION_TIME(TIMER_FUNCTION_JJ) << "\t seconds on jacobians;\n"
         << REPORT_FUNCTION_TIME(TIMER_FUNCTION_PJ) << "\t seconds on projections;\n"
         << REPORT_FUNCTION_TIME(TIMER_FUNCTION_JX) << "\t seconds on JX;\n"
@@ -241,13 +242,15 @@ void ConfigBA::PrintBundleStatistics()
         << REPORT_FUNCTION_TIME(TIMER_FUNCTION_BC) << "\t seconds to compute preconditioner;\n"
         << REPORT_FUNCTION_TIME(TIMER_FUNCTION_MP) << "\t seconds to apply preconditioner;\n"
         << REPORT_FUNCTION_TIME(TIMER_FUNCTION_UP) << "\t seconds to update parameters;\n";
-    if(__verbose_level) std::cout
+    if(__verbose_level > 0) std::cout
         << "---------------------------------------\n"
         << "mse = " << __initial_mse << " -> " << __final_mse << ""
         << "  (" << __final_mse_x << (__use_radial_distortion == -1 ? 'D' : 'U')<<")\n"
         << "---------------------------------------\n";
 
-
+    if (__verbose_level == -1)
+        std::cout << "PBA: MSE changed from " << __initial_mse
+            << " to " << __final_mse << std::endl;
 }
 
 double ConfigBA::MyClock()

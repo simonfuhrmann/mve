@@ -79,11 +79,6 @@ protected:
             (_config = config)->BundleTimerStart(_timer = timer);
         }
 
-        TimerBA(ConfigBA* config , int timer, bool resume)
-        {
-            (_config = config)->BundleTimerSwitch(_timer = timer);
-        }
-
         ~TimerBA()
         {
             _config->BundleTimerSwitch(_timer);

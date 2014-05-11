@@ -157,6 +157,9 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
 void
 Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
 {
+    if (viewport == NULL)
+        return;
+
     /* Try to get EXIF data. */
     if (this->opts.exif_embedding.empty())
     {
