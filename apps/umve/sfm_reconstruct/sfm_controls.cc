@@ -267,5 +267,5 @@ SfmControls::on_features_compute (void)
         return;
     }
 
-
+    // TODO: Compute features.
 }

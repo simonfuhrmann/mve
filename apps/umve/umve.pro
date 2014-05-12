@@ -3,8 +3,8 @@ MVE_ROOT = ../..
 CONFIG += qt opengl release
 QT += opengl
 
-QMAKE_LFLAGS += -rdynamic
-QMAKE_CXXFLAGS += -fPIC
+QMAKE_LFLAGS += -rdynamic -fopenmp
+QMAKE_CXXFLAGS += -fPIC -fopenmp
 
 # some convenience options for OS X
 macx {
@@ -20,7 +20,7 @@ TARGET = umve
 
 INCLUDEPATH += $${MVE_ROOT}/libs
 DEPENDPATH += $${MVE_ROOT}/libs
-LIBS = $${MVE_ROOT}/libs/dmrecon/libmve_dmrecon.a $${MVE_ROOT}/libs/mve/libmve.a $${MVE_ROOT}/libs/ogl/libmve_ogl.a $${MVE_ROOT}/libs/util/libmve_util.a -lpng -ljpeg -ltiff -lGLEW
+LIBS = $${MVE_ROOT}/libs/sfm/libmve_sfm.a $${MVE_ROOT}/libs/dmrecon/libmve_dmrecon.a $${MVE_ROOT}/libs/mve/libmve.a $${MVE_ROOT}/libs/ogl/libmve_ogl.a $${MVE_ROOT}/libs/util/libmve_util.a -lpng -ljpeg -ltiff -lGLEW
 QMAKE_LIBDIR_QT =
 
 OBJECTS_DIR = build
