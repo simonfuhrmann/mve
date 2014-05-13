@@ -67,7 +67,11 @@ main (int argc, char** argv)
     /* Set OpenGL version that Qt should use when creating a context.*/
     QGLFormat fmt;
     fmt.setVersion(3, 3);
+#if defined(_WIN32)
+    fmt.setProfile(QGLFormat::CompatibilityProfile);
+#else
     fmt.setProfile(QGLFormat::CoreProfile);
+#endif
     QGLFormat::setDefaultFormat(fmt);
 
     /* Create application. */
