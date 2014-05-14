@@ -15,7 +15,6 @@
 
 #include "mve/view.h"
 #include "mve/depthmap.h"
-#include "mve/bilateral.h"
 #include "mve/mesh_io_ply.h"
 #include "util/exception.h"
 
@@ -72,21 +71,6 @@ ImageOperationsWidget::ImageOperationsWidget (void)
     mvs_layout->addRow(mvs_cb_layout);
     mvs_layout->addRow(mvs_but_layout);
 
-    /* Bilateral filter layout. */
-    this->bf_gc_sigma.setRange(0.01, 10.0);
-    this->bf_gc_sigma.setValue(2.0f);
-    this->bf_pc_factor.setRange(0.5, 20.0);
-    this->bf_pc_factor.setValue(5.0f);
-
-    QPushButton* filter_but = new QPushButton("Bilateral Filter");
-    QFormLayout* bf_layout = new QFormLayout();
-    bf_layout->setVerticalSpacing(1);
-    bf_layout->addRow(tr("Source"), &this->bf_src_image);
-    bf_layout->addRow(tr("Dest"), &this->bf_dst_image);
-    bf_layout->addRow(tr("GC sigma"), &this->bf_gc_sigma);
-    bf_layout->addRow(tr("PC factor"), &this->bf_pc_factor);
-    bf_layout->addRow(filter_but);
-
     /* Depthmap cleanup layout. */
     this->dmclean_island_size.setRange(1, 10000);
     this->dmclean_island_size.setValue(200);
@@ -96,30 +80,24 @@ ImageOperationsWidget::ImageOperationsWidget (void)
     dmclean_layout->setVerticalSpacing(1);
     dmclean_layout->addRow(tr("Source"), &this->dmclean_src_image);
     dmclean_layout->addRow(tr("Dest"), &this->dmclean_dst_image);
-    dmclean_layout->addRow(tr("Island size"), &this->dmclean_island_size);
+    dmclean_layout->addRow(tr("Pixels"), &this->dmclean_island_size);
     dmclean_layout->addRow(dmclean_but);
 
     QCollapsible* mvs_header = new QCollapsible
         ("DM Reconstruct", get_wrapper(mvs_layout));
-    QCollapsible* bilateral_header = new QCollapsible
-        ("Bilateral filter", get_wrapper(bf_layout));
     QCollapsible* dmclean_header = new QCollapsible
         ("DM cleanup", get_wrapper(dmclean_layout));
-    bilateral_header->set_collapsed(true);
-    dmclean_header->set_collapsed(true);
 
     /* Main Layout. */
     QVBoxLayout* main_layout = new QVBoxLayout(this);
     main_layout->setSpacing(5);
     main_layout->addWidget(this->selected_view);
     main_layout->addWidget(mvs_header);
-    main_layout->addWidget(bilateral_header);
     main_layout->addWidget(dmclean_header);
     main_layout->addStretch(1);
 
     /* Connecting signals. */
     this->connect(dmrecon_but, SIGNAL(clicked()), this, SLOT(exec_dmrecon()));
-    this->connect(filter_but, SIGNAL(clicked()), this, SLOT(exec_bilateral()));
     this->connect(dmclean_but, SIGNAL(clicked()), this, SLOT(exec_dmclean()));
     this->connect(dmrecon_batch_but, SIGNAL(clicked()),
         this, SLOT(exec_dmrecon_batch()));
@@ -136,48 +114,6 @@ ImageOperationsWidget::on_view_selected (mve::View::Ptr view)
     this->selected_view->set_view(view);
     this->selected_view->fill_embeddings(this->mvs_color_image, mve::IMAGE_TYPE_UINT8, "undistorted");
     this->selected_view->fill_embeddings(this->dmclean_src_image, mve::IMAGE_TYPE_FLOAT);
-    this->selected_view->fill_embeddings(this->bf_src_image, mve::IMAGE_TYPE_FLOAT);
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-ImageOperationsWidget::exec_bilateral (void)
-{
-    mve::View::Ptr view = SceneManager::get().get_view();
-    if (view == NULL)
-    {
-        std::cout << "No view set!" << std::endl;
-        return;
-    }
-
-    std::string src_img = this->bf_src_image.currentText().toStdString();
-    std::string dst_img = this->bf_dst_image.text().toStdString();
-    float gc_sigma = this->bf_gc_sigma.value();
-    float pc_factor = this->bf_pc_factor.value();
-
-    if (src_img.empty() || dst_img.empty())
-    {
-        std::cout << "Source/dest image name not given" << std::endl;
-        return;
-    }
-
-    mve::FloatImage::Ptr img = view->get_float_image(src_img);
-    if (img == NULL)
-    {
-        std::cout << "Cannot request image: " << src_img << std::endl;
-        return;
-    }
-
-    mve::CameraInfo const& cam = view->get_camera();
-    math::Matrix3f invproj;
-    cam.fill_inverse_calibration(*invproj, img->width(), img->height());
-    mve::FloatImage::Ptr ret = mve::image::depthmap_bilateral_filter
-        (img, invproj, gc_sigma, pc_factor);
-
-    view->set_image(dst_img, ret);
-    emit this->signal_select_embedding(QString(dst_img.c_str()));
-    emit this->signal_reload_embeddings();
 }
 
 /* ---------------------------------------------------------------- */

@@ -71,9 +71,6 @@ typedef Vector<std::size_t,6> Vec6st;
 template <typename T, int N>
 class Vector
 {
-protected:
-    T v[N];
-
 public:
 
     /* ------------------------ Constructors ---------------------- */
@@ -252,6 +249,9 @@ public:
     Vector<T,N>& operator/= (T const& rhs);
     /** Component-wise division by scalar. */
     Vector<T,N> operator/ (T const& rhs) const;
+
+protected:
+    T v[N];
 };
 
 MATH_NAMESPACE_END

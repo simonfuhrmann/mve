@@ -22,12 +22,6 @@ class ImageOperationsWidget : public QWidget
 private:
     SelectedView* selected_view;
 
-    /* Bilateral filter settings. */
-    QDoubleSpinBox bf_gc_sigma;
-    QDoubleSpinBox bf_pc_factor;
-    QComboBox bf_src_image;
-    QLineEdit bf_dst_image;
-
     /* Depthmap cleanup settings. */
     QComboBox dmclean_src_image;
     QLineEdit dmclean_dst_image;
@@ -52,7 +46,6 @@ signals:
     void signal_select_embedding (QString const& name);
 
 private slots:
-    void exec_bilateral (void);
     void exec_dmrecon (void);
     void exec_dmclean (void);
     void exec_dmrecon_batch (void);

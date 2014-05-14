@@ -38,20 +38,6 @@ public:
     typedef std::pair<VertexBuffer::Ptr, std::string> BoundVBO;
     typedef std::vector<BoundVBO> VBOList;
 
-private:
-    GLuint vao_id;
-    GLuint primitive;
-    ShaderProgram::Ptr shader;
-
-    /* Vertex VBO, Index VBO and generic VBOs. */
-    VertexBuffer::Ptr vert_vbo;
-    VertexBuffer::Ptr index_vbo;
-    VBOList vbo_list;
-
-protected:
-    VertexArray (void);
-    void assign_attrib (BoundVBO const& bound_vbo);
-
 public:
     virtual ~VertexArray (void);
     static Ptr create (void);
@@ -79,6 +65,20 @@ public:
 
     /** Binds the shader and issues drawing commands. */
     void draw (void);
+
+protected:
+    VertexArray (void);
+    void assign_attrib (BoundVBO const& bound_vbo);
+
+private:
+    GLuint vao_id;
+    GLuint primitive;
+    ShaderProgram::Ptr shader;
+
+    /* Vertex VBO, Index VBO and generic VBOs. */
+    VertexBuffer::Ptr vert_vbo;
+    VertexBuffer::Ptr index_vbo;
+    VBOList vbo_list;
 };
 
 /* ---------------------------------------------------------------- */

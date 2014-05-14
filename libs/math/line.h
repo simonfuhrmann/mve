@@ -23,18 +23,15 @@ template <class T>
 class Line3
 {
 public:
-    typedef math::Vector<T, 3> Vec3T;
-
-public:
-    Vec3T d;
-    Vec3T p;
-
-public:
     /** Creates an uninitialized plane. */
     Line3 (void);
 
     /** Creates a plane with normal n and distance d from the origin. */
-    Line3 (Vec3T const& d, Vec3T const& p);
+    Line3 (math::Vector<T, 3> const& d, math::Vector<T, 3> const& p);
+
+public:
+    math::Vector<T, 3> d;
+    math::Vector<T, 3> p;
 };
 
 /* ---------------------------------------------------------------- */
@@ -47,7 +44,7 @@ Line3<T>::Line3 (void)
 
 template <class T>
 inline
-Line3<T>::Line3 (Vec3T const& d, Vec3T const& p)
+Line3<T>::Line3 (math::Vector<T, 3> const& d, math::Vector<T, 3> const& p)
     : d(d), p(p)
 {
 }

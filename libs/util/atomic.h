@@ -34,9 +34,6 @@ UTIL_NAMESPACE_BEGIN
 template <typename T>
 class Atomic
 {
-private:
-    volatile T val;
-
 public:
     /** Creates an atomic variable with initial value 'init'. */
     Atomic (T const& init);
@@ -62,6 +59,9 @@ public:
 
     /** Returns the value. */
     volatile T const& operator* (void) const;
+
+private:
+    volatile T val;
 };
 
 /* ---------------------------------------------------------------- */
@@ -74,13 +74,13 @@ public:
 template <typename T>
 class AtomicMutex
 {
-private:
-    Atomic<T>* lock;
-
 public:
     AtomicMutex (Atomic<T>& atomic);
     ~AtomicMutex (void);
     void release (void);
+
+private:
+    Atomic<T>* lock;
 };
 
 /* ---------------------------------------------------------------- */

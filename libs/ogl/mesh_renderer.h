@@ -26,15 +26,14 @@ public:
     typedef util::RefPtr<MeshRenderer> Ptr;
     typedef util::RefPtr<MeshRenderer const> ConstPtr;
 
-private:
-    MeshRenderer (void);
-    MeshRenderer (mve::TriangleMesh::ConstPtr mesh);
-
 public:
     static Ptr create (void);
     static Ptr create (mve::TriangleMesh::ConstPtr mesh);
-
     void set_mesh (mve::TriangleMesh::ConstPtr mesh);
+
+private:
+    MeshRenderer (void);
+    MeshRenderer (mve::TriangleMesh::ConstPtr mesh);
 };
 
 /* ---------------------------------------------------------------- */

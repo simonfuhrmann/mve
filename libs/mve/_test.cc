@@ -15,7 +15,6 @@
 #include "mve/view.h"
 #include "mve/scene.h"
 #include "mve/mesh_io_ply.h"
-#include "mve/bilateral.h"
 #include "mve/mesh.h"
 #include "mve/mesh_info.h"
 #include "mve/mesh_io_off.h"
@@ -213,32 +212,6 @@ int main (int argc, char** argv)
         std::cout << vi.faces[v] << " ";
     std::cout << std::endl;
     */
-
-#endif
-
-
-#if 0
-
-    mve::View::Ptr view = mve::View::create("/gris/scratch/home/pmuecke/q3scene2mve/views/view_0000.mve");
-    //mve::View::Ptr view = mve::View::create("/data/dev/phd/mvs_datasets/mve_brownhous/views/view_0000.mve");
-
-    mve::FloatImage::Ptr img = view->get_float_image("depthmap");
-
-    std::cout << "Running bilateral filter..." << std::endl;
-    mve::FloatImage::Ptr out = mve::image::bilateral_depthmap(img,
-        view->get_camera().flen, 4.0f, 10.0f);
-
-    mve::geom::save_ply_file("/tmp/testing/bilateral_in.ply",
-        view->get_camera(),
-        img,
-        view->get_float_image("confidence"),
-        view->get_byte_image("undistorted"));
-
-    mve::geom::save_ply_file("/tmp/testing/bilateral_out.ply",
-        view->get_camera(),
-        out,
-        view->get_float_image("confidence"),
-        view->get_byte_image("undistorted"));
 
 #endif
 

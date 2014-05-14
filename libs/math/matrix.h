@@ -111,7 +111,7 @@ public:
 
     /** Component-wise negation on self, returns self. */
     Matrix<T,N,M>& negate (void);
-     /** Returns a component-wise negation on copy of self. */
+    /** Returns a component-wise negation on copy of self. */
     Matrix<T,N,M> negated (void) const;
 
     /** Transpose the current matrix. Only available for square matrices. */

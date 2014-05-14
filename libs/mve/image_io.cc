@@ -348,7 +348,7 @@ load_jpg_file (std::string const& filename, std::string* exif)
         if (exif)
         {
             /* Request APP1 marker to be saved (this is the EXIF data). */
-            jpeg_save_markers(&cinfo, JPEG_APP0+1, 0xffff);
+            jpeg_save_markers(&cinfo, JPEG_APP0 + 1, 0xffff);
         }
 
         /* Read JPEG header. */
@@ -360,8 +360,9 @@ load_jpg_file (std::string const& filename, std::string* exif)
         if (exif)
         {
             jpeg_saved_marker_ptr marker = cinfo.marker_list;
-            //while (marker != 0) { ...; marker = marker->next; }
-            if (marker)
+            if (marker != NULL && marker->marker == JPEG_APP0 + 1
+                && marker->data_length > 6
+                && std::equal(marker->data, marker->data + 6, "Exif\0\0"))
             {
                 char const* data = reinterpret_cast<char const*>(marker->data);
                 exif->append(data, data + marker->data_length);

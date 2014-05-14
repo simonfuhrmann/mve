@@ -20,10 +20,7 @@ UTIL_NAMESPACE_BEGIN
  */
 class MutexLock
 {
-  private:
-    Mutex* m;
-
-  public:
+public:
     MutexLock (Mutex& mutex)
     { this->m = &mutex; this->m->lock(); }
 
@@ -32,48 +29,9 @@ class MutexLock
 
     void unlock (void)
     { this->m->unlock(); this->m = NULL; }
-};
 
-/* ---------------------------------------------------------------- */
-
-/**
- * Exception safe read lock for the reader/writer lock.
- */
-class ReadLock
-{
-  private:
-    ReadWriteLock* rwl;
-
-  public:
-    ReadLock (ReadWriteLock& rwlock)
-    { this->rwl = &rwlock; this->rwl->read_lock(); }
-
-    ~ReadLock (void)
-    { if (this->rwl) this->rwl->unlock(); }
-
-    void unlock (void)
-    { this->rwl->unlock(); this->rwl = NULL; }
-};
-
-/* ---------------------------------------------------------------- */
-
-/**
- * Exception safe write lock for the reader/writer lock.
- */
-class WriteLock
-{
-  private:
-    ReadWriteLock* rwl;
-
-  public:
-    WriteLock (ReadWriteLock& rwlock)
-    { this->rwl = &rwlock; this->rwl->write_lock(); }
-
-    ~WriteLock (void)
-    { if (this->rwl) this->rwl->unlock(); }
-
-    void unlock (void)
-    { this->rwl->unlock(); this->rwl = NULL; }
+private:
+    Mutex* m;
 };
 
 UTIL_NAMESPACE_END
