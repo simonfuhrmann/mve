@@ -19,10 +19,6 @@ MATH_NAMESPACE_BEGIN
 template <class T>
 class BezierCurve
 {
-private:
-    typedef std::vector<T> ControlPointVector;
-    ControlPointVector cp; // The control points
-
 public:
     BezierCurve (void);
     virtual ~BezierCurve (void);
@@ -46,6 +42,10 @@ public:
 
     /** Evaluates the Bezier curve at position t in [0, 1]. */
     T evaluate (float t) const;
+
+private:
+    typedef std::vector<T> ControlPointVector;
+    ControlPointVector cp; // The control points
 };
 
 /* ------------------------------------------------------------ */

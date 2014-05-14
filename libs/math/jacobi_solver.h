@@ -47,18 +47,6 @@ struct JacobiSolverParams
 template <typename T, int N>
 class JacobiSolver
 {
-private:
-    Vector<T,N> diagonal; // TODO: switch to invers of diagonal?
-    Matrix<T,N,N> nonDiagMatrix;
-
-    JacobiSolverParams<T> params;
-    JacobiSolverParams<T> resultInfo;
-
-    /**
-     * Common initialisation (e.g of parameters) shared between constructors.
-     */
-    void init(void);
-
 public:
     /* ------------------------ Constructors ---------------------- */
 
@@ -97,6 +85,18 @@ public:
      * If you omit the initialisation vector, it is set to all zeros.
      */
     Vector<T,N> solve (Vector<T,N> const&, Vector<T,N> const&);
+
+private:
+    Vector<T,N> diagonal; // TODO: switch to invers of diagonal?
+    Matrix<T,N,N> nonDiagMatrix;
+
+    JacobiSolverParams<T> params;
+    JacobiSolverParams<T> resultInfo;
+
+    /**
+     * Common initialisation (e.g of parameters) shared between constructors.
+     */
+    void init(void);
 };
 
 MATH_NAMESPACE_END

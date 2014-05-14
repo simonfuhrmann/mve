@@ -27,10 +27,6 @@ public:
     typedef Vector<T, 3> Vec3T;
 
 public:
-    Vec3T n;
-    T d;
-
-public:
     /** Creates an uninitialized plane. */
     Plane3 (void);
 
@@ -48,6 +44,10 @@ public:
 
     /** Flips the orientation of the plane. */
     Plane3<T> invert (void) const;
+
+public:
+    Vec3T n;
+    T d;
 };
 
 /* ---------------------------------------------------------------- */
