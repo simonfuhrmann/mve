@@ -66,7 +66,6 @@ public:
     typedef util::RefPtr<VertexInfoList> Ptr;
     typedef util::RefPtr<VertexInfoList const> ConstPtr;
 
-
 public:
     /* Creates an uninitialized vertex info list. */
     VertexInfoList (void);
@@ -96,10 +95,6 @@ public:
     /** Fills the given vector with all faces containing the edge. */
     void get_faces_for_edge (std::size_t v1, std::size_t v2,
         std::vector<std::size_t>* afaces) const;
-
-    /* TODO: More helper functions
-     * - get_mem_usage
-     */
 };
 
 /* ------------------------- Implementation ----------------------- */

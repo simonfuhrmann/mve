@@ -29,12 +29,6 @@ public:
     typedef util::RefPtr<Volume<T> const> ConstPtr;
     typedef std::vector<T> Voxels;
 
-private:
-    int w;
-    int h;
-    int d;
-    Voxels data;
-
 public:
     Volume (void);
     static Ptr create (int width, int height, int depth);
@@ -53,6 +47,12 @@ public:
     int height (void) const;
     /** Returns depth of the image. */
     int depth (void) const;
+
+private:
+    int w;
+    int h;
+    int d;
+    Voxels data;
 };
 
 /* ---------------------------------------------------------------- */

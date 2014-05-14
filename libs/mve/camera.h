@@ -19,25 +19,6 @@ MVE_NAMESPACE_BEGIN
 struct CameraInfo
 {
 public:
-    /* Intrinsic camera parameters. */
-
-    /** Focal length. */
-    float flen;
-    /** Principal point in x- and y-direction. */
-    float ppoint[2];
-    /** Pixel aspect ratio pixel_width / pixel_height. */
-    float paspect;
-    /** Image distortion parameters. */
-    float dist[2];
-
-    /* Extrinsic camera parameters. */
-
-    /** Camera translation vector. Camera position p = -ROT^T * trans. */
-    float trans[3];
-    /** Camera rotation which transforms from world to cam. */
-    float rot[9];
-
-public:
     /**
      * Default ctor that invalidates the camera.
      * An invalid camera always has focal length 'flen' set to 0.0f.
@@ -141,6 +122,25 @@ public:
      * Prints debug information to stdout.
      */
     void debug_print (void) const;
+
+public:
+    /* Intrinsic camera parameters. */
+
+    /** Focal length. */
+    float flen;
+    /** Principal point in x- and y-direction. */
+    float ppoint[2];
+    /** Pixel aspect ratio pixel_width / pixel_height. */
+    float paspect;
+    /** Image distortion parameters. */
+    float dist[2];
+
+    /* Extrinsic camera parameters. */
+
+    /** Camera translation vector. Camera position p = -ROT^T * trans. */
+    float trans[3];
+    /** Camera rotation which transforms from world to cam. */
+    float rot[9];
 };
 
 MVE_NAMESPACE_END
