@@ -33,27 +33,7 @@ UTIL_NAMESPACE_BEGIN
  */
 class Thread
 {
-  private:
-#ifdef _WIN32
-    HANDLE handle;
-    HANDLE cancel_event;
-#elif defined(_POSIX_THREADS)
-    pthread_t handle;
-#endif
-    bool cleanup;
-
-    static void* stub (void* arg);
-
-  protected:
-    /**
-     * This method needs to be defined in the subclass.
-     * It is called when the thread is created using pt_create().
-     * If transfered to public scope, run() may be called directly
-     * for sequential execution (no threading involved then).
-     */
-    virtual void* run (void) = 0;
-
-  public:
+public:
     Thread (void);
     virtual ~Thread (void);
 
@@ -65,6 +45,26 @@ class Thread
 
     /** Blocks the caller until the thread is terminated. */
     void pt_join (void);
+
+protected:
+    /**
+     * This method needs to be defined in the subclass.
+     * It is called when the thread is created using pt_create().
+     * If transfered to public scope, run() may be called directly
+     * for sequential execution (no threading involved then).
+     */
+    virtual void* run (void) = 0;
+
+private:
+#ifdef _WIN32
+    HANDLE handle;
+    HANDLE cancel_event;
+#elif defined(_POSIX_THREADS)
+    pthread_t handle;
+#endif
+    bool cleanup;
+
+    static void* stub (void* arg);
 };
 
 /* ---------------------------------------------------------------- */
@@ -74,35 +74,7 @@ class Thread
  */
 class Mutex
 {
-  private:
-#ifdef _WIN32
-    /* On Windows there are two ways for mutual exclusion:
-     * - Critical sections
-     * - Mutexes
-     * Critical sections only work for mutual exclusion for threads which are
-     * in the same process.
-     * Mutexes also work across different processes.
-     * Pthreads mutexes can work for both single and multiple processes but
-     * defaults to single process. (see pthread_mutexattr_{get,set}pshared())
-     * According to MSDN, critical section objects are slightly faster and
-     * more efficient than mutex objects. I'm assuming that using mutexes
-     * across processes is rare and thus prefer the slightly more efficient
-     * critical section over the mutex object.
-     * (see http://msdn.microsoft.com/en-us/library/ms682530%28v=vs.85%29.aspx)
-     */
-    CRITICAL_SECTION mutex;
-#elif defined(_POSIX_THREADS)
-    pthread_mutex_t mutex;
-#endif
-
-  private:
-    /** Don't allow copying of the mutex. */
-    Mutex (Mutex const& rhs);
-
-    /** Don't allow copying of the mutex. */
-    Mutex& operator= (Mutex const& rhs);
-
-  public:
+public:
     Mutex (void);
     ~Mutex (void);
 
@@ -122,6 +94,33 @@ class Mutex
      * Release ownership of the mutex, which unlocks the mutex.
      */
     int unlock (void);
+
+private:
+    /** Don't allow copying of the mutex. */
+    Mutex (Mutex const& rhs);
+
+    /** Don't allow copying of the mutex. */
+    Mutex& operator= (Mutex const& rhs);
+
+private:
+#ifdef _WIN32
+    /* On Windows there are two ways for mutual exclusion: Critical sections
+     * and Mutexes. Critical sections only work for mutual exclusion for
+     * threads which are in the same process. Mutexes also work across
+     * different processes.
+     *
+     * Pthreads mutexes can work for both single and multiple processes but
+     * defaults to single process. (see pthread_mutexattr_{get,set}pshared())
+     * According to MSDN, critical section objects are slightly faster and
+     * more efficient than mutex objects. I'm assuming that using mutexes
+     * across processes is rare and thus prefer the slightly more efficient
+     * critical section over the mutex object.
+     * (see http://msdn.microsoft.com/en-us/library/ms682530%28v=vs.85%29.aspx)
+     */
+    CRITICAL_SECTION mutex;
+#elif defined(_POSIX_THREADS)
+    pthread_mutex_t mutex;
+#endif
 };
 
 /* --------------------- Thread implementation -------------------- */

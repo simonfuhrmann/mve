@@ -70,31 +70,6 @@ struct ArgResult
  */
 class Arguments
 {
-private:
-    /* Settings. */
-    std::size_t nonopt_min;
-    std::size_t nonopt_max;
-    bool auto_exit;
-    std::vector<ArgOption> options;
-    std::string usage_str;
-    std::string descr_str;
-    int helptext_indent;
-    int descrtext_width;
-
-    /* Parse result. */
-    std::vector<ArgResult> results;
-    std::string command_name;
-
-    /* Iterator. */
-    std::size_t cur_result;
-
-private:
-    void parse_intern (std::vector<std::string> const& args);
-    void parse_long_opt (std::string const& tok);
-    bool parse_short_opt (std::string const& tok1, std::string const& tok2);
-    ArgOption const* find_opt (char sopt);
-    ArgOption const* find_opt (std::string const& lopt);
-
 public:
     Arguments (void);
 
@@ -175,6 +150,31 @@ public:
 
     /** Generates a help text that lists all arguments. */
     void generate_helptext (std::ostream& stream) const;
+
+private:
+    void parse_intern (std::vector<std::string> const& args);
+    void parse_long_opt (std::string const& tok);
+    bool parse_short_opt (std::string const& tok1, std::string const& tok2);
+    ArgOption const* find_opt (char sopt);
+    ArgOption const* find_opt (std::string const& lopt);
+
+private:
+    /* Settings. */
+    std::size_t nonopt_min;
+    std::size_t nonopt_max;
+    bool auto_exit;
+    std::vector<ArgOption> options;
+    std::string usage_str;
+    std::string descr_str;
+    int helptext_indent;
+    int descrtext_width;
+
+    /* Parse result. */
+    std::vector<ArgResult> results;
+    std::string command_name;
+
+    /* Iterator. */
+    std::size_t cur_result;
 };
 
 /* ---------------------------------------------------------------- */

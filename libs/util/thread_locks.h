@@ -20,10 +20,7 @@ UTIL_NAMESPACE_BEGIN
  */
 class MutexLock
 {
-  private:
-    Mutex* m;
-
-  public:
+public:
     MutexLock (Mutex& mutex)
     { this->m = &mutex; this->m->lock(); }
 
@@ -32,6 +29,9 @@ class MutexLock
 
     void unlock (void)
     { this->m->unlock(); this->m = NULL; }
+
+private:
+    Mutex* m;
 };
 
 UTIL_NAMESPACE_END
