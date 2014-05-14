@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <cctype>
 #include <cerrno> // errno
 #include <cstring> // std::strerror
 #include <cstdio> // std::rename
@@ -37,6 +38,7 @@ UTIL_FS_NAMESPACE_BEGIN
 
 // PATH_MAX might be long?
 char home_path[PATH_MAX] = { 0 };
+char app_data_path[PATH_MAX] = { 0 };
 
 bool
 exists (char const* pathname)
@@ -152,6 +154,32 @@ unlink (char const* pathname)
 #else // _WIN32
     return ::unlink(pathname) >= 0;
 #endif // _WIN32
+}
+
+/* ---------------------------------------------------------------- */
+
+char const*
+get_app_data_dir (void)
+{
+    if (*app_data_path != 0)
+        return app_data_path;
+
+    // TODO: Use environment variables?
+
+#ifdef _WIN32
+    // SHGetFolderPathA seems to expect non-wide chars
+    // http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
+    // FIXME: Max length of home path?
+    if (!SUCCEEDED(::SHGetFolderPathA(0, CSIDL_APPDATA, 0, 0, app_data_path)))
+        throw util::Exception("Cannot determine home directory");
+#else // _WIN32
+    std::string p = join_path(get_home_dir(), ".local/share");
+    if (p.size() >= PATH_MAX)
+        throw util::Exception("Cannot determine home directory");
+    std::strncpy(app_data_path, p.c_str(), PATH_MAX);
+#endif // _WIN32
+
+  return app_data_path;
 }
 
 /* ---------------------------------------------------------------- */

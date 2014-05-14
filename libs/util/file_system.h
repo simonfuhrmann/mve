@@ -27,6 +27,9 @@ bool dir_exists (char const* pathname);
 /** Determines if the given path is a file. */
 bool file_exists (char const* pathname);
 
+/** Determines the current user's path for application data. */
+char const* get_app_data_dir (void);
+
 /** Determines the home path for the current user. */
 char const* get_home_dir (void);
 
