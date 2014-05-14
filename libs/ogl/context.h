@@ -30,18 +30,6 @@ OGL_NAMESPACE_BEGIN
  */
 class Context
 {
-protected:
-    int width;
-    int height;
-
-protected:
-    /** Overwrite to define actions on init. */
-    virtual void init_impl (void) = 0;
-    /** Overwrite to define actions on resize. */
-    virtual void resize_impl (int old_width, int old_height) = 0;
-    /** Overwrite to define actions on paint. */
-    virtual void paint_impl (void) = 0;
-
 public:
     virtual ~Context (void);
 
@@ -68,6 +56,18 @@ public:
     int get_width (void) const;
     /** Returns the height of the viewport. */
     int get_height (void) const;
+
+protected:
+    /** Overwrite to define actions on init. */
+    virtual void init_impl (void) = 0;
+    /** Overwrite to define actions on resize. */
+    virtual void resize_impl (int old_width, int old_height) = 0;
+    /** Overwrite to define actions on paint. */
+    virtual void paint_impl (void) = 0;
+
+protected:
+    int width;
+    int height;
 };
 
 /* ---------------------------------------------------------------- */

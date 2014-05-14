@@ -19,6 +19,25 @@ OGL_NAMESPACE_BEGIN
  */
 class CamTrackball
 {
+public:
+    CamTrackball (void);
+
+    void set_camera (Camera* camera);
+    bool consume_event (MouseEvent const& event);
+    bool consume_event (KeyboardEvent const& event);
+
+    void set_camera_params (math::Vec3f const& center,
+        math::Vec3f const& lookat, math::Vec3f const& upvec);
+
+    math::Vec3f get_campos (void) const;
+    math::Vec3f get_viewdir (void) const;
+    math::Vec3f const& get_upvec (void) const;
+
+private:
+    math::Vec3f get_center (int x, int y);
+    void handle_tb_rotation (int x, int y);
+    math::Vec3f get_ball_normal (int x, int y);
+
 private:
     /* Camera information. */
     Camera* cam;
@@ -37,25 +56,6 @@ private:
 
     float zoom_tb_radius;
     int zoom_mouse_y;
-
-private:
-    math::Vec3f get_center (int x, int y);
-    void handle_tb_rotation (int x, int y);
-    math::Vec3f get_ball_normal (int x, int y);
-
-public:
-    CamTrackball (void);
-
-    void set_camera (Camera* camera);
-    bool consume_event (MouseEvent const& event);
-    bool consume_event (KeyboardEvent const& event);
-
-    void set_camera_params (math::Vec3f const& center,
-        math::Vec3f const& lookat, math::Vec3f const& upvec);
-
-    math::Vec3f get_campos (void) const;
-    math::Vec3f get_viewdir (void) const;
-    math::Vec3f const& get_upvec (void) const;
 };
 
 /* ---------------------------------------------------------------- */

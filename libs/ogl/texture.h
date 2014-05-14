@@ -22,9 +22,6 @@ public:
     typedef util::RefPtr<Texture> Ptr;
     typedef util::RefPtr<Texture const> ConstPtr;
 
-private:
-    GLuint tex_id;
-
 public:
     /** Creates a new texture object without image data. */
     Texture (void);
@@ -42,6 +39,9 @@ public:
 
     /** Uploads the given image to OpenGL. */
     void upload (mve::ByteImage::ConstPtr image);
+
+private:
+    GLuint tex_id;
 };
 
 /* ---------------------------------------------------------------- */

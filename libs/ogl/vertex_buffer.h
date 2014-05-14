@@ -28,19 +28,6 @@ public:
     typedef util::RefPtr<VertexBuffer> Ptr;
     typedef util::RefPtr<VertexBuffer const> ConstPtr;
 
-private:
-    GLuint vbo_id;
-    GLenum vbo_target;
-    GLenum datatype;
-    GLenum usage;
-    GLsizeiptr bytes;
-    GLint vpv;
-    GLsizei elems;
-    GLsizei stride;
-    
-private:
-    VertexBuffer (void);
-
 public:
     ~VertexBuffer (void);
     static Ptr create (void);
@@ -81,6 +68,19 @@ public:
 
     /** Binds the VBO. */
     void bind (void);
+
+private:
+    VertexBuffer (void);
+
+private:
+    GLuint vbo_id;
+    GLenum vbo_target;
+    GLenum datatype;
+    GLenum usage;
+    GLsizeiptr bytes;
+    GLint vpv;
+    GLsizei elems;
+    GLsizei stride;
 };
 
 /* ---------------------------------------------------------------- */
