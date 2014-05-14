@@ -64,6 +64,10 @@ private:
     QLineEdit* features_feature_embedding;
     QSpinBox* features_max_pixels;
 
+    /* SfM Matching UI elements. */
+    QLineEdit* matching_feature_embedding;
+    QLineEdit* matching_output_file;
+
     /* UI elements. */
     QTabWidget* tab_widget;
     QColor clear_color;

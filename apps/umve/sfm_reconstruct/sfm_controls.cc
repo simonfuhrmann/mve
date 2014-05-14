@@ -1,9 +1,25 @@
+#include <sstream>
 #include <iostream>
 #include <limits>
 
+#include <QBoxLayout>
+#include <QFuture>
+#include <QCoreApplication>
+#include <QProgressDialog>
 #include <QColorDialog>
 #include <QFormLayout>
+#if QT_VERSION >= 0x050000
+#include <QtConcurrent/QtConcurrentRun>
+#else
+#include <QtConcurrentRun>
+#endif
 
+#include "mve/image.h"
+#include "mve/image_tools.h"
+#include "sfm/sift.h"
+#include "sfm/bundler_common.h"
+
+#include "jobqueue.h"
 #include "scenemanager.h"
 #include "guihelpers.h"
 #include "sfm_reconstruct/sfm_controls.h"
@@ -73,7 +89,6 @@ SfmControls::create_sfm_layout (void)
     /* Features. */
     this->features_image_embedding = new QLineEdit("original");
     this->features_feature_embedding = new QLineEdit("original-sift");
-    this->features_exif_embedding = new QLineEdit("exif");
     this->features_max_pixels = new QSpinBox();
     this->features_max_pixels->setRange(0, std::numeric_limits<int>::max());
     this->features_max_pixels->setValue(5000000);
@@ -82,18 +97,38 @@ SfmControls::create_sfm_layout (void)
     QFormLayout* features_form = new QFormLayout();
     features_form->setVerticalSpacing(0);
     features_form->addRow(tr("Image:"), this->features_image_embedding);
-    features_form->addRow(tr("EXIF:"), this->features_exif_embedding);
     features_form->addRow(tr("Features:"), this->features_feature_embedding);
     features_form->addRow(tr("Max Pixels:"), this->features_max_pixels);
     features_form->addRow(features_compute);
 
+    /* Matching. */
+    this->matching_feature_embedding = new QLineEdit("original-sift");
+    QPushButton* matching_recompute = new QPushButton("Match");
+    this->matching_output_file = new QLineEdit("matching.bin");
+    QPushButton* matching_load = new QPushButton("Load");
+    QPushButton* matching_save = new QPushButton("Save");
+    QHBoxLayout* matching_buttons = new QHBoxLayout();
+    matching_buttons->setSpacing(1);
+    matching_buttons->addWidget(matching_load, 1);
+    matching_buttons->addWidget(matching_save,1 );
+
+    QFormLayout* matching_form = new QFormLayout();
+    matching_form->setVerticalSpacing(0);
+    matching_form->addRow(tr("Features:"), this->matching_feature_embedding);
+    matching_form->addRow(matching_recompute);
+    matching_form->addRow(tr("File:"), this->matching_output_file);
+    matching_form->addRow(matching_buttons);
+
     /* Pack together. */
     QCollapsible* features_header = new QCollapsible("Features",
         get_wrapper(features_form));
+    QCollapsible* matching_header = new QCollapsible("Matching",
+        get_wrapper(matching_form));
 
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setSpacing(5);
     layout->addWidget(features_header, 0);
+    layout->addWidget(matching_header, 0);
     layout->addStretch(1);
 
     /* Signals. */
@@ -227,7 +262,7 @@ SfmControls::paint_impl (void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // TODO: Make configurable through GUI
-    //glPointSize(4.0f);
+    glPointSize(2.0f);
     //glLineWidth(2.0f);
 
     this->state.send_uniform(this->camera);
@@ -256,6 +291,59 @@ SfmControls::paint_impl (void)
 
 /* ---------------------------------------------------------------- */
 
+struct JobSIFT : public JobProgress
+{
+    mve::View::Ptr view;
+    mve::ByteImage::Ptr image;
+    std::string feature_name;
+    sfm::Sift::Options sift_options;
+    bool auto_save;
+    int max_image_size;
+
+    /* Status. */
+    QFuture<void> future;
+    std::string name;
+    std::string message;
+    bool thread_started;
+
+    JobSIFT (void) : thread_started(false) {}
+    char const* get_name (void) { return name.c_str(); }
+    bool is_completed (void) { return future.isFinished(); }
+    bool has_progress (void) { return false; }
+    float get_progress (void) { return 0.0f; }
+    char const* get_message (void) { return message.c_str(); }
+    void cancel_job (void) { }
+};
+
+namespace
+{
+    void run_sift_job (JobSIFT* job)
+    {
+        /* Rescale image until maximum image size is met. */
+        job->message = "Rescaling...";
+        while (job->image->width() * job->image->height() > job->max_image_size)
+            job->image = mve::image::rescale_half_size<uint8_t>(job->image);
+
+        /* Compute features. */
+        job->message = "Features...";
+        sfm::Sift feature(job->sift_options);
+        feature.set_image(job->image);
+        feature.process();
+        sfm::Sift::Descriptors const& descriptors = feature.get_descriptors();
+
+        /* Save features as embedding. */
+        job->message = "Finishing...";
+        mve::ByteImage::Ptr descr_image = sfm::bundler::descriptors_to_embedding
+            (descriptors, job->image->width(), job->image->height());
+        job->view->set_data(job->feature_name, descr_image);
+        if (job->auto_save)
+            job->view->save_mve_file();
+        job->view->cache_cleanup();
+
+        job->message = "Done.";
+    }
+}
+
 void
 SfmControls::on_features_compute (void)
 {
@@ -267,5 +355,30 @@ SfmControls::on_features_compute (void)
         return;
     }
 
-    // TODO: Compute features.
+    /* Prepare variables for feature computation. */
+    mve::Scene::ViewList& views(scene->get_views());
+    std::string image_name = this->features_image_embedding->text().toStdString();
+    std::string feature_name = this->features_feature_embedding->text().toStdString();
+    int max_image_size = this->features_max_pixels->value();
+
+    for (std::size_t i = 0; i < views.size(); ++i)
+    {
+        mve::View::Ptr view = views[i];
+        if (view == NULL)
+            continue;
+        mve::ByteImage::Ptr img = view->get_byte_image(image_name);
+        if (img == NULL)
+            continue;
+
+        JobSIFT* job = new JobSIFT();
+        job->view = view;
+        job->image = img;
+        job->feature_name = feature_name;
+        job->sift_options = sfm::Sift::Options();
+        job->max_image_size = max_image_size;
+        job->auto_save = false;
+        job->name = view->get_name();
+        job->future = QtConcurrent::run(&run_sift_job, job);
+        JobQueue::get()->add_job(job);
+   }
 }

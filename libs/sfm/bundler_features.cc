@@ -110,8 +110,11 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
         feature.set_image(img);
         feature.process();
         descriptors = feature.get_descriptors();
-        viewport->width = img->width();
-        viewport->height = img->height();
+        if (viewport != NULL)
+        {
+            viewport->width = img->width();
+            viewport->height = img->height();
+        }
     }
     else
     {
@@ -137,7 +140,7 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
     /* Initialize viewports. */
     if (viewport != NULL)
     {
-        //viewport->image = img; // TMP
+        //viewport->image = img; // Only for debugging!
         viewport->descr_data.allocate(descriptors.size() * LEN);
         viewport->positions.resize(descriptors.size());
         viewport->colors.resize(descriptors.size());
