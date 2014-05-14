@@ -502,7 +502,7 @@ ViewInspect::populate_exif_viewer (void)
     }
     catch (std::exception& e)
     {
-        std::cout << "Error while parsing EXIF embedding!" << std::endl;
+        std::cout << "Error parsing EXIF: " << e.what() << std::endl;
         return;
     }
 
