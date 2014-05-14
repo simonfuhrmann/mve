@@ -137,6 +137,7 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
     /* Initialize viewports. */
     if (viewport != NULL)
     {
+        //viewport->image = img; // TMP
         viewport->descr_data.allocate(descriptors.size() * LEN);
         viewport->positions.resize(descriptors.size());
         viewport->colors.resize(descriptors.size());

@@ -126,15 +126,16 @@ main (int argc, char** argv)
     sfm::bundler::Incremental::Options incremental_opts;
     incremental_opts.fundamental_opts.already_normalized = false;
     incremental_opts.fundamental_opts.threshold = 3.0f;
-    incremental_opts.fundamental_opts.max_iterations = 1000;
+    //incremental_opts.fundamental_opts.max_iterations = 1000;
     incremental_opts.fundamental_opts.verbose_output = true;
     incremental_opts.pose_opts.threshold = 4.0f;
-    incremental_opts.pose_opts.max_iterations = 1000;
+    //incremental_opts.pose_opts.max_iterations = 1000;
     incremental_opts.pose_opts.verbose_output = true;
-    incremental_opts.pose_p3p_opts.threshold = 4.0f;
-    incremental_opts.pose_p3p_opts.max_iterations = 1000;
+    incremental_opts.pose_p3p_opts.threshold = 10.0f;
+    //incremental_opts.pose_p3p_opts.max_iterations = 1000;
     incremental_opts.pose_p3p_opts.verbose_output = true;
-    incremental_opts.track_error_threshold = 10.0;
+    //incremental_opts.track_error_threshold_factor = 50.0;
+    //incremental_opts.new_track_error_threshold = 10.0;
     incremental_opts.verbose_output = true;
 
     sfm::bundler::Incremental incremental(incremental_opts);
@@ -159,13 +160,6 @@ main (int argc, char** argv)
     /* Reconstruct remaining views. */
     while (true)
     {
-#if 0
-        static int tmp = 0;
-        if (tmp == 1)
-            break;
-        tmp += 1;
-#endif
-
         std::vector<int> next_views;
         incremental.find_next_views(&next_views);
         int next_view_id = -1;
@@ -225,24 +219,6 @@ main (int argc, char** argv)
         std::cout << "Saving MVE view " << view->get_filename() << std::endl;
         view->save_mve_file();
     }
-
-#if 0
-    /* Visualizing tracks for debugging. */
-    for (std::size_t i = 0; i < tracks.size(); ++i)
-    {
-        if (tracks[i].features.size() < 10)
-            continue;
-
-        std::cout << "Visualizing track " << i << "..." << std::endl;
-        mve::ByteImage::Ptr img = sfm::bundler::visualize_track(tracks[i],
-            viewports, scene, image_embedding, pairwise_matching);
-        mve::image::save_file(img, "/tmp/track.png");
-
-        std::cout << "Press ENTER to continue or STRG-C to cancel." << std::endl;
-        std::string temp_line;
-        std::getline(std::cin, temp_line);
-    }
-#endif
 
     return 0;
 }

@@ -43,6 +43,8 @@ struct Viewport
     float focal_length;
     /** Radial distortion parameter. */
     float radial_distortion;
+    /** The actual image data for debugging purposes. Usually NULL! */
+    mve::ByteImage::Ptr image;
     /** Tightly packed data for the descriptors. */
     util::AlignedMemory<float, 16> descr_data;
     /** Per-feature image position. */

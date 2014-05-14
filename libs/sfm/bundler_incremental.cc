@@ -264,7 +264,7 @@ bool Incremental::reconstruct_next_view (int view_id)
      * 6-point, delete tracks threshold 20: 41018 features
      * 3-point, delete tracks threshold 20: 42048 features
      */
-#define USE_P3P_FOR_POSE 0
+#define USE_P3P_FOR_POSE 1
 
     /* Initialize a temporary camera. */
     float const maxdim = static_cast<float>
@@ -300,7 +300,7 @@ bool Incremental::reconstruct_next_view (int view_id)
 #endif
 
     /* Cancel if inliers are below a threshold. */
-    if (2 * ransac_result.inliers.size() < corr.size())
+    if (3 * ransac_result.inliers.size() < corr.size())
         return false;
 
     /* Remove outliers from tracks and tracks from viewport. */
@@ -408,7 +408,7 @@ Incremental::create_bundle (void) const
 void
 Incremental::triangulate_new_tracks (void)
 {
-    double const square_thres = MATH_POW2(this->opts.track_error_threshold);
+    double const square_thres = MATH_POW2(this->opts.new_track_error_threshold);
     std::size_t num_new_tracks = 0;
     std::size_t num_large_error_tracks = 0;
     std::size_t num_behind_camera_tracks = 0;
@@ -657,17 +657,16 @@ void
 Incremental::delete_large_error_tracks (void)
 {
     /* Iterate over all tracks and sum reprojection error. */
-    double square_threshold = MATH_POW2(this->opts.track_error_threshold);
-    int num_deleted_tracks = 0;
+    std::vector<std::pair<double, std::size_t> > all_errors;
+    std::size_t num_valid_tracks = 0;
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         if (!this->tracks->at(i).is_valid())
             continue;
 
+        num_valid_tracks += 1;
         math::Vec3f const& pos3d = this->tracks->at(i).pos;
         FeatureReferenceList const& ref = this->tracks->at(i).features;
-
-        //std::cout << "Error for track ID " << i << " (" << ref.size() << " views):";
 
         double total_error = 0.0f;
         int num_valid = 0;
@@ -688,26 +687,41 @@ Incremental::delete_large_error_tracks (void)
             math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
             total_error += (pos2d - x2d).square_norm();
             num_valid += 1;
-
-            //std::cout << " " << (pos2d - x2d).square_norm();
         }
         total_error /= static_cast<double>(num_valid);
-        //std::cout << ", total error: " << total_error << std::endl;
+        all_errors.push_back(std::pair<double, int>(total_error, i));
+    }
 
-        /* Delete tracks with errors above a threshold. */
-        if (total_error > square_threshold)
+    if (num_valid_tracks < 2)
+        return;
+
+    /* Find the 1/2 percentile. */
+    std::size_t const nth_position = all_errors.size() / 2;
+    std::nth_element(all_errors.begin(),
+        all_errors.begin() + nth_position, all_errors.end());
+    double const square_threshold = all_errors[nth_position].first
+        * this->opts.track_error_threshold_factor;
+
+    /* Delete all tracks with errors above the threshold. */
+    int num_deleted_tracks = 0;
+    for (std::size_t i = nth_position; i < all_errors.size(); ++i)
+    {
+        if (all_errors[i].first > square_threshold)
         {
-            this->delete_track(i);
+            this->delete_track(all_errors[i].second);
             num_deleted_tracks += 1;
         }
     }
 
     if (this->opts.verbose_output)
     {
+        float percent = 100.0f * static_cast<float>(num_deleted_tracks)
+            / static_cast<float>(num_valid_tracks);
         std::cout << "Deleted " << num_deleted_tracks
-            << " tracks above a threshold of "
-            << this->opts.track_error_threshold
-            << "." << std::endl;
+            << " of " << num_valid_tracks << " tracks ("
+            << util::string::get_fixed(percent, 2)
+            << "%) above a threshold of "
+            << std::sqrt(square_threshold) << "." << std::endl;
     }
 }
 

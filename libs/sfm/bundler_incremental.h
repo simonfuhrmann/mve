@@ -34,8 +34,10 @@ public:
         RansacPose::Options pose_opts;
         /** Options for computing pose from 2D-3D correspondences. */
         RansacPoseP3P::Options pose_p3p_opts;
-        /** Threshold for large error tracks. */
-        double track_error_threshold;
+        /** Threshold (factor of the median error) for large error tracks. */
+        double track_error_threshold_factor;
+        /** Reprojection error threshold for newly triangulated tracks. */
+        double new_track_error_threshold;
         /** Produce status messages on the console. */
         bool verbose_output;
     };
@@ -62,15 +64,16 @@ public:
     bool reconstruct_next_view (int view_id);
     /** Triangulates tracks without 3D position and at least 2 views. */
     void triangulate_new_tracks (void);
+    /** Deletes tracks with a large reprojection error. */
+    void delete_large_error_tracks (void);
     /** Runs bundle adjustment on both, structure and motion. */
     void bundle_adjustment_full (void);
     /** Runs bundle adjustment on a single camera without structure. */
     void bundle_adjustment_single_cam (int view_id);
+    /** Transforms the bundle for numerical stability. */
+    //void normalize_scene (void); // TODO
     /** Computes a bundle from all viewports and reconstructed tracks. */
     mve::Bundle::Ptr create_bundle (void) const;
-
-    /** Deletes tracks with a large reprojection error. */
-    void delete_large_error_tracks (void);
 
 private:
     void bundle_adjustment_intern (int single_camera_ba);
@@ -87,7 +90,8 @@ private:
 
 inline
 Incremental::Options::Options (void)
-    : track_error_threshold(10.0)
+    : track_error_threshold_factor(25.0)
+    , new_track_error_threshold(10.0)
     , verbose_output(false)
 {
 }
