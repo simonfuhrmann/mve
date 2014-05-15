@@ -509,7 +509,7 @@ Directory::scan (std::string const& path)
             continue;
 
         this->push_back(File());
-        this->back().path = path + "/" + data.cFileName;
+        this->back().path = path;
         this->back().name = data.cFileName;
         this->back().is_dir =
             (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
