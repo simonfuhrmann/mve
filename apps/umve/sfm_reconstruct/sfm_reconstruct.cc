@@ -28,16 +28,19 @@ SfmReconstruct::SfmReconstruct (QWidget* parent)
 }
 
 void
-SfmReconstruct::on_view_selected (mve::View::Ptr /*view*/)
+SfmReconstruct::on_scene_selected (mve::Scene::Ptr scene)
 {
-    if (!this->is_tab_active)
-        return;
+    //if (!this->is_tab_active)
+    //    return;
+    this->sfm_controls->set_scene(scene);
 }
 
 void
-SfmReconstruct::on_scene_selected (mve::Scene::Ptr /*scene*/)
+SfmReconstruct::on_view_selected (mve::View::Ptr view)
 {
-    //this->set_scene(scene);
+    //if (!this->is_tab_active)
+    //    return;
+    this->sfm_controls->set_view(view);
 }
 
 QString

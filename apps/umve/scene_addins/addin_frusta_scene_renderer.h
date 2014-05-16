@@ -1,5 +1,5 @@
-#ifndef UMVE_ADDIN_FRUSTA_RENDERER_HEADER
-#define UMVE_ADDIN_FRUSTA_RENDERER_HEADER
+#ifndef UMVE_ADDIN_FRUSTA_SCENE_RENDERER_HEADER
+#define UMVE_ADDIN_FRUSTA_SCENE_RENDERER_HEADER
 
 #include <QWidget>
 #include <QCheckBox>
@@ -11,12 +11,12 @@
 
 #include "scene_addins/addin_base.h"
 
-class AddinFrustaRenderer : public AddinBase
+class AddinFrustaSceneRenderer : public AddinBase
 {
     Q_OBJECT
 
 public:
-    AddinFrustaRenderer (void);
+    AddinFrustaSceneRenderer (void);
     QWidget* get_sidebar_widget (void);
 
 protected:
@@ -33,9 +33,8 @@ private:
     QCheckBox* render_frusta_cb;
     QCheckBox* render_viewdir_cb;
     QSlider* frusta_size_slider;
-    mve::View::Ptr last_view;
     ogl::MeshRenderer::Ptr frusta_renderer;
     ogl::MeshRenderer::Ptr viewdir_renderer;
 };
 
-#endif // UMVE_ADDIN_FRUSTA_RENDERER_HEADER
+#endif /* UMVE_ADDIN_FRUSTA_SCENE_RENDERER_HEADER */

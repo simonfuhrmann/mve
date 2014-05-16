@@ -21,7 +21,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     /* Instanciate addins. */
     this->axis_renderer = new AddinAxisRenderer();
     this->sfm_renderer = new AddinSfmRenderer();
-    this->frusta_renderer = new AddinFrustaRenderer();
+    this->frusta_renderer = new AddinFrustaSceneRenderer();
     this->mesh_renderer = new AddinMeshesRenderer();
     this->dm_triangulate = new AddinDMTriangulate();
     this->dm_triangulate->set_selected_view(this->selected_view_2);
