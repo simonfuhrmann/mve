@@ -23,6 +23,9 @@
 #define MATCHING_SIGNATURE "MVE_MATCHING\n"
 #define MATCHING_SIGNATURE_LEN 13
 
+#define VIEWPORTS_SIGNATURE "MVE_VIEWPORTS\n"
+#define VIEWPORTS_SIGNATURE_LEN 14
+
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
@@ -57,6 +60,24 @@ struct Viewport
 
 /** The list of all viewports considered for bundling. */
 typedef std::vector<Viewport> ViewportList;
+
+/* ------------------ Input/Output for Viewports ------------------ */
+
+/**
+ * Writes certain per-viewport data to file. Currently only data relevant
+ * for bundling is written, i.e.
+ * - image width and height,
+ * - focal length and radial distortion,
+ * - positions, colors and track IDs.
+ */
+void
+save_viewports_data (ViewportList const& viewports,
+    std::string const& filename);
+
+/** Reads certain per-viewport data from file. */
+void
+load_viewports_data (std::string const& filename,
+    ViewportList* viewports);
 
 /* --------------- Data Structure for Feature Tracks -------------- */
 
@@ -107,6 +128,23 @@ save_pairwise_matching (PairwiseMatching const& matching,
 void
 load_pairwise_matching (std::string const& filename,
     PairwiseMatching* matching);
+
+/* ---------------- Input/Output of the Pre-Bundle ---------------- */
+
+/**
+ * Saves the pre-bundle data to file, which records all viewport and
+ * matching data necessary for incremental structure-from-motion.
+ */
+void
+save_prebundle_to_file (ViewportList const& viewports,
+    PairwiseMatching const& matching, std::string const& filename);
+
+/**
+ * Loads the pre-bundle data from file, initializing viewports and matching.
+ */
+void
+load_prebundle_from_file (std::string const& filename,
+    ViewportList* viewports, PairwiseMatching* matching);
 
 /* ------------- (De-)Serialization of SIFT and SURF -------------- */
 

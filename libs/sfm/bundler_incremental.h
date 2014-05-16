@@ -71,7 +71,7 @@ public:
     /** Runs bundle adjustment on a single camera without structure. */
     void bundle_adjustment_single_cam (int view_id);
     /** Transforms the bundle for numerical stability. */
-    //void normalize_scene (void); // TODO
+    void normalize_scene (void);
     /** Computes a bundle from all viewports and reconstructed tracks. */
     mve::Bundle::Ptr create_bundle (void) const;
 

@@ -19,6 +19,13 @@ Matching::compute (ViewportList const& viewports,
 {
     std::size_t num_pairs = viewports.size() * (viewports.size() - 1) / 2;
     std::size_t current_pair = 0;
+
+    if (this->progress != NULL)
+    {
+        this->progress->num_total = num_pairs;
+        this->progress->num_done = 0;
+    }
+
     for (std::size_t i = 0; i < viewports.size(); ++i)
         for (std::size_t j = 0; j < i; ++j)
         {
@@ -27,6 +34,9 @@ Matching::compute (ViewportList const& viewports,
                 << j << " (" << percent << "%)..." << std::endl;
             this->two_view_matching(i, j, viewports, pairwise_matching);
             current_pair += 1;
+
+            if (this->progress != NULL)
+                this->progress->num_done += 1;
         }
 
     std::cout << "Found a total of " << pairwise_matching->size()

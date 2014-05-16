@@ -16,23 +16,14 @@
 #include "sfm/bundler_init_pair.h"
 #include "sfm/bundler_incremental.h"
 
-int
-main (int argc, char** argv)
+void
+features_and_matching (mve::Scene::Ptr scene,
+    sfm::bundler::ViewportList* viewports,
+    sfm::bundler::PairwiseMatching* pairwise_matching)
 {
-    if (argc < 2)
-    {
-        std::cerr << "Syntax: " << argv[0] << " <scene>" << std::endl;
-        return 1;
-    }
-
-    util::system::rand_seed(2);
-
     std::string const image_embedding = "original";
     std::string const feature_embedding = "original-sift";
     std::string const exif_embedding = "exif";
-
-    /* Load scene. */
-    mve::Scene::Ptr scene = mve::Scene::create(argv[1]);
 
     /* Feature computation for the scene. */
     sfm::bundler::Features::Options feature_opts;
@@ -44,15 +35,14 @@ main (int argc, char** argv)
     feature_opts.force_recompute = false;
 
     std::cout << "Computing/loading image features..." << std::endl;
-    sfm::bundler::ViewportList viewports;
     sfm::bundler::Features bundler_features(feature_opts);
     bundler_features.compute(scene, sfm::bundler::Features::SIFT_FEATURES,
-        &viewports);
+        viewports);
 
     std::cout << "Viewport statistics:" << std::endl;
-    for (std::size_t i = 0; i < viewports.size(); ++i)
+    for (std::size_t i = 0; i < viewports->size(); ++i)
     {
-        sfm::bundler::Viewport const& view = viewports[i];
+        sfm::bundler::Viewport const& view = viewports->at(i);
         std::cout << "  View " << i << ": "
             << view.width << "x" << view.height << ", "
             << view.positions.size() << " features, "
@@ -60,28 +50,49 @@ main (int argc, char** argv)
     }
 
     /* Exhaustive matching between all pairs of views. */
-    sfm::bundler::PairwiseMatching pairwise_matching;
-    std::string matching_file = scene->get_path() + "/matching.bin";
-    if (util::fs::file_exists(matching_file.c_str()))
+    sfm::bundler::Matching::Options matching_opts;
+    matching_opts.matching_opts.descriptor_length = 128; // TODO
+    matching_opts.ransac_opts.already_normalized = false;
+    matching_opts.ransac_opts.threshold = 3.0f;
+    matching_opts.ransac_opts.verbose_output = false;
+
+    std::cout << "Performing exhaustive feature matching..." << std::endl;
+    sfm::bundler::Matching bundler_matching(matching_opts);
+    bundler_matching.compute(*viewports, pairwise_matching);
+}
+
+
+int
+main (int argc, char** argv)
+{
+    if (argc < 2)
     {
-        std::cout << "Loading matching result from: " << matching_file << std::endl;
-        sfm::bundler::load_pairwise_matching(matching_file, &pairwise_matching);
+        std::cerr << "Syntax: " << argv[0] << " <scene>" << std::endl;
+        return 1;
+    }
+
+    util::system::rand_seed(2);
+
+    /* Load scene. */
+    mve::Scene::Ptr scene = mve::Scene::create(argv[1]);
+    std::string const prebundle_file = "prebundle.bin";
+    std::string const prebundle_path = util::fs::join_path(scene->get_path(), prebundle_file);
+
+    sfm::bundler::ViewportList viewports;
+    sfm::bundler::PairwiseMatching pairwise_matching;
+    if (util::fs::file_exists(prebundle_path.c_str()))
+    {
+        std::cout << "Loading pre-bundle from file..." << std::endl;
+        sfm::bundler::load_prebundle_from_file(prebundle_path,
+            &viewports, &pairwise_matching);
     }
     else
     {
-        sfm::bundler::Matching::Options matching_opts;
-        matching_opts.matching_opts.descriptor_length = 128; // TODO
-        matching_opts.ransac_opts.already_normalized = false;
-        matching_opts.ransac_opts.threshold = 3.0f;
-        matching_opts.ransac_opts.verbose_output = false;
-
-        std::cout << "Performing exhaustive feature matching..." << std::endl;
-        sfm::bundler::Matching bundler_matching(matching_opts);
-        bundler_matching.compute(viewports, &pairwise_matching);
-
-        std::cout << "Saving matching result to: " << matching_file << std::endl;
-        sfm::bundler::save_pairwise_matching(pairwise_matching, matching_file);
+        features_and_matching(scene, &viewports, &pairwise_matching);
+        std::cout << "Saving pre-bundle to file..." << std::endl;
+        sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
     }
+
 
     /* For every viewport drop descriptor information to save memory. */
     for (std::size_t i = 0; i < viewports.size(); ++i)
@@ -192,6 +203,9 @@ main (int argc, char** argv)
         std::cout << "Running full bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_full();
     }
+
+    std::cout << "Normalizing scene..." << std::endl;
+    incremental.normalize_scene();
 
     std::cout << "Creating bundle data structure..." << std::endl;
     mve::Bundle::Ptr bundle = incremental.create_bundle();

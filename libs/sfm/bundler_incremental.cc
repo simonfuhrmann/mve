@@ -339,70 +339,6 @@ bool Incremental::reconstruct_next_view (int view_id)
     return true;
 }
 
-mve::Bundle::Ptr
-Incremental::create_bundle (void) const
-{
-    /* Create bundle data structure. */
-    mve::Bundle::Ptr bundle = mve::Bundle::create();
-    {
-        /* Populate the cameras in the bundle. */
-        mve::Bundle::Cameras& bundle_cams = bundle->get_cameras();
-        bundle_cams.resize(this->cameras.size());
-        for (std::size_t i = 0; i < this->cameras.size(); ++i)
-        {
-            mve::CameraInfo& cam = bundle_cams[i];
-            CameraPose const& pose = this->cameras[i];
-            Viewport const& viewport = this->viewports->at(i);
-            if (!pose.is_valid())
-            {
-                cam.flen = 0.0f;
-                continue;
-            }
-
-            float width = static_cast<float>(viewport.width);
-            float height = static_cast<float>(viewport.height);
-            float maxdim = std::max(width, height);
-            cam.flen = static_cast<float>(pose.get_focal_length());
-            cam.flen /= maxdim;
-            cam.ppoint[0] = static_cast<float>(pose.K[2]) / width;
-            cam.ppoint[1] = static_cast<float>(pose.K[5]) / height;
-            std::copy(pose.R.begin(), pose.R.end(), cam.rot);
-            std::copy(pose.t.begin(), pose.t.end(), cam.trans);
-        }
-
-        /* Populate the features in the Bundle. */
-        mve::Bundle::Features& bundle_feats = bundle->get_features();
-        for (std::size_t i = 0; i < this->tracks->size(); ++i)
-        {
-            Track const& track = this->tracks->at(i);
-            if (!track.is_valid())
-                continue;
-
-            /* Copy position and color of the track. */
-            bundle_feats.push_back(mve::Bundle::Feature3D());
-            mve::Bundle::Feature3D& f3d = bundle_feats.back();
-            std::copy(track.pos.begin(), track.pos.end(), f3d.pos);
-            f3d.color[0] = track.color[0] / 255.0f;
-            f3d.color[1] = track.color[1] / 255.0f;
-            f3d.color[2] = track.color[2] / 255.0f;
-            for (std::size_t j = 0; j < track.features.size(); ++j)
-            {
-                /* For each reference copy view ID, feature ID and 2D pos. */
-                f3d.refs.push_back(mve::Bundle::Feature2D());
-                mve::Bundle::Feature2D& f2d = f3d.refs.back();
-                f2d.view_id = track.features[j].view_id;
-                f2d.feature_id = track.features[j].feature_id;
-
-                Viewport view = this->viewports->at(f2d.view_id);
-                math::Vec2f const& f2d_pos = view.positions[f2d.feature_id];
-                std::copy(f2d_pos.begin(), f2d_pos.end(), f2d.pos);
-            }
-        }
-    }
-
-    return bundle;
-}
-
 /* ---------------------------------------------------------------- */
 
 void
@@ -624,7 +560,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         std::copy(cam.t, cam.t + 3, pose.t.begin());
         std::copy(cam.m[0], cam.m[0] + 9, pose.R.begin());
 
-        if (this->opts.verbose_output)
+        if (this->opts.verbose_output && single_camera_ba < 0)
         {
             std::cout << "Camera " << i << ", focal length: "
                 << pose.get_focal_length() << " -> " << cam.f
@@ -723,6 +659,116 @@ Incremental::delete_large_error_tracks (void)
             << "%) above a threshold of "
             << std::sqrt(square_threshold) << "." << std::endl;
     }
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Incremental::normalize_scene (void)
+{
+    /* Compute AABB for all camera centers. */
+    math::Vec3d aabb_min(std::numeric_limits<double>::max());
+    math::Vec3d aabb_max(-std::numeric_limits<double>::max());
+    for (std::size_t i = 0; i < this->cameras.size(); ++i)
+    {
+        CameraPose const& pose = this->cameras[i];
+        if (!pose.is_valid())
+            continue;
+        math::Vec3d center = -(pose.R.transposed() * pose.t);
+        for (int j = 0; j < 3; ++j)
+        {
+            aabb_min[j] = std::min(center[j], aabb_min[j]);
+            aabb_max[j] = std::max(center[j], aabb_max[j]);
+        }
+    }
+
+    /* Compute scale and translation. */
+    double scale = 1.0 / (aabb_max - aabb_min).maximum();
+    math::Vec3d trans = -(aabb_max + aabb_min) / 2.0;
+
+    /* Transform every point. */
+    for (std::size_t i = 0; i < this->tracks->size(); ++i)
+    {
+        if (!this->tracks->at(i).is_valid())
+            continue;
+
+        this->tracks->at(i).pos = (this->tracks->at(i).pos + trans) * scale;
+    }
+
+    /* Transform every camera. */
+    for (std::size_t i = 0; i < this->cameras.size(); ++i)
+    {
+        CameraPose& pose = this->cameras[i];
+        if (!pose.is_valid())
+            continue;
+        pose.t = pose.t * scale - pose.R * trans * scale;
+    }
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::Bundle::Ptr
+Incremental::create_bundle (void) const
+{
+    /* Create bundle data structure. */
+    mve::Bundle::Ptr bundle = mve::Bundle::create();
+    {
+        /* Populate the cameras in the bundle. */
+        mve::Bundle::Cameras& bundle_cams = bundle->get_cameras();
+        bundle_cams.resize(this->cameras.size());
+        for (std::size_t i = 0; i < this->cameras.size(); ++i)
+        {
+            mve::CameraInfo& cam = bundle_cams[i];
+            CameraPose const& pose = this->cameras[i];
+            Viewport const& viewport = this->viewports->at(i);
+            if (!pose.is_valid())
+            {
+                cam.flen = 0.0f;
+                continue;
+            }
+
+            float width = static_cast<float>(viewport.width);
+            float height = static_cast<float>(viewport.height);
+            float maxdim = std::max(width, height);
+            cam.flen = static_cast<float>(pose.get_focal_length());
+            cam.flen /= maxdim;
+            cam.ppoint[0] = static_cast<float>(pose.K[2]) / width;
+            cam.ppoint[1] = static_cast<float>(pose.K[5]) / height;
+            std::copy(pose.R.begin(), pose.R.end(), cam.rot);
+            std::copy(pose.t.begin(), pose.t.end(), cam.trans);
+        }
+
+        /* Populate the features in the Bundle. */
+        mve::Bundle::Features& bundle_feats = bundle->get_features();
+        for (std::size_t i = 0; i < this->tracks->size(); ++i)
+        {
+            Track const& track = this->tracks->at(i);
+            if (!track.is_valid())
+                continue;
+
+            /* Copy position and color of the track. */
+            bundle_feats.push_back(mve::Bundle::Feature3D());
+            mve::Bundle::Feature3D& f3d = bundle_feats.back();
+            std::copy(track.pos.begin(), track.pos.end(), f3d.pos);
+            f3d.color[0] = track.color[0] / 255.0f;
+            f3d.color[1] = track.color[1] / 255.0f;
+            f3d.color[2] = track.color[2] / 255.0f;
+            for (std::size_t j = 0; j < track.features.size(); ++j)
+            {
+                /* For each reference copy view ID, feature ID and 2D pos. */
+                f3d.refs.push_back(mve::Bundle::Feature2D());
+                mve::Bundle::Feature2D& f2d = f3d.refs.back();
+                f2d.view_id = track.features[j].view_id;
+                f2d.feature_id = track.features[j].feature_id;
+
+                Viewport view = this->viewports->at(f2d.view_id);
+                math::Vec2f const& f2d_pos = view.positions[f2d.feature_id];
+                std::copy(f2d_pos.begin(), f2d_pos.end(), f2d.pos);
+            }
+        }
+    }
+
+    return bundle;
 }
 
 /* ---------------------------------------------------------------- */

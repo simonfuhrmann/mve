@@ -57,8 +57,14 @@ public:
         int min_matching_inliers;
     };
 
+    struct Progress
+    {
+        std::size_t num_total;
+        std::size_t num_done;
+    };
+
 public:
-    Matching (Options const& options);
+    Matching (Options const& options, Progress* progress = NULL);
 
     /**
      * Computes the pairwise matching between all pairs of views.
@@ -74,6 +80,7 @@ private:
 
 private:
     Options opts;
+    Progress* progress;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -86,8 +93,9 @@ Matching::Options::Options (void)
 }
 
 inline
-Matching::Matching (Options const& options)
+Matching::Matching (Options const& options, Progress* progress)
     : opts(options)
+    , progress(progress)
 {
 }
 

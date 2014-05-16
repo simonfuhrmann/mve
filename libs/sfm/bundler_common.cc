@@ -13,6 +13,132 @@
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
+/* ------------------ Input/Output for Viewports ------------------ */
+
+void
+save_viewports_data (ViewportList const& viewports, std::ostream& out)
+{
+    /* Write signature. */
+    out.write(VIEWPORTS_SIGNATURE, VIEWPORTS_SIGNATURE_LEN);
+
+    /* Write number of viewports. */
+    int32_t num_viewports = static_cast<int32_t>(viewports.size());
+    out.write(reinterpret_cast<char const*>(&num_viewports), sizeof(int32_t));
+
+    for (std::size_t i = 0; i < viewports.size(); ++i)
+    {
+        Viewport const& vp(viewports[i]);
+        out.write(reinterpret_cast<char const*>(&vp.width), sizeof(int));
+        out.write(reinterpret_cast<char const*>(&vp.height), sizeof(int));
+        out.write(reinterpret_cast<char const*>(&vp.focal_length), sizeof(float));
+        out.write(reinterpret_cast<char const*>(&vp.radial_distortion), sizeof(float));
+
+        /* Write positions. */
+        int32_t num_positions = static_cast<int32_t>(vp.positions.size());
+        out.write(reinterpret_cast<char const*>(&num_positions), sizeof(int32_t));
+        for (std::size_t j = 0; j < vp.positions.size(); ++j)
+            out.write(reinterpret_cast<char const*>(&vp.positions[j]), sizeof(math::Vec2f));
+
+        /* Write colors. */
+        int32_t num_colors = static_cast<int32_t>(vp.colors.size());
+        out.write(reinterpret_cast<char const*>(&num_colors), sizeof(int32_t));
+        for (std::size_t j = 0; j < vp.colors.size(); ++j)
+            out.write(reinterpret_cast<char const*>(&vp.colors[j]), sizeof(math::Vec3uc));
+
+        /* Write track IDs. */
+        int32_t num_track_ids = static_cast<int32_t>(vp.track_ids.size());
+        out.write(reinterpret_cast<char const*>(&num_track_ids), sizeof(int32_t));
+        for (std::size_t j = 0; j < vp.track_ids.size(); ++j)
+            out.write(reinterpret_cast<char const*>(&vp.track_ids[j]), sizeof(int));
+    }
+}
+
+void
+load_viewports_data (std::istream& in, ViewportList* viewports)
+{
+    /* Read and check file signature. */
+    char signature[VIEWPORTS_SIGNATURE_LEN + 1];
+    in.read(signature, VIEWPORTS_SIGNATURE_LEN);
+    signature[VIEWPORTS_SIGNATURE_LEN] = '\0';
+    if (std::string(VIEWPORTS_SIGNATURE) != signature)
+        throw std::invalid_argument("Error matching signature");
+
+    /* Read number of viewports. */
+    int32_t num_viewports;
+    in.read(reinterpret_cast<char*>(&num_viewports), sizeof(int32_t));
+    viewports->clear();
+    viewports->resize(num_viewports);
+
+    for (int i = 0; i < num_viewports; ++i)
+    {
+        Viewport& vp = viewports->at(i);
+        in.read(reinterpret_cast<char*>(&vp.width), sizeof(int));
+        in.read(reinterpret_cast<char*>(&vp.height), sizeof(int));
+        in.read(reinterpret_cast<char*>(&vp.focal_length), sizeof(float));
+        in.read(reinterpret_cast<char*>(&vp.radial_distortion), sizeof(float));
+
+        /* Read positions. */
+        int32_t num_positions;
+        in.read(reinterpret_cast<char*>(&num_positions), sizeof(int32_t));
+        vp.positions.resize(num_positions);
+        for (int j = 0; j < num_positions; ++j)
+            in.read(reinterpret_cast<char*>(&vp.positions[j]), sizeof(math::Vec2f));
+
+        /* Read colors. */
+        int32_t num_colors;
+        in.read(reinterpret_cast<char*>(&num_colors), sizeof(int32_t));
+        vp.colors.resize(num_colors);
+        for (int j = 0; j < num_colors; ++j)
+            in.read(reinterpret_cast<char*>(&vp.colors[j]), sizeof(math::Vec3uc));
+
+        /* Read track IDs. */
+        int32_t num_track_ids;
+        in.read(reinterpret_cast<char*>(&num_track_ids), sizeof(int32_t));
+        vp.track_ids.resize(num_track_ids);
+        for (int j = 0; j < num_track_ids; ++j)
+            in.read(reinterpret_cast<char*>(&vp.track_ids[j]), sizeof(int));
+    }
+}
+
+void
+save_viewports_data (ViewportList const& viewports,
+    std::string const& filename)
+{
+    std::ofstream out(filename.c_str());
+    if (!out.good())
+        throw util::FileException(filename, std::strerror(errno));
+    save_viewports_data(viewports, out);
+    out.close();
+}
+
+void
+load_viewports_data (std::string const& filename,
+    ViewportList* viewports)
+{
+    std::ifstream in(filename.c_str());
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    try
+    {
+        load_viewports_data(in, viewports);
+    }
+    catch (...)
+    {
+        in.close();
+        throw;
+    }
+
+    if (in.eof())
+    {
+        in.close();
+        throw util::Exception("Premature EOF");
+    }
+    in.close();
+}
+
+/* --------------- Data Structure for Feature Tracks -------------- */
+
 void
 Track::invalidate (void)
 {
@@ -159,13 +285,8 @@ embedding_to_descriptors (mve::ByteImage::ConstPtr data,
 /* -------------- Input/Output for Feature Matching --------------- */
 
 void
-save_pairwise_matching (PairwiseMatching const& matching,
-    std::string const& filename)
+save_pairwise_matching (PairwiseMatching const& matching, std::ostream& out)
 {
-    std::ofstream out(filename.c_str());
-    if (!out.good())
-        throw util::FileException(filename, std::strerror(errno));
-
     /* Write file signature and header. */
     out.write(MATCHING_SIGNATURE, MATCHING_SIGNATURE_LEN);
     int32_t num_pairs = static_cast<int32_t>(matching.size());
@@ -190,27 +311,17 @@ save_pairwise_matching (PairwiseMatching const& matching,
             out.write(reinterpret_cast<char const*>(&i2), sizeof(int32_t));
         }
     }
-
-    out.close();
 }
 
 void
-load_pairwise_matching (std::string const& filename,
-    PairwiseMatching* matching)
+load_pairwise_matching (std::istream& in, PairwiseMatching* matching)
 {
-    std::ifstream in(filename.c_str());
-    if (!in.good())
-        throw util::FileException(filename, std::strerror(errno));
-
     /* Read and check file signature. */
     char signature[MATCHING_SIGNATURE_LEN + 1];
     in.read(signature, MATCHING_SIGNATURE_LEN);
     signature[MATCHING_SIGNATURE_LEN] = '\0';
     if (std::string(MATCHING_SIGNATURE) != signature)
-    {
-        in.close();
         throw std::invalid_argument("Error matching signature");
-    }
 
     matching->clear();
 
@@ -241,13 +352,85 @@ load_pairwise_matching (std::string const& filename,
         }
         matching->push_back(tvr);
     }
+}
+
+void
+save_pairwise_matching (PairwiseMatching const& matching,
+    std::string const& filename)
+{
+    std::ofstream out(filename.c_str());
+    if (!out.good())
+        throw util::FileException(filename, std::strerror(errno));
+    save_pairwise_matching(matching, out);
+    out.close();
+}
+
+void
+load_pairwise_matching (std::string const& filename,
+    PairwiseMatching* matching)
+{
+    std::ifstream in(filename.c_str());
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    try
+    {
+        load_pairwise_matching(in, matching);
+    }
+    catch (...)
+    {
+        in.close();
+        throw;
+    }
 
     if (in.eof())
     {
         in.close();
         throw util::Exception("Premature EOF");
     }
+    in.close();
+}
 
+/* ---------------- Input/Output of the Pre-Bundle ---------------- */
+
+void
+save_prebundle_to_file (ViewportList const& viewports,
+    PairwiseMatching const& matching, std::string const& filename)
+{
+    std::ofstream out(filename.c_str());
+    if (!out.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    save_viewports_data(viewports, out);
+    save_pairwise_matching(matching, out);
+
+    out.close();
+}
+
+void
+load_prebundle_from_file (std::string const& filename,
+    ViewportList* viewports, PairwiseMatching* matching)
+{
+    std::ifstream in(filename.c_str());
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    try
+    {
+        load_viewports_data(in, viewports);
+        load_pairwise_matching(in, matching);
+    }
+    catch (...)
+    {
+        in.close();
+        throw;
+    }
+
+    if (in.eof())
+    {
+        in.close();
+        throw util::Exception("Premature EOF");
+    }
     in.close();
 }
 
