@@ -26,6 +26,12 @@ Incremental::initialize (ViewportList* viewports, TrackList* tracks)
     }
 }
 
+bool
+Incremental::is_initialized (void) const
+{
+    return !this->viewports->empty() && !this->tracks->empty();
+}
+
 void
 Incremental::reconstruct_initial_pair (int view_1_id, int view_2_id)
 {
@@ -703,6 +709,14 @@ Incremental::normalize_scene (void)
             continue;
         pose.t = pose.t * scale - pose.R * trans * scale;
     }
+}
+
+/* ---------------------------------------------------------------- */
+
+std::vector<CameraPose> const&
+Incremental::get_cameras (void) const
+{
+    return this->cameras;
 }
 
 /* ---------------------------------------------------------------- */

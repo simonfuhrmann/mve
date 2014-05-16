@@ -54,6 +54,9 @@ public:
      */
     void initialize (ViewportList* viewports, TrackList* tracks);
 
+    /** Returns whether the incremental SfM has been initialized. */
+    bool is_initialized (void) const;
+
     /** Reconstructs the initial pose between the two given views. */
     void reconstruct_initial_pair (int view_1_id, int view_2_id);
     /** Returns a suitable next view ID or -1 on failure. */
@@ -72,6 +75,9 @@ public:
     void bundle_adjustment_single_cam (int view_id);
     /** Transforms the bundle for numerical stability. */
     void normalize_scene (void);
+
+    /** Returns the list of computed camera poses. */
+    std::vector<CameraPose> const& get_cameras (void) const;
     /** Computes a bundle from all viewports and reconstructed tracks. */
     mve::Bundle::Ptr create_bundle (void) const;
 

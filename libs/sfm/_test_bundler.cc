@@ -106,6 +106,7 @@ main (int argc, char** argv)
     init_pair_opts.homography_opts.already_normalized = false;
     init_pair_opts.homography_opts.threshold = 3.0f;
     init_pair_opts.homography_opts.verbose_output = false;
+
     sfm::bundler::InitialPair::Result init_pair_result;
     sfm::bundler::InitialPair init_pair(init_pair_opts);
     init_pair.compute(viewports, pairwise_matching, &init_pair_result);
