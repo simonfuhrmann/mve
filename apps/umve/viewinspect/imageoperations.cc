@@ -17,6 +17,7 @@
 #include "mve/depthmap.h"
 #include "mve/mesh_io_ply.h"
 #include "util/exception.h"
+#include "util/file_system.h"
 
 #include "jobqueue.h"
 #include "guihelpers.h"
@@ -215,10 +216,8 @@ ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
     mvs_settings.writePlyFile = this->mvs_write_ply.isChecked();
     mvs_settings.keepConfidenceMap = this->mvs_conf_map.isChecked();
     mvs_settings.keepDzMap = this->mvs_dz_map.isChecked();
-    mvs_settings.plyPath = scene->get_path();
-    mvs_settings.plyPath += "/recon/";
-    mvs_settings.logPath = scene->get_path();
-    mvs_settings.logPath += "/log/";
+    mvs_settings.plyPath = util::fs::join_path(scene->get_path(), "recon");
+    mvs_settings.logPath = util::fs::join_path(scene->get_path(), "log");
     mvs_settings.quiet = true;
 
     if (mvs_settings.imageEmbedding.empty())

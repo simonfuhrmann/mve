@@ -90,8 +90,8 @@ inline void
 WallTimer::reset (void)
 {
 #ifdef _WIN32
-    // FIXME: ::GetTickCount has poor precision (~10 - 16ms)
-    this->start = ::GetTickCount();
+    // FIXME: ::GetTickCount64 has poor precision (~10 - 16ms)
+    this->start = ::GetTickCount64();
 #else
     ::gettimeofday(&this->start, NULL);
 #endif
@@ -101,7 +101,7 @@ inline std::size_t
 WallTimer::get_elapsed (void) const
 {
 #ifdef _WIN32
-    return ::GetTickCount() - start;
+    return ::GetTickCount64() - start;
 #else
     struct timeval cur_time;
     ::gettimeofday(&cur_time, NULL);
