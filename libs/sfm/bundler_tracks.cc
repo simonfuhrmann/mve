@@ -13,8 +13,6 @@ Tracks::compute (PairwiseMatching const& matching,
     ViewportList* viewports, TrackList* tracks)
 {
     /* Initialize per-viewport track IDs. */
-    if (this->opts.verbose_output)
-        std::cout << "  Initializing viewports..." << std::endl;
     for (std::size_t i = 0; i < viewports->size(); ++i)
     {
         Viewport& viewport = viewports->at(i);
@@ -23,7 +21,8 @@ Tracks::compute (PairwiseMatching const& matching,
 
     /* Propagate track IDs. */
     if (this->opts.verbose_output)
-        std::cout << "  Propagating track IDs..." << std::endl;
+        std::cout << "Propagating track IDs..." << std::endl;
+
     std::size_t track_counter = 0;
     for (std::size_t i = 0; i < matching.size(); ++i)
     {
@@ -36,6 +35,7 @@ Tracks::compute (PairwiseMatching const& matching,
             if (viewport1.track_ids[idx.first] == -1
                 && viewport2.track_ids[idx.second] == -1)
             {
+                /* No track ID associated with the match. Create track. */
                 viewport1.track_ids[idx.first] = track_counter;
                 viewport2.track_ids[idx.second] = track_counter;
                 track_counter += 1;
@@ -43,29 +43,38 @@ Tracks::compute (PairwiseMatching const& matching,
             else if (viewport1.track_ids[idx.first] == -1
                 && viewport2.track_ids[idx.second] != -1)
             {
+                /* Propagate track ID from first to second view. */
                 viewport1.track_ids[idx.first]
                     = viewport2.track_ids[idx.second];
             }
             else if (viewport1.track_ids[idx.first] != -1
                 && viewport2.track_ids[idx.second] == -1)
             {
+                /* Propagate track ID from second to first view. */
                 viewport2.track_ids[idx.second]
                     = viewport1.track_ids[idx.first];
             }
             else if (viewport1.track_ids[idx.first]
                 == viewport2.track_ids[idx.second])
             {
+                /* Track ID already propagated. */
             }
             else
             {
-                // TODO Conflict.
+                /*
+                 * A track ID is already associated with both ends of a match,
+                 * however, is not consistent. This cannot happen if the
+                 * pairwise matching is in a certain order.
+                 */
+                std::cerr << "Warning: Conflict while propagating track IDs."
+                    << std::endl;
             }
         }
     }
 
     /* Create tracks. */
     if (this->opts.verbose_output)
-        std::cout << "  Creating tracks..." << std::endl;
+        std::cout << "Creating tracks..." << std::endl;
     tracks->clear();
     tracks->resize(track_counter);
     for (std::size_t i = 0; i < viewports->size(); ++i)
@@ -85,7 +94,7 @@ Tracks::compute (PairwiseMatching const& matching,
 
     /* Find and remove tracks with conflicts. */
     if (this->opts.verbose_output)
-        std::cout << "  Removing tracks with conflicts..." << std::flush;
+        std::cout << "Removing tracks with conflicts..." << std::flush;
     std::size_t const num_total_tracks = tracks->size();
     std::size_t const num_invalid_tracks
         = this->remove_invalid_tracks(viewports, tracks);
