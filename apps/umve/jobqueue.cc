@@ -3,6 +3,8 @@
 
 #include <QThreadPool>
 
+#include "util/string.h"
+
 #include "jobqueue.h"
 
 JobQueue*
@@ -140,15 +142,12 @@ JobQueue::update_job (JobQueueEntry& job)
     list_label << job.progress->get_name();
     if (job.progress->has_progress())
     {
-        int progress = (int)(job.progress->get_progress() * 100.0f);
-        list_label << " (" << progress << "%)";
+        float progress = job.progress->get_progress() * 100.0f;
+        list_label << " (" << util::string::get_fixed(progress, 2) << "%)";
     }
-    list_label << "\n";
+    list_label << "\n" << job.progress->get_message();
+    job.item->setText(list_label.str().c_str());
 
     if (job.progress->is_completed())
         job.finished += 1;
-
-    list_label << job.progress->get_message();
-
-    job.item->setText(list_label.str().c_str());
 }

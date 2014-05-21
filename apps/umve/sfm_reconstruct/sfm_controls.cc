@@ -469,7 +469,10 @@ namespace
         if (job->auto_save)
             job->view->save_mve_file();
         job->view->cache_cleanup();
-        job->message = "Done.";
+
+        std::stringstream ss;
+        ss << descriptors.size() << " features, done.";
+        job->message = ss.str();
     }
 }
 
@@ -534,7 +537,7 @@ struct JobMatching : public JobProgress
     char const* get_name (void) { return name.c_str(); }
     bool is_completed (void) { return future.isFinished(); }
     bool has_progress (void) { return true; }
-    float get_progress (void) { return 100.0f * progress.num_done / progress.num_total; }
+    float get_progress (void) { return (float)progress.num_done / (float)progress.num_total; }
     char const* get_message (void) { return message.c_str(); }
     void cancel_job (void) { }
 };
