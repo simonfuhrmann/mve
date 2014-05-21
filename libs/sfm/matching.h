@@ -9,6 +9,7 @@
 #include <vector>
 #include <limits>
 
+#include "math/defines.h"
 #include "sfm/defines.h"
 #include "sfm/nearest_neighbor.h"
 
@@ -101,10 +102,10 @@ public:
 
 inline
 Matching::Options::Options (void)
+    : descriptor_length(128)
+    , lowe_ratio_threshold(0.8f)
+    , distance_threshold(std::numeric_limits<float>::max())
 {
-    this->descriptor_length = 64;
-    this->lowe_ratio_threshold = 0.8f;
-    this->distance_threshold = std::numeric_limits<float>::max();
 }
 
 template <typename T>
@@ -119,10 +120,8 @@ Matching::oneway_match (Matching::Options const& options,
     if (set_1_size == 0 || set_2_size == 0)
         return;
 
-    float const square_lowe_threshold = options.lowe_ratio_threshold
-        * options.lowe_ratio_threshold;
-    float const square_dist_threshold = options.distance_threshold
-        * options.distance_threshold;
+    float const square_lowe_thres = MATH_POW2(options.lowe_ratio_threshold);
+    float const square_dist_thres = MATH_POW2(options.distance_threshold);
     NearestNeighbor<T> nn;
     nn.set_elements(set_2, set_2_size);
     nn.set_element_dimensions(options.descriptor_length);
@@ -133,11 +132,11 @@ Matching::oneway_match (Matching::Options const& options,
         typename NearestNeighbor<T>::Result nn_result;
         T const* query_pointer = set_1 + i * options.descriptor_length;
         nn.find(query_pointer, &nn_result);
-        if (nn_result.dist_1st_best > square_dist_threshold)
+        if (nn_result.dist_1st_best > square_dist_thres)
             continue;
         if (static_cast<float>(nn_result.dist_1st_best)
             / static_cast<float>(nn_result.dist_2nd_best)
-            > square_lowe_threshold)
+            > square_lowe_thres)
             continue;
         result->at(i) = nn_result.index_1st_best;
     }

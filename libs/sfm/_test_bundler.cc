@@ -2,6 +2,7 @@
 #include <string>
 
 #include "util/system.h"
+#include "util/timer.h"
 #include "util/file_system.h"
 #include "mve/scene.h"
 #include "mve/bundle.h"
@@ -57,8 +58,12 @@ features_and_matching (mve::Scene::Ptr scene,
     matching_opts.ransac_opts.verbose_output = false;
 
     std::cout << "Performing exhaustive feature matching..." << std::endl;
+    util::WallTimer timer;
     sfm::bundler::Matching bundler_matching(matching_opts);
     bundler_matching.compute(*viewports, pairwise_matching);
+    std::cout << "Matching took " << timer.get_elapsed()
+        << " ms." << std::endl;
+    //std::exit(1);
 }
 
 

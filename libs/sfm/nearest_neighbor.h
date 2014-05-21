@@ -22,7 +22,7 @@ SFM_NAMESPACE_BEGIN
  *
  *   ||Q - Ci||^2 = ||Q||^2 + ||Ci||^2 - 2 * <Q | Ci>.
  *
- * If Q and Ci are expected to be normalized, ||Q - Ci||^2 = 2 - 2 * <Q | Ci>.
+ * If Q and Ci are normalized, ||Q - Ci||^2 = 2 - 2 * <Q | Ci>.
  * Thus, we want to quickly compute and find the largest inner product <Q, Ci>
  * corresponding to the smallest distance.
  *
@@ -31,8 +31,12 @@ SFM_NAMESPACE_BEGIN
  * aligned for efficient memory access.
  *
  * The following types are supported:
- *   - short using SSE2
+ *   - signed short using SSE2
+ *     value range -127 to 127, normalized to 127, max distance 32258
+ *   - unsigend short using SSE2
+ *     value range 0 to 255, normalized to 255, max distance 65534
  *   - float using SSE3
+ *     any value range, normalized to 1, any distance possible
  */
 template <typename T>
 class NearestNeighbor
