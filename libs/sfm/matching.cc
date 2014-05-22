@@ -10,11 +10,20 @@ void
 Matching::remove_inconsistent_matches (Matching::Result* matches)
 {
     for (std::size_t i = 0; i < matches->matches_1_2.size(); ++i)
+    {
+        if (matches->matches_1_2[i] < 0)
+            continue;
         if (matches->matches_2_1[matches->matches_1_2[i]] != (int)i)
             matches->matches_1_2[i] = -1;
+    }
+
     for (std::size_t i = 0; i < matches->matches_2_1.size(); ++i)
+    {
+        if (matches->matches_2_1[i] < 0)
+            continue;
         if (matches->matches_1_2[matches->matches_2_1[i]] != (int)i)
             matches->matches_2_1[i] = -1;
+    }
 }
 
 int
