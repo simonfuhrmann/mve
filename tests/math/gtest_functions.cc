@@ -27,23 +27,25 @@ TEST(MathFunctionsTest, GaussianTest)
     EXPECT_NEAR(gaussian(-2.0f, 2.0f), 0.606530659712633f, 1e-14f);
 }
 
-TEST(MathFunctionsTest, GaussianNDTest)
+TEST(MathFunctionsTest, RoundTest)
 {
-    using namespace math;
+    EXPECT_EQ(1.0f, math::round(1.1f));
+    EXPECT_EQ(2.0f, math::round(1.5f));
+    EXPECT_EQ(2.0f, math::round(1.7f));
+    EXPECT_EQ(-1.0f, math::round(-0.5f));
+    EXPECT_EQ(-1.0f, math::round(-0.7f));
+    EXPECT_EQ(-1.0f, math::round(-1.1f));
+    EXPECT_EQ(-2.0f, math::round(-1.5f));
+    EXPECT_EQ(0.0f, math::round(-0.4f));
 
-    Vec3d zero(0.0, 0.0, 0.0);
-    Matrix3d eye;
-    matrix_set_identity(&eye);
-    EXPECT_EQ(gaussian_nd(zero, eye), 1.0);
-
-    double const arr[] = {
-        0.126854, 0.016426, 0.015765,
-        0.016426, 0.114678, 0.017557,
-        0.015765, 0.017557, 0.194152};
-    Matrix3d cov_inv(arr);
-    Vec3d x(-4.8551, -4.3369, 3.9772);
-    // correct result computed with octave
-    EXPECT_NEAR(gaussian_nd(x, cov_inv), 0.0213277, 1e-7);
+    EXPECT_EQ(1.0, math::round(1.1));
+    EXPECT_EQ(2.0, math::round(1.5));
+    EXPECT_EQ(2.0, math::round(1.7));
+    EXPECT_EQ(-1.0, math::round(-0.5));
+    EXPECT_EQ(-1.0, math::round(-0.7));
+    EXPECT_EQ(-1.0, math::round(-1.1));
+    EXPECT_EQ(-2.0, math::round(-1.5));
+    EXPECT_EQ(0.0, math::round(-0.4));
 }
 
 TEST(MathFunctionsTest, FastPowTest)

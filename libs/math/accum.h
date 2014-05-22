@@ -6,7 +6,7 @@
 #ifndef MATH_ACCUM_HEADER
 #define MATH_ACCUM_HEADER
 
-#include "math/algo.h"
+#include "math/functions.h"
 #include "math/defines.h"
 
 MATH_NAMESPACE_BEGIN
@@ -156,13 +156,13 @@ Accum<unsigned char>::sub (unsigned char const& value, float weight)
 inline unsigned char
 Accum<unsigned char>::normalized (float weight) const
 {
-    return static_cast<unsigned char>(math::algo::round(this->v / weight));
+    return static_cast<unsigned char>(math::round(this->v / weight));
 }
 
 inline unsigned char
 Accum<unsigned char>::normalized (void) const
 {
-    return static_cast<unsigned char>(math::algo::round(this->v / this->w));
+    return static_cast<unsigned char>(math::round(this->v / this->w));
 }
 
 MATH_NAMESPACE_END
