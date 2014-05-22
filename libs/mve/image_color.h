@@ -6,8 +6,9 @@
 #ifndef MVE_IMAGE_COLOR_HEADER
 #define MVE_IMAGE_COLOR_HEADER
 
-#include "mve/defines.h"
+#include "math/functions.h"
 #include "mve/image.h"
+#include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
@@ -152,9 +153,9 @@ color_srgb_to_xyz<uint8_t> (uint8_t* v)
     out[0] = v[0] * 0.4124 + v[1] * 0.3576 + v[2] * 0.1805;
     out[1] = v[0] * 0.2126 + v[1] * 0.7152 + v[2] * 0.0722;
     out[2] = v[0] * 0.0193 + v[1] * 0.1192 + v[2] * 0.9505;
-    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
-    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
-    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+    v[0] = std::max(0.0, std::min(255.0, math::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::round(out[2])));
 }
 
 template <typename T>
@@ -176,9 +177,9 @@ color_xyz_to_srgb<uint8_t> (uint8_t* v)
     out[0] = v[0] *  3.2410 + v[1] * -1.5374 + v[2] * -0.4986;
     out[1] = v[0] * -0.9692 + v[1] *  1.8760 + v[2] *  0.0416;
     out[2] = v[0] *  0.0556 + v[1] * -0.2040 + v[2] *  1.0570;
-    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
-    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
-    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+    v[0] = std::max(0.0, std::min(255.0, math::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::round(out[2])));
 }
 
 template <typename T>
@@ -219,9 +220,9 @@ color_xyy_to_xyz<uint8_t> (uint8_t* v)
         out[0] = v[0] * ratio;
         out[1] = v[2];
         out[2] = (255 - v[0] - v[1]) * ratio;
-        v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
-        v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
-        v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+        v[0] = std::max(0.0, std::min(255.0, math::round(out[0])));
+        v[1] = std::max(0.0, std::min(255.0, math::round(out[1])));
+        v[2] = std::max(0.0, std::min(255.0, math::round(out[2])));
     }
 }
 
@@ -263,9 +264,9 @@ color_xyz_to_xyy<uint8_t> (uint8_t* v)
         out[0] = 255.0 * v[0] / sum;
         out[1] = 255.0 * v[1] / sum;
         out[2] = static_cast<double>(v[1]);
-        v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
-        v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
-        v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+        v[0] = std::max(0.0, std::min(255.0, math::round(out[0])));
+        v[1] = std::max(0.0, std::min(255.0, math::round(out[1])));
+        v[2] = std::max(0.0, std::min(255.0, math::round(out[2])));
     }
 }
 
@@ -288,9 +289,9 @@ color_rgb_to_ycbcr<uint8_t> (uint8_t* v)
     out[0] = v[0] * 0.299     + v[1] * 0.587     + v[2] * 0.114     + 0.0;
     out[1] = v[0] * -0.168736 + v[1] * -0.331264 + v[2] * 0.5       + 128.0;
     out[2] = v[0] * 0.5       + v[1] * -0.418688 + v[2] * -0.081312 + 128.0;
-    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
-    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
-    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+    v[0] = std::max(0.0, std::min(255.0, math::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::round(out[2])));
 }
 
 template <typename T>
@@ -315,9 +316,9 @@ color_ycbcr_to_rgb<uint8_t> (uint8_t* v)
     out[0] = v[0]                            + 1.402   * (v[2] - 128.0);
     out[1] = v[0] - 0.34414 * (v[1] - 128.0) - 0.71414 * (v[2] - 128.0);
     out[2] = v[0] + 1.772   * (v[1] - 128.0);
-    v[0] = std::max(0.0, std::min(255.0, math::algo::round(out[0])));
-    v[1] = std::max(0.0, std::min(255.0, math::algo::round(out[1])));
-    v[2] = std::max(0.0, std::min(255.0, math::algo::round(out[2])));
+    v[0] = std::max(0.0, std::min(255.0, math::round(out[0])));
+    v[1] = std::max(0.0, std::min(255.0, math::round(out[1])));
+    v[2] = std::max(0.0, std::min(255.0, math::round(out[2])));
 }
 
 MVE_IMAGE_NAMESPACE_END

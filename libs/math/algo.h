@@ -176,13 +176,6 @@ kernel_region (T const& cx, T const& cy, T const& ks,
 }
 
 template <typename T>
-inline T
-round (T const& x)
-{
-   return x > T(0) ? std::floor(x + T(0.5)) : std::ceil(x - T(0.5));
-}
-
-template <typename T>
 inline void
 sort_values (T* a, T* b, T* c)
 {

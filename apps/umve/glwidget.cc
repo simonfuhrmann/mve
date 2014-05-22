@@ -5,6 +5,10 @@
 #include "ogl/events.h"
 #include "glwidget.h"
 
+#if QT_VERSION >= 0x050000
+#   include <QWindow>
+#endif
+
 GLWidget::GLWidget (QWidget *parent)
     : QGLWidget(parent)
     , context(NULL)
@@ -88,8 +92,14 @@ GLWidget::mousePressEvent (QMouseEvent *event)
     e.type = ogl::MOUSE_EVENT_PRESS;
     e.button = (ogl::MouseButton)event->button();
     e.button_mask = event->buttons();
+#if QT_VERSION >= 0x050000
+    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
+    e.x = static_cast<int>(event->x() * pixel_ratio);
+    e.y = static_cast<int>(event->y() * pixel_ratio);
+#else
     e.x = event->x();
     e.y = event->y();
+#endif
     this->context->mouse_event(e);
     this->repaint();
 }
@@ -103,8 +113,14 @@ GLWidget::mouseReleaseEvent (QMouseEvent *event)
     e.type = ogl::MOUSE_EVENT_RELEASE;
     e.button = (ogl::MouseButton)event->button();
     e.button_mask = event->buttons();
+#if QT_VERSION >= 0x050000
+    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
+    e.x = static_cast<int>(event->x() * pixel_ratio);
+    e.y = static_cast<int>(event->y() * pixel_ratio);
+#else
     e.x = event->x();
     e.y = event->y();
+#endif
     this->context->mouse_event(e);
     this->repaint();
 }
@@ -118,8 +134,14 @@ GLWidget::mouseMoveEvent (QMouseEvent *event)
     e.type = ogl::MOUSE_EVENT_MOVE;
     e.button = (ogl::MouseButton)event->button();
     e.button_mask = event->buttons();
+#if QT_VERSION >= 0x050000
+    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
+    e.x = static_cast<int>(event->x() * pixel_ratio);
+    e.y = static_cast<int>(event->y() * pixel_ratio);
+#else
     e.x = event->x();
     e.y = event->y();
+#endif
     this->context->mouse_event(e);
     this->repaint();
 }
@@ -136,8 +158,14 @@ GLWidget::wheelEvent (QWheelEvent* event)
         e.type = ogl::MOUSE_EVENT_WHEEL_UP;
     e.button = ogl::MOUSE_BUTTON_NONE;
     e.button_mask = event->buttons();
+#if QT_VERSION >= 0x050000
+    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
+    e.x = static_cast<int>(event->x() * pixel_ratio);
+    e.y = static_cast<int>(event->y() * pixel_ratio);
+#else
     e.x = event->x();
     e.y = event->y();
+#endif
     this->context->mouse_event(e);
     this->repaint();
 }
