@@ -600,7 +600,7 @@ Sift::orientation_assignment (Keypoint const& kp,
     /* Integral x and y coordinates and closest scale sample. */
     int const ix = static_cast<int>(kp.x + 0.5f);
     int const iy = static_cast<int>(kp.y + 0.5f);
-    int const is = static_cast<int>(math::algo::round(kp.sample));
+    int const is = static_cast<int>(math::round(kp.sample));
     float const sigma = this->keypoint_relative_scale(kp);
 
     /* Images with its dimension for the keypoint. */
@@ -705,7 +705,7 @@ Sift::descriptor_assignment (Keypoint const& kp, Descriptor& desc,
     /* Integral x and y coordinates and closest scale sample. */
     int const ix = static_cast<int>(kp.x + 0.5f);
     int const iy = static_cast<int>(kp.y + 0.5f);
-    int const is = static_cast<int>(math::algo::round(kp.sample));
+    int const is = static_cast<int>(math::round(kp.sample));
     float const dxf = kp.x - static_cast<float>(ix);
     float const dyf = kp.y - static_cast<float>(iy);
     float const sigma = this->keypoint_relative_scale(kp);

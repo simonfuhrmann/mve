@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "util/timer.h"
+#include "math/functions.h"
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
@@ -684,10 +685,10 @@ Surf::descriptor_computation (Descriptor* descr, bool upright)
         for (int x = -10; x < 10; ++x)
         {
             /* Rotate sample coordinate. */
-            int rot_x = static_cast<int>(math::algo::round(descr->x
+            int rot_x = static_cast<int>(math::round(descr->x
                 + (cos_ori * (x + 0.5f) - sin_ori * (y + 0.5f))
                 * descr_scale));
-            int rot_y = static_cast<int>(math::algo::round(descr->y
+            int rot_y = static_cast<int>(math::round(descr->y
                 + (sin_ori * (x + 0.5f) + cos_ori * (y + 0.5f))
                 * descr_scale));
 
