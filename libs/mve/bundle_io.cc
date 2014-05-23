@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 
+#include "util/file_system.h"
 #include "util/string.h"
 #include "util/exception.h"
 #include "math/matrix.h"
@@ -51,19 +52,6 @@ namespace
         rot[8] = 1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2];
         return rot;
     }
-
-    // TODO: Move to util::string or util::fs??
-    std::string
-    get_relative_path_component (std::string const& full_path)
-    {
-        std::size_t pos = full_path.find_last_of('/');
-        if (pos == std::string::npos)
-            return "./";
-        else if (pos == 0)
-            return "/.";
-        else
-            return full_path.substr(0, pos);
-    }
 }  // namespace
 
 Bundle::Ptr
@@ -105,7 +93,7 @@ load_nvm_bundle (std::string const& filename,
 
     /* Read views. */
     std::cout << "NVM: Number of views: " << num_views << std::endl;
-    std::string nvm_path = get_relative_path_component(filename);
+    std::string nvm_path = util::fs::basename(filename);
     for (int i = 0; i < num_views; ++i)
     {
         NVMCameraInfo nvm_cam;
@@ -134,7 +122,7 @@ load_nvm_bundle (std::string const& filename,
 
         /* If the filename is not absolute, make relative to NVM. */
         if (!nvm_cam.filename.empty() && nvm_cam.filename[0] != '/')
-            nvm_cam.filename = nvm_path + "/" + nvm_cam.filename;
+            nvm_cam.filename = util::fs::join_path(nvm_path, nvm_cam.filename);
 
         /* Jettison trailing zero. */
         int temp;
