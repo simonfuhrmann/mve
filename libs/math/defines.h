@@ -57,8 +57,8 @@ MATH_NAMESPACE_END
 #define MATH_POW4(x) (MATH_POW2(MATH_POW2(x)))
 
 /* Angle conversions macros, DEG <-> RAD. */
-#define MATH_RAD2DEG(x) (x * (180.0 / MATH_PI))
-#define MATH_DEG2RAD(x) (x * (MATH_PI / 180.0))
+#define MATH_RAD2DEG(x) ((x) * (180.0 / MATH_PI))
+#define MATH_DEG2RAD(x) ((x) * (MATH_PI / 180.0))
 
 /* Float and double limits and epsilon values. */
 #ifndef __FLT_MIN__
