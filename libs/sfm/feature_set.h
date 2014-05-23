@@ -17,6 +17,9 @@
 
 SFM_NAMESPACE_BEGIN
 
+/**
+ * TODO
+ */
 class FeatureSet
 {
 public:
@@ -28,7 +31,7 @@ public:
         FEATURE_ALL = 0xFF
     };
 
-    /** Options for features and matching. */
+    /** Options for feature detection and matching. */
     struct Options
     {
         Options (void);
@@ -42,7 +45,10 @@ public:
 
 public:
     FeatureSet (Options const& options);
+
+    /** Computes the features specified in the options. */
     void compute_features (mve::ByteImage::Ptr image);
+    /** Matches all features yielding a single matching result. */
     void match (FeatureSet const& other, Matching::Result* result);
 
 public:
@@ -67,11 +73,13 @@ private:
 
 /* ------------------------ Implementation ------------------------ */
 
+inline
 FeatureSet::Options::Options (void)
     : feature_types(FEATURE_SIFT)
 {
 }
 
+inline
 FeatureSet::FeatureSet (Options const& options)
     : opts(options)
     , num_sift_descriptors(0)

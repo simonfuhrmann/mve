@@ -17,20 +17,20 @@
 #include "sfm/bundler_init_pair.h"
 #include "sfm/bundler_incremental.h"
 
+#define IMAGE_EMBEDDING "original"
+#define FEATURE_EMBEDDING "original-sift"
+#define EXIF_EMBEDDING "exif"
+
 void
 features_and_matching (mve::Scene::Ptr scene,
     sfm::bundler::ViewportList* viewports,
     sfm::bundler::PairwiseMatching* pairwise_matching)
 {
-    std::string const image_embedding = "original";
-    std::string const feature_embedding = "original-sift";
-    std::string const exif_embedding = "exif";
-
     /* Feature computation for the scene. */
     sfm::bundler::Features::Options feature_opts;
-    feature_opts.image_embedding = image_embedding;
-    feature_opts.feature_embedding = feature_embedding;
-    feature_opts.exif_embedding = exif_embedding;
+    feature_opts.image_embedding = IMAGE_EMBEDDING;
+    feature_opts.feature_embedding = FEATURE_EMBEDDING;
+    feature_opts.exif_embedding = EXIF_EMBEDDING;
     feature_opts.max_image_size = 5000000;
     feature_opts.skip_saving_views = false;
     feature_opts.force_recompute = false;
@@ -175,6 +175,7 @@ main (int argc, char** argv)
     incremental.bundle_adjustment_full();
 
     /* Reconstruct remaining views. */
+    int num_cameras_reconstructed = 2;
     while (true)
     {
         std::vector<int> next_views;
@@ -183,7 +184,9 @@ main (int argc, char** argv)
         for (std::size_t i = 0; i < next_views.size(); ++i)
         {
             std::cout << std::endl;
-            std::cout << "Adding next view ID " << next_views[i] << "..." << std::endl;
+            std::cout << "Adding next view ID " << next_views[i]
+                << "(" << num_cameras_reconstructed << " of "
+                << viewports.size() << ")..." << std::endl;
             if (incremental.reconstruct_next_view(next_views[i]))
             {
                 next_view_id = next_views[i];
@@ -208,15 +211,15 @@ main (int argc, char** argv)
 
         std::cout << "Running full bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_full();
+        num_cameras_reconstructed += 1;
     }
 
     std::cout << "Normalizing scene..." << std::endl;
     incremental.normalize_scene();
 
+    /* Save bundle file to scene. */
     std::cout << "Creating bundle data structure..." << std::endl;
     mve::Bundle::Ptr bundle = incremental.create_bundle();
-
-    /* Save bundle file to scene. */
     mve::save_mve_bundle(bundle, scene->get_path() + "/synth_0.out");
 
     /* Apply bundle cameras to views. */
@@ -228,6 +231,7 @@ main (int argc, char** argv)
         return 1;
     }
 
+#pragma omp parallel for
     for (std::size_t i = 0; i < bundle_cams.size(); ++i)
     {
         mve::View::Ptr view = views[i];
@@ -236,8 +240,17 @@ main (int argc, char** argv)
             continue;
 
         view->set_camera(cam);
+
+        /* Undistort image. */
+        mve::ByteImage::Ptr original = view->get_byte_image(IMAGE_EMBEDDING);
+        mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
+            (original, cam.flen, cam.dist[0]);
+        view->set_image("undistorted", undist);
+
+#pragma omp critical
         std::cout << "Saving MVE view " << view->get_filename() << std::endl;
         view->save_mve_file();
+        view->cache_cleanup();
     }
 
     return 0;

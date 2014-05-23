@@ -7,10 +7,11 @@
 #include "mve/image_tools.h"
 #include "mve/image_io.h"
 
-#include "surf.h"
-#include "sift.h"
-#include "matching.h"
-#include "visualizer.h"
+#include "sfm/surf.h"
+#include "sfm/sift.h"
+#include "sfm/feature_set.h"
+#include "sfm/matching.h"
+#include "sfm/visualizer.h"
 
 uint8_t const color_black[] = { 0, 0, 0 };
 
@@ -19,7 +20,6 @@ sfm::Matching::Result
 twoview_matching (std::vector<DESCR> const& descr1,
     std::vector<DESCR> const& descr2)
 {
-#if 1
     /* Convert the descriptors to aligned float arrays. */
     util::AlignedMemory<float, 16> matchset_1(DIM * descr1.size());
     float* out_ptr1 = matchset_1.begin();
@@ -30,26 +30,6 @@ twoview_matching (std::vector<DESCR> const& descr1,
     float* out_ptr2 = matchset_2.begin();
     for (std::size_t i = 0; i < descr2.size(); ++i, out_ptr2 += DIM)
         std::copy(descr2[i].data.begin(), descr2[i].data.end(), out_ptr2);
-#else
-    /* Convert the descriptors to aligned short arrays. */
-    util::AlignedMemory<short, 16> matchset_1(DIM * descr1.size());
-    short* mem_ptr = matchset_1.begin();
-    for (std::size_t i = 0; i < descr1.size(); ++i)
-    {
-        math::Vector<float, DIM> const& d = descr1[i].data;
-        for (int j = 0; j < DIM; ++j)
-            *(mem_ptr++) = static_cast<short>(d[j] * 127.0f);
-    }
-
-    util::AlignedMemory<short, 16> matchset_2(DIM * descr2.size());
-    mem_ptr = matchset_2.begin();
-    for (std::size_t i = 0; i < descr2.size(); ++i)
-    {
-        math::Vector<float, DIM> const& d = descr2[i].data;
-        for (int j = 0; j < DIM; ++j)
-            *(mem_ptr++) = static_cast<short>(d[j] * 127.0f);
-    }
-#endif
 
     /* Perform matching. */
     sfm::Matching::Options matchopts;
@@ -64,10 +44,9 @@ twoview_matching (std::vector<DESCR> const& descr1,
     sfm::Matching::remove_inconsistent_matches(&matching);
     std::cout << "Two-view matching took " << timer.get_elapsed() << "ms." << std::endl;
 
-    int num_matches = 0;
-    for (std::size_t i = 0; i < matching.matches_1_2.size(); ++i)
-        num_matches += matching.matches_1_2[i] < 0 ? 0 : 1;
-    std::cout << "Kept " << num_matches << " good matches." << std::endl;
+    std::cout << "Kept " << sfm::Matching::count_consistent_matches(matching)
+        << " good matches." << std::endl;
+
     return matching;
 }
 
@@ -93,7 +72,32 @@ visualize_matching (sfm::Matching::Result const& matching,
         vis_matches.push_back(match);
     }
 
-    std::cout << "Drawing matches..." << std::endl;
+    std::cout << "Drawing " << vis_matches.size() << " matches..." << std::endl;
+    mve::ByteImage::Ptr match_image = sfm::Visualizer::draw_matches
+        (image1, image2, vis_matches);
+    return match_image;
+}
+
+mve::ByteImage::Ptr
+visualize_matching (sfm::Matching::Result const& matching,
+    mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2,
+    std::vector<math::Vec2f> const& pos1, std::vector<math::Vec2f> const& pos2)
+{
+    /* Visualize keypoints. */
+    sfm::Correspondences vis_matches;
+    for (std::size_t i = 0; i < matching.matches_1_2.size(); ++i)
+    {
+        if (matching.matches_1_2[i] < 0)
+            continue;
+        int const j = matching.matches_1_2[i];
+
+        sfm::Correspondence match;
+        std::copy(pos1[i].begin(), pos1[i].end(), match.p1);
+        std::copy(pos2[j].begin(), pos2[j].end(), match.p2);
+        vis_matches.push_back(match);
+    }
+
+    std::cout << "Drawing " << vis_matches.size() << " matches..." << std::endl;
     mve::ByteImage::Ptr match_image = sfm::Visualizer::draw_matches
         (image1, image2, vis_matches);
     return match_image;
@@ -102,6 +106,7 @@ visualize_matching (sfm::Matching::Result const& matching,
 void
 sift_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 {
+    std::cout << std::endl << "SIFT matching..." << std::endl;
     sfm::Sift::Descriptors descr1;
     {
         sfm::Sift::Options sift_options;
@@ -122,9 +127,11 @@ sift_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 
     sfm::Matching::Result matching
         = twoview_matching<sfm::Sift::Descriptor, 128>(descr1, descr2);
+
+    std::cout << "SIFT matching result: " << matching.matches_1_2.size() << " / " << matching.matches_2_1.size() << std::endl;
+
     mve::ByteImage::Ptr match_image
         = visualize_matching(matching, image1, image2, descr1, descr2);
-
     std::string output_filename = "/tmp/matching_sift.png";
     std::cout << "Saving visualization to " << output_filename << std::endl;
     mve::image::save_file(match_image, output_filename);
@@ -133,6 +140,7 @@ sift_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 void
 surf_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 {
+    std::cout << std::endl << "SURF matching..." << std::endl;
     sfm::Surf::Descriptors descr1;
     {
         sfm::Surf::Options surf_opts;
@@ -155,9 +163,45 @@ surf_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 
     sfm::Matching::Result matching
         = twoview_matching<sfm::Surf::Descriptor, 64>(descr1, descr2);
+
+    std::cout << "SURF matching result: " << matching.matches_1_2.size() << " / " << matching.matches_2_1.size() << std::endl;
+
     mve::ByteImage::Ptr match_image
         = visualize_matching(matching, image1, image2, descr1, descr2);
     std::string output_filename = "/tmp/matching_surf.png";
+    std::cout << "Saving visualization to " << output_filename << std::endl;
+    mve::image::save_file(match_image, output_filename);
+}
+
+void
+feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
+{
+    std::cout << std::endl << "Feature set matching..." << std::endl;
+    sfm::FeatureSet::Options opts;
+    opts.feature_types = sfm::FeatureSet::FEATURE_ALL;
+    opts.surf_opts.contrast_threshold = 500.0f;
+    opts.sift_matching_opts.lowe_ratio_threshold = 0.9f;
+    opts.sift_matching_opts.descriptor_length = 128;
+    opts.surf_matching_opts.lowe_ratio_threshold = 0.9f;
+    opts.surf_matching_opts.descriptor_length = 64;
+
+    sfm::FeatureSet feat1(opts);
+    feat1.compute_features(image1);
+    sfm::FeatureSet feat2(opts);
+    feat2.compute_features(image2);
+
+    sfm::Matching::Result matching;
+    feat1.match(feat2, &matching);
+
+    std::cout << "Consistent Matches: "
+        << sfm::Matching::count_consistent_matches(matching)
+        << std::endl;
+
+    std::cout << "FS matching result: " << matching.matches_1_2.size() << " / " << matching.matches_2_1.size() << std::endl;
+
+    mve::ByteImage::Ptr match_image
+        = visualize_matching(matching, image1, image2, feat1.pos, feat2.pos);
+    std::string output_filename = "/tmp/matching_featureset.png";
     std::cout << "Saving visualization to " << output_filename << std::endl;
     mve::image::save_file(match_image, output_filename);
 }
@@ -195,6 +239,7 @@ main (int argc, char** argv)
 
     sift_matching(image1, image2);
     surf_matching(image1, image2);
+    feature_set_matching(image1, image2);
 
 #if 0
     /* Benchmarking. */

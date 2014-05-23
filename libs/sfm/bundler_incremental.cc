@@ -689,7 +689,7 @@ Incremental::normalize_scene (void)
     }
 
     /* Compute scale and translation. */
-    double scale = 1.0 / (aabb_max - aabb_min).maximum();
+    double scale = 10.0 / (aabb_max - aabb_min).maximum();
     math::Vec3d trans = -(aabb_max + aabb_min) / 2.0;
 
     /* Transform every point. */
@@ -750,6 +750,9 @@ Incremental::create_bundle (void) const
             cam.ppoint[1] = static_cast<float>(pose.K[5]) / height;
             std::copy(pose.R.begin(), pose.R.end(), cam.rot);
             std::copy(pose.t.begin(), pose.t.end(), cam.trans);
+            cam.dist[0] = viewport.radial_distortion
+                * MATH_POW2(pose.get_focal_length());
+            cam.dist[1] = 0.0f;
         }
 
         /* Populate the features in the Bundle. */

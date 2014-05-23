@@ -1,10 +1,38 @@
 #include <iostream>
 #include <algorithm>
 
-#include "util/timer.h"
 #include "sfm/feature_set.h"
 
 SFM_NAMESPACE_BEGIN
+
+namespace
+{
+    void
+    discretize_descriptor (Sift::Descriptor const& descr,
+        math::Vector<unsigned char, 128>* data)
+    {
+        for (int i = 0; i < 128; ++i)
+        {
+            float value = descr.data[i];
+            value = math::clamp(value, 0.0f, 1.0f);
+            value = math::round(value * 255.0f);
+            (*data)[i] = static_cast<unsigned char>(value);
+        }
+    }
+
+    void
+    discretize_descriptor (Surf::Descriptor const& descr,
+        math::Vector<signed char, 64>* data)
+    {
+        for (int i = 0; i < 64; ++i)
+        {
+            float value = descr.data[i];
+            value = math::clamp(value, 0.0f, 1.0f);
+            value = math::round(value * 255.0f);
+            (*data)[i] = static_cast<signed char>(value);
+        }
+    }
+}  /* namespace */
 
 void
 FeatureSet::compute_features (mve::ByteImage::Ptr image)
@@ -73,9 +101,6 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
 void
 FeatureSet::match (FeatureSet const& other, Matching::Result* result)
 {
-    util::WallTimer timer;
-    int num_matches = 0;
-
     /* SIFT matching. */
     sfm::Matching::Result sift_result;
     if (this->num_sift_descriptors > 0)
@@ -85,7 +110,6 @@ FeatureSet::match (FeatureSet const& other, Matching::Result* result)
             other.sift_descr.begin(), other.num_sift_descriptors,
             &sift_result);
         sfm::Matching::remove_inconsistent_matches(&sift_result);
-        num_matches += sfm::Matching::count_consistent_matches(sift_result);
     }
 
     /* SURF matching. */
@@ -97,29 +121,20 @@ FeatureSet::match (FeatureSet const& other, Matching::Result* result)
             other.surf_descr.begin(), other.num_surf_descriptors,
             &surf_result);
         sfm::Matching::remove_inconsistent_matches(&surf_result);
-        num_matches += sfm::Matching::count_consistent_matches(surf_result);
     }
-
-
-    std::cout << "  Matching took " << timer.get_elapsed() << "ms, "
-        << num_matches << " matches." << std::endl;
 
     /* Fix offsets in the matching result. */
     int other_surf_offset = other.num_sift_descriptors;
     if (other_surf_offset > 0)
-    {
-        std::for_each(surf_result.matches_1_2.begin(),
-            surf_result.matches_1_2.end(),
-            math::algo::foreach_addition_with_const<int>(other_surf_offset));
-    }
+        for (std::size_t i = 0; i < surf_result.matches_1_2.size(); ++i)
+            if (surf_result.matches_1_2[i] >= 0)
+                surf_result.matches_1_2[i] += other_surf_offset;
 
     int this_surf_offset = this->num_sift_descriptors;
     if (this_surf_offset > 0)
-    {
-        std::for_each(surf_result.matches_2_1.begin(),
-            surf_result.matches_2_1.end(),
-            math::algo::foreach_addition_with_const<int>(this_surf_offset));
-    }
+        for (std::size_t i = 0; i < surf_result.matches_2_1.size(); ++i)
+            if (surf_result.matches_2_1[i] >= 0)
+                surf_result.matches_2_1[i] += this_surf_offset;
 
     /* Create a combined matching result. */
     std::size_t this_num_descriptors = this->num_sift_descriptors
