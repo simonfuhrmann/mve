@@ -1,15 +1,20 @@
+/*
+ * Structure from Motion reconstruction for MVE scenes.
+ * Written by Simon Fuhrmann.
+ */
+
 #include <iostream>
 #include <string>
 
 #include "util/system.h"
 #include "util/timer.h"
+#include "util/arguments.h"
 #include "util/file_system.h"
 #include "mve/scene.h"
 #include "mve/bundle.h"
 #include "mve/bundle_io.h"
-#include "mve/image_io.h"
+#include "mve/image.h"
 #include "mve/image_tools.h"
-#include "sfm/sift.h"
 #include "sfm/bundler_common.h"
 #include "sfm/bundler_features.h"
 #include "sfm/bundler_matching.h"
@@ -17,21 +22,27 @@
 #include "sfm/bundler_init_pair.h"
 #include "sfm/bundler_incremental.h"
 
-#define IMAGE_EMBEDDING "undistorted"
-#define FEATURE_EMBEDDING "undistorted-sift"
-#define EXIF_EMBEDDING "exif"
+struct AppSettings
+{
+    std::string scene_path;
+    std::string original_name;
+    std::string undistorted_name;
+    std::string exif_name;
+    std::string prebundle_file;
+    int max_image_size;
+};
 
 void
-features_and_matching (mve::Scene::Ptr scene,
+features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     sfm::bundler::ViewportList* viewports,
     sfm::bundler::PairwiseMatching* pairwise_matching)
 {
     /* Feature computation for the scene. */
     sfm::bundler::Features::Options feature_opts;
-    feature_opts.image_embedding = IMAGE_EMBEDDING;
-    feature_opts.feature_embedding = FEATURE_EMBEDDING;
-    feature_opts.exif_embedding = EXIF_EMBEDDING;
-    feature_opts.max_image_size = 8000000;
+    feature_opts.image_embedding = conf.original_name;
+    feature_opts.feature_embedding = "";
+    feature_opts.exif_embedding = conf.exif_name;
+    feature_opts.max_image_size = conf.max_image_size;
     feature_opts.skip_saving_views = false;
     feature_opts.force_recompute = false;
 
@@ -71,22 +82,13 @@ features_and_matching (mve::Scene::Ptr scene,
     }
 }
 
-
-int
-main (int argc, char** argv)
+void
+sfm_reconstruct (AppSettings const& conf)
 {
-    if (argc < 2)
-    {
-        std::cerr << "Syntax: " << argv[0] << " <scene>" << std::endl;
-        return 1;
-    }
-
-    util::system::rand_seed(2);
-
     /* Load scene. */
-    mve::Scene::Ptr scene = mve::Scene::create(argv[1]);
-    std::string const prebundle_file = "prebundle.bin";
-    std::string const prebundle_path = util::fs::join_path(scene->get_path(), prebundle_file);
+    mve::Scene::Ptr scene = mve::Scene::create(conf.scene_path);
+    std::string const prebundle_path
+        = util::fs::join_path(scene->get_path(), conf.prebundle_file);
 
     sfm::bundler::ViewportList viewports;
     sfm::bundler::PairwiseMatching pairwise_matching;
@@ -98,34 +100,37 @@ main (int argc, char** argv)
     }
     else
     {
-        features_and_matching(scene, &viewports, &pairwise_matching);
+        features_and_matching(scene, conf, &viewports, &pairwise_matching);
         std::cout << "Saving pre-bundle to file..." << std::endl;
         sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
     }
-
 
     /* For every viewport drop descriptor information to save memory. */
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].descr_data.deallocate();
 
+    /* Remove unused embeddings. */
+    scene->cache_cleanup();
+
     /* Compute connected feature components, i.e. feature tracks. */
-    std::cout << "Computing feature tracks..." << std::endl;
     sfm::bundler::Tracks::Options tracks_options;
     tracks_options.verbose_output = true;
-    sfm::bundler::TrackList tracks;
+
     sfm::bundler::Tracks bundler_tracks(tracks_options);
+    sfm::bundler::TrackList tracks;
+    std::cout << "Computing feature tracks..." << std::endl;
     bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
     std::cout << "Created a total of " << tracks.size()
         << " tracks." << std::endl;
 
     /* Find initial pair. */
     sfm::bundler::InitialPair::Options init_pair_opts;
-    init_pair_opts.verbose_output = true;
-    init_pair_opts.max_homography_inliers = 0.5f;
     init_pair_opts.homography_opts.max_iterations = 1000;
     init_pair_opts.homography_opts.already_normalized = false;
     init_pair_opts.homography_opts.threshold = 3.0f;
     init_pair_opts.homography_opts.verbose_output = false;
+    init_pair_opts.max_homography_inliers = 0.5f;
+    init_pair_opts.verbose_output = true;
 
     sfm::bundler::InitialPair::Result init_pair_result;
     sfm::bundler::InitialPair init_pair(init_pair_opts);
@@ -134,7 +139,7 @@ main (int argc, char** argv)
     if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0)
     {
         std::cerr << "Error finding initial pair, exiting!" << std::endl;
-        return 1;
+        std::exit(1);
     }
 
     std::cout << "Using views " << init_pair_result.view_1_id
@@ -191,7 +196,7 @@ main (int argc, char** argv)
         {
             std::cout << std::endl;
             std::cout << "Adding next view ID " << next_views[i]
-                << "(" << num_cameras_reconstructed << " of "
+                << " (" << (num_cameras_reconstructed + 1) << " of "
                 << viewports.size() << ")..." << std::endl;
             if (incremental.reconstruct_next_view(next_views[i]))
             {
@@ -234,7 +239,7 @@ main (int argc, char** argv)
     if (bundle_cams.size() != views.size())
     {
         std::cerr << "Error: Invalid number of cameras!" << std::endl;
-        return 1;
+        std::exit(1);
     }
 
 #pragma omp parallel for
@@ -248,7 +253,7 @@ main (int argc, char** argv)
         view->set_camera(cam);
 
         /* Undistort image. */
-        mve::ByteImage::Ptr original = view->get_byte_image(IMAGE_EMBEDDING);
+        mve::ByteImage::Ptr original = view->get_byte_image(conf.original_name);
         mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
             (original, cam.flen, cam.dist[0]);
         view->set_image("undistorted", undist);
@@ -258,6 +263,57 @@ main (int argc, char** argv)
         view->save_mve_file();
         view->cache_cleanup();
     }
+
+}
+
+int
+main (int argc, char** argv)
+{
+    /* Setup argument parser. */
+    util::Arguments args;
+    args.set_usage(argv[0], "[ OPTIONS ] SCENE");
+    args.set_exit_on_error(true);
+    args.set_nonopt_maxnum(1);
+    args.set_nonopt_minnum(1);
+    args.set_helptext_indent(23);
+    args.set_description("This utility reconstructs camera parameters "
+        "for MVE scenes using Structure-from-Motion techniques.");
+    args.add_option('o', "original", true, "Original image embedding [original]");
+    args.add_option('e', "exif", true, "EXIF data embedding [exif]");
+    args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing [6000000]");
+    args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
+    args.add_option('\0', "prebundle", true, "Load/store pre-bundle from file [prebundle.sfm]");
+    args.parse(argc, argv);
+
+    /* Setup defaults. */
+    AppSettings conf;
+    conf.scene_path = args.get_nth_nonopt(0);
+    conf.original_name = "original";
+    conf.undistorted_name = "undistorted";
+    conf.exif_name = "exif";
+    conf.prebundle_file = "prebundle.sfm";
+    conf.max_image_size = 6000000;
+
+    /* General settings. */
+    for (util::ArgResult const* i = args.next_option();
+        i != NULL; i = args.next_option())
+    {
+        if (i->opt->lopt == "original")
+            conf.original_name = i->arg;
+        else if (i->opt->lopt == "exif")
+            conf.exif_name = i->arg;
+        else if (i->opt->lopt == "undistorted")
+            conf.undistorted_name = i->arg;
+        else if (i->opt->lopt == "max-pixels")
+            conf.max_image_size = i->get_arg<int>();
+        else if (i->opt->lopt == "prebundle")
+            conf.prebundle_file = i->arg;
+        else
+            throw std::invalid_argument("Unexpected option");
+    }
+
+    util::system::rand_seed(0);
+    sfm_reconstruct(conf);
 
     return 0;
 }
