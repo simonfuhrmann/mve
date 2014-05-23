@@ -24,6 +24,7 @@ Tracks::compute (PairwiseMatching const& matching,
         std::cout << "Propagating track IDs..." << std::endl;
 
     std::size_t track_counter = 0;
+    std::size_t num_conflicts = 0;
     for (std::size_t i = 0; i < matching.size(); ++i)
     {
         TwoViewMatching const& tvm = matching[i];
@@ -63,18 +64,17 @@ Tracks::compute (PairwiseMatching const& matching,
             {
                 /*
                  * A track ID is already associated with both ends of a match,
-                 * however, is not consistent. This cannot happen if the
-                 * pairwise matching is in a certain order.
+                 * however, is not consistent.
                  */
-                std::cerr << "Warning: Conflict while propagating track IDs."
-                    << std::endl;
+                num_conflicts += 1;
             }
         }
     }
 
+    std::cerr << "Warning: " << num_conflicts
+        << " conflicts while propagating track IDs." << std::endl;
+
     /* Create tracks. */
-    if (this->opts.verbose_output)
-        std::cout << "Creating tracks..." << std::endl;
     tracks->clear();
     tracks->resize(track_counter);
     for (std::size_t i = 0; i < viewports->size(); ++i)
@@ -104,12 +104,11 @@ Tracks::compute (PairwiseMatching const& matching,
 
     /* Compute color for every track. */
     if (this->opts.verbose_output)
-        std::cout << "  Colorizing tracks..." << std::endl;
+        std::cout << "Colorizing tracks..." << std::endl;
     for (std::size_t i = 0; i < tracks->size(); ++i)
     {
-        // FIXME: Use 50% median color?
         Track& track = tracks->at(i);
-        math::Vec4f color(0.0f, 0.0f, 0.0f, 1.0f);
+        math::Vec4f color(0.0f, 0.0f, 0.0f, 0.0f);
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             FeatureReference const& ref = track.features[j];

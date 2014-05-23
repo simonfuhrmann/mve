@@ -29,11 +29,16 @@ Matching::compute (ViewportList const& viewports,
     for (std::size_t i = 0; i < viewports.size(); ++i)
         for (std::size_t j = 0; j < i; ++j)
         {
+            current_pair += 1;
+            if (viewports[i].positions.empty()
+                || viewports[j].positions.empty())
+                continue;
+
             int percent = current_pair * 100 / num_pairs;
             std::cout << "Processing pair " << i << ","
                 << j << " (" << percent << "%)..." << std::endl;
+
             this->two_view_matching(i, j, viewports, pairwise_matching);
-            current_pair += 1;
 
             if (this->progress != NULL)
                 this->progress->num_done += 1;

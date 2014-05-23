@@ -95,6 +95,9 @@ Features::compute (mve::View::Ptr view, Viewport* viewport) const
      * rescaled to the image size descriptors have been computed from.
      */
     mve::ByteImage::Ptr img = view->get_byte_image(this->opts.image_embedding);
+    if (img == NULL)
+        return;
+
     if (descriptors.empty())
     {
         /* Rescale image until maximum image size is met. */

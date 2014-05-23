@@ -10,6 +10,9 @@ namespace
      * Given a string, compute a simplified version that only contains upper
      * case alpha-numeric characters. All other characters are replaced with
      * spaces. Two or more subsequent spaces are replaced with a single space.
+     *
+     * Example: Asahi Optical Co.,Ltd.  PENTAX Optio330RS
+     * Becomes: ASAHI OPTICAL CO LTD PENTAX OPTIO330RS
      */
     std::string
     simplify_string (std::string const& str)

@@ -38,6 +38,8 @@ public:
         double track_error_threshold_factor;
         /** Reprojection error threshold for newly triangulated tracks. */
         double new_track_error_threshold;
+        /** Minimum angle for track triangulation in RAD. */
+        double min_triangulation_angle;
         /** Produce status messages on the console. */
         bool verbose_output;
     };
@@ -98,6 +100,7 @@ inline
 Incremental::Options::Options (void)
     : track_error_threshold_factor(25.0)
     , new_track_error_threshold(10.0)
+    , min_triangulation_angle(MATH_DEG2RAD(1.0))
     , verbose_output(false)
 {
 }

@@ -122,6 +122,12 @@ CameraPose::get_focal_length (void) const
     return (this->K[0] + this->K[4]) / 2.0;
 }
 
+void
+CameraPose::fill_camera_pos (math::Vector<double, 3>* camera_pos) const
+{
+    *camera_pos = -this->R.transposed().mult(this->t);
+}
+
 bool
 CameraPose::is_valid (void) const
 {

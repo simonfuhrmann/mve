@@ -17,8 +17,8 @@
 #include "sfm/bundler_init_pair.h"
 #include "sfm/bundler_incremental.h"
 
-#define IMAGE_EMBEDDING "original"
-#define FEATURE_EMBEDDING "original-sift"
+#define IMAGE_EMBEDDING "undistorted"
+#define FEATURE_EMBEDDING "undistorted-sift"
 #define EXIF_EMBEDDING "exif"
 
 void
@@ -31,7 +31,7 @@ features_and_matching (mve::Scene::Ptr scene,
     feature_opts.image_embedding = IMAGE_EMBEDDING;
     feature_opts.feature_embedding = FEATURE_EMBEDDING;
     feature_opts.exif_embedding = EXIF_EMBEDDING;
-    feature_opts.max_image_size = 5000000;
+    feature_opts.max_image_size = 8000000;
     feature_opts.skip_saving_views = false;
     feature_opts.force_recompute = false;
 
@@ -63,7 +63,12 @@ features_and_matching (mve::Scene::Ptr scene,
     bundler_matching.compute(*viewports, pairwise_matching);
     std::cout << "Matching took " << timer.get_elapsed()
         << " ms." << std::endl;
-    //std::exit(1);
+
+    if (pairwise_matching->empty())
+    {
+        std::cerr << "No matching image pairs. Exiting." << std::endl;
+        std::exit(1);
+    }
 }
 
 
@@ -103,6 +108,16 @@ main (int argc, char** argv)
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].descr_data.deallocate();
 
+    /* Compute connected feature components, i.e. feature tracks. */
+    std::cout << "Computing feature tracks..." << std::endl;
+    sfm::bundler::Tracks::Options tracks_options;
+    tracks_options.verbose_output = true;
+    sfm::bundler::TrackList tracks;
+    sfm::bundler::Tracks bundler_tracks(tracks_options);
+    bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
+    std::cout << "Created a total of " << tracks.size()
+        << " tracks." << std::endl;
+
     /* Find initial pair. */
     sfm::bundler::InitialPair::Options init_pair_opts;
     init_pair_opts.verbose_output = true;
@@ -126,16 +141,6 @@ main (int argc, char** argv)
         << " and " << init_pair_result.view_2_id
         << " as initial pair." << std::endl;
 
-    /* Compute connected feature components, i.e. feature tracks. */
-    std::cout << "Computing feature tracks..." << std::endl;
-    sfm::bundler::Tracks::Options tracks_options;
-    tracks_options.verbose_output = true;
-    sfm::bundler::TrackList tracks;
-    sfm::bundler::Tracks bundler_tracks(tracks_options);
-    bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
-    std::cout << "Created a total of " << tracks.size()
-        << " tracks." << std::endl;
-
     /* Clear pairwise matching to save memeory. */
     pairwise_matching.clear();
 
@@ -153,6 +158,7 @@ main (int argc, char** argv)
     incremental_opts.pose_p3p_opts.verbose_output = true;
     //incremental_opts.track_error_threshold_factor = 50.0;
     //incremental_opts.new_track_error_threshold = 10.0;
+    //incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
     incremental_opts.verbose_output = true;
 
     sfm::bundler::Incremental incremental(incremental_opts);

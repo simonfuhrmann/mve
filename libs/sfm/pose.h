@@ -42,6 +42,8 @@ struct CameraPose
     void set_from_p_and_known_k (math::Matrix<double, 3, 4> const& p_matrix);
     /** Returns the focal length as average of x and y focal length. */
     double get_focal_length (void) const;
+    /** Returns the camera position (requires valid camera). */
+    void fill_camera_pos (math::Vector<double, 3>* camera_pos) const;
     /** Returns true if K matrix is valid (non-zero focal length). */
     bool is_valid (void) const;
 };
