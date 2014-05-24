@@ -67,9 +67,11 @@ Matching::two_view_matching (std::size_t id_1, std::size_t id_2,
     }
 
     /* Require at least 8 matches. Check threshold. */
-    if (num_matches < std::max(8, this->opts.min_feature_matches))
+    int const min_matches_thres = std::max(8, this->opts.min_feature_matches);
+    if (num_matches < min_matches_thres)
     {
-        std::cout << "  Matches below threshold. Skipping." << std::endl;
+        std::cout << "  Matches below threshold of "
+            << min_matches_thres << ". Skipping." << std::endl;
         return;
     }
 
@@ -106,9 +108,11 @@ Matching::two_view_matching (std::size_t id_1, std::size_t id_2,
     }
 
     /* Require at least 8 inlier matches. */
-    if (num_inliers < std::max(8, this->opts.min_matching_inliers))
+    int const min_inlier_thres = std::max(8, this->opts.min_matching_inliers);
+    if (num_inliers < min_inlier_thres)
     {
-        std::cout << "  Inliers below threshold. Skipping." << std::endl;
+        std::cout << "  Inliers below threshold of "
+            << min_inlier_thres << ". Skipping." << std::endl;
         return;
     }
 

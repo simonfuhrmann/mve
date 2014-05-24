@@ -52,7 +52,6 @@ protected slots:
     void update_frusta_renderer (void);
     void apply_clear_color (void);
     void on_set_clear_color (void);
-    void on_features_compute (void);
     void on_matching_compute (void);
     void on_prebundle_load (void);
     void on_prebundle_save (void);
@@ -72,18 +71,14 @@ private:
     AddinFrustaSfmRenderer* frusta_renderer;
     ogl::MeshRenderer::Ptr sfm_points_renderer;
 
-    /* SfM Features UI elements. */
-    QLineEdit* features_image_embedding;
-    QLineEdit* features_feature_embedding;
+    /* SfM Features and Matching UI elements. */
     QSpinBox* features_max_pixels;
-
-    /* SfM Matching UI elements. */
-    QLineEdit* matching_feature_embedding;
     QLineEdit* matching_image_embedding;
     QLineEdit* matching_exif_embedding;
     QLineEdit* matching_prebundle_file;
 
     /* SfM options. */
+    sfm::bundler::Features::Options feature_opts;
     sfm::bundler::Matching::Options matching_opts;
     sfm::bundler::InitialPair::Options init_pair_opts;
     sfm::bundler::Tracks::Options tracks_options;

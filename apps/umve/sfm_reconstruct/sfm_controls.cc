@@ -83,27 +83,15 @@ SfmControls::SfmControls (GLWidget* gl_widget, QTabWidget* tab_widget)
 QVBoxLayout*
 SfmControls::create_sfm_layout (void)
 {
-    /* Features. */
-    this->features_image_embedding = new QLineEdit("original");
-    this->features_feature_embedding = new QLineEdit("original-sift");
+    /* Features and matching. */
     this->features_max_pixels = new QSpinBox();
     this->features_max_pixels->setRange(0, std::numeric_limits<int>::max());
     this->features_max_pixels->setValue(5000000);
 
-    QPushButton* features_compute = new QPushButton(tr("Compute missing features"));
-    QFormLayout* features_form = new QFormLayout();
-    features_form->setVerticalSpacing(0);
-    features_form->addRow(tr("Image:"), this->features_image_embedding);
-    features_form->addRow(tr("Features:"), this->features_feature_embedding);
-    features_form->addRow(tr("Max Pixels:"), this->features_max_pixels);
-    features_form->addRow(features_compute);
-
-    /* Matching. */
     this->matching_image_embedding = new QLineEdit("original");
-    this->matching_feature_embedding = new QLineEdit("original-sift");
     this->matching_exif_embedding = new QLineEdit("exif");
-    QPushButton* matching_compute = new QPushButton("Match");
-    this->matching_prebundle_file = new QLineEdit("prebundle.bin");
+    this->matching_prebundle_file = new QLineEdit("prebundle.sfm");
+    QPushButton* matching_compute = new QPushButton("Features and Matching");
     QPushButton* matching_load = new QPushButton("Load");
     QPushButton* matching_save = new QPushButton("Save");
     QHBoxLayout* matching_buttons = new QHBoxLayout();
@@ -114,8 +102,8 @@ SfmControls::create_sfm_layout (void)
     QFormLayout* matching_form = new QFormLayout();
     matching_form->setVerticalSpacing(0);
     matching_form->addRow(tr("Image:"), this->matching_image_embedding);
-    matching_form->addRow(tr("Features:"), this->matching_feature_embedding);
     matching_form->addRow(tr("EXIF:"), this->matching_exif_embedding);
+    matching_form->addRow(tr("Max Pixels:"), this->features_max_pixels);
     matching_form->addRow(matching_compute);
     matching_form->addRow(tr("File:"), this->matching_prebundle_file);
     matching_form->addRow(matching_buttons);
@@ -135,9 +123,7 @@ SfmControls::create_sfm_layout (void)
     // ...
 
     /* Pack together. */
-    QCollapsible* features_header = new QCollapsible("Features",
-        get_wrapper(features_form));
-    QCollapsible* matching_header = new QCollapsible("Matching",
+    QCollapsible* matching_header = new QCollapsible("Features and Matching",
         get_wrapper(matching_form));
     QCollapsible* sfm_header = new QCollapsible("Incremental SfM",
         get_wrapper(sfm_form));
@@ -147,15 +133,12 @@ SfmControls::create_sfm_layout (void)
 
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setSpacing(5);
-    layout->addWidget(features_header, 0);
     layout->addWidget(matching_header, 0);
     layout->addWidget(sfm_header, 0);
     layout->addWidget(settings_header, 0);
     layout->addStretch(1);
 
     /* Signals. */
-    this->connect(features_compute, SIGNAL(clicked()),
-        this, SLOT(on_features_compute()));
     this->connect(matching_compute, SIGNAL(clicked()),
         this, SLOT(on_matching_compute()));
     this->connect(matching_load, SIGNAL(clicked()),
@@ -341,7 +324,6 @@ SfmControls::create_sfm_points_renderer (void)
 void
 SfmControls::update_frusta_renderer (void)
 {
-
     std::vector<sfm::CameraPose> const& poses = this->incremental_sfm.get_cameras();
     if (this->viewports.size() != poses.size())
         return;
@@ -378,7 +360,6 @@ void
 SfmControls::initialize_options (void)
 {
     /* Matching options. */
-    this->matching_opts.matching_opts.descriptor_length = 128; // TODO
     this->matching_opts.ransac_opts.already_normalized = false;
     this->matching_opts.ransac_opts.threshold = 3.0f;
     this->matching_opts.ransac_opts.verbose_output = false;
@@ -414,129 +395,27 @@ SfmControls::initialize_options (void)
 
 /* ---------------------------------------------------------------- */
 
-struct JobSIFT : public JobProgress
-{
-    mve::View::Ptr view;
-    std::string image_name;
-    std::string feature_name;
-    sfm::Sift::Options sift_options;
-    bool auto_save;
-    int max_image_size;
-
-    /* Status. */
-    QFuture<void> future;
-    std::string name;
-    std::string message;
-
-    JobSIFT (void) {}
-    char const* get_name (void) { return name.c_str(); }
-    bool is_completed (void) { return future.isFinished(); }
-    bool has_progress (void) { return false; }
-    float get_progress (void) { return 0.0f; }
-    char const* get_message (void) { return message.c_str(); }
-    void cancel_job (void) { }
-};
-
-namespace
-{
-    void run_sift_job (JobSIFT* job)
-    {
-        job->message = "Loading image...";
-        mve::ByteImage::Ptr image = job->view->get_byte_image(job->image_name);
-        if (image == NULL)
-        {
-            job->message = "No such image.";
-            return;
-        }
-
-        /* Rescale image until maximum image size is met. */
-        job->message = "Rescaling...";
-        while (image->width() * image->height() > job->max_image_size)
-            image = mve::image::rescale_half_size<uint8_t>(image);
-
-        /* Compute features. */
-        job->message = "Features...";
-        sfm::Sift feature(job->sift_options);
-        feature.set_image(image);
-        feature.process();
-        sfm::Sift::Descriptors const& descriptors = feature.get_descriptors();
-
-        /* Save features as embedding. */
-        job->message = "Finishing...";
-        mve::ByteImage::Ptr descr_image = sfm::bundler::descriptors_to_embedding
-            (descriptors, image->width(), image->height());
-        job->view->set_data(job->feature_name, descr_image);
-        if (job->auto_save)
-            job->view->save_mve_file();
-        job->view->cache_cleanup();
-
-        std::stringstream ss;
-        ss << descriptors.size() << " features, done.";
-        job->message = ss.str();
-    }
-}
-
-void
-SfmControls::on_features_compute (void)
-{
-    mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
-    {
-        QMessageBox::information(this->tab_widget, "Error computing features",
-            "No scene is loaded.");
-        return;
-    }
-
-    /* Prepare variables for feature computation. */
-    mve::Scene::ViewList& views(scene->get_views());
-    std::string image_name = this->features_image_embedding->text().toStdString();
-    std::string feature_name = this->features_feature_embedding->text().toStdString();
-    int max_image_size = this->features_max_pixels->value();
-
-    for (std::size_t i = 0; i < views.size(); ++i)
-    {
-        mve::View::Ptr view = views[i];
-        if (view == NULL)
-            continue;
-
-        JobSIFT* job = new JobSIFT();
-        job->name = view->get_name();
-        job->message = "Waiting...";
-        job->view = view;
-        job->image_name = image_name;
-        job->feature_name = feature_name;
-        job->sift_options = sfm::Sift::Options();
-        job->max_image_size = max_image_size;
-        job->auto_save = false;
-        job->future = QtConcurrent::run(&run_sift_job, job);
-        JobQueue::get()->add_job(job);
-   }
-}
-
-/* ---------------------------------------------------------------- */
-
 struct JobMatching : public JobProgress
 {
     /* Status. */
     QFuture<void> future;
     std::string name;
     std::string message;
+    bool show_progress;
 
     /* Members. */
     mve::Scene::Ptr scene;
-    std::string feature_name;
-    std::string image_name;
-    std::string exif_name;
-    sfm::bundler::ViewportList* viewports;
-    sfm::bundler::Matching::Options options;
+    sfm::bundler::Matching::Options matching_options;
+    sfm::bundler::Features::Options features_options;
     sfm::bundler::Matching::Progress progress;
+    sfm::bundler::ViewportList* viewports;
     sfm::bundler::PairwiseMatching* result;
     bool canceled;
 
-    JobMatching (void) : viewports(NULL), result(NULL), canceled(false) {}
+    JobMatching (void) : show_progress(false), viewports(NULL), result(NULL), canceled(false) {}
     char const* get_name (void) { return name.c_str(); }
     bool is_completed (void) { return future.isFinished(); }
-    bool has_progress (void) { return true; }
+    bool has_progress (void) { return this->show_progress; }
     float get_progress (void) { return (float)progress.num_done / (float)progress.num_total; }
     char const* get_message (void) { return message.c_str(); }
     void cancel_job (void) { }
@@ -564,65 +443,17 @@ namespace
     run_matching_job (JobMatching* job)
     {
         /* Initialize the viewports. */
-        job->message = "Initializing...";
         mve::Scene::ViewList& views(job->scene->get_views());
         job->viewports->clear();
         job->viewports->resize(views.size());
-        for (std::size_t i = 0; i < views.size(); ++i)
-        {
-            mve::View::Ptr view = views[i];
-            if (view == NULL)
-                continue;
-            mve::ByteImage::Ptr descr_data = view->get_data(job->feature_name);
-            if (descr_data == NULL)
-                continue;
-            mve::ByteImage::Ptr image = view->get_byte_image(job->image_name);
-            if (image == NULL)
-                continue;
 
-            sfm::bundler::Viewport& viewport = job->viewports->at(i);
-            sfm::Sift::Descriptors descriptors;
-            sfm::bundler::embedding_to_descriptors(descr_data, &descriptors,
-                &viewport.width, &viewport.height);
-
-            std::cout << "Initializing " << descriptors.size()
-                << " descriptors for view " << i
-                << " (" << viewport.width << "x" << viewport.height
-                << ")..." << std::endl;
-
-            while (image->width() > viewport.width
-                && image->height() > viewport.height)
-                image = mve::image::rescale_half_size<uint8_t>(image);
-            if (image->width() != viewport.width
-                || image->height() != viewport.height)
-                continue;
-
-            viewport.descr_data.allocate(descriptors.size() * 128);
-            viewport.positions.resize(descriptors.size());
-            viewport.colors.resize(descriptors.size());
-
-            float* ptr = viewport.descr_data.begin();
-            for (std::size_t i = 0; i < descriptors.size(); ++i, ptr += 128)
-            {
-                sfm::Sift::Descriptor const& d = descriptors[i];
-                std::copy(d.data.begin(), d.data.end(), ptr);
-                viewport.positions[i] = math::Vec2f(d.x, d.y);
-                image->linear_at(d.x, d.y, viewport.colors[i].begin());
-            }
-
-            /* Estimate focal length for view. */
-            mve::ByteImage::Ptr exif = view->get_byte_image(job->exif_name);
-            viewport.focal_length = get_focal_length(exif);
-
-            /* Cleanup. */
-            descr_data.reset();
-            image.reset();
-            exif.reset();
-            view->cache_cleanup();
-        }
+        job->message = "Features...";
+        sfm::bundler::Features features(job->features_options);
+        features.compute(job->scene, job->viewports);
 
         job->message = "Matching...";
-        sfm::bundler::Matching matching(job->options, &job->progress);
+        job->show_progress = true;
+        sfm::bundler::Matching matching(job->matching_options, &job->progress);
         matching.compute(*job->viewports, job->result);
         job->message = "Done.";
     }
@@ -641,22 +472,24 @@ SfmControls::on_matching_compute (void)
     this->initialize_options();
 
     /* Prepare variables for feature computation. */
-    std::string feature_name = this->matching_feature_embedding->text().toStdString();
     std::string image_name = this->matching_image_embedding->text().toStdString();
     std::string exif_name = this->matching_exif_embedding->text().toStdString();
 
+    this->feature_opts.image_embedding = image_name;
+    this->feature_opts.exif_embedding = exif_name;
+    this->feature_opts.max_image_size = this->features_max_pixels->value();;
+    this->feature_opts.feature_options.feature_types = sfm::FeatureSet::FEATURE_ALL;
+
     JobMatching* job = new JobMatching();
-    job->name = "SfM Matching";
+    job->name = "SfM Reconstruct";
     job->message = "Waiting...";
     job->scene = this->state.scene;
-    job->feature_name = feature_name;
-    job->image_name = image_name;
-    job->exif_name = exif_name;
-    job->options = this->matching_opts;
-    job->result = &this->pairwise_matching;
-    job->viewports = &this->viewports;
+    job->matching_options = this->matching_opts;
+    job->features_options = this->feature_opts;
     job->progress.num_done = 0;
     job->progress.num_total = 1;
+    job->viewports = &this->viewports;
+    job->result = &this->pairwise_matching;
     job->future = QtConcurrent::run(&run_matching_job, job);
     JobQueue::get()->add_job(job);
 }

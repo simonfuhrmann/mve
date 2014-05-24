@@ -46,13 +46,10 @@ public:
     {
         Options (void);
 
-        /** Two-view feature matching options. */
-        sfm::Matching::Options matching_opts;
-        /** Minimum number of matching features before RANSAC. */
-        int min_feature_matches;
-
         /** Options for RANSAC computation of the fundamental matrix. */
         sfm::RansacFundamental::Options ransac_opts;
+        /** Minimum number of matching features before RANSAC. */
+        int min_feature_matches;
         /** Minimum number of matching features after RANSAC. */
         int min_matching_inliers;
     };

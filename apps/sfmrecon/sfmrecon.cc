@@ -61,7 +61,6 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
 
     /* Exhaustive matching between all pairs of views. */
     sfm::bundler::Matching::Options matching_opts;
-    matching_opts.matching_opts.descriptor_length = 128; // TODO
     matching_opts.ransac_opts.already_normalized = false;
     matching_opts.ransac_opts.threshold = 3.0f;
     matching_opts.ransac_opts.verbose_output = false;
