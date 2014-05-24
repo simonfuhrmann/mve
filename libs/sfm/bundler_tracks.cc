@@ -16,7 +16,7 @@ Tracks::compute (PairwiseMatching const& matching,
     for (std::size_t i = 0; i < viewports->size(); ++i)
     {
         Viewport& viewport = viewports->at(i);
-        viewport.track_ids.resize(viewport.colors.size(), -1);
+        viewport.track_ids.resize(viewport.features.positions.size(), -1);
     }
 
     /* Propagate track IDs. */
@@ -112,8 +112,8 @@ Tracks::compute (PairwiseMatching const& matching,
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             FeatureReference const& ref = track.features[j];
-            Viewport const& viewport = viewports->at(ref.view_id);
-            math::Vec3f const feature_color(viewport.colors[ref.feature_id]);
+            FeatureSet const& features = viewports->at(ref.view_id).features;
+            math::Vec3f const feature_color(features.colors[ref.feature_id]);
             color += math::Vec4f(feature_color, 1.0f);
         }
         track.color[0] = static_cast<uint8_t>(color[0] / color[3] + 0.5f);
@@ -251,8 +251,8 @@ visualize_track (Track const& track, ViewportList const& viewports,
 
         ImageInfo& info = images[i];
         info.image = image;
-        info.feature_x = viewport.positions[feature_id][0];
-        info.feature_y = viewport.positions[feature_id][1];
+        info.feature_x = viewport.features.positions[feature_id][0];
+        info.feature_y = viewport.features.positions[feature_id][1];
         info.view_id = view_id;
         info.feature_id = feature_id;
 

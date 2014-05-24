@@ -64,8 +64,8 @@ Incremental::reconstruct_initial_pair (int view_1_id, int view_2_id)
 
             if (view_1_feature_id != -1 && view_2_feature_id != -1)
             {
-                math::Vec2f const& pos1 = view_1.positions[view_1_feature_id];
-                math::Vec2f const& pos2 = view_2.positions[view_2_feature_id];
+                math::Vec2f const& pos1 = view_1.features.positions[view_1_feature_id];
+                math::Vec2f const& pos2 = view_2.features.positions[view_2_feature_id];
                 Correspondence correspondence;
                 std::copy(pos1.begin(), pos1.end(), correspondence.p1);
                 std::copy(pos2.begin(), pos2.end(), correspondence.p2);
@@ -236,6 +236,7 @@ Incremental::find_next_views (std::vector<int>* next_views)
 bool Incremental::reconstruct_next_view (int view_id)
 {
     Viewport const& viewport = this->viewports->at(view_id);
+    FeatureSet const& features = viewport.features;
 
     /* Collect all 2D-3D correspondences. */
     Correspondences2D3D corr;
@@ -246,7 +247,7 @@ bool Incremental::reconstruct_next_view (int view_id)
         int const track_id = viewport.track_ids[i];
         if (track_id < 0 || !this->tracks->at(track_id).is_valid())
             continue;
-        math::Vec2f const& pos2d = viewport.positions[i];
+        math::Vec2f const& pos2d = features.positions[i];
         math::Vec3f const& pos3d = this->tracks->at(track_id).pos;
 
         corr.push_back(Correspondence2D3D());
@@ -288,8 +289,8 @@ bool Incremental::reconstruct_next_view (int view_id)
 
     if (this->opts.verbose_output)
     {
-        std::cout << "RANSAC found " << ransac_result.inliers.size()
-            << " inliers." << std::endl;
+        std::cout << "Selected " << ransac_result.inliers.size()
+            << " 2D-3D correspondences inliers." << std::endl;
     }
 
 #else
@@ -380,7 +381,8 @@ Incremental::triangulate_new_tracks (void)
             if (!this->cameras[view_id].is_valid())
                 continue;
             int const feature_id = track.features[j].feature_id;
-            pos.push_back(this->viewports->at(view_id).positions[feature_id]);
+            pos.push_back(this->viewports->at(view_id)
+                .features.positions[feature_id]);
             poses.push_back(&this->cameras[view_id]);
         }
 
@@ -576,7 +578,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 
             int const feature_id = track.features[j].feature_id;
             Viewport const& view = this->viewports->at(view_id);
-            math::Vec2f f2d = view.positions[feature_id];
+            math::Vec2f f2d = view.features.positions[feature_id];
 
             Point2D point;
             point.x = f2d[0] - static_cast<float>(view.width) / 2.0f;
@@ -662,7 +664,7 @@ Incremental::delete_large_error_tracks (void)
                 continue;
 
             Viewport const& viewport = this->viewports->at(view_id);
-            math::Vec2f const& pos2d = viewport.positions[feature_id];
+            math::Vec2f const& pos2d = viewport.features.positions[feature_id];
 
             /* Re-project 3D feature and compute error. */
             math::Vec3d x = pose.K * (pose.R * pos3d + pose.t);
@@ -818,8 +820,8 @@ Incremental::create_bundle (void) const
                 f2d.view_id = track.features[j].view_id;
                 f2d.feature_id = track.features[j].feature_id;
 
-                Viewport view = this->viewports->at(f2d.view_id);
-                math::Vec2f const& f2d_pos = view.positions[f2d.feature_id];
+                FeatureSet features = this->viewports->at(f2d.view_id).features;
+                math::Vec2f const& f2d_pos = features.positions[f2d.feature_id];
                 std::copy(f2d_pos.begin(), f2d_pos.end(), f2d.pos);
             }
         }

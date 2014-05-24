@@ -48,8 +48,8 @@ InitialPair::compute (ViewportList const& viewports,
     for (std::size_t i = 0; i < pairs.size(); ++i)
     {
         TwoViewMatching const& tvm = matching[pairs[i]];
-        Viewport const& view1 = viewports[tvm.view_1_id];
-        Viewport const& view2 = viewports[tvm.view_2_id];
+        FeatureSet const& view1 = viewports[tvm.view_1_id].features;
+        FeatureSet const& view2 = viewports[tvm.view_2_id].features;
 
         /* Prepare correspondences for RANSAC. */
         correspondences.resize(tvm.matches.size());

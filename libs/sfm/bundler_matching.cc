@@ -30,8 +30,8 @@ Matching::compute (ViewportList const& viewports,
         for (std::size_t j = 0; j < i; ++j)
         {
             current_pair += 1;
-            if (viewports[i].positions.empty()
-                || viewports[j].positions.empty())
+            if (viewports[i].features.positions.empty()
+                || viewports[j].features.positions.empty())
                 continue;
 
             int percent = current_pair * 100 / num_pairs;
@@ -52,19 +52,15 @@ void
 Matching::two_view_matching (std::size_t id_1, std::size_t id_2,
     ViewportList const& viewports, PairwiseMatching* pairwise_matching)
 {
-    Viewport const& view_1 = viewports[id_1];
-    Viewport const& view_2 = viewports[id_2];
+    FeatureSet const& view_1 = viewports[id_1].features;
+    FeatureSet const& view_2 = viewports[id_2].features;
 
     /* Perform two-view descriptor matching. */
     sfm::Matching::Result matching_result;
     int num_matches = 0;
     {
         util::WallTimer timer;
-        sfm::Matching::twoway_match(this->opts.matching_opts,
-            view_1.descr_data.begin(), view_1.positions.size(),
-            view_2.descr_data.begin(), view_2.positions.size(),
-            &matching_result);
-        sfm::Matching::remove_inconsistent_matches(&matching_result);
+        view_1.match(view_2, &matching_result);
         num_matches = sfm::Matching::count_consistent_matches(matching_result);
         std::cout << "  Matching took " << timer.get_elapsed() << "ms, "
             << num_matches << " matches." << std::endl;

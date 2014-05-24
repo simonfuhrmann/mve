@@ -27,23 +27,24 @@ save_viewports_data (ViewportList const& viewports, std::ostream& out)
 
     for (std::size_t i = 0; i < viewports.size(); ++i)
     {
-        Viewport const& vp(viewports[i]);
+        Viewport const& vp = viewports[i];
+        FeatureSet const& vpf = vp.features;
         out.write(reinterpret_cast<char const*>(&vp.width), sizeof(int));
         out.write(reinterpret_cast<char const*>(&vp.height), sizeof(int));
         out.write(reinterpret_cast<char const*>(&vp.focal_length), sizeof(float));
         out.write(reinterpret_cast<char const*>(&vp.radial_distortion), sizeof(float));
 
         /* Write positions. */
-        int32_t num_positions = static_cast<int32_t>(vp.positions.size());
+        int32_t num_positions = static_cast<int32_t>(vpf.positions.size());
         out.write(reinterpret_cast<char const*>(&num_positions), sizeof(int32_t));
-        for (std::size_t j = 0; j < vp.positions.size(); ++j)
-            out.write(reinterpret_cast<char const*>(&vp.positions[j]), sizeof(math::Vec2f));
+        for (std::size_t j = 0; j < vpf.positions.size(); ++j)
+            out.write(reinterpret_cast<char const*>(&vpf.positions[j]), sizeof(math::Vec2f));
 
         /* Write colors. */
-        int32_t num_colors = static_cast<int32_t>(vp.colors.size());
+        int32_t num_colors = static_cast<int32_t>(vpf.colors.size());
         out.write(reinterpret_cast<char const*>(&num_colors), sizeof(int32_t));
-        for (std::size_t j = 0; j < vp.colors.size(); ++j)
-            out.write(reinterpret_cast<char const*>(&vp.colors[j]), sizeof(math::Vec3uc));
+        for (std::size_t j = 0; j < vpf.colors.size(); ++j)
+            out.write(reinterpret_cast<char const*>(&vpf.colors[j]), sizeof(math::Vec3uc));
 
         /* Write track IDs. */
         int32_t num_track_ids = static_cast<int32_t>(vp.track_ids.size());
@@ -72,6 +73,7 @@ load_viewports_data (std::istream& in, ViewportList* viewports)
     for (int i = 0; i < num_viewports; ++i)
     {
         Viewport& vp = viewports->at(i);
+        FeatureSet& vpf = vp.features;
         in.read(reinterpret_cast<char*>(&vp.width), sizeof(int));
         in.read(reinterpret_cast<char*>(&vp.height), sizeof(int));
         in.read(reinterpret_cast<char*>(&vp.focal_length), sizeof(float));
@@ -80,16 +82,16 @@ load_viewports_data (std::istream& in, ViewportList* viewports)
         /* Read positions. */
         int32_t num_positions;
         in.read(reinterpret_cast<char*>(&num_positions), sizeof(int32_t));
-        vp.positions.resize(num_positions);
+        vpf.positions.resize(num_positions);
         for (int j = 0; j < num_positions; ++j)
-            in.read(reinterpret_cast<char*>(&vp.positions[j]), sizeof(math::Vec2f));
+            in.read(reinterpret_cast<char*>(&vpf.positions[j]), sizeof(math::Vec2f));
 
         /* Read colors. */
         int32_t num_colors;
         in.read(reinterpret_cast<char*>(&num_colors), sizeof(int32_t));
-        vp.colors.resize(num_colors);
+        vpf.colors.resize(num_colors);
         for (int j = 0; j < num_colors; ++j)
-            in.read(reinterpret_cast<char*>(&vp.colors[j]), sizeof(math::Vec3uc));
+            in.read(reinterpret_cast<char*>(&vpf.colors[j]), sizeof(math::Vec3uc));
 
         /* Read track IDs. */
         int32_t num_track_ids;

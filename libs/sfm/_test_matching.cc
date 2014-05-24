@@ -199,8 +199,8 @@ feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 
     std::cout << "FS matching result: " << matching.matches_1_2.size() << " / " << matching.matches_2_1.size() << std::endl;
 
-    mve::ByteImage::Ptr match_image
-        = visualize_matching(matching, image1, image2, feat1.pos, feat2.pos);
+    mve::ByteImage::Ptr match_image = visualize_matching(
+        matching, image1, image2, feat1.positions, feat2.positions);
     std::string output_filename = "/tmp/matching_featureset.png";
     std::cout << "Saving visualization to " << output_filename << std::endl;
     mve::image::save_file(match_image, output_filename);

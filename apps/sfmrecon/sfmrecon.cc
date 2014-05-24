@@ -15,6 +15,7 @@
 #include "mve/bundle_io.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
+#include "sfm/feature_set.h"
 #include "sfm/bundler_common.h"
 #include "sfm/bundler_features.h"
 #include "sfm/bundler_matching.h"
@@ -40,16 +41,13 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     /* Feature computation for the scene. */
     sfm::bundler::Features::Options feature_opts;
     feature_opts.image_embedding = conf.original_name;
-    feature_opts.feature_embedding = "";
     feature_opts.exif_embedding = conf.exif_name;
     feature_opts.max_image_size = conf.max_image_size;
-    feature_opts.skip_saving_views = false;
-    feature_opts.force_recompute = false;
+    feature_opts.feature_options.feature_types = sfm::FeatureSet::FEATURE_ALL;
 
     std::cout << "Computing/loading image features..." << std::endl;
     sfm::bundler::Features bundler_features(feature_opts);
-    bundler_features.compute(scene, sfm::bundler::Features::SIFT_FEATURES,
-        viewports);
+    bundler_features.compute(scene, viewports);
 
     std::cout << "Viewport statistics:" << std::endl;
     for (std::size_t i = 0; i < viewports->size(); ++i)
@@ -57,7 +55,7 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
         sfm::bundler::Viewport const& view = viewports->at(i);
         std::cout << "  View " << i << ": "
             << view.width << "x" << view.height << ", "
-            << view.positions.size() << " features, "
+            << view.features.positions.size() << " features, "
             << "focal length: " << view.focal_length << std::endl;
     }
 
@@ -107,7 +105,7 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* For every viewport drop descriptor information to save memory. */
     for (std::size_t i = 0; i < viewports.size(); ++i)
-        viewports[i].descr_data.deallocate();
+        viewports[i].features.clean_descriptors();
 
     /* Remove unused embeddings. */
     scene->cache_cleanup();
@@ -122,6 +120,10 @@ sfm_reconstruct (AppSettings const& conf)
     bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
     std::cout << "Created a total of " << tracks.size()
         << " tracks." << std::endl;
+
+    /* Remove unused color data to save memory. */
+    for (std::size_t i = 0; i < viewports.size(); ++i)
+        viewports[i].features.colors.clear();
 
     /* Find initial pair. */
     sfm::bundler::InitialPair::Options init_pair_opts;
@@ -160,7 +162,7 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.pose_opts.verbose_output = true;
     incremental_opts.pose_p3p_opts.threshold = 10.0f;
     //incremental_opts.pose_p3p_opts.max_iterations = 1000;
-    incremental_opts.pose_p3p_opts.verbose_output = true;
+    incremental_opts.pose_p3p_opts.verbose_output = false;
     //incremental_opts.track_error_threshold_factor = 50.0;
     //incremental_opts.new_track_error_threshold = 10.0;
     //incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
@@ -175,7 +177,6 @@ sfm_reconstruct (AppSettings const& conf)
         init_pair_result.view_2_id);
 
     /* Reconstruct track positions with the intial pair. */
-    std::cout << "Triangulating new tracks..." << std::endl;
     incremental.triangulate_new_tracks();
 
     /* Remove tracks with large errors. */
@@ -191,6 +192,13 @@ sfm_reconstruct (AppSettings const& conf)
     {
         std::vector<int> next_views;
         incremental.find_next_views(&next_views);
+
+        if (next_views.empty())
+        {
+            std::cout << "SfM reconstruction finished." << std::endl;
+            break;
+        }
+
         int next_view_id = -1;
         for (std::size_t i = 0; i < next_views.size(); ++i)
         {
@@ -207,17 +215,14 @@ sfm_reconstruct (AppSettings const& conf)
 
         if (next_view_id < 0)
         {
-            std::cout << "No more views to reconstruct. Exiting." << std::endl;
+            std::cout << "No valid next view. Exiting." << std::endl;
             break;
         }
 
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
 
-        std::cout << "Triangulating new tracks..." << std::endl;
         incremental.triangulate_new_tracks();
-
-        /* Remove tracks with large errors. */
         incremental.delete_large_error_tracks();
 
         std::cout << "Running full bundle adjustment..." << std::endl;

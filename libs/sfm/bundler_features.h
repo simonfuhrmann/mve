@@ -11,9 +11,7 @@
 
 #include "mve/image.h"
 #include "mve/scene.h"
-#include "sfm/sift.h"
-#include "sfm/surf.h"
-#include "sfm/matching.h"
+#include "sfm/feature_set.h"
 #include "sfm/bundler_common.h"
 #include "sfm/defines.h"
 
@@ -39,25 +37,10 @@ public:
         std::string image_embedding;
         /** The embedding name in which EXIF tags are stored. */
         std::string exif_embedding;
-        /** The embedding name for saving the features. */
-        std::string feature_embedding;
-        /** Do not skip views with existing features embedding. */
-        bool force_recompute;
-        /** Do not save MVE views. */
-        bool skip_saving_views;
         /** The maximum image size given in number of pixels. */
         int max_image_size;
-
-        /** Options for SIFT. */
-        Sift::Options sift_options;
-        /** Options for SURF. */
-        Surf::Options surf_options;
-    };
-
-    enum FeatureType
-    {
-        SIFT_FEATURES,
-        SURF_FEATURES
+        /** Feature set options. */
+        FeatureSet::Options feature_options;
     };
 
 public:
@@ -68,16 +51,9 @@ public:
      * Optionally, if the viewports argument is not NULL, the viewports
      * are initialized with descriptor data, positions and colors.
      */
-    void compute (mve::Scene::Ptr scene, FeatureType type,
-        ViewportList* viewports = NULL);
+    void compute (mve::Scene::Ptr scene, ViewportList* viewports);
 
 private:
-    template <typename FEATURE, int LEN>
-    void compute (mve::View::Ptr view, Viewport* viewport) const;
-
-    template <typename FEATURE>
-    FEATURE construct (void) const;
-
     void estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const;
     void fallback_focal_length (mve::View::Ptr view, Viewport* viewport) const;
 
@@ -90,9 +66,6 @@ private:
 inline
 Features::Options::Options (void)
     : image_embedding("original")
-    , feature_embedding("original-descr")
-    , force_recompute(false)
-    , skip_saving_views(false)
     , max_image_size(std::numeric_limits<int>::max())
 {
 }

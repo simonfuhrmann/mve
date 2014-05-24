@@ -14,6 +14,7 @@
 #include "mve/image.h"
 #include "sfm/sift.h"
 #include "sfm/surf.h"
+#include "sfm/feature_set.h"
 #include "sfm/correspondence.h"
 #include "sfm/defines.h"
 
@@ -48,12 +49,8 @@ struct Viewport
     float radial_distortion;
     /** The actual image data for debugging purposes. Usually NULL! */
     mve::ByteImage::Ptr image;
-    /** Tightly packed data for the descriptors. */
-    util::AlignedMemory<float, 16> descr_data;
-    /** Per-feature image position. */
-    std::vector<math::Vec2f> positions;
-    /** Per-feature image color. */
-    std::vector<math::Vec3uc> colors;
+    /** Per-feature information. */
+    FeatureSet features;
     /** Per-feature track ID, -1 if not part of a track. */
     std::vector<int> track_ids;
 };

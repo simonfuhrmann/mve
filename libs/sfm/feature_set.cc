@@ -37,6 +37,11 @@ namespace
 void
 FeatureSet::compute_features (mve::ByteImage::Ptr image)
 {
+    this->colors.clear();
+    this->positions.clear();
+    this->width = image->width();
+    this->height = image->height();
+
     /* Make sure these are in the right order. Matching relies on it. */
     if (this->opts.feature_types & FEATURE_SIFT)
         this->compute_sift(image);
@@ -54,9 +59,9 @@ FeatureSet::compute_sift (mve::ByteImage::ConstPtr image)
     Sift::Descriptors const& descr = sift.get_descriptors();
 
     /* Prepare and copy to data structures. */
-    std::size_t offset = this->pos.size();
-    this->pos.resize(offset + descr.size());
-    this->color.resize(offset + descr.size());
+    std::size_t offset = this->positions.size();
+    this->positions.resize(offset + descr.size());
+    this->colors.resize(offset + descr.size());
     this->sift_descr.allocate(descr.size() * 128);
     this->num_sift_descriptors = descr.size();
 
@@ -66,8 +71,8 @@ FeatureSet::compute_sift (mve::ByteImage::ConstPtr image)
         Sift::Descriptor const& d = descr[i];
 
         std::copy(d.data.begin(), d.data.end(), ptr);
-        this->pos[offset + i] = math::Vec2f(d.x, d.y);
-        image->linear_at(d.x, d.y, this->color[offset + i].begin());
+        this->positions[offset + i] = math::Vec2f(d.x, d.y);
+        image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
 }
 
@@ -81,9 +86,9 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
     Surf::Descriptors const& descr = surf.get_descriptors();
 
     /* Prepare and copy to data structures. */
-    std::size_t offset = this->pos.size();
-    this->pos.resize(offset + descr.size());
-    this->color.resize(offset + descr.size());
+    std::size_t offset = this->positions.size();
+    this->positions.resize(offset + descr.size());
+    this->colors.resize(offset + descr.size());
     this->surf_descr.allocate(descr.size() * 64);
     this->num_surf_descriptors = descr.size();
 
@@ -93,13 +98,13 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
         Surf::Descriptor const& d = descr[i];
 
         std::copy(d.data.begin(), d.data.end(), ptr);
-        this->pos[offset + i] = math::Vec2f(d.x, d.y);
-        image->linear_at(d.x, d.y, this->color[offset + i].begin());
+        this->positions[offset + i] = math::Vec2f(d.x, d.y);
+        image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
 }
 
 void
-FeatureSet::match (FeatureSet const& other, Matching::Result* result)
+FeatureSet::match (FeatureSet const& other, Matching::Result* result) const
 {
     /* SIFT matching. */
     sfm::Matching::Result sift_result;
@@ -155,6 +160,15 @@ FeatureSet::match (FeatureSet const& other, Matching::Result* result)
         sift_result.matches_2_1.begin(), sift_result.matches_2_1.end());
     result->matches_2_1.insert(result->matches_2_1.end(),
         surf_result.matches_2_1.begin(), surf_result.matches_2_1.end());
+}
+
+void
+FeatureSet::clean_descriptors (void)
+{
+    this->num_sift_descriptors = 0;
+    this->sift_descr.deallocate();
+    this->num_surf_descriptors = 0;
+    this->surf_descr.deallocate();
 }
 
 SFM_NAMESPACE_END
