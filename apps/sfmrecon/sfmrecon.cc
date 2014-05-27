@@ -15,6 +15,7 @@
 #include "mve/bundle_io.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
+#include "sfm/nearest_neighbor.h"
 #include "sfm/feature_set.h"
 #include "sfm/bundler_common.h"
 #include "sfm/bundler_features.h"
@@ -82,6 +83,18 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
 void
 sfm_reconstruct (AppSettings const& conf)
 {
+#if ENABLE_SSE2_NN_SEARCH && defined(__SSE2__)
+    std::cout << "SSE2 accelerated matching is enabled." << std::endl;
+#else
+    std::cout << "SSE2 accelerated matching is disabled." << std::endl;
+#endif
+
+#if ENABLE_SSE3_NN_SEARCH && defined(__SSE3__)
+    std::cout << "SSE3 accelerated matching is enabled." << std::endl;
+#else
+    std::cout << "SSE3 accelerated matching is disabled." << std::endl;
+#endif
+
     /* Load scene. */
     mve::Scene::Ptr scene = mve::Scene::create(conf.scene_path);
     std::string const prebundle_path
