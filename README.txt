@@ -4,18 +4,22 @@ Introduction
 This is a guideline how to compile and use FSSR, the Floating Scale
 Surface Reconstruction software accompanying the following paper:
 
-    Floating Scale Surface Reconstruction [PDF, 11MB]
+    Floating Scale Surface Reconstruction
     Simon Fuhrmann and Michael Goesele
     In: ACM ToG (Proceedings of ACM SIGGRAPH 2014).
     http://tinyurl.com/floating-scale-surface-recon
 
-This software is based on MVE, the Multi-View Environment. It must be
-downloaded and compiled prior to this software. You can get it here:
+This software is based on MVE, the Multi-View Environment. See the link below
+for details on MVE, and the next section for downloading and building MVE. 
 
     http://www.gris.tu-darmstadt.de/projects/multiview-environment/
 
-Building MVE and FSSR
+
+Downlaoding and Building MVE and FSSR
 ======================================================================
+
+MVE requires libjpeg, libpng and libtiff as dependencies, which can be obtained
+using the package system of your distribution.
 
 The following commands should get you started:
 
@@ -27,10 +31,11 @@ The following commands should get you started:
     git clone https://github.com/simonfuhrmann/fssr.git
     make -j8 -C fssr
 
-The binaries are then located and ready for execution here:
+The binaries will be located and ready for execution here:
 
     fssr/apps/fssr_octree
     fssr/apps/fssr_surface
+
 
 FSSR Input Data
 ======================================================================
@@ -61,6 +66,16 @@ A typical PLY header (without color) then looks like this:
     property float value
     end_header
 
+If you are using MVE and want to create a surface from a set of depth maps,
+you can use the 'scene2pset' tools, which is included in the MVE distribution.
+
+    Usage: scene2pset [ OPTS ] SCENE_DIR MESH_OUT
+
+Make sure the parameters --depth and --image specify the correct depth map
+and corresponding image. Also enable normals, scale and confidence with the
+parameters --with-normals, --with-scale and --with-conf.
+
+
 Running FSSR
 ======================================================================
 
@@ -80,6 +95,7 @@ surface mesh. This is done with a second 'fssr_surface' tool.
 
 The tool takes as input the octree and produces a mesh. Several options
 can control the resulting mesh. See the tools output for details.
+
 
 Trouble? Contact!
 ======================================================================
