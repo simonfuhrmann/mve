@@ -39,6 +39,7 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     sfm::bundler::ViewportList* viewports,
     sfm::bundler::PairwiseMatching* pairwise_matching)
 {
+
     /* Feature computation for the scene. */
     sfm::bundler::Features::Options feature_opts;
     feature_opts.image_embedding = conf.original_name;
@@ -46,9 +47,14 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     feature_opts.max_image_size = conf.max_image_size;
     feature_opts.feature_options.feature_types = sfm::FeatureSet::FEATURE_ALL;
 
-    std::cout << "Computing/loading image features..." << std::endl;
-    sfm::bundler::Features bundler_features(feature_opts);
-    bundler_features.compute(scene, viewports);
+    std::cout << "Computing image features..." << std::endl;
+    {
+        util::WallTimer timer;
+        sfm::bundler::Features bundler_features(feature_opts);
+        bundler_features.compute(scene, viewports);
+        std::cout << "Computing features took " << timer.get_elapsed()
+            << " ms." << std::endl;
+    }
 
     std::cout << "Viewport statistics:" << std::endl;
     for (std::size_t i = 0; i < viewports->size(); ++i)
@@ -67,11 +73,13 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     matching_opts.ransac_opts.verbose_output = false;
 
     std::cout << "Performing exhaustive feature matching..." << std::endl;
-    util::WallTimer timer;
-    sfm::bundler::Matching bundler_matching(matching_opts);
-    bundler_matching.compute(*viewports, pairwise_matching);
-    std::cout << "Matching took " << timer.get_elapsed()
-        << " ms." << std::endl;
+    {
+            util::WallTimer timer;
+        sfm::bundler::Matching bundler_matching(matching_opts);
+        bundler_matching.compute(*viewports, pairwise_matching);
+        std::cout << "Matching took " << timer.get_elapsed()
+            << " ms." << std::endl;
+    }
 
     if (pairwise_matching->empty())
     {
@@ -121,6 +129,9 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* Remove unused embeddings. */
     scene->cache_cleanup();
+
+    /* Start timer for incremental SfM. */
+    util::WallTimer timer;
 
     /* Compute connected feature components, i.e. feature tracks. */
     sfm::bundler::Tracks::Options tracks_options;
@@ -242,6 +253,9 @@ sfm_reconstruct (AppSettings const& conf)
         num_cameras_reconstructed += 1;
     }
 
+    std::cout << "SfM reconstruction took " << timer.get_elapsed()
+        << " ms." << std::endl;
+
     std::cout << "Normalizing scene..." << std::endl;
     incremental.normalize_scene();
 
@@ -280,7 +294,6 @@ sfm_reconstruct (AppSettings const& conf)
         view->save_mve_file();
         view->cache_cleanup();
     }
-
 }
 
 int
