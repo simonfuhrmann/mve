@@ -4,9 +4,10 @@
  *
  * The surface reconstruction approach implemented here is described in:
  *
- *     Floating Scale Surface Reconstruction [PDF, 11MB]
+ *     Floating Scale Surface Reconstruction
  *     Simon Fuhrmann and Michael Goesele
  *     In: ACM ToG (Proceedings of ACM SIGGRAPH 2014).
+ *     http://tinyurl.com/floating-scale-surface-recon
  */
 
 #include <iostream>
