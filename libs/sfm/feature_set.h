@@ -15,6 +15,9 @@
 #include "sfm/matching.h"
 #include "sfm/defines.h"
 
+/* Whether to use floating point or 8-bit descriptors for matching. */
+#define DISCRETIZE_DESCRIPTORS 1
+
 SFM_NAMESPACE_BEGIN
 
 /**
@@ -72,8 +75,13 @@ private:
     Options opts;
     int num_sift_descriptors;
     int num_surf_descriptors;
+#if DISCRETIZE_DESCRIPTORS
+    util::AlignedMemory<unsigned short, 16> sift_descr;
+    util::AlignedMemory<signed short, 16> surf_descr;
+#else
     util::AlignedMemory<float, 16> sift_descr;
     util::AlignedMemory<float, 16> surf_descr;
+#endif
 };
 
 /* ------------------------ Implementation ------------------------ */

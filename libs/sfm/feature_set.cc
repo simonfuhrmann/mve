@@ -8,29 +8,39 @@ SFM_NAMESPACE_BEGIN
 namespace
 {
     void
-    discretize_descriptor (Sift::Descriptor const& descr,
-        math::Vector<unsigned char, 128>* data)
+    convert_descriptor (Sift::Descriptor const& descr, unsigned short* data)
     {
         for (int i = 0; i < 128; ++i)
         {
             float value = descr.data[i];
             value = math::clamp(value, 0.0f, 1.0f);
             value = math::round(value * 255.0f);
-            (*data)[i] = static_cast<unsigned char>(value);
+            data[i] = static_cast<unsigned char>(value);
         }
     }
 
     void
-    discretize_descriptor (Surf::Descriptor const& descr,
-        math::Vector<signed char, 64>* data)
+    convert_descriptor (Surf::Descriptor const& descr, signed short* data)
     {
         for (int i = 0; i < 64; ++i)
         {
             float value = descr.data[i];
-            value = math::clamp(value, 0.0f, 1.0f);
-            value = math::round(value * 255.0f);
-            (*data)[i] = static_cast<signed char>(value);
+            value = math::clamp(value, -1.0f, 1.0f);
+            value = math::round(value * 127.0f);
+            data[i] = static_cast<signed char>(value);
         }
+    }
+
+    void
+    convert_descriptor (Sift::Descriptor const& descr, float* data)
+    {
+        std::copy(descr.data.begin(), descr.data.end(), data);
+    }
+
+    void
+    convert_descriptor (Surf::Descriptor const& descr, float* data)
+    {
+        std::copy(descr.data.begin(), descr.data.end(), data);
     }
 }  /* namespace */
 
@@ -65,12 +75,15 @@ FeatureSet::compute_sift (mve::ByteImage::ConstPtr image)
     this->sift_descr.allocate(descr.size() * 128);
     this->num_sift_descriptors = descr.size();
 
+#if DISCRETIZE_DESCRIPTORS
+    unsigned short* ptr = this->sift_descr.begin();
+#else
     float* ptr = this->sift_descr.begin();
+#endif
     for (std::size_t i = 0; i < descr.size(); ++i, ptr += 128)
     {
         Sift::Descriptor const& d = descr[i];
-
-        std::copy(d.data.begin(), d.data.end(), ptr);
+        convert_descriptor(d, ptr);
         this->positions[offset + i] = math::Vec2f(d.x, d.y);
         image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
@@ -92,12 +105,15 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
     this->surf_descr.allocate(descr.size() * 64);
     this->num_surf_descriptors = descr.size();
 
+#if DISCRETIZE_DESCRIPTORS
+    signed short* ptr = this->surf_descr.begin();
+#else
     float* ptr = this->surf_descr.begin();
+#endif
     for (std::size_t i = 0; i < descr.size(); ++i, ptr += 64)
     {
         Surf::Descriptor const& d = descr[i];
-
-        std::copy(d.data.begin(), d.data.end(), ptr);
+        convert_descriptor(d, ptr);
         this->positions[offset + i] = math::Vec2f(d.x, d.y);
         image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
