@@ -1,6 +1,6 @@
 # Default values.
 CXX ?= g++
-CXXFLAGS ?= -Wall -Wextra -Wundef -pedantic -g -O3
+CXXFLAGS ?= -Wall -Wextra -Wundef -pedantic -g -O3 -fno-math-errno
 
 # Delete this if libgomp.a is not installed! (e.g., OS X without gcc)
 OPENMP ?= -fopenmp
