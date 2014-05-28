@@ -3,8 +3,10 @@
  * Written by Simon Fuhrmann.
  */
 
+#include <fstream>
 #include <iostream>
 #include <string>
+#include <ctime>
 
 #include "util/system.h"
 #include "util/timer.h"
@@ -31,15 +33,41 @@ struct AppSettings
     std::string undistorted_name;
     std::string exif_name;
     std::string prebundle_file;
+    std::string log_file;
     int max_image_size;
 };
+
+void
+log_message (AppSettings const& conf, std::string const& message)
+{
+    if (conf.log_file.empty())
+        return;
+    std::string fname = util::fs::join_path(conf.scene_path, conf.log_file);
+    std::ofstream out(fname.c_str(), std::ios::app);
+    out << message << std::endl;
+    out.close();
+}
+
+void
+log_start_of_sfm (AppSettings const& conf)
+{
+    if (conf.log_file.empty())
+        return;
+
+    time_t rawtime;
+    std::time(&rawtime);
+    struct std::tm* timeinfo;
+    timeinfo = std::localtime(&rawtime);
+    char timestr[20];
+    std::strftime(timestr, 20, "%Y-%m-%d %H:%M:%S", timeinfo);
+    log_message(conf, "Starting SfM (" + std::string(timestr) + ")");
+}
 
 void
 features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     sfm::bundler::ViewportList* viewports,
     sfm::bundler::PairwiseMatching* pairwise_matching)
 {
-
     /* Feature computation for the scene. */
     sfm::bundler::Features::Options feature_opts;
     feature_opts.image_embedding = conf.original_name;
@@ -52,18 +80,21 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
         util::WallTimer timer;
         sfm::bundler::Features bundler_features(feature_opts);
         bundler_features.compute(scene, viewports);
+
+        std::cout << "Viewport statistics:" << std::endl;
+        for (std::size_t i = 0; i < viewports->size(); ++i)
+        {
+            sfm::bundler::Viewport const& view = viewports->at(i);
+            std::cout << "  View " << i << ": "
+                << view.width << "x" << view.height << ", "
+                << view.features.positions.size() << " features, "
+                << "focal length: " << view.focal_length << std::endl;
+        }
+
         std::cout << "Computing features took " << timer.get_elapsed()
             << " ms." << std::endl;
-    }
-
-    std::cout << "Viewport statistics:" << std::endl;
-    for (std::size_t i = 0; i < viewports->size(); ++i)
-    {
-        sfm::bundler::Viewport const& view = viewports->at(i);
-        std::cout << "  View " << i << ": "
-            << view.width << "x" << view.height << ", "
-            << view.features.positions.size() << " features, "
-            << "focal length: " << view.focal_length << std::endl;
+        log_message(conf, "Feature detection took "
+            + util::string::get(timer.get_elapsed()) + "ms.");
     }
 
     /* Exhaustive matching between all pairs of views. */
@@ -74,11 +105,13 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
 
     std::cout << "Performing exhaustive feature matching..." << std::endl;
     {
-            util::WallTimer timer;
+        util::WallTimer timer;
         sfm::bundler::Matching bundler_matching(matching_opts);
         bundler_matching.compute(*viewports, pairwise_matching);
         std::cout << "Matching took " << timer.get_elapsed()
             << " ms." << std::endl;
+        log_message(conf, "Feature matching took "
+            + util::string::get(timer.get_elapsed()) + "ms.");
     }
 
     if (pairwise_matching->empty())
@@ -107,6 +140,9 @@ sfm_reconstruct (AppSettings const& conf)
     mve::Scene::Ptr scene = mve::Scene::create(conf.scene_path);
     std::string const prebundle_path
         = util::fs::join_path(scene->get_path(), conf.prebundle_file);
+
+    /* Log time and date if a log file is specified. */
+    log_start_of_sfm(conf);
 
     sfm::bundler::ViewportList viewports;
     sfm::bundler::PairwiseMatching pairwise_matching;
@@ -211,6 +247,7 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* Reconstruct remaining views. */
     int num_cameras_reconstructed = 2;
+    int full_ba_num_skipped = 0;
     while (true)
     {
         std::vector<int> next_views;
@@ -244,17 +281,37 @@ sfm_reconstruct (AppSettings const& conf)
 
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
-
         incremental.triangulate_new_tracks();
         incremental.delete_large_error_tracks();
-
-        std::cout << "Running full bundle adjustment..." << std::endl;
-        incremental.bundle_adjustment_full();
         num_cameras_reconstructed += 1;
+
+        /* Run full bundle adjustment only after a couple of views. */
+        int const full_ba_skip_views
+            = std::min(5, num_cameras_reconstructed / 15);
+        if (full_ba_num_skipped < full_ba_skip_views)
+        {
+            std::cout << "Skipping full bundle adjustment (skipping "
+                << full_ba_skip_views << " views)." << std::endl;
+            full_ba_num_skipped += 1;
+        }
+        else
+        {
+            std::cout << "Running full bundle adjustment..." << std::endl;
+            incremental.bundle_adjustment_full();
+            full_ba_num_skipped = 0;
+        }
+    }
+
+    if (full_ba_num_skipped > 0)
+    {
+        std::cout << "Running final bundle adjustment..." << std::endl;
+        incremental.bundle_adjustment_full();
     }
 
     std::cout << "SfM reconstruction took " << timer.get_elapsed()
         << " ms." << std::endl;
+    log_message(conf, "SfM reconstruction took "
+        + util::string::get(timer.get_elapsed()) + "ms.\n");
 
     std::cout << "Normalizing scene..." << std::endl;
     incremental.normalize_scene();
@@ -312,12 +369,14 @@ main (int argc, char** argv)
     args.set_nonopt_minnum(1);
     args.set_helptext_indent(23);
     args.set_description("This utility reconstructs camera parameters "
-        "for MVE scenes using Structure-from-Motion techniques.");
+        "for MVE scenes using Structure-from-Motion techniques. Note: the "
+        "prebundle and the log file are relative to the scene directory.");
     args.add_option('o', "original", true, "Original image embedding [original]");
     args.add_option('e', "exif", true, "EXIF data embedding [exif]");
     args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing [6000000]");
     args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle from file [prebundle.sfm]");
+    args.add_option('l', "log-file", true, "Logs some timings to file []");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -343,6 +402,8 @@ main (int argc, char** argv)
             conf.max_image_size = i->get_arg<int>();
         else if (i->opt->lopt == "prebundle")
             conf.prebundle_file = i->arg;
+        else if (i->opt->lopt == "log-file")
+            conf.log_file = i->arg;
         else
             throw std::invalid_argument("Unexpected option");
     }
