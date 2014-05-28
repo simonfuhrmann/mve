@@ -42,6 +42,13 @@ namespace
     {
         std::copy(descr.data.begin(), descr.data.end(), data);
     }
+
+    template <typename T>
+    bool
+    compare_scale (T const& descr1, T const& descr2)
+    {
+        return descr1.scale > descr2.scale;
+    }
 }  /* namespace */
 
 void
@@ -63,10 +70,16 @@ void
 FeatureSet::compute_sift (mve::ByteImage::ConstPtr image)
 {
     /* Compute features. */
-    Sift sift(this->opts.sift_opts);
-    sift.set_image(image);
-    sift.process();
-    Sift::Descriptors const& descr = sift.get_descriptors();
+    Sift::Descriptors descr;
+    {
+        Sift sift(this->opts.sift_opts);
+        sift.set_image(image);
+        sift.process();
+        descr = sift.get_descriptors();
+    }
+
+    /* Sort features by scale for low-res matching. */
+    std::sort(descr.begin(), descr.end(), compare_scale<sfm::Sift::Descriptor>);
 
     /* Prepare and copy to data structures. */
     std::size_t offset = this->positions.size();
@@ -93,10 +106,16 @@ void
 FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
 {
     /* Compute features. */
-    Surf surf(this->opts.surf_opts);
-    surf.set_image(image);
-    surf.process();
-    Surf::Descriptors const& descr = surf.get_descriptors();
+    Surf::Descriptors descr;
+    {
+        Surf surf(this->opts.surf_opts);
+        surf.set_image(image);
+        surf.process();
+        descr = surf.get_descriptors();
+    }
+
+    /* Sort features by scale for low-res matching. */
+    std::sort(descr.begin(), descr.end(), compare_scale<sfm::Surf::Descriptor>);
 
     /* Prepare and copy to data structures. */
     std::size_t offset = this->positions.size();
@@ -117,6 +136,38 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
         this->positions[offset + i] = math::Vec2f(d.x, d.y);
         image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
+}
+
+int
+FeatureSet::match_lowres (FeatureSet const& other, int num_features) const
+{
+    /* SIFT lowres matching. */
+    if (this->num_sift_descriptors > 0)
+    {
+        sfm::Matching::Result sift_result;
+        sfm::Matching::twoway_match(this->opts.sift_matching_opts,
+            this->sift_descr.begin(),
+            std::min(num_features, this->num_sift_descriptors),
+            other.sift_descr.begin(),
+            std::min(num_features, other.num_sift_descriptors),
+            &sift_result);
+        return sfm::Matching::count_consistent_matches(sift_result);
+    }
+
+    /* SURF lowres matching. */
+    if (this->num_surf_descriptors > 0)
+    {
+        sfm::Matching::Result surf_result;
+        sfm::Matching::twoway_match(this->opts.surf_matching_opts,
+            this->surf_descr.begin(),
+            std::min(num_features, this->num_surf_descriptors),
+            other.surf_descr.begin(),
+            std::min(num_features, other.num_surf_descriptors),
+            &surf_result);
+        return sfm::Matching::count_consistent_matches(surf_result);
+    }
+
+    return 0;
 }
 
 void

@@ -35,6 +35,7 @@ struct AppSettings
     std::string prebundle_file;
     std::string log_file;
     int max_image_size;
+    bool lowres_matching;
 };
 
 void
@@ -102,8 +103,9 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     matching_opts.ransac_opts.already_normalized = false;
     matching_opts.ransac_opts.threshold = 3.0f;
     matching_opts.ransac_opts.verbose_output = false;
+    matching_opts.use_lowres_matching = conf.lowres_matching;
 
-    std::cout << "Performing exhaustive feature matching..." << std::endl;
+    std::cout << "Performing feature matching..." << std::endl;
     {
         util::WallTimer timer;
         sfm::bundler::Matching bundler_matching(matching_opts);
@@ -376,7 +378,8 @@ main (int argc, char** argv)
     args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing [6000000]");
     args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle from file [prebundle.sfm]");
-    args.add_option('l', "log-file", true, "Logs some timings to file []");
+    args.add_option('\0', "log-file", true, "Logs some timings to file []");
+    args.add_option('\0', "careful-matching", false, "Disables matchability prediction");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -387,6 +390,7 @@ main (int argc, char** argv)
     conf.exif_name = "exif";
     conf.prebundle_file = "prebundle.sfm";
     conf.max_image_size = 6000000;
+    conf.lowres_matching = true;
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
@@ -404,6 +408,8 @@ main (int argc, char** argv)
             conf.prebundle_file = i->arg;
         else if (i->opt->lopt == "log-file")
             conf.log_file = i->arg;
+        else if (i->opt->lopt == "careful-matching")
+            conf.lowres_matching = false;
         else
             throw std::invalid_argument("Unexpected option");
     }

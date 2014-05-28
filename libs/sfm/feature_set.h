@@ -54,8 +54,17 @@ public:
 
     /** Computes the features specified in the options. */
     void compute_features (mve::ByteImage::Ptr image);
-    /** Matches all features yielding a single matching result. */
+
+    /** Matches all feature types yielding a single matching result. */
     void match (FeatureSet const& other, Matching::Result* result) const;
+
+    /**
+     * Matches the N lowest resolution features and returns the number of
+     * matches. Can be used as a guess for full matchability. Useful values
+     * are at most 3 matches for 500 features, or 2 matches with 300 features.
+     */
+    int match_lowres (FeatureSet const& other, int num_features) const;
+
     /** Clean up descriptor data. */
     void clean_descriptors (void);
 

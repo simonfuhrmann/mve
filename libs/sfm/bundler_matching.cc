@@ -65,6 +65,21 @@ void
 Matching::two_view_matching (FeatureSet const& view_1,
     FeatureSet const& view_2, CorrespondenceIndices* matches)
 {
+    /* Low-res matching if number of features is large. */
+    if (this->opts.use_lowres_matching
+        && view_1.positions.size() * view_2.positions.size() > 1000000)
+    {
+        int const num_matches = view_1.match_lowres(view_2,
+            this->opts.num_lowres_features);
+        if (num_matches < this->opts.min_lowres_matches)
+        {
+            std::cout << "  Only " << num_matches
+                << " of " << this->opts.min_lowres_matches
+                << " low-res matches. Rejecting pair." << std::endl;
+            return;
+        }
+    }
+
     /* Perform two-view descriptor matching. */
     sfm::Matching::Result matching_result;
     int num_matches = 0;

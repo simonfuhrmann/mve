@@ -52,6 +52,12 @@ public:
         int min_feature_matches;
         /** Minimum number of matching features after RANSAC. */
         int min_matching_inliers;
+        /** Perform low-resolution matching to reject unlikely pairs. */
+        bool use_lowres_matching;
+        /** Number of features used for low-res matching. */
+        int num_lowres_features;
+        /** Minimum number of matches from low-res matching. */
+        int min_lowres_matches;
     };
 
     struct Progress
@@ -86,6 +92,9 @@ inline
 Matching::Options::Options (void)
     : min_feature_matches(24)
     , min_matching_inliers(12)
+    , use_lowres_matching(false)
+    , num_lowres_features(500)
+    , min_lowres_matches(5)
 {
 }
 
