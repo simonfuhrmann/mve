@@ -5,8 +5,8 @@ include ${MVE_ROOT}/Makefile.inc
 MSPR_ROOT := ../..
 vpath libfssr.a ${MSPR_ROOT}/libs/fssr/
 
-CXXFLAGS += -I${MSPR_ROOT}/libs -I${MVE_ROOT}/libs
-LDLIBS += -lpng -ltiff -ljpeg
+CXXFLAGS += -I${MSPR_ROOT}/libs -I${MVE_ROOT}/libs ${OPENMP}
+LDLIBS += -lpng -ltiff -ljpeg ${OPENMP}
 
 SOURCES := $(wildcard [^_]*.cc)
 ${TARGET}: ${SOURCES:.cc=.o} libfssr.a libmve.a libmve_util.a
