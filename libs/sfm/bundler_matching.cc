@@ -30,18 +30,31 @@ Matching::compute (ViewportList const& viewports,
         for (std::size_t j = 0; j < i; ++j)
         {
             current_pair += 1;
-            if (viewports[i].features.positions.empty()
-                || viewports[j].features.positions.empty())
+            if (this->progress != NULL)
+                this->progress->num_done += 1;
+
+            FeatureSet const& view_1 = viewports[i].features;
+            FeatureSet const& view_2 = viewports[j].features;
+            if (view_1.positions.empty() || view_2.positions.empty())
                 continue;
 
+            /* Debug output. */
             int percent = current_pair * 100 / num_pairs;
             std::cout << "Processing pair " << i << ","
                 << j << " (" << percent << "%)..." << std::endl;
 
-            this->two_view_matching(i, j, viewports, pairwise_matching);
+            /* Match the views. */
+            CorrespondenceIndices matches;
+            this->two_view_matching(view_1, view_2, &matches);
+            if (matches.empty())
+                continue;
 
-            if (this->progress != NULL)
-                this->progress->num_done += 1;
+            /* Successful two view matching. Add the pair. */
+            pairwise_matching->push_back(TwoViewMatching());
+            TwoViewMatching& matching = pairwise_matching->back();
+            matching.view_1_id = i;
+            matching.view_2_id = j;
+            std::swap(matching.matches, matches);
         }
 
     std::cout << "Found a total of " << pairwise_matching->size()
@@ -49,12 +62,9 @@ Matching::compute (ViewportList const& viewports,
 }
 
 void
-Matching::two_view_matching (std::size_t id_1, std::size_t id_2,
-    ViewportList const& viewports, PairwiseMatching* pairwise_matching)
+Matching::two_view_matching (FeatureSet const& view_1,
+    FeatureSet const& view_2, CorrespondenceIndices* matches)
 {
-    FeatureSet const& view_1 = viewports[id_1].features;
-    FeatureSet const& view_2 = viewports[id_2].features;
-
     /* Perform two-view descriptor matching. */
     sfm::Matching::Result matching_result;
     int num_matches = 0;
@@ -117,14 +127,11 @@ Matching::two_view_matching (std::size_t id_1, std::size_t id_2,
     }
 
     /* Create Two-View matching result. */
-    pairwise_matching->push_back(TwoViewMatching());
-    TwoViewMatching& twoview_matching = pairwise_matching->back();
-    twoview_matching.view_1_id = id_1;
-    twoview_matching.view_2_id = id_2;
+    matches->reserve(num_inliers);
     for (int i = 0; i < num_inliers; ++i)
     {
         int const inlier_id = ransac_result.inliers[i];
-        twoview_matching.matches.push_back(unfiltered_indices[inlier_id]);
+        matches->push_back(unfiltered_indices[inlier_id]);
     }
 }
 

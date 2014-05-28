@@ -72,8 +72,8 @@ public:
         PairwiseMatching* pairwise_matching);
 
 private:
-    void two_view_matching (std::size_t id_1, std::size_t id_2,
-        ViewportList const& viewports, PairwiseMatching* pairwise_matching);
+    void two_view_matching (FeatureSet const& view_1, FeatureSet const& view_2,
+        CorrespondenceIndices* matches);
 
 private:
     Options opts;
