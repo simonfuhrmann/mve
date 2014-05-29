@@ -803,6 +803,7 @@ Incremental::create_bundle (void) const
 
         /* Populate the features in the Bundle. */
         mve::Bundle::Features& bundle_feats = bundle->get_features();
+        bundle_feats.reserve(this->tracks->size());
         for (std::size_t i = 0; i < this->tracks->size(); ++i)
         {
             Track const& track = this->tracks->at(i);
@@ -816,6 +817,7 @@ Incremental::create_bundle (void) const
             f3d.color[0] = track.color[0] / 255.0f;
             f3d.color[1] = track.color[1] / 255.0f;
             f3d.color[2] = track.color[2] / 255.0f;
+            f3d.refs.reserve(track.features.size());
             for (std::size_t j = 0; j < track.features.size(); ++j)
             {
                 /* For each reference copy view ID, feature ID and 2D pos. */
@@ -824,8 +826,10 @@ Incremental::create_bundle (void) const
                 f2d.view_id = track.features[j].view_id;
                 f2d.feature_id = track.features[j].feature_id;
 
-                FeatureSet features = this->viewports->at(f2d.view_id).features;
-                math::Vec2f const& f2d_pos = features.positions[f2d.feature_id];
+                FeatureSet const& features
+                    = this->viewports->at(f2d.view_id).features;
+                math::Vec2f const& f2d_pos
+                    = features.positions[f2d.feature_id];
                 std::copy(f2d_pos.begin(), f2d_pos.end(), f2d.pos);
             }
         }

@@ -26,6 +26,9 @@
 #include "sfm/bundler_init_pair.h"
 #include "sfm/bundler_incremental.h"
 
+#define RAND_SEED_MATCHING 0
+#define RAND_SEED_SFM 0
+
 struct AppSettings
 {
     std::string scene_path;
@@ -37,6 +40,7 @@ struct AppSettings
     int max_image_size;
     bool lowres_matching;
     bool skip_sfm;
+    bool always_full_ba;
 };
 
 void
@@ -151,6 +155,7 @@ sfm_reconstruct (AppSettings const& conf)
     sfm::bundler::PairwiseMatching pairwise_matching;
     if (!util::fs::file_exists(prebundle_path.c_str()))
     {
+        util::system::rand_seed(RAND_SEED_MATCHING);
         features_and_matching(scene, conf, &viewports, &pairwise_matching);
         std::cout << "Saving pre-bundle to file..." << std::endl;
         sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
@@ -168,17 +173,16 @@ sfm_reconstruct (AppSettings const& conf)
         std::exit(0);
     }
 
-    /* For every viewport drop descriptor information to save memory. */
+    /* Drop descriptors and embeddings to save memory. */
+    scene->cache_cleanup();
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].features.clean_descriptors();
-
-    /* Remove unused embeddings. */
-    scene->cache_cleanup();
 
     /* Start timer for incremental SfM. */
     util::WallTimer timer;
 
     /* Compute connected feature components, i.e. feature tracks. */
+    util::system::rand_seed(RAND_SEED_SFM);
     sfm::bundler::Tracks::Options tracks_options;
     tracks_options.verbose_output = true;
 
@@ -295,8 +299,8 @@ sfm_reconstruct (AppSettings const& conf)
         num_cameras_reconstructed += 1;
 
         /* Run full bundle adjustment only after a couple of views. */
-        int const full_ba_skip_views
-            = std::min(5, num_cameras_reconstructed / 15);
+        int const full_ba_skip_views = conf.always_full_ba ? 0
+            : std::min(5, num_cameras_reconstructed / 15);
         if (full_ba_num_skipped < full_ba_skip_views)
         {
             std::cout << "Skipping full bundle adjustment (skipping "
@@ -388,6 +392,7 @@ main (int argc, char** argv)
     args.add_option('\0', "log-file", true, "Logs some timings to file []");
     args.add_option('\0', "no-prediction", false, "Disables matchability prediction");
     args.add_option('\0', "skip-sfm", false, "Compute prebundle, skip SfM reconstruction");
+    args.add_option('\0', "always-full-ba", false, "Run full bundle adjustment after every view");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -400,6 +405,7 @@ main (int argc, char** argv)
     conf.max_image_size = 6000000;
     conf.lowres_matching = true;
     conf.skip_sfm = false;
+    conf.always_full_ba = false;
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
@@ -421,11 +427,12 @@ main (int argc, char** argv)
             conf.lowres_matching = false;
         else if (i->opt->lopt == "skip-sfm")
             conf.skip_sfm = true;
+        else if (i->opt->lopt == "always-full-ba")
+            conf.always_full_ba = true;
         else
             throw std::invalid_argument("Unexpected option");
     }
 
-    util::system::rand_seed(0);
     sfm_reconstruct(conf);
 
     return 0;
