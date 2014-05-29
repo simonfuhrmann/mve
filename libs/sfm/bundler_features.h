@@ -21,10 +21,9 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 /**
  * Bundler Component: Computation of image features for an MVE scene.
  *
- * The component computes for every view in the scene the features for the
- * given image embedding. If features already exist as embedding, they are
- * not recomputed. Otherwise features are computed and stored. If no feature
- * embedding is given, only viewports are initialized.
+ * The component computes features for every view in the scene and stores
+ * the features in the viewports. It also estimates the focal length from
+ * the EXIF data stored in the views.
  */
 class Features
 {

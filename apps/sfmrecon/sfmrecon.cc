@@ -36,6 +36,7 @@ struct AppSettings
     std::string log_file;
     int max_image_size;
     bool lowres_matching;
+    bool skip_sfm;
 };
 
 void
@@ -148,17 +149,23 @@ sfm_reconstruct (AppSettings const& conf)
 
     sfm::bundler::ViewportList viewports;
     sfm::bundler::PairwiseMatching pairwise_matching;
-    if (util::fs::file_exists(prebundle_path.c_str()))
+    if (!util::fs::file_exists(prebundle_path.c_str()))
+    {
+        features_and_matching(scene, conf, &viewports, &pairwise_matching);
+        std::cout << "Saving pre-bundle to file..." << std::endl;
+        sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
+    }
+    else if (!conf.skip_sfm)
     {
         std::cout << "Loading pre-bundle from file..." << std::endl;
         sfm::bundler::load_prebundle_from_file(prebundle_path,
             &viewports, &pairwise_matching);
     }
-    else
+
+    if (conf.skip_sfm)
     {
-        features_and_matching(scene, conf, &viewports, &pairwise_matching);
-        std::cout << "Saving pre-bundle to file..." << std::endl;
-        sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
+        std::cout << "Prebundle finished, skipping SfM. Exiting." << std::endl;
+        std::exit(0);
     }
 
     /* For every viewport drop descriptor information to save memory. */
@@ -379,7 +386,8 @@ main (int argc, char** argv)
     args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle from file [prebundle.sfm]");
     args.add_option('\0', "log-file", true, "Logs some timings to file []");
-    args.add_option('\0', "careful-matching", false, "Disables matchability prediction");
+    args.add_option('\0', "no-prediction", false, "Disables matchability prediction");
+    args.add_option('\0', "skip-sfm", false, "Compute prebundle, skip SfM reconstruction");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -391,6 +399,7 @@ main (int argc, char** argv)
     conf.prebundle_file = "prebundle.sfm";
     conf.max_image_size = 6000000;
     conf.lowres_matching = true;
+    conf.skip_sfm = false;
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
@@ -408,8 +417,10 @@ main (int argc, char** argv)
             conf.prebundle_file = i->arg;
         else if (i->opt->lopt == "log-file")
             conf.log_file = i->arg;
-        else if (i->opt->lopt == "careful-matching")
+        else if (i->opt->lopt == "no-prediction")
             conf.lowres_matching = false;
+        else if (i->opt->lopt == "skip-sfm")
+            conf.skip_sfm = true;
         else
             throw std::invalid_argument("Unexpected option");
     }

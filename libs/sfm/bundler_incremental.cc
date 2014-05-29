@@ -717,6 +717,8 @@ Incremental::normalize_scene (void)
     /* Compute AABB for all camera centers. */
     math::Vec3d aabb_min(std::numeric_limits<double>::max());
     math::Vec3d aabb_max(-std::numeric_limits<double>::max());
+    math::Vec3d camera_mean(0.0);
+    int num_valid_cameras = 0;
     for (std::size_t i = 0; i < this->cameras.size(); ++i)
     {
         CameraPose const& pose = this->cameras[i];
@@ -728,11 +730,13 @@ Incremental::normalize_scene (void)
             aabb_min[j] = std::min(center[j], aabb_min[j]);
             aabb_max[j] = std::max(center[j], aabb_max[j]);
         }
+        camera_mean += center;
+        num_valid_cameras += 1;
     }
 
     /* Compute scale and translation. */
     double scale = 10.0 / (aabb_max - aabb_min).maximum();
-    math::Vec3d trans = -(aabb_max + aabb_min) / 2.0;
+    math::Vec3d trans = -(camera_mean / static_cast<double>(num_valid_cameras));
 
     /* Transform every point. */
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
@@ -832,6 +836,7 @@ Incremental::create_bundle (void) const
 
 /* ---------------------------------------------------------------- */
 
+// TODO: Better invalidate the track?
 void
 Incremental::delete_track (int track_id)
 {
