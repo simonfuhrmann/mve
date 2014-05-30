@@ -1,27 +1,23 @@
-////////////////////////////////////////////////////////////////////////////
-//	File:		    SparseBundleCPU.h
-//	Author:		    Changchang Wu (ccwu@cs.washington.edu)
-//	Description :   interface of the CPU-version of multi-core bundle adjustment
-//
-//  Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
-//    and the University of Washington at Seattle
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public
-//  License as published by the Free Software Foundation; either
-//  Version 3 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  General Public License for more details.
-//
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
+ *    and the University of Washington at Seattle
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License as published by the Free Software Foundation; either
+ *  Version 3 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ */
 
-#if !defined(SPARSE_BUNDLE_CPU_H)
-#define SPARSE_BUNDLE_CPU_H
+#ifndef SFM_PBA_CPU_HEADER
+#define SFM_PBA_CPU_HEADER
 
 #include <malloc.h>
+#include "sfm/defines.h"
 
 //BYTE-ALIGNMENT for data allocation (16 required for SSE, 32 required for AVX)
 //PREVIOUS version uses only SSE. The new version will include AVX.
@@ -30,6 +26,8 @@
 #define FLOAT_ALIGN      8
 #define VECTOR_ALIGNMENT_MASK (VECTOR_ALIGNMENT - 1)
 #define ALIGN_PTR(p)	  (( ((size_t) p) + VECTOR_ALIGNMENT_MASK)  & (~VECTOR_ALIGNMENT_MASK))
+
+SFM_NAMESPACE_BEGIN
 
 template <class Float> class avec
 {
@@ -273,5 +271,7 @@ public:
 };
 
 ParallelBA* NewSparseBundleCPU(bool dp);
-#endif
 
+SFM_NAMESPACE_END
+
+#endif // SFM_PBA_CPU_HEADER

@@ -1,22 +1,17 @@
-////////////////////////////////////////////////////////////////////////////
-//  File:           SparseBundleCPU.cpp
-//  Author:         Changchang Wu
-//  Description :   implementationof the CPU-based multicore bundle adjustment
-//
-//  Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
-//    and the University of Washington at Seattle
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public
-//  License as published by the Free Software Foundation; either
-//  Version 3 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  General Public License for more details.
-//
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
+ *    and the University of Washington at Seattle
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License as published by the Free Software Foundation; either
+ *  Version 3 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ */
 
 #include <stdlib.h>
 #include <vector>
@@ -37,8 +32,8 @@ using std::max;
 #include <time.h>
 #include <float.h>
 
-#include "pba.h"
-#include "pba_cpu.h"
+#include "sfm/pba.h"
+#include "sfm/pba_cpu.h"
 
 #if defined(WINAPI_FAMILY) && WINAPI_FAMILY==WINAPI_FAMILY_APP
 #include <thread>
@@ -90,6 +85,7 @@ using std::max;
 //compute the number of threads for vector operatoins, pure heuristics...
 #define AUTO_MT_NUM(sz) int((log((double) sz) / log(2.0) - 18.5 ) * __num_cpu_cores / 16.0)
 
+SFM_NAMESPACE_BEGIN
 
 template<class Float> void avec<Float> ::SaveToFile(const char* name)
 {
@@ -4245,3 +4241,5 @@ ParallelBA* NewSparseBundleCPU(bool dp)
 #endif
         return new SparseBundleCPU<float>;
 }
+
+SFM_NAMESPACE_END

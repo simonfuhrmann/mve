@@ -1,27 +1,23 @@
-////////////////////////////////////////////////////////////////////////////
-//	File:		    DataInterface.h
-//	Author:		    Changchang Wu (ccwu@cs.washington.edu)
-//	Description :   data interface, the data format been uploaded to GPU
-//
-//  Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
-//    and the University of Washington at Seattle
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public
-//  License as published by the Free Software Foundation; either
-//  Version 3 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  General Public License for more details.
-//
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
+ *    and the University of Washington at Seattle
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License as published by the Free Software Foundation; either
+ *  Version 3 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ */
 
-#ifndef DATA_INTERFACE_GPU_H
-#define DATA_INTERFACE_GPU_H
+#ifndef SFM_PBA_TYPES_HEADER
+#define SFM_PBA_TYPES_HEADER
 
 #include <math.h>
+#include "sfm/defines.h"
 
 #define PBA_PI 3.14159265358979323846
 
@@ -43,6 +39,8 @@
 //transfer data type with 4-float alignment
 #define CameraT CameraT_
 #define Point3D Point3D_
+
+SFM_NAMESPACE_BEGIN
 
 template <class FT>
 struct CameraT_
@@ -374,6 +372,6 @@ struct Point2D
     template <class Float> void GetPoint2D(Float&X, Float&Y)  const { X = (Float) x; Y = (Float) y; }
 };
 
+SFM_NAMESPACE_END
 
-#endif
-
+#endif // SFM_PBA_TYPES_HEADER

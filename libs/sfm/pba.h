@@ -1,36 +1,26 @@
-////////////////////////////////////////////////////////////////////////////
-//	File:		    pba.h
-//	Author:		    Changchang Wu (ccwu@cs.washington.edu)
-//	Description :   interface of class ParallelBA, which has two implementations
-//                  SparseBundleCU for CUDA-based version, and
-//                  SparseBundleCPU<Float> for CPU multi-threading version
-//
-//  Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
-//    and the University of Washington at Seattle
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public
-//  License as published by the Free Software Foundation; either
-//  Version 3 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  General Public License for more details.
-//
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
+ *    and the University of Washington at Seattle
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License as published by the Free Software Foundation; either
+ *  Version 3 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ */
 
 // TODO (Simon Fuhrmann)
-// - Change all file headers
-// - Change include guards
-// - Add namespace
 // - Remove using directives
 // - Reorganize classes (public, protected, private)
 // - Remove Cuda implementation artifacts
 // - Remove specialization for float, always use double?
 
-#ifndef PARALLEL_BA_H
-#define PARALLEL_BA_H
+#ifndef SFM_PBA_HEADER
+#define SFM_PBA_HEADER
 
 #if  defined(_WIN32)
     #ifdef PBA_DLL
@@ -58,6 +48,8 @@
 #include "pba_config.h"
 
 #define PBA_NO_GPU
+
+SFM_NAMESPACE_BEGIN
 
 class ParallelBA
 {
@@ -150,5 +142,6 @@ typedef ParallelBA * (*NEWPARALLELBAPROC)(ParallelBA::DeviceT);
 //older versions do not have this function.
 PBA_EXPORT_EXTERN int  ParallelBA_GetVersion();
 
-#endif
+SFM_NAMESPACE_END
 
+#endif
