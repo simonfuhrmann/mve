@@ -153,7 +153,7 @@ class SparseBundleCPU : public ParallelBA, public ConfigBA
 {
 public:
     typedef avec<Float>   VectorF;
-    typedef vector<int>   VectorI;
+    typedef std::vector<int>   VectorI;
     typedef float         float_t;
 
 protected:      //cpu data
@@ -210,8 +210,8 @@ protected:
     VectorF		 _cuCameraQMapW;
     VectorF		 _cuCameraQListW;
 protected:
-    bool		ProcessIndexCameraQ(vector<int>&qmap, vector<int>& qlist);
-    void		ProcessWeightCameraQ(vector<int>&cpnum, vector<int>&qmap, Float* qmapw, Float* qlistw);
+    bool		ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int>& qlist);
+    void		ProcessWeightCameraQ(std::vector<int>&cpnum, std::vector<int>&qmap, Float* qmapw, Float* qlistw);
 
 protected:      //internal functions
     int         ValidateInputData();

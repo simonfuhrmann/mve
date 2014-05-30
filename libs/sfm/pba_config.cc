@@ -13,16 +13,12 @@
  *  General Public License for more details.
  */
 
-#include <string.h>
+#include <cstring>
 #include <iostream>
-#include <time.h>
+#include <ctime>
 #include <iomanip>
 #include <fstream>
 #include <string>
-
-using std::cout;
-using std::ofstream;
-using std::string;
 
 #ifndef _WIN32
         #include <sys/time.h>
@@ -180,7 +176,7 @@ void ConfigBA::SaveBundleStatistics(int ncam, int npt, int nproj)
             );
 
         ///////////////////////////////////////////////////////
-        ofstream out(filenamebuf);     out << std::left;
+        std::ofstream out(filenamebuf);     out << std::left;
 
         float overhead = (BundleTimerGet(TIMER_OVERALL) - BundleTimerGet(TIMER_OPTIMIZATION));
         if(__matlab_format_stat) out

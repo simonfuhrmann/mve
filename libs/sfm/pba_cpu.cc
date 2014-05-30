@@ -13,7 +13,7 @@
  *  General Public License for more details.
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <vector>
 #include <iostream>
 #include <utility>
@@ -22,15 +22,9 @@
 #include <sstream>
 #include <iomanip>
 
-using std::vector;
-using std::cout;
-using std::pair;
-using std::ofstream;
-using std::max;
-
-#include <math.h>
-#include <time.h>
-#include <float.h>
+#include <cmath>
+#include <ctime>
+#include <cfloat>
 
 #include "sfm/pba.h"
 #include "sfm/pba_cpu.h"
@@ -89,7 +83,7 @@ SFM_NAMESPACE_BEGIN
 
 template<class Float> void avec<Float> ::SaveToFile(const char* name)
 {
-    ofstream out(name);
+    std::ofstream out(name);
     for(Float* p = _data; p < _last; ++p) out << (*p) <<  '\n';
 }
 
@@ -1078,7 +1072,7 @@ namespace ProgramCPU
         //f[1], t[3], r[3][3], d[1]
         for(int i = 0; i < ncam; ++i, c += 16, d += 8, nc += 16)
         {
-            nc[0]  = max(c[0] + d[0], ((Float)1e-10));
+            nc[0]  = std::max(c[0] + d[0], ((Float)1e-10));
             nc[1]  = c[1] + d[1];
             nc[2]  = c[2] + d[2];
             nc[3]  = c[3] + d[3];
@@ -1539,8 +1533,8 @@ namespace ProgramCPU
 
     ///////////////////////////////////////
     template <class Float>
-    void  ComputeDiagonal( const avec<Float>& jcv, const vector<int>& cmapv, const avec<Float>& jpv, const vector<int>& pmapv,
-                        const vector<int>& cmlistv, const Float* qw0, avec<Float>& jtjdi, bool jc_transpose, int radial)
+    void  ComputeDiagonal( const avec<Float>& jcv, const std::vector<int>& cmapv, const avec<Float>& jpv, const std::vector<int>& pmapv,
+                        const std::vector<int>& cmlistv, const Float* qw0, avec<Float>& jtjdi, bool jc_transpose, int radial)
     {
         //first camera part
         if(jcv.size() == 0 || jpv.size() == 0) return; // not gonna happen
@@ -1858,7 +1852,7 @@ namespace ProgramCPU
 
     template<class Float>
     void ComputeDiagonalBlock_(float lambda, bool dampd, const avec<Float>& camerav,  const avec<Float>& pointv,
-                             const avec<Float>& meas,  const vector<int>& jmapv,  const avec<Float>& sjv,
+                             const avec<Float>& meas,  const std::vector<int>& jmapv,  const avec<Float>& sjv,
                              avec<Float>&qwv, avec<Float>& diag, avec<Float>& blocks,
                              bool intrinsic_fixed, int radial_distortion, int mode = 0)
     {
@@ -2755,19 +2749,19 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
     //////////////////////////////////////////
     BundleTimerSwap(TIMER_PREPROCESSING, TIMER_GPU_ALLOCATION);
     ////mapping from camera to measuremnts
-    vector<int>& cpi = _cuCameraMeasurementMap;     cpi.resize(_num_camera + 1);
-    vector<int>& cpidx = _cuCameraMeasurementList;  cpidx.resize(_num_imgpt);
-    vector<int> cpnum(_num_camera, 0);              cpi[0] = 0;
+    std::vector<int>& cpi = _cuCameraMeasurementMap;     cpi.resize(_num_camera + 1);
+    std::vector<int>& cpidx = _cuCameraMeasurementList;  cpidx.resize(_num_imgpt);
+    std::vector<int> cpnum(_num_camera, 0);              cpi[0] = 0;
     for(int i = 0; i < _num_imgpt; ++i) cpnum[_camera_idx[i]]++;
     for(int i = 1; i <= _num_camera; ++i) cpi[i] = cpi[i - 1] + cpnum[i - 1];
     ///////////////////////////////////////////////////////
-    vector<int> cptidx = cpi;
+    std::vector<int> cptidx = cpi;
     for(int i = 0; i < _num_imgpt; ++i) cpidx[cptidx[_camera_idx[i]] ++] = i;
 
     ///////////////////////////////////////////////////////////
     if(_cuCameraMeasurementListT.size())
     {
-        vector<int> &ridx = _cuCameraMeasurementListT; ridx.resize(_num_imgpt);
+        std::vector<int> &ridx = _cuCameraMeasurementListT; ridx.resize(_num_imgpt);
         for(int i = 0; i < _num_imgpt; ++i)ridx[cpidx[i]] = i;
     }
 
@@ -2794,7 +2788,7 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
 
     ////////////////////////////////////////////
     ///////mapping from point to measurment
-    vector<int> & ppi = _cuPointMeasurementMap;  ppi.resize(_num_point + 1);
+    std::vector<int> & ppi = _cuPointMeasurementMap;  ppi.resize(_num_point + 1);
     for(int i = 0, last_point = -1; i < _num_imgpt; ++i)
     {
         int pt = _point_idx[i];
@@ -2803,7 +2797,7 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
     ppi[_num_point] = _num_imgpt;
 
     //////////projection map
-    vector<int>& pmp = _cuProjectionMap; pmp.resize(_num_imgpt *2);
+    std::vector<int>& pmp = _cuProjectionMap; pmp.resize(_num_imgpt *2);
     for(int i = 0; i < _num_imgpt; ++i)
     {
         int* imp = &pmp[i * 2];
@@ -2821,7 +2815,7 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
 
 
 template<class Float>
-bool SparseBundleCPU<Float>::ProcessIndexCameraQ(vector<int>&qmap, vector<int>& qlist)
+bool SparseBundleCPU<Float>::ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int>& qlist)
 {
     ///////////////////////////////////
     qlist.resize(0);
@@ -2837,7 +2831,7 @@ bool SparseBundleCPU<Float>::ProcessIndexCameraQ(vector<int>&qmap, vector<int>& 
     ///////////////////////////////////////
 
     int error = 0;
-    vector<int> temp(_num_camera * 2, -1);
+    std::vector<int> temp(_num_camera * 2, -1);
 
     for(int i = 0; i < _num_camera; ++i)
     {
@@ -2894,11 +2888,11 @@ bool SparseBundleCPU<Float>::ProcessIndexCameraQ(vector<int>&qmap, vector<int>& 
 }
 
 template<class Float>
-void SparseBundleCPU<Float>::ProcessWeightCameraQ(vector<int>&cpnum, vector<int>&qmap, Float* qmapw, Float* qlistw)
+void SparseBundleCPU<Float>::ProcessWeightCameraQ(std::vector<int>&cpnum, std::vector<int>&qmap, Float* qmapw, Float* qlistw)
 {
     //set average focal length and average radial distortion
-    vector<Float>	qpnum(_num_camera, 0),		qcnum(_num_camera, 0);
-    vector<Float>	fs(_num_camera, 0),			rs(_num_camera, 0);
+    std::vector<Float>	qpnum(_num_camera, 0),		qcnum(_num_camera, 0);
+    std::vector<Float>	fs(_num_camera, 0),			rs(_num_camera, 0);
 
     for(int i = 0; i < _num_camera; ++i)
     {
@@ -3192,7 +3186,7 @@ void SparseBundleCPU<Float>::NormalizeDataF()
         {
             //------------------------------------------------------------------
             //////////////////////////////////////////////////////////////
-            vector<float> focals(_num_camera);
+            std::vector<float> focals(_num_camera);
             for(int i = 0; i < _num_camera; ++i) focals[i] = _camera_data[i].f;
             std::nth_element(focals.begin(), focals.begin() + _num_camera / 2, focals.end());
             float median_focal_length = focals[_num_camera/2];
@@ -3259,10 +3253,10 @@ void SparseBundleCPU<Float>::NormalizeDataD()
     if(__depth_scaling == 1.0f)
     {
         const float     dist_bound = 1.0f;
-        vector<float>   oz(_num_imgpt);
-        vector<float>   cpdist1(_num_camera,  dist_bound);
-        vector<float>   cpdist2(_num_camera, -dist_bound);
-        vector<int>     camnpj(_num_camera, 0), cambpj(_num_camera, 0);
+        std::vector<float>   oz(_num_imgpt);
+        std::vector<float>   cpdist1(_num_camera,  dist_bound);
+        std::vector<float>   cpdist2(_num_camera, -dist_bound);
+        std::vector<int>     camnpj(_num_camera, 0), cambpj(_num_camera, 0);
         int bad_point_count = 0;
         for(int i = 0; i < _num_imgpt; ++i)
         {
@@ -3639,7 +3633,7 @@ template<class Float>
 void SparseBundleCPU<Float>::DumpCooJacobian()
 {
     //////////
-    ofstream jo("j.txt");
+    std::ofstream jo("j.txt");
     int cn = __use_radial_distortion ? 8 : 7;
     int width = cn * _num_camera + 3 * _num_point;
     jo <<"%%MatrixMarket matrix coordinate real general\n";
@@ -3667,7 +3661,7 @@ void SparseBundleCPU<Float>::DumpCooJacobian()
         }
     }
 
-    ofstream jt("jt.txt");
+    std::ofstream jt("jt.txt");
     jt <<"%%MatrixMarket matrix coordinate real general\n";
     jt << width << " " << (_num_imgpt * 2)  << " " << (cn + 3) * _num_imgpt * 2<< '\n';
 
@@ -4040,7 +4034,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
                         {\
                             nthread[FID] = j;   PROFILE_( A B);\
                             float t = BundleTimerGet(TIMER_PROFILE_STEP) / repeat;\
-                            if(t > tbest) { if(j >= max(nto, 16)) break;}\
+                            if(t > tbest) { if(j >= std::max(nto, 16)) break;}\
                             else {tbest = t;    nbest = j; }\
                         }\
                         if(nto != 0) nthread[FID] = nbest; \
@@ -4057,7 +4051,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
                         {\
                             nthread[FID1] = j;   PROFILE_(A B);\
                             float t = BundleTimerGet(TIMER_PROFILE_STEP) / repeat;\
-                            if(t > tbest) { if(j >= max(nt1, 16)) break;}\
+                            if(t > tbest) { if(j >= std::max(nt1, 16)) break;}\
                             else {tbest = t;    nbest1 = j; }\
                         }\
                         nthread[FID1] = nbest1; \
@@ -4065,7 +4059,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
                         {\
                             nthread[FID2] = j;   PROFILE_( A B);\
                             float t = BundleTimerGet(TIMER_PROFILE_STEP) / repeat;\
-                            if(t > tbest) { if(j >= max(nt2, 16)) break;}\
+                            if(t > tbest) { if(j >= std::max(nt2, 16)) break;}\
                             else {tbest = t;    nbest2 = j; }\
                         }\
                         nthread[FID2] = nbest2;\

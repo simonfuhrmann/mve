@@ -14,7 +14,6 @@
  */
 
 // TODO (Simon Fuhrmann)
-// - Remove using directives
 // - Reorganize classes (public, protected, private)
 // - Remove Cuda implementation artifacts
 // - Remove specialization for float, always use double?

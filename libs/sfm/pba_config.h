@@ -18,7 +18,6 @@
 
 #include <vector>
 #include "sfm/defines.h"
-using std::vector;
 
 SFM_NAMESPACE_BEGIN
 
@@ -171,7 +170,7 @@ protected:
     bool             __matlab_format_stat;
     char*            __stat_filename;
     const char*      __driver_output;
-    vector<float>    __bundle_records;
+    std::vector<float>    __bundle_records;
     double           __timer_record[NUM_TIMER];
     int              __num_cpu_thread_all;
     int              __num_cpu_thread[NUM_FUNC];

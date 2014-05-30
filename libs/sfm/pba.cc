@@ -13,7 +13,7 @@
  *  General Public License for more details.
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <new>
 
 #include "pba.h"
