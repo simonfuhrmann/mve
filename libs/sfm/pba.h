@@ -15,38 +15,14 @@
 
 // TODO (Simon Fuhrmann)
 // - Reorganize classes (public, protected, private)
-// - Remove Cuda implementation artifacts
 // - Remove specialization for float, always use double?
 
 #ifndef SFM_PBA_HEADER
 #define SFM_PBA_HEADER
 
-#if  defined(_WIN32)
-    #ifdef PBA_DLL
-        #ifdef DLL_EXPORT
-            #define PBA_EXPORT __declspec(dllexport)
-        #else
-            #define PBA_EXPORT __declspec(dllimport)
-        #endif
-    #else
-        #define PBA_EXPORT
-    #endif
-
-    #define PBA_EXPORT_EXTERN PBA_EXPORT
-
-    #if _MSC_VER > 1000
-        #pragma once
-    #endif
-#else
-    #define PBA_EXPORT
-    #define PBA_EXPORT_EXTERN extern "C"
-#endif
-
 //filetype definitions for points and camera
 #include "pba_types.h"
 #include "pba_config.h"
-
-#define PBA_NO_GPU
 
 SFM_NAMESPACE_BEGIN
 
@@ -89,12 +65,12 @@ public:
 public:
     ////////////////////////////////////////////////////
     //methods for changing bundle adjustment settings
-    PBA_EXPORT virtual void ParseParam(int narg, char** argv);           //indirect method
-    PBA_EXPORT virtual ConfigBA* GetInternalConfig();                    //direct method
-    PBA_EXPORT virtual void SetFixedIntrinsics(bool fixed);              //call this for calibrated system
-    PBA_EXPORT virtual void EnableRadialDistortion(DistortionT type);    //call this to enable radial distortion
-    PBA_EXPORT virtual void SetNextTimeBudget(int seconds);              //# of seconds for next run (0 = no limit)
-    PBA_EXPORT virtual void ReserveStorage(size_t ncam, size_t npt, size_t nproj);
+    virtual void ParseParam(int narg, char** argv);           //indirect method
+    virtual ConfigBA* GetInternalConfig();                    //direct method
+    virtual void SetFixedIntrinsics(bool fixed);              //call this for calibrated system
+    virtual void EnableRadialDistortion(DistortionT type);    //call this to enable radial distortion
+    virtual void SetNextTimeBudget(int seconds);              //# of seconds for next run (0 = no limit)
+    virtual void ReserveStorage(size_t ncam, size_t npt, size_t nproj);
 
 public:
     //function name change; the old one is mapped as inline function
@@ -104,42 +80,42 @@ public:
 public:
     /////////////////////////////////////////////////////
     //optimizer interface, input and run
-    PBA_EXPORT virtual void SetCameraData(size_t ncam,  CameraT* cams);			//set camera data
-    PBA_EXPORT virtual void SetPointData(size_t npoint, Point3D* pts);			//set 3D point data
-    PBA_EXPORT virtual void SetProjection(size_t nproj,
+    virtual void SetCameraData(size_t ncam,  CameraT* cams);			//set camera data
+    virtual void SetPointData(size_t npoint, Point3D* pts);			//set 3D point data
+    virtual void SetProjection(size_t nproj,
         const Point2D* imgpts,  const int* point_idx, const int* cam_idx);		//set projections
-    PBA_EXPORT virtual void SetNextBundleMode(BundleModeT mode = BUNDLE_FULL);	//mode of the next bundle adjustment call
-    PBA_EXPORT virtual int  RunBundleAdjustment();								//start bundle adjustment, return number of successful LM iterations
+    virtual void SetNextBundleMode(BundleModeT mode = BUNDLE_FULL);	//mode of the next bundle adjustment call
+    virtual int  RunBundleAdjustment();								//start bundle adjustment, return number of successful LM iterations
 
 public:
     //////////////////////////////////////////////////
     //Query optimzer runing status for Multi-threading
     //Three functions below can be called from a differnt thread while bundle is running
-    PBA_EXPORT virtual float GetMeanSquaredError();        //read back results during/after BA
-    PBA_EXPORT virtual void  AbortBundleAdjustment();      //tell bundle adjustment to abort ASAP
-    PBA_EXPORT virtual int   GetCurrentIteration();        //which iteration is it working on?
+    virtual float GetMeanSquaredError();        //read back results during/after BA
+    virtual void  AbortBundleAdjustment();      //tell bundle adjustment to abort ASAP
+    virtual int   GetCurrentIteration();        //which iteration is it working on?
 
 public:
-    PBA_EXPORT ParallelBA(DeviceT device = PBA_CUDA_DEVICE_DEFAULT);
-    PBA_EXPORT void* operator new (size_t size);
-    PBA_EXPORT virtual ~ParallelBA();
+    ParallelBA(DeviceT device = PBA_CUDA_DEVICE_DEFAULT);
+    void* operator new (size_t size);
+    virtual ~ParallelBA();
 
 public:
     //////////////////////////////////////////////
     //Future functions will be added to the end for compatiability with old version.
-    PBA_EXPORT virtual void SetFocalMask(const int * fmask, float weight = 1.0f);
+    virtual void SetFocalMask(const int * fmask, float weight = 1.0f);
 
 private:
     ParallelBA *   _optimizer;
 };
 
 //function for dynamic loading of library
-PBA_EXPORT_EXTERN ParallelBA * NewParallelBA(ParallelBA::DeviceT device = ParallelBA::PBA_CUDA_DEVICE_DEFAULT);
+ParallelBA * NewParallelBA(ParallelBA::DeviceT device = ParallelBA::PBA_CUDA_DEVICE_DEFAULT);
 typedef ParallelBA * (*NEWPARALLELBAPROC)(ParallelBA::DeviceT);
 
 ///////////////////////////////////////////////
 //older versions do not have this function.
-PBA_EXPORT_EXTERN int  ParallelBA_GetVersion();
+int  ParallelBA_GetVersion();
 
 SFM_NAMESPACE_END
 

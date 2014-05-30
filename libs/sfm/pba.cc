@@ -26,22 +26,7 @@ ParallelBA::ParallelBA(DeviceT device)
     //The wrapper intends to provide different implementations.
 
     if(device >= PBA_CUDA_DEVICE_DEFAULT)
-#ifndef PBA_NO_GPU
-    {
-        SparseBundleCU * cuba = new SparseBundleCU(device - PBA_CUDA_DEVICE0);
-        if(cuba->GetMemCapacity() > 0)
-            _optimizer = cuba;
-        else
-        {
-            device = PBA_CPU_FLOAT;
-            _optimizer = NewSparseBundleCPU(false);
-            delete cuba;
-        }
-    }
-    else
-#else
         device = PBA_CPU_FLOAT;
-#endif
 
     if(device == PBA_CPU_FLOAT)
         _optimizer = NewSparseBundleCPU(false);
