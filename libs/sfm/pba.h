@@ -15,7 +15,6 @@
 
 // TODO (Simon Fuhrmann)
 // - Reorganize classes (public, protected, private)
-// - Remove specialization for float, always use double?
 
 #ifndef SFM_PBA_HEADER
 #define SFM_PBA_HEADER
