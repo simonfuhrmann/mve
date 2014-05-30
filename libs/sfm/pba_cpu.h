@@ -30,34 +30,31 @@
 
 SFM_NAMESPACE_BEGIN
 
-template <class Float>
-class avec : public std::vector<Float, util::AlignedAllocator<Float, VECTOR_ALIGNMENT> >
+class avec : public std::vector<double, util::AlignedAllocator<double, VECTOR_ALIGNMENT> >
 {
 public:
     avec() {}
-    avec(size_t sz) : std::vector<Float, util::AlignedAllocator<Float, VECTOR_ALIGNMENT> >(sz) {}
+    avec(size_t sz) : std::vector<double, util::AlignedAllocator<double, VECTOR_ALIGNMENT> >(sz) {}
 
-    inline void set(Float* data, size_t size)
+    inline void set(double* data, size_t size)
     {
         this->assign(data, data+size);
     }
 
-    inline operator Float* ()               {return this->empty() ? NULL : &this->front();}
-    inline operator const Float* () const   {return this->empty() ? NULL : &this->front();}
-    inline Float* begin()                   {return this->empty() ? NULL : &this->front();}
-    inline Float* end()                     {return this->empty() ? NULL : &this->back()+1;}
-    inline const Float* begin() const       {return this->empty() ? NULL : &this->front();}
-    inline const Float* end()   const       {return this->empty() ? NULL : &this->back()+1;}
+    inline operator double* ()               {return this->empty() ? NULL : &this->front();}
+    inline operator const double* () const   {return this->empty() ? NULL : &this->front();}
+    inline double* begin()                   {return this->empty() ? NULL : &this->front();}
+    inline double* end()                     {return this->empty() ? NULL : &this->back()+1;}
+    inline const double* begin() const       {return this->empty() ? NULL : &this->front();}
+    inline const double* end()   const       {return this->empty() ? NULL : &this->back()+1;}
     void   SaveToFile(const char* name);
 };
 
-template<class Float>
 class SparseBundleCPU : public ParallelBA, public ConfigBA
 {
 public:
-    typedef avec<Float>   VectorF;
+    typedef avec   VectorF;
     typedef std::vector<int>   VectorI;
-    typedef float         float_t;
 
 protected:      //cpu data
     int             _num_camera;
@@ -114,7 +111,7 @@ protected:
     VectorF		 _cuCameraQListW;
 protected:
     bool		ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int>& qlist);
-    void		ProcessWeightCameraQ(std::vector<int>&cpnum, std::vector<int>&qmap, Float* qmapw, Float* qlistw);
+    void		ProcessWeightCameraQ(std::vector<int>&cpnum, std::vector<int>&qmap, double* qmapw, double* qlistw);
 
 protected:      //internal functions
     int         ValidateInputData();
