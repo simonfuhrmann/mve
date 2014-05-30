@@ -3,7 +3,7 @@
 
 #include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
-#include "sfm/pba.h"
+#include "sfm/pba_cpu.h"
 #include "sfm/bundler_incremental.h"
 
 SFM_NAMESPACE_BEGIN
@@ -493,20 +493,20 @@ Incremental::bundle_adjustment_single_cam (int view_id)
 
 /* ---------------------------------------------------------------- */
 
-//#define PBA_DISTORTION_TYPE ParallelBA::PBA_PROJECTION_DISTORTION
-#define PBA_DISTORTION_TYPE ParallelBA::PBA_MEASUREMENT_DISTORTION
-//#define PBA_DISTORTION_TYPE ParallelBA::PBA_NO_DISTORTION
+//#define PBA_DISTORTION_TYPE ConfigBA::PBA_PROJECTION_DISTORTION
+#define PBA_DISTORTION_TYPE ConfigBA::PBA_MEASUREMENT_DISTORTION
+//#define PBA_DISTORTION_TYPE ConfigBA::PBA_NO_DISTORTION
 
 void
 Incremental::bundle_adjustment_intern (int single_camera_ba)
 {
     /* Configure PBA. */
-    ParallelBA pba(ParallelBA::PBA_CPU_DOUBLE);
+    SparseBundleCPU pba;
     pba.EnableRadialDistortion(PBA_DISTORTION_TYPE);
     if (single_camera_ba >= 0)
-        pba.SetNextBundleMode(ParallelBA::BUNDLE_ONLY_MOTION);
+        pba.SetNextBundleMode(ConfigBA::BUNDLE_ONLY_MOTION);
     else
-        pba.SetNextBundleMode(ParallelBA::BUNDLE_FULL);
+        pba.SetNextBundleMode(ConfigBA::BUNDLE_FULL);
     pba.SetNextTimeBudget(0);
 
     pba.GetInternalConfig()->__verbose_cg_iteration = false;

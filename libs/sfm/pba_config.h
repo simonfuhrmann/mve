@@ -23,6 +23,31 @@ SFM_NAMESPACE_BEGIN
 
 class ConfigBA
 {
+public:
+    enum StatusT
+    {
+        STATUS_SUCCESS = 0,
+        STATUS_CAMERA_MISSING = 1,
+        STATUS_POINT_MISSING,
+        STATUS_PROJECTION_MISSING,
+        STATUS_MEASURMENT_MISSING,
+        STATUS_ALLOCATION_FAIL
+    };
+
+    enum DistortionT
+    {
+        PBA_MEASUREMENT_DISTORTION = -1, //single parameter, apply to measurements
+        PBA_NO_DISTORTION = 0,           //no radial distortion
+        PBA_PROJECTION_DISTORTION = 1    //single parameter, apply to projectino
+    };
+
+    enum BundleModeT
+    {
+        BUNDLE_FULL = 0,
+        BUNDLE_ONLY_MOTION = 1,
+        BUNDLE_ONLY_STRUCTURE = 2
+    };
+
 protected:
     enum
     {

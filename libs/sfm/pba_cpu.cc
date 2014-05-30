@@ -27,7 +27,6 @@
 #include <cfloat>
 
 #include "util/exception.h"
-#include "sfm/pba.h"
 #include "sfm/pba_cpu.h"
 
 #if defined(WINAPI_FAMILY) && WINAPI_FAMILY==WINAPI_FAMILY_APP
@@ -2471,8 +2470,7 @@ namespace ProgramCPU
 using namespace ProgramCPU;
 
 SparseBundleCPU:: SparseBundleCPU()
-    : ParallelBA(PBA_INVALID_DEVICE)
-    , _num_camera(0)
+    : _num_camera(0)
     , _num_point(0)
     , _num_imgpt(0)
     , _camera_data(NULL)
@@ -4121,13 +4119,6 @@ int SparseBundleCPU::FindProcessorCoreNum()
 #else
     return sysconf( _SC_NPROCESSORS_ONLN );
 #endif
-}
-
-ParallelBA* NewSparseBundleCPU(bool dp)
-{
-    if (!dp)
-        throw util::Exception("float precision is not supported!");
-    return new SparseBundleCPU;
 }
 
 SFM_NAMESPACE_END

@@ -19,6 +19,8 @@
 #include <malloc.h>
 #include "sfm/defines.h"
 #include "util/aligned_allocator.h"
+#include "sfm/pba_config.h"
+#include "sfm/pba_types.h"
 
 //BYTE-ALIGNMENT for data allocation (16 required for SSE, 32 required for AVX)
 //PREVIOUS version uses only SSE. The new version will include AVX.
@@ -50,7 +52,7 @@ public:
     void   SaveToFile(const char* name);
 };
 
-class SparseBundleCPU : public ParallelBA, public ConfigBA
+class SparseBundleCPU : public ConfigBA
 {
 public:
     typedef avec   VectorF;
@@ -169,8 +171,6 @@ public:
     virtual float GetMeanSquaredError();
     virtual int RunBundleAdjustment();
 };
-
-ParallelBA* NewSparseBundleCPU(bool dp);
 
 SFM_NAMESPACE_END
 
