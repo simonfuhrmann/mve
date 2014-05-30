@@ -84,7 +84,7 @@ SFM_NAMESPACE_BEGIN
 template<class Float> void avec<Float> ::SaveToFile(const char* name)
 {
     std::ofstream out(name);
-    for(Float* p = _data; p < _last; ++p) out << (*p) <<  '\n';
+    for(Float* p = begin(); p < end(); ++p) out << (*p) <<  '\n';
 }
 
 #ifdef CPUPBA_USE_SSE
