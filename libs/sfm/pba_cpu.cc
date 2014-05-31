@@ -1,24 +1,19 @@
-////////////////////////////////////////////////////////////////////////////
-//  File:           SparseBundleCPU.cpp
-//  Author:         Changchang Wu
-//  Description :   implementationof the CPU-based multicore bundle adjustment
-//
-//  Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
-//    and the University of Washington at Seattle
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public
-//  License as published by the Free Software Foundation; either
-//  Version 3 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  General Public License for more details.
-//
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
+ *    and the University of Washington at Seattle
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License as published by the Free Software Foundation; either
+ *  Version 3 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <vector>
 #include <iostream>
 #include <utility>
@@ -27,18 +22,12 @@
 #include <sstream>
 #include <iomanip>
 
-using std::vector;
-using std::cout;
-using std::pair;
-using std::ofstream;
-using std::max;
+#include <cmath>
+#include <ctime>
+#include <cfloat>
 
-#include <math.h>
-#include <time.h>
-#include <float.h>
-
-#include "pba.h"
-#include "pba_cpu.h"
+#include "util/exception.h"
+#include "sfm/pba_cpu.h"
 
 #if defined(WINAPI_FAMILY) && WINAPI_FAMILY==WINAPI_FAMILY_APP
 #include <thread>
@@ -90,11 +79,12 @@ using std::max;
 //compute the number of threads for vector operatoins, pure heuristics...
 #define AUTO_MT_NUM(sz) int((log((double) sz) / log(2.0) - 18.5 ) * __num_cpu_cores / 16.0)
 
+SFM_NAMESPACE_BEGIN
 
-template<class Float> void avec<Float> ::SaveToFile(const char* name)
+void avec::SaveToFile(const char* name)
 {
-    ofstream out(name);
-    for(Float* p = _data; p < _last; ++p) out << (*p) <<  '\n';
+    std::ofstream out(name);
+    for(double* p = begin(); p < end(); ++p) out << (*p) <<  '\n';
 }
 
 #ifdef CPUPBA_USE_SSE
@@ -143,8 +133,8 @@ namespace MYSSE
 namespace ProgramCPU
 {
     using namespace MYSSE;
-    #define SSE_ZERO SSE<Float>::zero()
-    #define SSE_T typename SSE<Float>::sse_type
+    #define SSE_ZERO SSE<double>::zero()
+    #define SSE_T typename SSE<double>::sse_type
     /////////////////////////////
     inline void   ScaleJ4(float* jcx, float* jcy, const float* sj)
     {
@@ -516,15 +506,14 @@ namespace ProgramCPU
 namespace ProgramCPU
 {
     int		__num_cpu_cores = 0;
-    template <class Float>   double ComputeVectorNorm(const avec<Float>& vec, int mt = 0);
+    double ComputeVectorNorm(const avec& vec, int mt = 0);
 
 #if defined(CPUPBA_USE_SIMD)
-    template <class Float>
-    void ComputeSQRT(avec<Float>& vec)
+    void ComputeSQRT(avec& vec)
     {
 #ifndef SIMD_NO_SQRT
-        const size_t step =sse_step<Float>();
-        Float * p = &vec[0], * pe = p + vec.size(), *pex = pe - step;
+        const size_t step =sse_step<double>();
+        double * p = &vec[0], * pe = p + vec.size(), *pex = pe - step;
         for(; p <= pex; p += step)   sse_store(p, sse_sqrt(sse_load(p)));
         for(; p < pe; ++p) p[0] = sqrt(p[0]);
 #else
@@ -532,47 +521,42 @@ namespace ProgramCPU
 #endif
     }
 
-    template <class Float>
-    void ComputeRSQRT(avec<Float>& vec)
+    void ComputeRSQRT(avec& vec)
     {
-        Float * p = &vec[0], * pe = p + vec.size();
-        for(; p < pe; ++p) p[0] = (p[0] == 0? 0 : Float(1.0) / p[0]);
+        double * p = &vec[0], * pe = p + vec.size();
+        for(; p < pe; ++p) p[0] = (p[0] == 0? 0 : double(1.0) / p[0]);
         ComputeSQRT(vec);
     }
 
-    template<class Float>
-    void SetVectorZero(Float* p, Float * pe)
+    void SetVectorZero(double* p, double * pe)
     {
          SSE_T sse = SSE_ZERO;
-         const size_t step =sse_step<Float>();
-         Float * pex = pe - step;
+         const size_t step =sse_step<double>();
+         double * pex = pe - step;
          for(; p <= pex; p += step) sse_store(p, sse);
          for(; p < pe; ++p) *p = 0;
     }
 
-    template<class Float>
-    void SetVectorZero(avec<Float>& vec)
+    void SetVectorZero(avec& vec)
     {
-         Float * p = &vec[0], * pe = p + vec.size();
+         double * p = &vec[0], * pe = p + vec.size();
          SetVectorZero(p, pe);
     }
 
     //function not used
-    template<class Float>
-    inline void MemoryCopyA(const Float* p, const Float* pe, Float* d)
+    inline void MemoryCopyA(const double* p, const double* pe, double* d)
     {
-        const size_t step = sse_step<Float>();
-        const Float* pex = pe - step;
+        const size_t step = sse_step<double>();
+        const double* pex = pe - step;
         for(; p <= pex; p += step, d += step) sse_store(d, sse_load(p));
         //while(p < pe) *d++ = *p++;
     }
 
-    template <class Float>
-    void ComputeVectorNorm(const Float* p, const Float* pe, double* psum)
+    void ComputeVectorNorm(const double* p, const double* pe, double* psum)
     {
          SSE_T sse = SSE_ZERO;
-         const size_t step =sse_step<Float>();
-         const Float * pex = pe - step;
+         const size_t step =sse_step<double>();
+         const double * pex = pe - step;
          for(; p <= pex; p += step)
          {
              SSE_T ps = sse_load(p);
@@ -583,15 +567,14 @@ namespace ProgramCPU
         *psum = sum;
     }
 
-    template<class Float>
-    double ComputeVectorNormW(const avec<Float>& vec, const avec<Float>& weight)
+    double ComputeVectorNormW(const avec& vec, const avec& weight)
     {
         if(weight.begin() != NULL)
         {
              SSE_T sse = SSE_ZERO;
-             const size_t step =sse_step<Float>();
-             const Float * p = vec, * pe = p + vec.size(), *pex = pe - step;
-             const Float * w = weight;
+             const size_t step =sse_step<double>();
+             const double * p = vec, * pe = p + vec.size(), *pex = pe - step;
+             const double * w = weight;
              for(; p <= pex; p += step, w+= step)
              {
                  SSE_T pw = sse_load(w), ps = sse_load(p);
@@ -602,17 +585,16 @@ namespace ProgramCPU
              return sum;
         }else
         {
-            return ComputeVectorNorm<Float>(vec, 0);
+            return ComputeVectorNorm(vec, 0);
         }
     }
 
-    template<class Float>
-    double ComputeVectorDot(const avec<Float>& vec1, const avec<Float>& vec2)
+    double ComputeVectorDot(const avec& vec1, const avec& vec2)
     {
          SSE_T sse = SSE_ZERO;
-         const size_t step =sse_step<Float>();
-         const Float * p1 = vec1, * pe = p1 + vec1.size(), *pex = pe - step;
-         const Float * p2 = vec2;
+         const size_t step =sse_step<double>();
+         const double * p1 = vec1, * pe = p1 + vec1.size(), *pex = pe - step;
+         const double * p2 = vec2;
          for(; p1 <= pex; p1 += step, p2+= step)
          {
              SSE_T ps1 = sse_load(p1), ps2 = sse_load(p2);
@@ -623,13 +605,12 @@ namespace ProgramCPU
          return sum;
     }
 
-    template<class Float>
-    void   ComputeVXY(const avec<Float>& vec1, const avec<Float>& vec2, avec<Float>& result, size_t part = 0, size_t skip = 0)
+    void   ComputeVXY(const avec& vec1, const avec& vec2, avec& result, size_t part = 0, size_t skip = 0)
     {
-        const size_t step =sse_step<Float>();
-        const Float * p1 = vec1 + skip, * pe = p1 + (part ? part : vec1.size()), * pex = pe - step;
-        const Float * p2 = vec2 + skip;
-        Float * p3 = result + skip;
+        const size_t step =sse_step<double>();
+        const double * p1 = vec1 + skip, * pe = p1 + (part ? part : vec1.size()), * pex = pe - step;
+        const double * p2 = vec2 + skip;
+        double * p3 = result + skip;
         for(; p1 <= pex; p1 += step, p2 += step, p3 += step)
         {
             SSE_T  ps1 = sse_load(p1), ps2 = sse_load(p2);
@@ -638,12 +619,11 @@ namespace ProgramCPU
         for(; p1 < pe; ++p1, ++p2, ++p3) *p3 = p1[0] * p2[0];
     }
 
-    template <class Float>
-    void   ComputeSAXPY(Float a, const Float* p1, const Float* p2, Float* p3, Float* pe)
+    void   ComputeSAXPY(double a, const double* p1, const double* p2, double* p3, double* pe)
     {
-        const size_t step =sse_step<Float>();
+        const size_t step =sse_step<double>();
         SSE_T aa = sse_load1(&a);
-        Float *pex = pe - step;
+        double *pex = pe - step;
         if(a == 1.0f)
         {
             for(; p3 <= pex; p1 += step, p2 += step, p3 += step)
@@ -669,13 +649,12 @@ namespace ProgramCPU
         for(; p3 < pe; ++p1, ++p2, ++p3) p3[0] = a * p1[0] + p2[0];
     }
 
-    template<class Float>
-    void   ComputeSAX(Float a, const avec<Float>& vec1, avec<Float>& result)
+    void   ComputeSAX(double a, const avec& vec1, avec& result)
     {
-        const size_t step = sse_step<Float>();
+        const size_t step = sse_step<double>();
         SSE_T aa = sse_load1(&a);
-        const Float * p1 = vec1, *pe = p1 + vec1.size(), *pex = pe - step;
-        Float * p3 = result;
+        const double * p1 = vec1, *pe = p1 + vec1.size(), *pex = pe - step;
+        double * p3 = result;
         for(; p1 <= pex; p1 += step, p3 += step)
         {
             sse_store(p3, sse_mul(sse_load(p1), aa));
@@ -683,12 +662,11 @@ namespace ProgramCPU
         for(; p1 < pe; ++p1,  ++p3) p3[0] = a * p1[0];
     }
 
-    template<class Float>
-    inline void   ComputeSXYPZ(Float a, const Float* p1, const Float* p2, const Float* p3, Float* p4, Float* pe)
+    inline void   ComputeSXYPZ(double a, const double* p1, const double* p2, const double* p3, double* p4, double* pe)
     {
-        const size_t step =sse_step<Float>();
+        const size_t step =sse_step<double>();
         SSE_T aa = sse_load1(&a);
-        Float *pex = pe - step;
+        double *pex = pe - step;
         for(; p4 <= pex; p1 += step, p2 += step, p3 += step, p4 += step)
         {
             SSE_T ps1 = sse_load(p1), ps2 = sse_load(p2), ps3 = sse_load(p3);
@@ -698,8 +676,7 @@ namespace ProgramCPU
     }
 
 #else
-    template <class Float>
-    void ComputeSQRT(avec<Float>& vec)
+    void ComputeSQRT(avec& vec)
     {
         Float* it = vec.begin();
         for(; it < vec.end(); ++it)
@@ -707,8 +684,8 @@ namespace ProgramCPU
             *it  = sqrt(*it);
         }
     }
-    template <class Float>
-    void ComputeRSQRT(avec<Float>& vec)
+
+    void ComputeRSQRT(avec& vec)
     {
         Float* it = vec.begin();
         for(; it < vec.end(); ++it)
@@ -716,20 +693,16 @@ namespace ProgramCPU
             *it  = (*it == 0 ? 0 : Float(1.0) / sqrt(*it));
         }
     }
-    template <class Float>
-    inline void SetVectorZero(Float* p,Float* pe)  { std::fill(p, pe, 0);                     }
-    template <class Float>
-    inline void SetVectorZero(avec<Float>& vec)    { std::fill(vec.begin(), vec.end(), 0);    }
 
-    template<class Float>
+    inline void SetVectorZero(Float* p,Float* pe)  { std::fill(p, pe, 0);                     }
+    inline void SetVectorZero(avec& vec)    { std::fill(vec.begin(), vec.end(), 0);    }
+
     inline void MemoryCopyA(const Float* p, const Float* pe, Float* d)
     {
         while(p < pe) *d++ = *p++;
     }
 
-
-    template <class Float>
-    double ComputeVectorNormW(const avec<Float>& vec, const avec<Float>& weight)
+    double ComputeVectorNormW(const avec& vec, const avec& weight)
     {
         double sum = 0;
         const Float*  it1 = vec.begin(), * it2 = weight.begin();
@@ -740,8 +713,7 @@ namespace ProgramCPU
         return sum;
     }
 
-    template <class Float>
-    double ComputeVectorDot(const avec<Float>& vec1, const avec<Float>& vec2)
+    double ComputeVectorDot(const avec& vec1, const avec& vec2)
     {
         double sum = 0;
         const Float*   it1 = vec1.begin(), *it2 = vec2.begin();
@@ -751,15 +723,15 @@ namespace ProgramCPU
         }
         return sum;
     }
-    template <class Float>
+
     void ComputeVectorNorm(const Float* p, const Float* pe, double* psum)
     {
         double sum = 0;
         for(; p < pe; ++p)  sum += (*p) * (*p);
         *psum = sum;
     }
-    template <class Float>
-    inline void   ComputeVXY(const avec<Float>& vec1, const avec<Float>& vec2, avec<Float>& result, size_t part =0, size_t skip = 0)
+
+    inline void   ComputeVXY(const avec& vec1, const avec& vec2, avec& result, size_t part =0, size_t skip = 0)
     {
         const Float*  it1 = vec1.begin() + skip, *it2 = vec2.begin() + skip;
         const Float*  ite = part ? (it1 + part) : vec1.end();
@@ -769,21 +741,18 @@ namespace ProgramCPU
              (*it3) = (*it1) * (*it2);
         }
     }
-    template <class Float>
+
     void   ScaleJ8(Float* jcx, Float* jcy, const Float* sj)
     {
         for(int i = 0; i < 8; ++i) {jcx[i] *= sj[i]; jcy[i] *= sj[i]; }
     }
 
-    template <class Float>
     inline void AddScaledVec8(Float a, const Float* x, Float* v)
     {
         for(int i = 0; i < 8; ++i) v[i] += (a * x[i]);
     }
 
-
-    template <class Float>
-    void   ComputeSAX(Float a, const avec<Float>& vec1, avec<Float>& result)
+    void   ComputeSAX(Float a, const avec& vec1, avec& result)
     {
         const Float*  it1 = vec1.begin();
         Float* it3 = result.begin();
@@ -793,13 +762,11 @@ namespace ProgramCPU
         }
     }
 
-    template <class Float>
     inline void   ComputeSXYPZ(Float a, const Float* p1, const Float* p2, const Float* p3, Float* p4, Float* pe)
     {
         for(; p4 < pe; ++p1, ++p2, ++p3, ++p4) *p4 = (a * (*p1) * (*p2) + (*p3));
     }
 
-    template <class Float>
     void   ComputeSAXPY(Float a, const Float* it1, const Float* it2, Float* it3, Float* ite)
     {
         if(a == (Float)1.0)
@@ -816,7 +783,7 @@ namespace ProgramCPU
             }
         }
     }
-    template<class Float>
+
     void AddBlockJtJ(const Float * jc, Float * block, int vn)
     {
         for(int i = 0; i < vn; ++i)
@@ -848,8 +815,8 @@ namespace ProgramCPU
 #endif
 #else
 #define DEFINE_THREAD_DATA(X)       template<class Float> struct X##_STRUCT { int tid;
-#define DECLEAR_THREAD_DATA(X, ...) X##_STRUCT <Float>  tdata = {i,  __VA_ARGS__ }; \
-                                    X##_STRUCT <Float>* newdata = new X##_STRUCT <Float>(tdata)
+#define DECLEAR_THREAD_DATA(X, ...) X##_STRUCT <double>  tdata = {i,  __VA_ARGS__ }; \
+                                    X##_STRUCT <double>* newdata = new X##_STRUCT <double>(tdata)
 #define BEGIN_THREAD_PROC(X)        }; template<class Float> void* X##_PROC(X##_STRUCT <Float> * q){
    //                                 cpu_set_t mask;        CPU_ZERO( &mask ); CPU_SET( q->tid, &mask );
    //                                 if( sched_setaffinity(0, sizeof(mask), &mask ) == -1 )
@@ -862,67 +829,63 @@ namespace ProgramCPU
 #define MYTHREAD  pthread_t
 
 #define RUN_THREAD(X, t, ...)       DECLEAR_THREAD_DATA(X, __VA_ARGS__);\
-                                    pthread_create(&t, NULL, (void* (*)(void*))X##_FUNCTOR <Float> :: get(), newdata)
+                                    pthread_create(&t, NULL, (void* (*)(void*))X##_FUNCTOR <double> :: get(), newdata)
 #define WAIT_THREAD(tv, n)      {   for(size_t i = 0; i < size_t(n); ++i) pthread_join(tv[i], NULL) ;}
 #endif
-    template<class Float>
-    inline void MemoryCopyB(const Float* p, const Float* pe, Float* d)
+    inline void MemoryCopyB(const double* p, const double* pe, double* d)
     {
         while(p < pe) *d++ = *p++;
     }
 
-    template <class Float>
-    inline Float   DotProduct8(const Float* v1, const Float* v2)
+#ifndef CPUPBA_USE_SIMD
+    inline double   DotProduct8(const double* v1, const double* v2)
     {
         return  v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3] +
                 v1[4] * v2[4] + v1[5] * v2[5] + v1[6] * v2[6] + v1[7] * v2[7];
     }
-    template<class Float>
-    inline void ComputeTwoJX(const Float* jc, const Float* jp, const Float* xc, const Float* xp, Float* jx)
+
+    inline void ComputeTwoJX(const double* jc, const double* jp, const double* xc, const double* xp, double* jx)
     {
             jx[0] = DotProduct8(jc, xc)     + (jp[0] * xp[0] + jp[1] * xp[1] + jp[2] * xp[2]);
             jx[1] = DotProduct8(jc + 8, xc) + (jp[3] * xp[0] + jp[4] * xp[1] + jp[5] * xp[2]);
     }
-    template <class Float>
-    Float  ComputeVectorMax(const avec<Float>& vec)
+#endif
+
+    double  ComputeVectorMax(const avec& vec)
     {
-        Float v = 0;
-        const Float* it = vec.begin();
+        double v = 0;
+        const double* it = vec.begin();
         for(; it < vec.end(); ++it)
         {
-            Float vi = (Float)fabs(*it);
+            double vi = (double)fabs(*it);
             v = std::max(v,  vi);
         }
         return v;
     }
 
-    template<class Float>
-    void   ComputeSXYPZ(Float a, const avec<Float>& vec1, const avec<Float>& vec2, const avec<Float>& vec3, avec<Float>& result)
+    void   ComputeSXYPZ(double a, const avec& vec1, const avec& vec2, const avec& vec3, avec& result)
     {
         if(vec1.begin() != NULL)
         {
-            const Float * p1 = &vec1[0], * p2 = &vec2[0], * p3 = &vec3[0];
-            Float * p4 = &result[0], * pe = p4 + result.size();
+            const double * p1 = &vec1[0], * p2 = &vec2[0], * p3 = &vec3[0];
+            double * p4 = &result[0], * pe = p4 + result.size();
             ComputeSXYPZ(a, p1, p2, p3, p4, pe);
 
         }else
         {
             //ComputeSAXPY<Float>(a, vec2, vec3, result, 0);
-            ComputeSAXPY<Float>(a, vec2.begin(), vec3.begin(), result.begin(), result.end());
+            ComputeSAXPY(a, vec2.begin(), vec3.begin(), result.begin(), result.end());
         }
 
     }
 
-
-
     DEFINE_THREAD_DATA(ComputeSAXPY)
-           Float a; const Float * p1, * p2; Float* p3, * pe;
+           double a; const double * p1, * p2; double* p3, * pe;
     BEGIN_THREAD_PROC(ComputeSAXPY)
         ComputeSAXPY(q->a, q->p1, q->p2, q->p3, q-> pe);
     END_THREAD_RPOC(ComputeSAXPY)
 
-    template <class Float>
-    void   ComputeSAXPY(Float a, const avec<Float>& vec1, const avec<Float>& vec2, avec<Float>& result, int mt = 0)
+    void   ComputeSAXPY(double a, const avec& vec1, const avec& vec2, avec& result, int mt = 0)
     {
         const bool auto_multi_thread = true;
         if(auto_multi_thread && mt == 0) {  mt = AUTO_MT_NUM( result.size() * 2);  }
@@ -930,8 +893,8 @@ namespace ProgramCPU
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             const int thread_num = std::min(mt, THREAD_NUM_MAX);
-            const Float* p1 = vec1.begin(), * p2 = vec2.begin();
-            Float* p3 = result.begin();
+            const double* p1 = vec1.begin(), * p2 = vec2.begin();
+            double* p3 = result.begin();
             for (int i = 0; i < thread_num; ++i)
             {
                 size_t first = (result.size() * i / thread_num + FLOAT_ALIGN - 1 ) / FLOAT_ALIGN  * FLOAT_ALIGN ;
@@ -947,13 +910,12 @@ namespace ProgramCPU
     }
 
     DEFINE_THREAD_DATA(ComputeVectorNorm)
-          const Float * p, * pe; double* sum;
+          const double * p, * pe; double* sum;
     BEGIN_THREAD_PROC(ComputeVectorNorm)
         ComputeVectorNorm(q->p, q->pe, q-> sum);
     END_THREAD_RPOC(ComputeVectorNorm)
 
-    template <class Float>
-    double ComputeVectorNorm(const avec<Float>& vec, int mt)
+    double ComputeVectorNorm(const avec& vec, int mt)
     {
         const bool auto_multi_thread = true;
         if(auto_multi_thread && mt == 0) {  mt = AUTO_MT_NUM(vec.size());  }
@@ -962,7 +924,7 @@ namespace ProgramCPU
             MYTHREAD threads[THREAD_NUM_MAX];
             double sumv[THREAD_NUM_MAX];
             const int thread_num = std::min(mt, THREAD_NUM_MAX);
-            const Float * p = vec;
+            const double * p = vec;
             for (int i = 0; i < thread_num; ++i)
             {
                 size_t first = (vec.size() * i / thread_num + FLOAT_ALIGN - 1 ) / FLOAT_ALIGN  * FLOAT_ALIGN ;
@@ -983,8 +945,7 @@ namespace ProgramCPU
         }
     }
 
-    template <class Float>
-    void GetRodriguesRotation(const Float m[3][3], Float r[3])
+    void GetRodriguesRotation(const double m[3][3], double r[3])
     {
         //http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/index.htm
         double a = (m[0][0]+m[1][1]+m[2][2]-1.0)/2.0;
@@ -1003,7 +964,7 @@ namespace ProgramCPU
             }
             else
             {
-                const Float ha = Float(sqrt(0.5) * PBA_PI);
+                const double ha = double(sqrt(0.5) * PBA_PI);
                 double xx = (m[0][0]+1.0)/2.0;
                 double yy = (m[1][1]+1.0)/2.0;
                 double zz = (m[2][2]+1.0)/2.0;
@@ -1019,9 +980,9 @@ namespace ProgramCPU
                     } else
                     {
                         double t = sqrt(xx) ;
-                        r[0] = Float(t * PBA_PI);
-                        r[1] = Float(xy/t * PBA_PI);
-                        r[2] = Float(xz/t * PBA_PI);
+                        r[0] = double(t * PBA_PI);
+                        r[1] = double(xy/t * PBA_PI);
+                        r[2] = double(xz/t * PBA_PI);
                     }
                 } else if (yy > zz)
                 {
@@ -1031,9 +992,9 @@ namespace ProgramCPU
                     } else
                     {
                         double t = sqrt(yy);
-                        r[0] = Float(xy/t* PBA_PI);
-                        r[1] = Float( t * PBA_PI);
-                        r[2] = Float(yz/t* PBA_PI);
+                        r[0] = double(xy/t* PBA_PI);
+                        r[1] = double( t * PBA_PI);
+                        r[2] = double(yz/t* PBA_PI);
                     }
                 } else
                 {
@@ -1043,9 +1004,9 @@ namespace ProgramCPU
                     } else
                     {
                         double t  = sqrt(zz);
-                        r[0]  = Float(xz/ t* PBA_PI);
-                        r[1]  = Float(yz/ t* PBA_PI);
-                        r[2]  = Float( t * PBA_PI);
+                        r[0]  = double(xz/ t* PBA_PI);
+                        r[1]  = double(yz/ t* PBA_PI);
+                        r[2]  = double( t * PBA_PI);
                     }
                 }
             }
@@ -1054,35 +1015,36 @@ namespace ProgramCPU
         {
             a = acos(a);
             double b = 0.5*a/sin(a);
-            r[0]    =    Float(b*(m[2][1]-m[1][2]));
-            r[1]    =    Float(b*(m[0][2]-m[2][0]));
-            r[2]    =    Float(b*(m[1][0]-m[0][1]));
+            r[0]    =    double(b*(m[2][1]-m[1][2]));
+            r[1]    =    double(b*(m[0][2]-m[2][0]));
+            r[2]    =    double(b*(m[1][0]-m[0][1]));
         }
     }
-    template <class Float>     void UncompressRodriguesRotation(const Float r[3], Float m[])
+
+    void UncompressRodriguesRotation(const double r[3], double m[])
     {
         double a = sqrt(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]);
         double ct = a==0.0?0.5f:(1.0f-cos(a))/a/a;
         double st = a==0.0?1:sin(a)/a;
-        m[0]=Float(1.0 - (r[1]*r[1] + r[2]*r[2])*ct);
-        m[1]=Float(r[0]*r[1]*ct - r[2]*st);
-        m[2]=Float(r[2]*r[0]*ct + r[1]*st);
-        m[3]=Float(r[0]*r[1]*ct + r[2]*st);
-        m[4]=Float(1.0f - (r[2]*r[2] + r[0]*r[0])*ct);
-        m[5]=Float(r[1]*r[2]*ct - r[0]*st);
-        m[6]=Float(r[2]*r[0]*ct - r[1]*st);
-        m[7]=Float(r[1]*r[2]*ct + r[0]*st);
-        m[8]=Float(1.0 - (r[0]*r[0] + r[1]*r[1])*ct );
+        m[0]=double(1.0 - (r[1]*r[1] + r[2]*r[2])*ct);
+        m[1]=double(r[0]*r[1]*ct - r[2]*st);
+        m[2]=double(r[2]*r[0]*ct + r[1]*st);
+        m[3]=double(r[0]*r[1]*ct + r[2]*st);
+        m[4]=double(1.0f - (r[2]*r[2] + r[0]*r[0])*ct);
+        m[5]=double(r[1]*r[2]*ct - r[0]*st);
+        m[6]=double(r[2]*r[0]*ct - r[1]*st);
+        m[7]=double(r[1]*r[2]*ct + r[0]*st);
+        m[8]=double(1.0 - (r[0]*r[0] + r[1]*r[1])*ct );
     }
-    template<class Float>
-    void UpdateCamera(int ncam, const avec<Float>& camera, const avec<Float>& delta, avec<Float>& new_camera)
+
+    void UpdateCamera(int ncam, const avec& camera, const avec& delta, avec& new_camera)
     {
-        const Float * c = &camera[0], * d = &delta[0];
-        Float * nc = &new_camera[0], m[9];
+        const double * c = &camera[0], * d = &delta[0];
+        double * nc = &new_camera[0], m[9];
         //f[1], t[3], r[3][3], d[1]
         for(int i = 0; i < ncam; ++i, c += 16, d += 8, nc += 16)
         {
-            nc[0]  = max(c[0] + d[0], ((Float)1e-10));
+            nc[0]  = std::max(c[0] + d[0], ((double)1e-10));
             nc[1]  = c[1] + d[1];
             nc[2]  = c[2] + d[2];
             nc[3]  = c[3] + d[3];
@@ -1108,9 +1070,8 @@ namespace ProgramCPU
         }
     }
 
-    template <class Float>
-    void  UpdateCameraPoint(int ncam, const avec<Float>& camera, const avec<Float>& point, avec<Float>& delta,
-                            avec<Float>& new_camera, avec<Float>& new_point, int mode, int mt)
+    void  UpdateCameraPoint(int ncam, const avec& camera, const avec& point, avec& delta,
+                            avec& new_camera, avec& new_point, int mode, int mt)
     {
         ////////////////////////////
         if(mode != 2)
@@ -1120,26 +1081,24 @@ namespace ProgramCPU
         /////////////////////////////
         if(mode != 1)
         {
-            avec<Float> dp; dp.set(delta.begin() + 8 * ncam, point.size());
-            ComputeSAXPY((Float) 1.0, dp, point, new_point, mt);
+            avec dp; dp.set(delta.begin() + 8 * ncam, point.size());
+            ComputeSAXPY((double) 1.0, dp, point, new_point, mt);
         }
     }
 
     // Forward declare (sfu).
-    template <class Float>
-    void ComputeProjection(size_t nproj, const Float* camera, const Float* point, const Float* ms,
-                           const int * jmap, Float* pj, int radial, int mt);
+    void ComputeProjection(size_t nproj, const double* camera, const double* point, const double* ms,
+                           const int * jmap, double* pj, int radial, int mt);
 
     DEFINE_THREAD_DATA(ComputeProjection)
-            size_t nproj; const Float* camera, *point, * ms;
-            const int *jmap; Float* pj; int radial_distortion;
+            size_t nproj; const double* camera, *point, * ms;
+            const int *jmap; double* pj; int radial_distortion;
     BEGIN_THREAD_PROC(ComputeProjection)
         ComputeProjection( q->nproj, q->camera, q->point, q->ms, q->jmap, q->pj, q->radial_distortion, 0);
     END_THREAD_RPOC(ComputeProjection)
 
-    template <class Float>
-    void ComputeProjection(size_t nproj, const Float* camera, const Float* point, const Float* ms,
-                           const int * jmap, Float* pj, int radial, int mt)
+    void ComputeProjection(size_t nproj, const double* camera, const double* point, const double* ms,
+                           const int * jmap, double* pj, int radial, int mt)
     {
         if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
@@ -1159,23 +1118,23 @@ namespace ProgramCPU
         {
             for(size_t i = 0; i < nproj; ++i, jmap += 2, ms += 2, pj += 2)
             {
-                const Float* c = camera + jmap[0] * 16;
-                const Float* m = point + jmap[1] * POINT_ALIGN;
+                const double* c = camera + jmap[0] * 16;
+                const double* m = point + jmap[1] * POINT_ALIGN;
                 /////////////////////////////////////////////////////
-                Float p0 = c[4 ]*m[0]+c[5 ]*m[1]+c[6 ]*m[2] + c[1];
-                Float p1 = c[7 ]*m[0]+c[8 ]*m[1]+c[9 ]*m[2] + c[2];
-                Float p2 = c[10]*m[0]+c[11]*m[1]+c[12]*m[2] + c[3];
+                double p0 = c[4 ]*m[0]+c[5 ]*m[1]+c[6 ]*m[2] + c[1];
+                double p1 = c[7 ]*m[0]+c[8 ]*m[1]+c[9 ]*m[2] + c[2];
+                double p2 = c[10]*m[0]+c[11]*m[1]+c[12]*m[2] + c[3];
 
                 if(radial == 1)
                 {
-                    Float rr = Float(1.0)  + c[13] * (p0 * p0 + p1 * p1) / (p2 * p2);
-                    Float f_p2 = c[0] * rr / p2;
+                    double rr = double(1.0)  + c[13] * (p0 * p0 + p1 * p1) / (p2 * p2);
+                    double f_p2 = c[0] * rr / p2;
                     pj[0] = ms[0] - p0 * f_p2;
                     pj[1] = ms[1] - p1 * f_p2;
                 }else if(radial == -1)
                 {
-                    Float f_p2 = c[0] / p2;
-                    Float  rd = Float(1.0) + c[13] * (ms[0] * ms[0] + ms[1] * ms[1]) ;
+                    double f_p2 = c[0] / p2;
+                    double  rd = double(1.0) + c[13] * (ms[0] * ms[0] + ms[1] * ms[1]) ;
                     pj[0] = ms[0] * rd  - p0 * f_p2;
                     pj[1] = ms[1] * rd  - p1 * f_p2;
                 }else
@@ -1188,21 +1147,18 @@ namespace ProgramCPU
     }
 
     // forward declare
-    template <class Float>
-    void ComputeProjectionX(size_t nproj, const Float* camera, const Float* point, const Float* ms,
-                           const int * jmap, Float* pj, int radial, int mt);
+    void ComputeProjectionX(size_t nproj, const double* camera, const double* point, const double* ms,
+                           const int * jmap, double* pj, int radial, int mt);
 
     DEFINE_THREAD_DATA(ComputeProjectionX)
-            size_t nproj; const Float* camera, *point, * ms;
-            const int *jmap; Float* pj; int radial_distortion;
+            size_t nproj; const double* camera, *point, * ms;
+            const int *jmap; double* pj; int radial_distortion;
     BEGIN_THREAD_PROC(ComputeProjectionX)
         ComputeProjectionX( q->nproj, q->camera, q->point, q->ms, q->jmap, q->pj, q->radial_distortion, 0);
     END_THREAD_RPOC(ComputeProjectionX)
 
-
-    template <class Float>
-    void ComputeProjectionX(size_t nproj, const Float* camera, const Float* point, const Float* ms,
-                           const int * jmap, Float* pj, int radial, int mt)
+    void ComputeProjectionX(size_t nproj, const double* camera, const double* point, const double* ms,
+                           const int * jmap, double* pj, int radial, int mt)
     {
         if (mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
@@ -1221,22 +1177,22 @@ namespace ProgramCPU
         {
             for(size_t i = 0; i < nproj; ++i, jmap += 2, ms += 2, pj += 2)
             {
-                const Float* c = camera + jmap[0] * 16;
-                const Float* m = point + jmap[1] * POINT_ALIGN;
+                const double* c = camera + jmap[0] * 16;
+                const double* m = point + jmap[1] * POINT_ALIGN;
                 /////////////////////////////////////////////////////
-                Float p0 = c[4 ]*m[0]+c[5 ]*m[1]+c[6 ]*m[2] + c[1];
-                Float p1 = c[7 ]*m[0]+c[8 ]*m[1]+c[9 ]*m[2] + c[2];
-                Float p2 = c[10]*m[0]+c[11]*m[1]+c[12]*m[2] + c[3];
+                double p0 = c[4 ]*m[0]+c[5 ]*m[1]+c[6 ]*m[2] + c[1];
+                double p1 = c[7 ]*m[0]+c[8 ]*m[1]+c[9 ]*m[2] + c[2];
+                double p2 = c[10]*m[0]+c[11]*m[1]+c[12]*m[2] + c[3];
                 if(radial == 1)
                 {
-                    Float rr = Float(1.0)  + c[13] * (p0 * p0 + p1 * p1) / (p2 * p2);
-                    Float f_p2 = c[0] / p2;
+                    double rr = double(1.0)  + c[13] * (p0 * p0 + p1 * p1) / (p2 * p2);
+                    double f_p2 = c[0] / p2;
                     pj[0] = ms[0] / rr - p0 * f_p2;
                     pj[1] = ms[1] / rr - p1 * f_p2;
                 }else if(radial == -1)
                 {
-                    Float  rd = Float(1.0) + c[13] * (ms[0] * ms[0] + ms[1] * ms[1]) ;
-                    Float f_p2 = c[0] / p2 / rd;
+                    double  rd = double(1.0) + c[13] * (ms[0] * ms[0] + ms[1] * ms[1]) ;
+                    double f_p2 = c[0] / p2 / rd;
                     pj[0] = ms[0]  - p0 * f_p2;
                     pj[1] = ms[1]  - p1 * f_p2;
                 }else
@@ -1249,30 +1205,28 @@ namespace ProgramCPU
 
     }
 
-    template <class Float>
-    void ComputeProjectionQ(size_t nq, const Float* camera,const int * qmap,  const Float* wq, Float* pj)
+    void ComputeProjectionQ(size_t nq, const double* camera,const int * qmap,  const double* wq, double* pj)
     {
         for(size_t i = 0;i < nq; ++i, qmap += 2, pj += 2, wq += 2)
         {
-            const Float* c1 = camera + qmap[0] * 16;
-            const Float* c2 = camera + qmap[1] * 16;
+            const double* c1 = camera + qmap[0] * 16;
+            const double* c2 = camera + qmap[1] * 16;
             pj[0] = - (c1[ 0] - c2[ 0]) * wq[0];
             pj[1] = - (c1[13] - c2[13]) * wq[1];
         }
     }
 
-    template<class Float>
-    void ComputeJQX( size_t nq, const Float* x,  const int* qmap, const Float* wq,const Float* sj, Float* jx)
+    void ComputeJQX( size_t nq, const double* x,  const int* qmap, const double* wq,const double* sj, double* jx)
     {
         if(sj)
         {
             for(size_t i = 0;i < nq; ++i, qmap += 2, jx += 2, wq += 2)
             {
                 int idx1 = qmap[0] * 8, idx2 = qmap[1] * 8;
-                const Float* x1 = x + idx1;
-                const Float* x2 = x + idx2;
-                const Float* sj1 = sj + idx1;
-                const Float* sj2 = sj + idx2;
+                const double* x1 = x + idx1;
+                const double* x2 = x + idx2;
+                const double* sj1 = sj + idx1;
+                const double* sj2 = sj + idx2;
                 jx[0] = (x1[0] * sj1[0] - x2[0] * sj2[0]) * wq[0];
                 jx[1] = (x1[7] * sj1[7] - x2[7] * sj2[7]) * wq[1];
             }
@@ -1280,16 +1234,15 @@ namespace ProgramCPU
         {
             for(size_t i = 0;i < nq; ++i, qmap += 2, jx += 2, wq += 2)
             {
-                const Float* x1 = x + qmap[0] * 8;
-                const Float* x2 = x + qmap[1] * 8;
+                const double* x1 = x + qmap[0] * 8;
+                const double* x2 = x + qmap[1] * 8;
                 jx[0] = (x1[0] - x2[0]) * wq[0];
                 jx[1] = (x1[7] - x2[7]) * wq[1];
             }
         }
     }
 
-    template<class Float>
-    void ComputeJQtEC(size_t ncam, const Float* pe, const int* qlist, const Float* wq, const Float* sj, Float* v)
+    void ComputeJQtEC(size_t ncam, const double* pe, const int* qlist, const double* wq, const double* sj, double* v)
     {
         if(sj)
         {
@@ -1298,8 +1251,8 @@ namespace ProgramCPU
                 int ip  = qlist[0];
                 if(ip == -1)continue;
                 int in = qlist[1];
-                const Float * e1 = pe + ip * 2;
-                const Float * e2 = pe + in * 2;
+                const double * e1 = pe + ip * 2;
+                const double * e2 = pe + in * 2;
                 v[0] += wq[0] * sj[0] * (e1[0] - e2[0]);
                 v[7] += wq[1] * sj[7] * (e1[1] - e2[1]);
             }
@@ -1310,34 +1263,32 @@ namespace ProgramCPU
                 int ip  = qlist[0];
                 if(ip == -1)continue;
                 int in = qlist[1];
-                const Float * e1 = pe + ip * 2;
-                const Float * e2 = pe + in * 2;
+                const double * e1 = pe + ip * 2;
+                const double * e2 = pe + in * 2;
                 v[0] += wq[0] * (e1[0] - e2[0]);
                 v[7] += wq[1] * (e1[1] - e2[1]);
             }
         }
     }
 
-
-    template<class Float>
-    inline void JacobianOne(const Float* c, const Float * pt, const Float* ms, Float* jxc, Float* jyc,
-                   Float* jxp, Float* jyp, bool intrinsic_fixed , int radial_distortion)
+    inline void JacobianOne(const double* c, const double * pt, const double* ms, double* jxc, double* jyc,
+                   double* jxp, double* jyp, bool intrinsic_fixed , int radial_distortion)
     {
-        const Float* r = c + 4;
-        Float x0 = c[4 ]*pt[0]+c[5 ]*pt[1]+c[6 ]*pt[2] ;
-        Float y0 = c[7 ]*pt[0]+c[8 ]*pt[1]+c[9 ]*pt[2];
-        Float z0 = c[10]*pt[0]+c[11]*pt[1]+c[12]*pt[2];
-        Float p2 = ( z0 + c[3]);
-        Float f_p2  = c[0] / p2;
-        Float p0_p2 = (x0 + c[1]) / p2;
-        Float p1_p2 = (y0 + c[2]) / p2;
+        const double* r = c + 4;
+        double x0 = c[4 ]*pt[0]+c[5 ]*pt[1]+c[6 ]*pt[2] ;
+        double y0 = c[7 ]*pt[0]+c[8 ]*pt[1]+c[9 ]*pt[2];
+        double z0 = c[10]*pt[0]+c[11]*pt[1]+c[12]*pt[2];
+        double p2 = ( z0 + c[3]);
+        double f_p2  = c[0] / p2;
+        double p0_p2 = (x0 + c[1]) / p2;
+        double p1_p2 = (y0 + c[2]) / p2;
 
         if(radial_distortion == 1)
         {
-            Float rr1 = c[13] * p0_p2 * p0_p2;
-            Float rr2 = c[13] * p1_p2 * p1_p2;
-            Float f_p2_x = Float(f_p2 * (1.0 + 3.0 * rr1 + rr2));
-            Float f_p2_y = Float(f_p2 * (1.0 + 3.0 * rr2 + rr1));
+            double rr1 = c[13] * p0_p2 * p0_p2;
+            double rr2 = c[13] * p1_p2 * p1_p2;
+            double f_p2_x = double(f_p2 * (1.0 + 3.0 * rr1 + rr2));
+            double f_p2_y = double(f_p2 * (1.0 + 3.0 * rr2 + rr1));
             if(jxc)
             {
 #ifndef PBA_DISABLE_CONST_CAMERA
@@ -1350,8 +1301,8 @@ namespace ProgramCPU
                 }else
 #endif
                 {
-                    Float jfc = intrinsic_fixed ? 0: Float(1.0 + rr1 + rr2);
-                    Float ft_x_pn = intrinsic_fixed ? 0 : c[0] * (p0_p2 * p0_p2 + p1_p2 * p1_p2);
+                    double jfc = intrinsic_fixed ? 0: double(1.0 + rr1 + rr2);
+                    double ft_x_pn = intrinsic_fixed ? 0 : c[0] * (p0_p2 * p0_p2 + p1_p2 * p1_p2);
                     /////////////////////////////////////////////////////
                     jxc[0] = p0_p2 * jfc;
                     jxc[1] = f_p2_x;
@@ -1418,7 +1369,7 @@ namespace ProgramCPU
 
                     if(radial_distortion == -1 && !intrinsic_fixed)
                     {
-                        Float  msn = ms[0] * ms[0] + ms[1] * ms[1];
+                        double  msn = ms[0] * ms[0] + ms[1] * ms[1];
                         jxc[7] = -ms[0] * msn;
                         jyc[7] = -ms[1] * msn;
                     }else
@@ -1445,26 +1396,24 @@ namespace ProgramCPU
     }
 
     // Forward declare
-    template <class Float>
-    void ComputeJacobian(size_t nproj, size_t ncam, const Float* camera, const Float* point, Float*  jc, Float* jp,
-                         const int* jmap, const Float * sj, const Float *  ms, const int * cmlist,
-                         bool intrinsic_fixed , int radial_distortion, bool shuffle, Float* jct,
-                         int mt = 2, int i0 = 0);
+    void ComputeJacobian(size_t nproj, size_t ncam, const double* camera, const double* point, double*  jc, double* jp,
+                         const int* jmap, const double * sj, const double *  ms, const int * cmlist,
+                         bool intrinsic_fixed , int radial_distortion, bool shuffle, double* jct,
+                         int mt, int i0);
 
     DEFINE_THREAD_DATA(ComputeJacobian)
-            size_t nproj, ncam; const Float* camera, *point; Float * jc, *jp;
-            const int *jmap; const Float* sj, * ms; const int* cmlist;
-            bool intrinsic_fixed; int radial_distortion; bool shuffle; Float* jct; int i0;
+            size_t nproj, ncam; const double* camera, *point; double * jc, *jp;
+            const int *jmap; const double* sj, * ms; const int* cmlist;
+            bool intrinsic_fixed; int radial_distortion; bool shuffle; double* jct; int i0;
     BEGIN_THREAD_PROC(ComputeJacobian)
         ComputeJacobian( q->nproj, q->ncam, q->camera, q->point, q->jc, q->jp,
                     q->jmap, q->sj,  q->ms, q->cmlist, q->intrinsic_fixed,
                     q->radial_distortion, q->shuffle, q->jct, 0, q->i0);
     END_THREAD_RPOC(ComputeJacobian)
 
-    template <class Float>
-    void ComputeJacobian(size_t nproj, size_t ncam, const Float* camera, const Float* point, Float*  jc, Float* jp,
-                         const int* jmap, const Float * sj, const Float *  ms, const int * cmlist,
-                         bool intrinsic_fixed , int radial_distortion, bool shuffle, Float* jct,
+    void ComputeJacobian(size_t nproj, size_t ncam, const double* camera, const double* point, double*  jc, double* jp,
+                         const int* jmap, const double * sj, const double *  ms, const int * cmlist,
+                         bool intrinsic_fixed , int radial_distortion, bool shuffle, double* jct,
                          int mt = 2, int i0 = 0)
     {
 
@@ -1484,15 +1433,15 @@ namespace ProgramCPU
             WAIT_THREAD(threads, thread_num);
         }else
         {
-            const Float* sjc0 = sj;
-            const Float* sjp0 = sj ?  sj + ncam * 8 : NULL;
+            const double* sjc0 = sj;
+            const double* sjp0 = sj ?  sj + ncam * 8 : NULL;
 
             for(size_t i = i0; i < nproj; ++i, jmap += 2, ms += 2, ++cmlist)
             {
                 int cidx = jmap[0], pidx = jmap[1];
-                const Float* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
-                Float* jci = jc ? (jc + (shuffle? cmlist[0] : i)* 16)  : NULL;
-                Float* jpi = jp ? (jp + i * POINT_ALIGN2) : NULL;
+                const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
+                double* jci = jc ? (jc + (shuffle? cmlist[0] : i)* 16)  : NULL;
+                double* jpi = jp ? (jp + i * POINT_ALIGN2) : NULL;
 
                 /////////////////////////////////////////////////////
                 JacobianOne(c, pt, ms, jci, jci + 8, jpi, jpi + POINT_ALIGN, intrinsic_fixed, radial_distortion);
@@ -1507,7 +1456,7 @@ namespace ProgramCPU
                     }
                     if(jpi)
                     {
-                        const Float* sjp = sjp0 + pidx * POINT_ALIGN;
+                        const double* sjp = sjp0 + pidx * POINT_ALIGN;
                         for(int j = 0; j < 3; ++j) {jpi[j] *= sjp[j]; jpi[POINT_ALIGN + j] *= sjp[j]; }
                     }
                 }
@@ -1517,16 +1466,15 @@ namespace ProgramCPU
         }
     }
 
-    template <class Float>
-    void ComputeDiagonalAddQ(size_t ncam, const Float* qw, Float* d, const Float* sj = NULL)
+    void ComputeDiagonalAddQ(size_t ncam, const double* qw, double* d, const double* sj = NULL)
     {
         if(sj)
         {
             for(size_t i = 0; i < ncam; ++i, qw += 2, d += 8, sj += 8)
             {
                 if(qw[0] == 0) continue;
-                Float j1 = qw[0] * sj[0];
-                Float j2 = qw[1] * sj[7];
+                double j1 = qw[0] * sj[0];
+                double j2 = qw[1] * sj[7];
                 d[0] += (j1 * j1 * 2.0f);
                 d[7] += (j2 * j2 * 2.0f);
             }
@@ -1542,9 +1490,8 @@ namespace ProgramCPU
     }
 
     ///////////////////////////////////////
-    template <class Float>
-    void  ComputeDiagonal( const avec<Float>& jcv, const vector<int>& cmapv, const avec<Float>& jpv, const vector<int>& pmapv,
-                        const vector<int>& cmlistv, const Float* qw0, avec<Float>& jtjdi, bool jc_transpose, int radial)
+    void  ComputeDiagonal( const avec& jcv, const std::vector<int>& cmapv, const avec& jpv, const std::vector<int>& pmapv,
+                        const std::vector<int>& cmlistv, const double* qw0, avec& jtjdi, bool jc_transpose, int radial)
     {
         //first camera part
         if(jcv.size() == 0 || jpv.size() == 0) return; // not gonna happen
@@ -1557,10 +1504,10 @@ namespace ProgramCPU
         const int* cmap = &cmapv[0];
         const int * pmap = &pmapv[0];
         const int * cmlist = &cmlistv[0];
-        const Float* jc = &jcv[0];
-        const Float* jp = &jpv[0];
-        const Float* qw = qw0;
-        Float* jji = &jtjdi[0];
+        const double* jc = &jcv[0];
+        const double* jp = &jpv[0];
+        const double* qw = qw0;
+        double* jji = &jtjdi[0];
 
         ///////compute jc part
         for(size_t i = 0; i < ncam; ++i, jji += 8, ++cmap, qw += 2)
@@ -1570,7 +1517,7 @@ namespace ProgramCPU
             for(int j = idx1; j < idx2; ++j)
             {
                 int idx = jc_transpose? j : cmlist[j];
-                const Float* pj = jc + idx * 16;
+                const double* pj = jc + idx * 16;
                 ///////////////////////////////////////////
                 for(int k = 0; k < vn; ++k) jji[k] += (pj[k] * pj[k] + pj[k + 8] * pj[k + 8]);
             }
@@ -1584,16 +1531,16 @@ namespace ProgramCPU
         for(size_t i = 0; i < npts; ++i, jji += POINT_ALIGN, ++ pmap)
         {
             int idx1 = pmap[0], idx2 = pmap[1];
-            const Float* pj = jp + idx1 * POINT_ALIGN2;
+            const double* pj = jp + idx1 * POINT_ALIGN2;
             for(int j = idx1; j < idx2; ++j, pj += POINT_ALIGN2)
             {
                 for(int k = 0; k < 3; ++k) jji[k] += (pj[k] * pj[k] + pj[k + POINT_ALIGN] * pj[k + POINT_ALIGN]);
             }
         }
-        Float* it = jtjdi.begin();
+        double* it = jtjdi.begin();
         for(; it < jtjdi.end(); ++it)
         {
-            *it = (*it == 0) ? 0 : Float(1.0 / (*it));
+            *it = (*it == 0) ? 0 : double(1.0 / (*it));
         }
     }
 
@@ -1647,21 +1594,19 @@ namespace ProgramCPU
     }
 
     // Forward declare.
-    template<class Float>
-    void ComputeDiagonalBlockC(size_t ncam,  float lambda1, float lambda2, const Float* jc, const int* cmap,
-                const int* cmlist, Float* di, Float* bi, int vn, bool jc_transpose, bool use_jq, int mt);
+    void ComputeDiagonalBlockC(size_t ncam,  float lambda1, float lambda2, const double* jc, const int* cmap,
+                const int* cmlist, double* di, double* bi, int vn, bool jc_transpose, bool use_jq, int mt);
 
     DEFINE_THREAD_DATA(ComputeDiagonalBlockC)
-        size_t ncam; float lambda1, lambda2; const Float * jc; const int* cmap,* cmlist;
-        Float * di, * bi; int vn; bool jc_transpose, use_jq;
+        size_t ncam; float lambda1, lambda2; const double * jc; const int* cmap,* cmlist;
+        double * di, * bi; int vn; bool jc_transpose, use_jq;
     BEGIN_THREAD_PROC(ComputeDiagonalBlockC)
         ComputeDiagonalBlockC( q->ncam, q->lambda1, q->lambda2, q->jc, q->cmap,
         q->cmlist, q->di, q->bi, q->vn, q->jc_transpose, q->use_jq, 0);
     END_THREAD_RPOC(ComputeDiagonalBlockC)
 
-    template<class Float>
-    void ComputeDiagonalBlockC(size_t ncam,  float lambda1, float lambda2, const Float* jc, const int* cmap,
-                const int* cmlist, Float* di, Float* bi, int vn, bool jc_transpose, bool use_jq, int mt)
+    void ComputeDiagonalBlockC(size_t ncam,  float lambda1, float lambda2, const double* jc, const int* cmap,
+                const int* cmlist, double* di, double* bi, int vn, bool jc_transpose, bool use_jq, int mt)
     {
         const size_t bc = vn * 8;
 
@@ -1681,9 +1626,9 @@ namespace ProgramCPU
             WAIT_THREAD(threads, thread_num);
         }else
         {
-            Float bufv[64 + 8]; //size_t offset = ((size_t)bufv) & 0xf;
+            double bufv[64 + 8]; //size_t offset = ((size_t)bufv) & 0xf;
             //Float* pbuf = bufv + ((16 - offset) / sizeof(Float));
-            Float* pbuf = (Float*)ALIGN_PTR(bufv);
+            double* pbuf = (double*)ALIGN_PTR(bufv);
 
 
             ///////compute jc part
@@ -1701,7 +1646,7 @@ namespace ProgramCPU
                     for(int j = idx1; j < idx2; ++j)
                     {
                         int idx = jc_transpose? j : cmlist[j];
-                        const Float* pj = jc + idx * 16;
+                        const double* pj = jc + idx * 16;
                         /////////////////////////////////
                         AddBlockJtJ(pj,     pbuf, vn);
                         AddBlockJtJ(pj + 8, pbuf, vn);
@@ -1711,16 +1656,16 @@ namespace ProgramCPU
 
                     if(use_jq)
                     {
-                        Float* pb = pbuf;
+                        double* pb = pbuf;
                         for(int j= 0; j < 8; ++j, ++di, pb += 9)
                         {
-                            Float temp;
+                            double temp;
                             di[0]  = temp = (di[0] + pb[0]);
                             pb[0] = lambda2 * temp + lambda1;
                         }
                     }else
                     {
-                        Float* pb = pbuf;
+                        double* pb = pbuf;
                         for(int j= 0; j < 8; ++j, ++di, pb += 9)
                         {
                             *pb = lambda2 * ((* di) = (*pb)) + lambda1;
@@ -1728,27 +1673,25 @@ namespace ProgramCPU
                     }
 
                     //invert the matrix?
-                    if(vn==8)   InvertSymmetricMatrix<Float, 8, 8>(pbuf, bi);
-                    else        InvertSymmetricMatrix<Float, 7, 8>(pbuf, bi);
+                    if(vn==8)   InvertSymmetricMatrix<double, 8, 8>(pbuf, bi);
+                    else        InvertSymmetricMatrix<double, 7, 8>(pbuf, bi);
                 }
             }
         }
     }
 
     // Forward declare.
-    template<class Float>
     void ComputeDiagonalBlockP(size_t npt, float lambda1, float lambda2,
-                        const Float*  jp, const int* pmap, Float* di, Float* bi, int mt);
+                        const double*  jp, const int* pmap, double* di, double* bi, int mt);
 
     DEFINE_THREAD_DATA(ComputeDiagonalBlockP)
-        size_t npt; float lambda1, lambda2;  const Float * jp; const int* pmap; Float* di, *bi;
+        size_t npt; float lambda1, lambda2;  const double * jp; const int* pmap; double* di, *bi;
     BEGIN_THREAD_PROC(ComputeDiagonalBlockP)
         ComputeDiagonalBlockP( q->npt, q->lambda1, q->lambda2, q->jp, q->pmap, q->di, q->bi, 0);
     END_THREAD_RPOC(ComputeDiagonalBlockP)
 
-    template<class Float>
     void ComputeDiagonalBlockP(size_t npt, float lambda1, float lambda2,
-                        const Float*  jp, const int* pmap, Float* di, Float* bi, int mt)
+                        const double*  jp, const int* pmap, double* di, double* bi, int mt)
     {
         if(mt > 1)
         {
@@ -1770,8 +1713,8 @@ namespace ProgramCPU
             {
                 int idx1 = pmap[0], idx2 = pmap[1];
 
-                Float M00 = 0, M01= 0, M02 = 0, M11 = 0, M12 = 0, M22 = 0;
-                const Float* jxp = jp + idx1 * (POINT_ALIGN2), * jyp = jxp + POINT_ALIGN;
+                double M00 = 0, M01= 0, M02 = 0, M11 = 0, M12 = 0, M22 = 0;
+                const double* jxp = jp + idx1 * (POINT_ALIGN2), * jyp = jxp + POINT_ALIGN;
                 for(int j = idx1; j < idx2; ++j, jxp += POINT_ALIGN2, jyp += POINT_ALIGN2)
                 {
                     M00 += (jxp[0] * jxp[0] + jyp[0] * jyp[0]);
@@ -1791,7 +1734,7 @@ namespace ProgramCPU
                 M22 = M22 * lambda2 + lambda1;
 
                 ///////////////////////////////
-                Float det = (M00 * M11 - M01 * M01) * M22 + Float(2.0) * M01 * M12 * M02 - M02 * M02 * M11 - M12 * M12 * M00;
+                double det = (M00 * M11 - M01 * M01) * M22 + double(2.0) * M01 * M12 * M02 - M02 * M02 * M11 - M12 * M12 * M00;
                 if(det >= FLT_MAX || det <= FLT_MIN * 2.0f)
                 {
                     //SetVectorZero(bi, bi + 6);
@@ -1860,10 +1803,9 @@ namespace ProgramCPU
         }
     }
 
-    template<class Float>
-    void ComputeDiagonalBlock_(float lambda, bool dampd, const avec<Float>& camerav,  const avec<Float>& pointv,
-                             const avec<Float>& meas,  const vector<int>& jmapv,  const avec<Float>& sjv,
-                             avec<Float>&qwv, avec<Float>& diag, avec<Float>& blocks,
+    void ComputeDiagonalBlock_(float lambda, bool dampd, const avec& camerav,  const avec& pointv,
+                             const avec& meas,  const std::vector<int>& jmapv,  const avec& sjv,
+                             avec&qwv, avec& diag, avec& blocks,
                              bool intrinsic_fixed, int radial_distortion, int mode = 0)
     {
         const int vn = radial_distortion? 8 : 7;
@@ -1872,35 +1814,35 @@ namespace ProgramCPU
         size_t npts = pointv.size()/POINT_ALIGN;
         size_t sz_jcd = ncam * 8;
         size_t sz_jcb = ncam * szbc;
-        avec<Float> blockpv(blocks.size());
+        avec blockpv(blocks.size());
         SetVectorZero(blockpv);
         SetVectorZero(diag);
         //////////////////////////////////////////////////////
         float lambda1 = dampd? 0.0f : lambda;
         float lambda2 = dampd? (1.0f + lambda) : 1.0f;
 
-        Float jbufv[24 + 8]; 	//size_t offset = ((size_t) jbufv) & 0xf;
+        double jbufv[24 + 8]; 	//size_t offset = ((size_t) jbufv) & 0xf;
         //Float* jxc = jbufv + ((16 - offset) / sizeof(Float));
-        Float* jxc = (Float*)ALIGN_PTR(jbufv);
-        Float* jyc = jxc + 8, *jxp = jxc + 16, *jyp = jxc + 20;
+        double* jxc = (double*)ALIGN_PTR(jbufv);
+        double* jyc = jxc + 8, *jxp = jxc + 16, *jyp = jxc + 20;
 
         //////////////////////////////
         const int * jmap = &jmapv[0];
-        const Float* camera = &camerav[0];
-        const Float* point = &pointv[0];
-        const Float* ms = &meas[0];
-        const Float* sjc0 = sjv.size() ?  &sjv[0] : NULL;
-        const Float* sjp0 = sjv.size() ?  &sjv[sz_jcd] : NULL;
+        const double* camera = &camerav[0];
+        const double* point = &pointv[0];
+        const double* ms = &meas[0];
+        const double* sjc0 = sjv.size() ?  &sjv[0] : NULL;
+        const double* sjp0 = sjv.size() ?  &sjv[sz_jcd] : NULL;
         //////////////////////////////////////////////
-        Float* blockpc = &blockpv[0], * blockpp = &blockpv[sz_jcb];
-        Float* bo = blockpc, *bi = &blocks[0], *di = &diag[0];
+        double* blockpc = &blockpv[0], * blockpp = &blockpv[sz_jcb];
+        double* bo = blockpc, *bi = &blocks[0], *di = &diag[0];
 
         /////////////////////////////////////////////////////////
         //diagonal blocks
         for(size_t i = 0; i < jmapv.size(); i += 2, jmap += 2, ms += 2)
         {
             int cidx = jmap[0], pidx = jmap[1];
-            const Float* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
+            const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
             /////////////////////////////////////////////////////////
             JacobianOne(c, pt, ms, jxc, jyc, jxp, jyp, intrinsic_fixed, radial_distortion);
 
@@ -1909,11 +1851,11 @@ namespace ProgramCPU
             {
                 if(sjc0)
                 {
-                    const Float* sjc = sjc0 + cidx * 8;
+                    const double* sjc = sjc0 + cidx * 8;
                     ScaleJ8(jxc, jyc, sjc);
                 }
                 /////////////////////////////////////////
-                Float* bc = blockpc + cidx * szbc;
+                double* bc = blockpc + cidx * szbc;
                 AddBlockJtJ(jxc, bc, vn);
                 AddBlockJtJ(jyc, bc, vn);
             }
@@ -1922,13 +1864,13 @@ namespace ProgramCPU
             {
                 if(sjp0)
                 {
-                    const Float* sjp = sjp0 + pidx * POINT_ALIGN;
+                    const double* sjp = sjp0 + pidx * POINT_ALIGN;
                     jxp[0] *= sjp[0];   jxp[1] *= sjp[1];   jxp[2] *= sjp[2];
                     jyp[0] *= sjp[0];   jyp[1] *= sjp[1];   jyp[2] *= sjp[2];
                 }
 
                 ///////////////////////////////////////////
-                Float* bp = blockpp  + pidx * 6;
+                double* bp = blockpp  + pidx * 6;
                 bp[0] += (jxp[0] * jxp[0] + jyp[0] * jyp[0]);
                 bp[1] += (jxp[0] * jxp[1] + jyp[0] * jyp[1]);
                 bp[2] += (jxp[0] * jxp[2] + jyp[0] * jyp[2]);
@@ -1942,18 +1884,18 @@ namespace ProgramCPU
         if(mode != 2)
         {
             /////////////////////////////////////////
-            const Float* qw =  qwv.begin();
+            const double* qw =  qwv.begin();
             if(qw)
             {
                 for(size_t i = 0; i < ncam; ++i, qw += 2)
                 {
                     if(qw[0] == 0)continue;
-                    Float* bc = blockpc + i * szbc;
+                    double* bc = blockpc + i * szbc;
                     if(sjc0)
                     {
-                        const Float* sjc = sjc0 + i * 8;
-                        Float j1 = sjc[0] * qw[0];
-                        Float j2 = sjc[7] * qw[1];
+                        const double* sjc = sjc0 + i * 8;
+                        double j1 = sjc[0] * qw[0];
+                        double j2 = sjc[7] * qw[1];
                         bc[0] += (j1 * j1 * 2.0f);
                         if(radial_distortion) bc[63] += (j2 * j2 * 2.0f);
                     }else
@@ -1968,7 +1910,7 @@ namespace ProgramCPU
 
             for(size_t i = 0; i < ncam; ++i, bo += szbc, bi += szbc, di += 8)
             {
-                    Float* bp = bo,  *dip = di;
+                    double* bp = bo,  *dip = di;
                     for(int  j = 0; j < vn; ++j, ++dip, bp += 9)
                     {
                         dip[0] = bp[0];
@@ -1976,8 +1918,8 @@ namespace ProgramCPU
                     }
 
                 //invert the matrix?
-                if(radial_distortion)   InvertSymmetricMatrix<Float, 8, 8>(bo, bi);
-                else                    InvertSymmetricMatrix<Float, 7, 8>(bo, bi);
+                if(radial_distortion)   InvertSymmetricMatrix<double, 8, 8>(bo, bi);
+                else                    InvertSymmetricMatrix<double, 7, 8>(bo, bi);
             }
         }else
         {
@@ -1993,8 +1935,8 @@ namespace ProgramCPU
         {
             for(size_t i = 0; i < npts; ++i, bo += 6, bi += 6, di += POINT_ALIGN)
             {
-                Float& M00 = bo[0], & M01 = bo[1], & M02 = bo[2];
-                Float& M11 = bo[3], & M12 = bo[4], & M22 = bo[5];
+                double& M00 = bo[0], & M01 = bo[1], & M02 = bo[2];
+                double& M11 = bo[3], & M12 = bo[4], & M22 = bo[5];
                 di[0] = M00;  	di[1] = M11;  	di[2] = M22;
 
                 /////////////////////////////
@@ -2003,7 +1945,7 @@ namespace ProgramCPU
                 M22 = M22 * lambda2 + lambda1;
 
                 ///////////////////////////////
-                Float det = (M00 * M11 - M01 * M01) * M22 + Float(2.0) * M01 * M12 * M02 - M02 * M02 * M11 - M12 * M12 * M00;
+                double det = (M00 * M11 - M01 * M01) * M22 + double(2.0) * M01 * M12 * M02 - M02 * M02 * M11 - M12 * M12 * M00;
                 if(det >= FLT_MAX || det <= FLT_MIN * 2.0f)
                 {
                     for(int j = 0; j < 6; ++j) bi[j] = 0;
@@ -2025,7 +1967,7 @@ namespace ProgramCPU
     void MultiplyBlockConditionerC(int ncam, const Float* bi, const Float*  x, Float* vx, int vn, int mt = 0);
 
     DEFINE_THREAD_DATA(MultiplyBlockConditionerC)
-        int ncam;  const Float * bi, * x;  Float * vx; int vn;
+        int ncam;  const double * bi, * x;  double * vx; int vn;
     BEGIN_THREAD_PROC(MultiplyBlockConditionerC)
         MultiplyBlockConditionerC(q->ncam, q->bi, q->x, q->vx, q->vn, 0);
     END_THREAD_RPOC(MultiplyBlockConditionerC)
@@ -2061,7 +2003,7 @@ namespace ProgramCPU
     void MultiplyBlockConditionerP(int npoint, const Float* bi, const Float*  x, Float* vx, int mt = 0);
 
     DEFINE_THREAD_DATA(MultiplyBlockConditionerP)
-        int npoint;  const Float * bi, * x;  Float * vx;
+        int npoint;  const double * bi, * x;  double * vx;
     BEGIN_THREAD_PROC(MultiplyBlockConditionerP)
         MultiplyBlockConditionerP(q->npoint, q->bi, q->x, q->vx, 0);
     END_THREAD_RPOC(MultiplyBlockConditionerP)
@@ -2112,7 +2054,7 @@ namespace ProgramCPU
 
 
     DEFINE_THREAD_DATA(ComputeJX)
-        size_t nproj, ncam; const Float* xc, *jc,* jp; const int* jmap; Float* jx; int mode;
+        size_t nproj, ncam; const double* xc, *jc,* jp; const int* jmap; double* jx; int mode;
     BEGIN_THREAD_PROC(ComputeJX)
         ComputeJX(q->nproj, q->ncam, q->xc, q->jc, q->jp, q->jmap, q->jx, q->mode, 0);
     END_THREAD_RPOC(ComputeJX)
@@ -2167,23 +2109,21 @@ namespace ProgramCPU
     }
 
     // Forward declare.
-    template<class Float>
-    void ComputeJX_(size_t nproj, size_t ncam,  const Float* x, Float* jx, const Float* camera,
-                    const Float* point,  const Float* ms, const Float* sj, const int*  jmap,
-                    bool intrinsic_fixed, int radial_distortion, int mode, int mt = 16);
+    void ComputeJX_(size_t nproj, size_t ncam,  const double* x, double* jx, const double* camera,
+                    const double* point,  const double* ms, const double* sj, const int*  jmap,
+                    bool intrinsic_fixed, int radial_distortion, int mode, int mt);
 
     DEFINE_THREAD_DATA(ComputeJX_)
-           size_t nproj, ncam; const Float* x; Float * jx;
-            const Float* camera, *point,* ms, *sj; const int *jmap;
+           size_t nproj, ncam; const double* x; double * jx;
+            const double* camera, *point,* ms, *sj; const int *jmap;
             bool intrinsic_fixed; int radial_distortion; int mode;
     BEGIN_THREAD_PROC(ComputeJX_)
         ComputeJX_( q->nproj, q->ncam, q->x, q->jx, q->camera, q->point, q->ms, q->sj,
                     q->jmap, q->intrinsic_fixed, q->radial_distortion, q->mode, 0);
     END_THREAD_RPOC(ComputeJX_)
 
-    template<class Float>
-    void ComputeJX_(size_t nproj, size_t ncam,  const Float* x, Float* jx, const Float* camera,
-                    const Float* point,  const Float* ms, const Float* sj, const int*  jmap,
+    void ComputeJX_(size_t nproj, size_t ncam,  const double* x, double* jx, const double* camera,
+                    const double* point,  const double* ms, const double* sj, const int*  jmap,
                     bool intrinsic_fixed, int radial_distortion, int mode, int mt = 16)
     {
         if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
@@ -2203,26 +2143,26 @@ namespace ProgramCPU
             WAIT_THREAD(threads, thread_num);
         }else if(mode == 0)
         {
-            Float jcv[24 + 8]; //size_t offset = ((size_t) jcv) & 0xf;
+            double jcv[24 + 8]; //size_t offset = ((size_t) jcv) & 0xf;
             //Float* jc = jcv + (16 - offset) / sizeof(Float), *jp = jc + 16;
-            Float* jc = (Float*)ALIGN_PTR(jcv), *jp = jc + 16;
+            double* jc = (double*)ALIGN_PTR(jcv), *jp = jc + 16;
             ////////////////////////////////////////
-            const Float* sjc = sj;
-            const Float* sjp = sjc? (sjc + ncam * 8) : NULL;
-            const Float* xc0 = x, *xp0 = x + ncam * 8;
+            const double* sjc = sj;
+            const double* sjp = sjc? (sjc + ncam * 8) : NULL;
+            const double* xc0 = x, *xp0 = x + ncam * 8;
 
             /////////////////////////////////
             for(size_t i = 0 ;i < nproj; ++i, ms += 2, jmap += 2, jx += 2)
             {
                 const int cidx = jmap[0], pidx = jmap[1];
-                const Float* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
+                const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
                 /////////////////////////////////////////////////////
                 JacobianOne(c, pt, ms, jc, jc + 8, jp, jp + POINT_ALIGN, intrinsic_fixed, radial_distortion);
                 if(sjc)
                 {
                     //jacobian scaling
                     ScaleJ8(jc, jc + 8, sjc + cidx * 8);
-                    const Float* sjpi = sjp + pidx * POINT_ALIGN;
+                    const double* sjpi = sjp + pidx * POINT_ALIGN;
                     for(int j = 0; j < 3; ++j) {jp[j] *= sjpi[j]; jp[POINT_ALIGN + j] *= sjpi[j]; }
                 }
                 ////////////////////////////////////
@@ -2230,45 +2170,45 @@ namespace ProgramCPU
             }
         }else if(mode == 1)
         {
-            Float jcv[24 + 8]; //size_t offset = ((size_t) jcv) & 0xf;
+            double jcv[24 + 8]; //size_t offset = ((size_t) jcv) & 0xf;
             //Float* jc = jcv + (16 - offset) / sizeof(Float);
-            Float* jc = (Float*)ALIGN_PTR(jcv);
+            double* jc = (double*)ALIGN_PTR(jcv);
 
             ////////////////////////////////////////
-            const Float* sjc = sj, * xc0 = x;
+            const double* sjc = sj, * xc0 = x;
 
             /////////////////////////////////
             for(size_t i = 0 ;i < nproj; ++i, ms += 2, jmap += 2, jx += 2)
             {
                 const int cidx = jmap[0], pidx = jmap[1];
-                const Float* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
+                const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
                 /////////////////////////////////////////////////////
-                JacobianOne(c, pt, ms, jc, jc + 8, (Float*) NULL, (Float*)NULL, intrinsic_fixed, radial_distortion);
+                JacobianOne(c, pt, ms, jc, jc + 8, (double*) NULL, (double*)NULL, intrinsic_fixed, radial_distortion);
                 if(sjc)ScaleJ8(jc, jc + 8, sjc + cidx * 8);
-                const Float* xc = xc0 + cidx * 8;
+                const double* xc = xc0 + cidx * 8;
                 jx[0] = DotProduct8(jc, xc)   ;
                 jx[1] = DotProduct8(jc + 8, xc);
             }
         }else if(mode == 2)
         {
-            Float jp[8];
+            double jp[8];
 
             ////////////////////////////////////////
-            const Float* sjp = sj? (sj + ncam * 8) : NULL;
-            const Float* xp0 = x + ncam * 8;
+            const double* sjp = sj? (sj + ncam * 8) : NULL;
+            const double* xp0 = x + ncam * 8;
 
             /////////////////////////////////
             for(size_t i = 0 ;i < nproj; ++i, ms += 2, jmap += 2, jx += 2)
             {
                 const int cidx = jmap[0], pidx = jmap[1];
-                const Float* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
+                const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
                 /////////////////////////////////////////////////////
-                JacobianOne(c, pt, ms, (Float*) NULL, (Float*) NULL, jp, jp + POINT_ALIGN, intrinsic_fixed, radial_distortion);
+                JacobianOne(c, pt, ms, (double*) NULL, (double*) NULL, jp, jp + POINT_ALIGN, intrinsic_fixed, radial_distortion);
 
-                const Float* xp = xp0 + pidx * POINT_ALIGN;
+                const double* xp = xp0 + pidx * POINT_ALIGN;
                 if(sjp)
                 {
-                    const Float* s = sjp + pidx * POINT_ALIGN;
+                    const double* s = sjp + pidx * POINT_ALIGN;
                     jx[0] =  (jp[0] * xp[0] * s[0] + jp[1] * xp[1] * s[1] + jp[2] * xp[2] * s[2]);
                     jx[1] =  (jp[3] * xp[0] * s[0] + jp[4] * xp[1] * s[1] + jp[5] * xp[2] * s[2]);
                 }else
@@ -2286,7 +2226,7 @@ namespace ProgramCPU
                         const int* cmlist,  Float* v, bool jc_transpose, int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEC)
-        size_t ncam; const Float* pe, * jc; const int* cmap,* cmlist;  Float* v;bool jc_transpose;
+        size_t ncam; const double* pe, * jc; const int* cmap,* cmlist;  double* v;bool jc_transpose;
     BEGIN_THREAD_PROC(ComputeJtEC)
         ComputeJtEC( q->ncam, q->pe, q->jc, q->cmap, q->cmlist, q->v, q->jc_transpose, 0);
     END_THREAD_RPOC(ComputeJtEC)
@@ -2334,7 +2274,7 @@ namespace ProgramCPU
                         const int* pmap, Float* v,  int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEP)
-        size_t npt; const Float* pe, * jp; const int* pmap; Float* v;
+        size_t npt; const double* pe, * jp; const int* pmap; double* v;
     BEGIN_THREAD_PROC(ComputeJtEP)
         ComputeJtEP( q->npt, q->pe, q->jp, q->pmap, q->v, 0);
     END_THREAD_RPOC(ComputeJtEP)
@@ -2401,7 +2341,7 @@ namespace ProgramCPU
                         bool intrinsic_fixed, int radial_distortion, int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEC_)
-           size_t ncam; const Float* ee; Float * jte; const Float* c, *point,* ms;
+           size_t ncam; const double* ee; double * jte; const double* c, *point,* ms;
            const int *jmap, *cmap, *cmlist; bool intrinsic_fixed; int radial_distortion;
     BEGIN_THREAD_PROC(ComputeJtEC_)
         ComputeJtEC_(q->ncam, q->ee, q->jte, q->c, q->point, q->ms, q->jmap, q->cmap,
@@ -2529,10 +2469,8 @@ namespace ProgramCPU
 
 using namespace ProgramCPU;
 
-template<class Float>
-SparseBundleCPU<Float>:: SparseBundleCPU()
-    : ParallelBA(PBA_INVALID_DEVICE)
-    , _num_camera(0)
+SparseBundleCPU:: SparseBundleCPU()
+    : _num_camera(0)
     , _num_point(0)
     , _num_imgpt(0)
     , _camera_data(NULL)
@@ -2543,7 +2481,7 @@ SparseBundleCPU<Float>:: SparseBundleCPU()
     , _projection_sse(0)
     , _num_imgpt_q(0)
 {
-    __cpu_data_precision = sizeof(Float);
+    __cpu_data_precision = sizeof(double);
     if(__num_cpu_cores == 0)	__num_cpu_cores = FindProcessorCoreNum();
     if(__verbose_level)			std::cout  << "CPU " << (__cpu_data_precision == 4 ? "single" : "double")
                                            << "-precisoin solver; " << __num_cpu_cores << " cores"
@@ -2588,8 +2526,7 @@ SparseBundleCPU<Float>:: SparseBundleCPU()
     __num_cpu_thread[FUNC_VV] = 0;  //automatically chosen accodring to size
 }
 
-template<class Float>
-void SparseBundleCPU<Float>:: SetCameraData(size_t ncam,  CameraT* cams)
+void SparseBundleCPU:: SetCameraData(size_t ncam,  CameraT* cams)
 {
     if(sizeof(CameraT) != 16 * sizeof(float)) return;  //never gonna happen...?
      _num_camera = (int) ncam;
@@ -2597,22 +2534,19 @@ void SparseBundleCPU<Float>:: SetCameraData(size_t ncam,  CameraT* cams)
     _focal_mask  = NULL;
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::SetFocalMask(const int* fmask, float weight)
+void SparseBundleCPU::SetFocalMask(const int* fmask, float weight)
 {
     _focal_mask = fmask;
     _weight_q = weight;
 }
 
-template<class Float>
-void SparseBundleCPU<Float>:: SetPointData(size_t npoint, Point3D* pts)
+void SparseBundleCPU:: SetPointData(size_t npoint, Point3D* pts)
 {
     _num_point = (int) npoint;
     _point_data = (float*) pts;
 }
 
-template<class Float>
-void SparseBundleCPU<Float>:: SetProjection(size_t nproj, const Point2D* imgpts, const int* point_idx, const int* cam_idx)
+void SparseBundleCPU:: SetProjection(size_t nproj, const Point2D* imgpts, const int* point_idx, const int* cam_idx)
 {
     _num_imgpt = (int) nproj;
     _imgpt_data = (float*) imgpts;
@@ -2620,14 +2554,12 @@ void SparseBundleCPU<Float>:: SetProjection(size_t nproj, const Point2D* imgpts,
     _point_idx = point_idx;
 }
 
-template<class Float>
-float SparseBundleCPU<Float>::GetMeanSquaredError()
+float SparseBundleCPU::GetMeanSquaredError()
 {
     return float(_projection_sse / (_num_imgpt * __focal_scaling * __focal_scaling));
 }
 
-template<class Float>
-int SparseBundleCPU<Float>:: RunBundleAdjustment()
+int SparseBundleCPU:: RunBundleAdjustment()
 {
     ResetBundleStatistics();
     BundleAdjustment();
@@ -2637,10 +2569,7 @@ int SparseBundleCPU<Float>:: RunBundleAdjustment()
     return __num_lm_success;
 }
 
-
-
-template<class Float>
-int SparseBundleCPU<Float>:: ValidateInputData()
+int SparseBundleCPU:: ValidateInputData()
 {
     if(_camera_data == NULL) return STATUS_CAMERA_MISSING;
     if(_point_data == NULL)  return STATUS_POINT_MISSING;
@@ -2649,8 +2578,7 @@ int SparseBundleCPU<Float>:: ValidateInputData()
     return STATUS_SUCCESS;
 }
 
-template<class Float>
-int SparseBundleCPU<Float>::InitializeBundle()
+int SparseBundleCPU::InitializeBundle()
 {
     /////////////////////////////////////////////////////
     TimerBA timer(this, TIMER_GPU_ALLOCATION);
@@ -2662,15 +2590,12 @@ int SparseBundleCPU<Float>::InitializeBundle()
     return STATUS_SUCCESS;
 }
 
-
-template<class Float>
-int SparseBundleCPU<Float>::GetParameterLength()
+int SparseBundleCPU::GetParameterLength()
 {
     return _num_camera * 8 + POINT_ALIGN * _num_point;
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::BundleAdjustment()
+void SparseBundleCPU::BundleAdjustment()
 {
     if(ValidateInputData() != STATUS_SUCCESS) return;
 
@@ -2695,16 +2620,14 @@ void SparseBundleCPU<Float>::BundleAdjustment()
     DenormalizeData();
 }
 
-template<class Float>
-void SparseBundleCPU<Float>:: NormalizeData()
+void SparseBundleCPU:: NormalizeData()
 {
     TimerBA timer(this, TIMER_PREPROCESSING);
     NormalizeDataD();
     NormalizeDataF();
 }
 
-template<class Float>
-void SparseBundleCPU<Float>:: TransferDataToHost()
+void SparseBundleCPU:: TransferDataToHost()
 {
     TimerBA timer(this, TIMER_GPU_DOWNLOAD);
     std::copy(_cuCameraData.begin(), _cuCameraData.end(), ((float*)_camera_data));
@@ -2721,12 +2644,11 @@ void SparseBundleCPU<Float>:: TransferDataToHost()
 }
 
 #define ALLOCATE_REQUIRED_DATA(NAME, num, channels)    \
-    {NAME.resize((num)* (channels)); total_sz += NAME.size() * sizeof(Float);}
+    {NAME.resize((num)* (channels)); total_sz += NAME.size() * sizeof(double);}
 #define ALLOCATE_OPTIONAL_DATA(NAME, num, channels, option)    \
     if(option)  ALLOCATE_REQUIRED_DATA(NAME, num, channels)  else{NAME.resize(0); }
 //////////////////////////////////////////////
-template<class Float>
-bool SparseBundleCPU<Float>::InitializeStorageForSFM()
+bool SparseBundleCPU::InitializeStorageForSFM()
 {
     size_t total_sz = 0;
     //////////////////////////////////////////////////
@@ -2759,19 +2681,19 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
     //////////////////////////////////////////
     BundleTimerSwap(TIMER_PREPROCESSING, TIMER_GPU_ALLOCATION);
     ////mapping from camera to measuremnts
-    vector<int>& cpi = _cuCameraMeasurementMap;     cpi.resize(_num_camera + 1);
-    vector<int>& cpidx = _cuCameraMeasurementList;  cpidx.resize(_num_imgpt);
-    vector<int> cpnum(_num_camera, 0);              cpi[0] = 0;
+    std::vector<int>& cpi = _cuCameraMeasurementMap;     cpi.resize(_num_camera + 1);
+    std::vector<int>& cpidx = _cuCameraMeasurementList;  cpidx.resize(_num_imgpt);
+    std::vector<int> cpnum(_num_camera, 0);              cpi[0] = 0;
     for(int i = 0; i < _num_imgpt; ++i) cpnum[_camera_idx[i]]++;
     for(int i = 1; i <= _num_camera; ++i) cpi[i] = cpi[i - 1] + cpnum[i - 1];
     ///////////////////////////////////////////////////////
-    vector<int> cptidx = cpi;
+    std::vector<int> cptidx = cpi;
     for(int i = 0; i < _num_imgpt; ++i) cpidx[cptidx[_camera_idx[i]] ++] = i;
 
     ///////////////////////////////////////////////////////////
     if(_cuCameraMeasurementListT.size())
     {
-        vector<int> &ridx = _cuCameraMeasurementListT; ridx.resize(_num_imgpt);
+        std::vector<int> &ridx = _cuCameraMeasurementListT; ridx.resize(_num_imgpt);
         for(int i = 0; i < _num_imgpt; ++i)ridx[cpidx[i]] = i;
     }
 
@@ -2798,7 +2720,7 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
 
     ////////////////////////////////////////////
     ///////mapping from point to measurment
-    vector<int> & ppi = _cuPointMeasurementMap;  ppi.resize(_num_point + 1);
+    std::vector<int> & ppi = _cuPointMeasurementMap;  ppi.resize(_num_point + 1);
     for(int i = 0, last_point = -1; i < _num_imgpt; ++i)
     {
         int pt = _point_idx[i];
@@ -2807,7 +2729,7 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
     ppi[_num_point] = _num_imgpt;
 
     //////////projection map
-    vector<int>& pmp = _cuProjectionMap; pmp.resize(_num_imgpt *2);
+    std::vector<int>& pmp = _cuProjectionMap; pmp.resize(_num_imgpt *2);
     for(int i = 0; i < _num_imgpt; ++i)
     {
         int* imp = &pmp[i * 2];
@@ -2823,9 +2745,7 @@ bool SparseBundleCPU<Float>::InitializeStorageForSFM()
     return true;
 }
 
-
-template<class Float>
-bool SparseBundleCPU<Float>::ProcessIndexCameraQ(vector<int>&qmap, vector<int>& qlist)
+bool SparseBundleCPU::ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int>& qlist)
 {
     ///////////////////////////////////
     qlist.resize(0);
@@ -2841,7 +2761,7 @@ bool SparseBundleCPU<Float>::ProcessIndexCameraQ(vector<int>&qmap, vector<int>& 
     ///////////////////////////////////////
 
     int error = 0;
-    vector<int> temp(_num_camera * 2, -1);
+    std::vector<int> temp(_num_camera * 2, -1);
 
     for(int i = 0; i < _num_camera; ++i)
     {
@@ -2897,12 +2817,11 @@ bool SparseBundleCPU<Float>::ProcessIndexCameraQ(vector<int>&qmap, vector<int>& 
     return true;
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::ProcessWeightCameraQ(vector<int>&cpnum, vector<int>&qmap, Float* qmapw, Float* qlistw)
+void SparseBundleCPU::ProcessWeightCameraQ(std::vector<int>&cpnum, std::vector<int>&qmap, double* qmapw, double* qlistw)
 {
     //set average focal length and average radial distortion
-    vector<Float>	qpnum(_num_camera, 0),		qcnum(_num_camera, 0);
-    vector<Float>	fs(_num_camera, 0),			rs(_num_camera, 0);
+    std::vector<double>	qpnum(_num_camera, 0),		qcnum(_num_camera, 0);
+    std::vector<double>	fs(_num_camera, 0),			rs(_num_camera, 0);
 
     for(int i = 0; i < _num_camera; ++i)
     {
@@ -2931,16 +2850,15 @@ void SparseBundleCPU<Float>::ProcessWeightCameraQ(vector<int>&cpnum, vector<int>
     for(int i = 0;i < _num_imgpt_q; ++i)
     {
         int cidx  = qmap[i * 2], qi = _focal_mask[cidx];
-        Float wi = sqrt(qpnum[qi] / qcnum[qi]) *  _weight_q;
-        Float wr = (__use_radial_distortion ? wi * _camera_data[qi].f: 0.0) ;
+        double wi = sqrt(qpnum[qi] / qcnum[qi]) *  _weight_q;
+        double wr = (__use_radial_distortion ? wi * _camera_data[qi].f: 0.0) ;
         qmapw[i * 2] = wi; 		qmapw[i * 2 + 1] = wr;
         qlistw[cidx * 2] = wi;	qlistw[cidx * 2 + 1] = wr;
     }
 }
 
 /////////////////////////////////////////////////
-template<class Float>
-bool SparseBundleCPU<Float>::InitializeStorageForCG()
+bool SparseBundleCPU::InitializeStorageForCG()
 {
     size_t total_sz = 0;
     int plen = GetParameterLength();  //q = 8m + 3n
@@ -2967,8 +2885,7 @@ bool SparseBundleCPU<Float>::InitializeStorageForCG()
 
 
 ///////////////////////////////////////////////////
-template<class Float>
-void SparseBundleCPU<Float>::PrepareJacobianNormalization()
+void SparseBundleCPU::PrepareJacobianNormalization()
 {
     if(!_cuVectorSJ.size())return;
 
@@ -2988,9 +2905,7 @@ void SparseBundleCPU<Float>::PrepareJacobianNormalization()
     }
 }
 
-
-template<class Float>
-void SparseBundleCPU<Float>::EvaluateJacobians()
+void SparseBundleCPU::EvaluateJacobians()
 {
     if(__no_jacobian_store) return;
     if(__bundle_current_mode == BUNDLE_ONLY_MOTION && !__jc_store_original && !__jc_store_transpose) return;
@@ -3010,16 +2925,14 @@ void SparseBundleCPU<Float>::EvaluateJacobians()
         ComputeJacobian(_num_imgpt, _num_camera, _cuCameraData.begin(), _cuPointData.begin(), _cuJacobianCameraT.begin(),
             _cuJacobianPoint.begin(), &_cuProjectionMap.front(), _cuVectorSJ.begin(),
             _cuMeasurements.begin(), &_cuCameraMeasurementListT.front(),
-            __fixed_intrinsics, __use_radial_distortion, true, ((Float*) 0),
+            __fixed_intrinsics, __use_radial_distortion, true, ((double*) 0),
             __num_cpu_thread[FUNC_JJ_JCT_JP]);
 
     }
     ++__num_jacobian_eval;
 }
 
-
-template<class Float>
-void SparseBundleCPU<Float>::ComputeJtE(VectorF& E, VectorF& JtE, int mode)
+void SparseBundleCPU::ComputeJtE(VectorF& E, VectorF& JtE, int mode)
 {
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JTE);
     if(mode == 0) mode = __bundle_current_mode;
@@ -3069,8 +2982,7 @@ void SparseBundleCPU<Float>::ComputeJtE(VectorF& E, VectorF& JtE, int mode)
     }
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::SaveBundleRecord(int iter, float res, float damping, float& g_norm, float& g_inf)
+void SparseBundleCPU::SaveBundleRecord(int iter, float res, float damping, float& g_norm, float& g_inf)
 {
     //do not really compute if parameter not specified...
     //for large dataset, it never converges..
@@ -3079,8 +2991,7 @@ void SparseBundleCPU<Float>::SaveBundleRecord(int iter, float res, float damping
     ConfigBA::SaveBundleRecord(iter, res, damping, g_norm, g_inf);
 }
 
-template<class Float>
-float SparseBundleCPU<Float>::EvaluateProjection(VectorF& cam, VectorF&point, VectorF& proj)
+float SparseBundleCPU::EvaluateProjection(VectorF& cam, VectorF&point, VectorF& proj)
 {
     ++__num_projection_eval;
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_PJ);
@@ -3091,8 +3002,7 @@ float SparseBundleCPU<Float>::EvaluateProjection(VectorF& cam, VectorF&point, Ve
     return (float) ComputeVectorNorm(proj, __num_cpu_thread[FUNC_VS]);
 }
 
-template<class Float>
-float SparseBundleCPU<Float>::EvaluateProjectionX(VectorF& cam, VectorF&point, VectorF& proj)
+float SparseBundleCPU::EvaluateProjectionX(VectorF& cam, VectorF&point, VectorF& proj)
 {
     ++__num_projection_eval;
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_PJ);
@@ -3103,8 +3013,7 @@ float SparseBundleCPU<Float>::EvaluateProjectionX(VectorF& cam, VectorF&point, V
     return (float) ComputeVectorNorm(proj, __num_cpu_thread[FUNC_VS]);
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::ComputeJX(VectorF& X, VectorF& JX, int mode)
+void SparseBundleCPU::ComputeJX(VectorF& X, VectorF& JX, int mode)
 {
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_JX);
     if(__no_jacobian_store || (__multiply_jx_usenoj && mode != 2) || !__jc_store_original)
@@ -3126,8 +3035,7 @@ void SparseBundleCPU<Float>::ComputeJX(VectorF& X, VectorF& JX, int mode)
 
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::ComputeBlockPC(float lambda, bool dampd)
+void SparseBundleCPU::ComputeBlockPC(float lambda, bool dampd)
 {
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_BC);
 
@@ -3154,8 +3062,7 @@ void SparseBundleCPU<Float>::ComputeBlockPC(float lambda, bool dampd)
 
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::ApplyBlockPC(VectorF& v, VectorF& pv, int mode)
+void SparseBundleCPU::ApplyBlockPC(VectorF& v, VectorF& pv, int mode)
 {
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_MP);
     MultiplyBlockConditioner(_num_camera, _num_point,
@@ -3163,8 +3070,7 @@ void SparseBundleCPU<Float>::ApplyBlockPC(VectorF& v, VectorF& pv, int mode)
         __num_cpu_thread[FUNC_MPC], __num_cpu_thread[FUNC_MPP]);
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::ComputeDiagonal(VectorF& JJ)
+void SparseBundleCPU::ComputeDiagonal(VectorF& JJ)
 {
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_DD);
     if(__no_jacobian_store)
@@ -3183,10 +3089,7 @@ void SparseBundleCPU<Float>::ComputeDiagonal(VectorF& JJ)
     }
 }
 
-
-
-template<class Float>
-void SparseBundleCPU<Float>::NormalizeDataF()
+void SparseBundleCPU::NormalizeDataF()
 {
     int incompatible_radial_distortion = 0;
     _cuMeasurements.resize(_num_imgpt * 2);
@@ -3196,18 +3099,18 @@ void SparseBundleCPU<Float>::NormalizeDataF()
         {
             //------------------------------------------------------------------
             //////////////////////////////////////////////////////////////
-            vector<float> focals(_num_camera);
+            std::vector<float> focals(_num_camera);
             for(int i = 0; i < _num_camera; ++i) focals[i] = _camera_data[i].f;
             std::nth_element(focals.begin(), focals.begin() + _num_camera / 2, focals.end());
             float median_focal_length = focals[_num_camera/2];
             __focal_scaling = __data_normalize_median / median_focal_length;
-            Float radial_factor = median_focal_length * median_focal_length * 4.0f;
+            double radial_factor = median_focal_length * median_focal_length * 4.0f;
 
             ///////////////////////////////
 
             for(int i = 0; i < _num_imgpt * 2; ++i)
             {
-                _cuMeasurements[i] = Float(_imgpt_data[i] * __focal_scaling);
+                _cuMeasurements[i] = double(_imgpt_data[i] * __focal_scaling);
             }
             for(int i = 0; i < _num_camera; ++i)
             {
@@ -3256,17 +3159,16 @@ void SparseBundleCPU<Float>::NormalizeDataF()
 
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::NormalizeDataD()
+void SparseBundleCPU::NormalizeDataD()
 {
 
     if(__depth_scaling == 1.0f)
     {
         const float     dist_bound = 1.0f;
-        vector<float>   oz(_num_imgpt);
-        vector<float>   cpdist1(_num_camera,  dist_bound);
-        vector<float>   cpdist2(_num_camera, -dist_bound);
-        vector<int>     camnpj(_num_camera, 0), cambpj(_num_camera, 0);
+        std::vector<float>   oz(_num_imgpt);
+        std::vector<float>   cpdist1(_num_camera,  dist_bound);
+        std::vector<float>   cpdist2(_num_camera, -dist_bound);
+        std::vector<int>     camnpj(_num_camera, 0), cambpj(_num_camera, 0);
         int bad_point_count = 0;
         for(int i = 0; i < _num_imgpt; ++i)
         {
@@ -3352,10 +3254,7 @@ void SparseBundleCPU<Float>::NormalizeDataD()
     }
 }
 
-
-
-template<class Float>
-void SparseBundleCPU<Float>::DenormalizeData()
+void SparseBundleCPU::DenormalizeData()
 {
     if(__focal_normalize && __focal_scaling!= 1.0f)
     {
@@ -3391,8 +3290,7 @@ void SparseBundleCPU<Float>::DenormalizeData()
     }
 }
 
-template<class Float>
-int SparseBundleCPU<Float>:: SolveNormalEquationPCGX(float lambda)
+int SparseBundleCPU:: SolveNormalEquationPCGX(float lambda)
 {
     //----------------------------------------------------------
     //(Jt * J + lambda * diag(Jt * J)) X = Jt * e
@@ -3433,33 +3331,33 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGX(float lambda)
     ApplyBlockPC(_cuVectorJtE, u, 2);
     ComputeJX(u, e, 2);
     ComputeJtE(e, uc, 1);
-    ComputeSAXPY(Float(-1.0f), uc, _cuVectorJtE, r);    //r
+    ComputeSAXPY(double(-1.0f), uc, _cuVectorJtE, r);    //r
     ApplyBlockPC(r, p, 1);                      //z = p = M r
 
 
-    float_t rtz0 = (float_t) ComputeVectorDot(r, p);    //r(0)' * z(0)
+    float rtz0 = (float) ComputeVectorDot(r, p);    //r(0)' * z(0)
     ComputeJX(p, e, 1);                                                //Jc * x
     ComputeJtE(e, u, 2);                                               //JpT * jc * x
     ApplyBlockPC(u, v, 2);
-    float_t qtq0 = (float_t) ComputeVectorNorm(e, __num_cpu_thread[FUNC_VS]);         //q(0)' * q(0)
-    float_t pdp0 = (float_t) ComputeVectorNormW(p, d);     //p(0)' * DDD * p(0)
-    float_t uv0  = (float_t) ComputeVectorDot(up, vp);
-    float_t alpha0 = rtz0 / (qtq0 + lambda * pdp0 - uv0);
+    float qtq0 = (float) ComputeVectorNorm(e, __num_cpu_thread[FUNC_VS]);         //q(0)' * q(0)
+    float pdp0 = (float) ComputeVectorNormW(p, d);     //p(0)' * DDD * p(0)
+    float uv0  = (float) ComputeVectorDot(up, vp);
+    float alpha0 = rtz0 / (qtq0 + lambda * pdp0 - uv0);
 
     if(__verbose_cg_iteration)    std::cout << " --0,\t alpha = " << alpha0 << ", t = " << BundleTimerGetNow(TIMER_CG_ITERATION) << "\n";
     if(!finite(alpha0))            {  return 0;    }
     if(alpha0 == 0)                {__recent_cg_status = 'I'; return 1; }
 
     ////////////////////////////////////////////////////////////
-    ComputeSAX((Float)alpha0, p, x);                //x(k+1) = x(k) + a(k) * p(k)
+    ComputeSAX((double)alpha0, p, x);                //x(k+1) = x(k) + a(k) * p(k)
     ComputeJX(v, e2, 2);//                          //Jp * mp * JpT * JcT * p
-    ComputeSAXPY(Float(-1.0f), e2, e, e, __num_cpu_thread[FUNC_VV]);
+    ComputeSAXPY(double(-1.0f), e2, e, e, __num_cpu_thread[FUNC_VV]);
     ComputeJtE(e, uc, 1);                            //JcT * ....
-    ComputeSXYPZ((Float)lambda, d, p, uc, uc);
-    ComputeSAXPY((Float) -alpha0, uc, r, r); // r(k + 1) = r(k) - a(k) * A * pk
+    ComputeSXYPZ((double)lambda, d, p, uc, uc);
+    ComputeSAXPY((double) -alpha0, uc, r, r); // r(k + 1) = r(k) - a(k) * A * pk
 
     //////////////////////////////////////////////////////////////////////////
-    float_t rtzk = rtz0, rtz_min = rtz0, betak;    int iteration = 1;
+    float rtzk = rtz0, rtz_min = rtz0, betak;    int iteration = 1;
     ++__num_cg_iteration;
 
     while(true)
@@ -3467,9 +3365,9 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGX(float lambda)
         ApplyBlockPC(r, z, 1);
 
         ///////////////////////////////////////////////////////////////////////////
-        float_t rtzp = rtzk;
-        rtzk = (float_t) ComputeVectorDot(r, z);    //[r(k + 1) = M^(-1) * z(k + 1)] * z(k+1)
-        float_t rtz_ratio = sqrt(fabs(rtzk / rtz0));
+        float rtzp = rtzk;
+        rtzk = (float) ComputeVectorDot(r, z);    //[r(k + 1) = M^(-1) * z(k + 1)] * z(k+1)
+        float rtz_ratio = sqrt(fabs(rtzk / rtz0));
         if(rtz_ratio < __cg_norm_threshold )
         {
             if(__recent_cg_status == ' ') __recent_cg_status = iteration < std::min(10, __cg_min_iteration) ? '0' + iteration : 'N';
@@ -3479,16 +3377,16 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGX(float lambda)
         betak = rtzk / rtzp;                                                                  //beta
         rtz_min = std::min(rtz_min, rtzk);
 
-        ComputeSAXPY((Float)betak, p, z, p);                    //p(k) = z(k) + b(k) * p(k - 1)
+        ComputeSAXPY((double)betak, p, z, p);                    //p(k) = z(k) + b(k) * p(k - 1)
         ComputeJX(p, e, 1);                                     //Jc * p
         ComputeJtE(e, u, 2);                                    //JpT * jc * p
         ApplyBlockPC(u, v, 2);
         //////////////////////////////////////////////////////////////////////
 
-        float_t qtqk = (float_t) ComputeVectorNorm(e, __num_cpu_thread[FUNC_VS]);        //q(k)' q(k)
-        float_t pdpk = (float_t) ComputeVectorNormW(p, d);    //p(k)' * DDD * p(k)
-        float_t uvk =  (float_t) ComputeVectorDot(up, vp);
-        float_t alphak = rtzk / ( qtqk + lambda * pdpk - uvk);
+        float qtqk = (float) ComputeVectorNorm(e, __num_cpu_thread[FUNC_VS]);        //q(k)' q(k)
+        float pdpk = (float) ComputeVectorNormW(p, d);    //p(k)' * DDD * p(k)
+        float uvk =  (float) ComputeVectorDot(up, vp);
+        float alphak = rtzk / ( qtqk + lambda * pdpk - uvk);
 
         /////////////////////////////////////////////////////
         if(__verbose_cg_iteration) std::cout    << " --"<<iteration<<",\t alpha= " << alphak
@@ -3498,7 +3396,7 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGX(float lambda)
         if(!finite(alphak) || rtz_ratio > __cg_norm_guard) {__recent_cg_status = 'X'; break; }//something doesn't converge..
 
         ////////////////////////////////////////////////
-        ComputeSAXPY((Float)alphak, p, x, x);        //x(k+1) = x(k) + a(k) * p(k)
+        ComputeSAXPY((double)alphak, p, x, x);        //x(k+1) = x(k) + a(k) * p(k)
 
         /////////////////////////////////////////////////
         ++iteration;        ++__num_cg_iteration;
@@ -3506,22 +3404,21 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGX(float lambda)
 
 
         ComputeJX(v, e2, 2);//                          //Jp * mp * JpT * JcT * p
-        ComputeSAXPY((Float)-1.0f, e2, e, e, __num_cpu_thread[FUNC_VV]);
+        ComputeSAXPY((double)-1.0f, e2, e, e, __num_cpu_thread[FUNC_VV]);
         ComputeJtE(e, uc, 1);                            //JcT * ....
-        ComputeSXYPZ((Float)lambda, d, p, uc, uc);
-        ComputeSAXPY((Float) -alphak, uc, r, r);    // r(k + 1) = r(k) - a(k) * A * pk
+        ComputeSXYPZ((double)lambda, d, p, uc, uc);
+        ComputeSAXPY((double) -alphak, uc, r, r);    // r(k + 1) = r(k) - a(k) * A * pk
      }
 
     ComputeJX(x, e, 1);
     ComputeJtE(e, u, 2);
     VectorF jte_p ;  jte_p.set(_cuVectorJtE.data() + 8 * _num_camera, _num_point * 3);
-    ComputeSAXPY((Float)-1.0f, up, jte_p, vp);
+    ComputeSAXPY((double)-1.0f, up, jte_p, vp);
     ApplyBlockPC(v, _cuVectorXK, 2);
     return iteration;
 }
 
-template<class Float>
-int SparseBundleCPU<Float>:: SolveNormalEquationPCGB(float lambda)
+int SparseBundleCPU:: SolveNormalEquationPCGB(float lambda)
 {
     //----------------------------------------------------------
     //(Jt * J + lambda * diag(Jt * J)) X = Jt * e
@@ -3540,10 +3437,10 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGB(float lambda)
     ComputeJX(_cuVectorPK, _cuVectorJX);            //q(0) = J * p(0)
 
     //////////////////////////////////////////////////
-    float_t rtz0 = (float_t) ComputeVectorDot(_cuVectorJtE, _cuVectorPK);    //r(0)' * z(0)
-    float_t qtq0 = (float_t) ComputeVectorNorm(_cuVectorJX, __num_cpu_thread[FUNC_VS]);                        //q(0)' * q(0)
-    float_t ptdp0 = (float_t) ComputeVectorNormW(_cuVectorPK, VectorDP);    //p(0)' * DDD * p(0)
-    float_t alpha0 = rtz0 / (qtq0 + lambda * ptdp0);
+    float rtz0 = (float) ComputeVectorDot(_cuVectorJtE, _cuVectorPK);    //r(0)' * z(0)
+    float qtq0 = (float) ComputeVectorNorm(_cuVectorJX, __num_cpu_thread[FUNC_VS]);                        //q(0)' * q(0)
+    float ptdp0 = (float) ComputeVectorNormW(_cuVectorPK, VectorDP);    //p(0)' * DDD * p(0)
+    float alpha0 = rtz0 / (qtq0 + lambda * ptdp0);
 
     if(__verbose_cg_iteration)    std::cout << " --0,\t alpha = " << alpha0 << ", t = " << BundleTimerGetNow(TIMER_CG_ITERATION) << "\n";
     if(!finite(alpha0))            {  return 0;    }
@@ -3552,14 +3449,14 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGB(float lambda)
 
     ////////////////////////////////////////////////////////////
 
-    ComputeSAX((Float) alpha0, _cuVectorPK, _cuVectorXK);                //x(k+1) = x(k) + a(k) * p(k)
+    ComputeSAX((double) alpha0, _cuVectorPK, _cuVectorXK);                //x(k+1) = x(k) + a(k) * p(k)
     ComputeJtE(_cuVectorJX, VectorQK);                                    //Jt * (J * p0)
 
-    ComputeSXYPZ((Float)lambda, VectorDP, _cuVectorPK, VectorQK, VectorQK);    //Jt * J * p0 + lambda * DDD * p0
+    ComputeSXYPZ((double)lambda, VectorDP, _cuVectorPK, VectorQK, VectorQK);    //Jt * J * p0 + lambda * DDD * p0
 
-    ComputeSAXPY((Float)-alpha0, VectorQK, _cuVectorJtE, _cuVectorRK);    //r(k+1) = r(k) - a(k) * (Jt * q(k)  + DDD * p(k)) ;
+    ComputeSAXPY((double)-alpha0, VectorQK, _cuVectorJtE, _cuVectorRK);    //r(k+1) = r(k) - a(k) * (Jt * q(k)  + DDD * p(k)) ;
 
-    float_t rtzk = rtz0, rtz_min = rtz0, betak;    int iteration = 1;
+    float rtzk = rtz0, rtz_min = rtz0, betak;    int iteration = 1;
     ++__num_cg_iteration;
 
     while(true)
@@ -3567,9 +3464,9 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGB(float lambda)
         ApplyBlockPC(_cuVectorRK, _cuVectorZK);
 
         ///////////////////////////////////////////////////////////////////////////
-        float_t rtzp = rtzk;
-        rtzk = (float_t) ComputeVectorDot(_cuVectorRK, _cuVectorZK);    //[r(k + 1) = M^(-1) * z(k + 1)] * z(k+1)
-        float_t rtz_ratio = sqrt(fabs(rtzk / rtz0));
+        float rtzp = rtzk;
+        rtzk = (float) ComputeVectorDot(_cuVectorRK, _cuVectorZK);    //[r(k + 1) = M^(-1) * z(k + 1)] * z(k+1)
+        float rtz_ratio = sqrt(fabs(rtzk / rtz0));
         if(rtz_ratio < __cg_norm_threshold )
         {
             if(__recent_cg_status == ' ') __recent_cg_status = iteration < std::min(10, __cg_min_iteration) ? '0' + iteration : 'N';
@@ -3579,14 +3476,14 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGB(float lambda)
         betak = rtzk / rtzp;                                                                  //beta
         rtz_min = std::min(rtz_min, rtzk);
 
-        ComputeSAXPY((Float)betak, _cuVectorPK, _cuVectorZK, _cuVectorPK);                    //p(k) = z(k) + b(k) * p(k - 1)
+        ComputeSAXPY((double)betak, _cuVectorPK, _cuVectorZK, _cuVectorPK);                    //p(k) = z(k) + b(k) * p(k - 1)
         ComputeJX(_cuVectorPK, _cuVectorJX);                                                  //q(k) = J * p(k)
         //////////////////////////////////////////////////////////////////////
 
-        float_t qtqk = (float_t) ComputeVectorNorm(_cuVectorJX, __num_cpu_thread[FUNC_VS]);                        //q(k)' q(k)
-        float_t ptdpk = (float_t) ComputeVectorNormW(_cuVectorPK, VectorDP);    //p(k)' * DDD * p(k)
+        float qtqk = (float) ComputeVectorNorm(_cuVectorJX, __num_cpu_thread[FUNC_VS]);                        //q(k)' q(k)
+        float ptdpk = (float) ComputeVectorNormW(_cuVectorPK, VectorDP);    //p(k)' * DDD * p(k)
 
-        float_t alphak = rtzk / ( qtqk + lambda * ptdpk);
+        float alphak = rtzk / ( qtqk + lambda * ptdpk);
 
 
         /////////////////////////////////////////////////////
@@ -3597,7 +3494,7 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGB(float lambda)
         if(!finite(alphak) || rtz_ratio > __cg_norm_guard) {		__recent_cg_status = 'X'; break;	}//something doesn't converge..
 
         ////////////////////////////////////////////////
-        ComputeSAXPY((Float)alphak, _cuVectorPK, _cuVectorXK, _cuVectorXK);        //x(k+1) = x(k) + a(k) * p(k)
+        ComputeSAXPY((double)alphak, _cuVectorPK, _cuVectorXK, _cuVectorXK);        //x(k+1) = x(k) + a(k) * p(k)
 
          /////////////////////////////////////////////////
         ++iteration;        ++__num_cg_iteration;
@@ -3608,19 +3505,19 @@ int SparseBundleCPU<Float>:: SolveNormalEquationPCGB(float lambda)
             ////r = JtE - (Jt J + lambda * D) x
             ComputeJX(_cuVectorXK, _cuVectorJX);
             ComputeJtE(_cuVectorJX, VectorQK);
-            ComputeSXYPZ((Float)lambda, VectorDP, _cuVectorXK, VectorQK, VectorQK);
-            ComputeSAXPY((Float)-1.0f, VectorQK, _cuVectorJtE, _cuVectorRK);
+            ComputeSXYPZ((double)lambda, VectorDP, _cuVectorXK, VectorQK, VectorQK);
+            ComputeSAXPY((double)-1.0f, VectorQK, _cuVectorJtE, _cuVectorRK);
         }else
         {
             ComputeJtE(_cuVectorJX, VectorQK);
-            ComputeSXYPZ((Float)lambda, VectorDP, _cuVectorPK, VectorQK, VectorQK);//
-            ComputeSAXPY((Float)-alphak, VectorQK, _cuVectorRK, _cuVectorRK);    //r(k+1) = r(k) - a(k) * (Jt * q(k)  + DDD * p(k)) ;
+            ComputeSXYPZ((double)lambda, VectorDP, _cuVectorPK, VectorQK, VectorQK);//
+            ComputeSAXPY((double)-alphak, VectorQK, _cuVectorRK, _cuVectorRK);    //r(k+1) = r(k) - a(k) * (Jt * q(k)  + DDD * p(k)) ;
         }
     }
     return iteration;
 }
 
-template<class Float> int SparseBundleCPU<Float>::SolveNormalEquation(float lambda)
+int SparseBundleCPU::SolveNormalEquation(float lambda)
 {
     if(__bundle_current_mode == BUNDLE_ONLY_MOTION)
     {
@@ -3639,11 +3536,10 @@ template<class Float> int SparseBundleCPU<Float>::SolveNormalEquation(float lamb
     }
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::DumpCooJacobian()
+void SparseBundleCPU::DumpCooJacobian()
 {
     //////////
-    ofstream jo("j.txt");
+    std::ofstream jo("j.txt");
     int cn = __use_radial_distortion ? 8 : 7;
     int width = cn * _num_camera + 3 * _num_point;
     jo <<"%%MatrixMarket matrix coordinate real general\n";
@@ -3671,7 +3567,7 @@ void SparseBundleCPU<Float>::DumpCooJacobian()
         }
     }
 
-    ofstream jt("jt.txt");
+    std::ofstream jt("jt.txt");
     jt <<"%%MatrixMarket matrix coordinate real general\n";
     jt << width << " " << (_num_imgpt * 2)  << " " << (cn + 3) * _num_imgpt * 2<< '\n';
 
@@ -3705,9 +3601,7 @@ void SparseBundleCPU<Float>::DumpCooJacobian()
     }
 }
 
-
-template<class Float>
-void SparseBundleCPU<Float>::RunTestIterationLM(bool reduced)
+void SparseBundleCPU::RunTestIterationLM(bool reduced)
 {
     EvaluateProjection(_cuCameraData, _cuPointData, _cuImageProj);
     EvaluateJacobians();
@@ -3720,9 +3614,7 @@ void SparseBundleCPU<Float>::RunTestIterationLM(bool reduced)
     ComputeVectorNorm(_cuVectorJX, __num_cpu_thread[FUNC_VS]);
 }
 
-
-template<class Float>
-float SparseBundleCPU<Float>::UpdateCameraPoint(VectorF& dx, VectorF& cuImageTempProj)
+float SparseBundleCPU::UpdateCameraPoint(VectorF& dx, VectorF& cuImageTempProj)
 {
     ConfigBA::TimerBA timer (this, TIMER_FUNCTION_UP);
 
@@ -3748,8 +3640,7 @@ float SparseBundleCPU<Float>::UpdateCameraPoint(VectorF& dx, VectorF& cuImageTem
     }
 }
 
-template<class Float>
-float SparseBundleCPU<Float>::SaveUpdatedSystem(float residual_reduction, float dx_sqnorm, float damping)
+float SparseBundleCPU::SaveUpdatedSystem(float residual_reduction, float dx_sqnorm, float damping)
 {
     float expected_reduction;
     if(__bundle_current_mode == BUNDLE_ONLY_MOTION)
@@ -3809,8 +3700,7 @@ float SparseBundleCPU<Float>::SaveUpdatedSystem(float residual_reduction, float 
     return float(residual_reduction / expected_reduction);
 }
 
-template<class Float>
-void SparseBundleCPU<Float>::AdjustBundleAdjsutmentMode()
+void SparseBundleCPU::AdjustBundleAdjsutmentMode()
 {
     if(__bundle_current_mode == BUNDLE_ONLY_MOTION)
     {
@@ -3822,8 +3712,7 @@ void SparseBundleCPU<Float>::AdjustBundleAdjsutmentMode()
     }
 }
 
-template<class Float>
-float SparseBundleCPU<Float>::EvaluateDeltaNorm()
+float SparseBundleCPU::EvaluateDeltaNorm()
 {
     if(__bundle_current_mode == BUNDLE_ONLY_MOTION)
     {
@@ -3839,9 +3728,7 @@ float SparseBundleCPU<Float>::EvaluateDeltaNorm()
     }
 }
 
-
-template<class Float>
-void SparseBundleCPU<Float>::NonlinearOptimizeLM()
+void SparseBundleCPU::NonlinearOptimizeLM()
 {
     ////////////////////////////////////////
     TimerBA timer(this, TIMER_OPTIMIZATION);
@@ -4044,7 +3931,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
                         {\
                             nthread[FID] = j;   PROFILE_( A B);\
                             float t = BundleTimerGet(TIMER_PROFILE_STEP) / repeat;\
-                            if(t > tbest) { if(j >= max(nto, 16)) break;}\
+                            if(t > tbest) { if(j >= std::max(nto, 16)) break;}\
                             else {tbest = t;    nbest = j; }\
                         }\
                         if(nto != 0) nthread[FID] = nbest; \
@@ -4061,7 +3948,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
                         {\
                             nthread[FID1] = j;   PROFILE_(A B);\
                             float t = BundleTimerGet(TIMER_PROFILE_STEP) / repeat;\
-                            if(t > tbest) { if(j >= max(nt1, 16)) break;}\
+                            if(t > tbest) { if(j >= std::max(nt1, 16)) break;}\
                             else {tbest = t;    nbest1 = j; }\
                         }\
                         nthread[FID1] = nbest1; \
@@ -4069,7 +3956,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
                         {\
                             nthread[FID2] = j;   PROFILE_( A B);\
                             float t = BundleTimerGet(TIMER_PROFILE_STEP) / repeat;\
-                            if(t > tbest) { if(j >= max(nt2, 16)) break;}\
+                            if(t > tbest) { if(j >= std::max(nt2, 16)) break;}\
                             else {tbest = t;    nbest2 = j; }\
                         }\
                         nthread[FID2] = nbest2;\
@@ -4078,7 +3965,7 @@ void SparseBundleCPU<Float>::NonlinearOptimizeLM()
                      }
 
 
-template<class Float> void SparseBundleCPU<Float>::RunProfileSteps()
+void SparseBundleCPU::RunProfileSteps()
 {
     const int repeat = std::max(__profile_pba, 1);
     int * nthread = __num_cpu_thread;
@@ -4129,16 +4016,16 @@ template<class Float> void SparseBundleCPU<Float>::RunProfileSteps()
     PROFILE(ComputeVectorNorm, (_cuVectorXK));
     PROFILE(ComputeVectorDot, (_cuVectorXK, _cuVectorRK));
     PROFILE(ComputeVectorNormW, (_cuVectorXK, _cuVectorRK));
-    PROFILE(ComputeSAXPY, ((Float)0.01f, _cuVectorXK, _cuVectorRK, _cuVectorZK));
-    PROFILE(ComputeSXYPZ, ((Float)0.01f, _cuVectorXK, _cuVectorPK, _cuVectorRK, _cuVectorZK));
+    PROFILE(ComputeSAXPY, ((double)0.01f, _cuVectorXK, _cuVectorRK, _cuVectorZK));
+    PROFILE(ComputeSXYPZ, ((double)0.01f, _cuVectorXK, _cuVectorPK, _cuVectorRK, _cuVectorZK));
     std::cout << "---------------------------------\n";
     PROTILE(FUNC_VS, ComputeVectorNorm, (_cuImageProj, nthread[FUNC_VS])); 	//reset the parameter to 0
 
     ///////////////////////////////////////
     {
-        avec<Float> temp1(_cuImageProj.size()), temp2(_cuImageProj.size());
+        avec temp1(_cuImageProj.size()), temp2(_cuImageProj.size());
         SetVectorZero(temp1);
-        PROTILE(FUNC_VV, ComputeSAXPY, ((Float)0.01f, _cuImageProj, temp1, temp2, nthread[FUNC_VV]));
+        PROTILE(FUNC_VV, ComputeSAXPY, ((double)0.01f, _cuImageProj, temp1, temp2, nthread[FUNC_VV]));
     }
 
     std::cout << "---------------------------------\n";
@@ -4220,8 +4107,7 @@ template<class Float> void SparseBundleCPU<Float>::RunProfileSteps()
     std::cout <<  "---------------------------------\n";
 }
 
-template<class Float>
-int SparseBundleCPU<Float>::FindProcessorCoreNum()
+int SparseBundleCPU::FindProcessorCoreNum()
 {
 #ifdef _WIN32
     #if defined(WINAPI_FAMILY) && WINAPI_FAMILY==WINAPI_FAMILY_APP
@@ -4235,13 +4121,4 @@ int SparseBundleCPU<Float>::FindProcessorCoreNum()
 #endif
 }
 
-
-ParallelBA* NewSparseBundleCPU(bool dp)
-{
-#ifndef SIMD_NO_DOUBLE
-    if(dp)
-        return new SparseBundleCPU<double>;
-    else
-#endif
-        return new SparseBundleCPU<float>;
-}
+SFM_NAMESPACE_END

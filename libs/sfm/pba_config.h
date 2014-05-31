@@ -1,31 +1,53 @@
-////////////////////////////////////////////////////////////////////////////
-//	File:		    ConfigBA.h
-//	Author:		    Changchang Wu (ccwu@cs.washington.edu)
-//	Description :   configuration object class
-//
-//  Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
-//    and the University of Washington at Seattle
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public
-//  License as published by the Free Software Foundation; either
-//  Version 3 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  General Public License for more details.
-//
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
+ *    and the University of Washington at Seattle
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License as published by the Free Software Foundation; either
+ *  Version 3 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ */
 
-#ifndef CONFIG_BA_H
-#define CONFIG_BA_H
+#ifndef SFM_PBA_CONFIG_HEADER
+#define SFM_PBA_CONFIG_HEADER
 
 #include <vector>
-using std::vector;
+#include "sfm/defines.h"
+
+SFM_NAMESPACE_BEGIN
 
 class ConfigBA
 {
+public:
+    enum StatusT
+    {
+        STATUS_SUCCESS = 0,
+        STATUS_CAMERA_MISSING = 1,
+        STATUS_POINT_MISSING,
+        STATUS_PROJECTION_MISSING,
+        STATUS_MEASURMENT_MISSING,
+        STATUS_ALLOCATION_FAIL
+    };
+
+    enum DistortionT
+    {
+        PBA_MEASUREMENT_DISTORTION = -1, //single parameter, apply to measurements
+        PBA_NO_DISTORTION = 0,           //no radial distortion
+        PBA_PROJECTION_DISTORTION = 1    //single parameter, apply to projectino
+    };
+
+    enum BundleModeT
+    {
+        BUNDLE_FULL = 0,
+        BUNDLE_ONLY_MOTION = 1,
+        BUNDLE_ONLY_STRUCTURE = 2
+    };
+
 protected:
     enum
     {
@@ -173,7 +195,7 @@ protected:
     bool             __matlab_format_stat;
     char*            __stat_filename;
     const char*      __driver_output;
-    vector<float>    __bundle_records;
+    std::vector<float>    __bundle_records;
     double           __timer_record[NUM_TIMER];
     int              __num_cpu_thread_all;
     int              __num_cpu_thread[NUM_FUNC];
@@ -210,5 +232,7 @@ public:
 
 
 };
-#endif
 
+SFM_NAMESPACE_END
+
+#endif // SFM_PBA_CONFIG_HEADER

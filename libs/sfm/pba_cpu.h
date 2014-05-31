@@ -1,27 +1,26 @@
-////////////////////////////////////////////////////////////////////////////
-//	File:		    SparseBundleCPU.h
-//	Author:		    Changchang Wu (ccwu@cs.washington.edu)
-//	Description :   interface of the CPU-version of multi-core bundle adjustment
-//
-//  Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
-//    and the University of Washington at Seattle
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public
-//  License as published by the Free Software Foundation; either
-//  Version 3 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  General Public License for more details.
-//
-////////////////////////////////////////////////////////////////////////////////
+/*
+ * Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)
+ *    and the University of Washington at Seattle
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License as published by the Free Software Foundation; either
+ *  Version 3 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ */
 
-#if !defined(SPARSE_BUNDLE_CPU_H)
-#define SPARSE_BUNDLE_CPU_H
+#ifndef SFM_PBA_CPU_HEADER
+#define SFM_PBA_CPU_HEADER
 
 #include <malloc.h>
+#include "sfm/defines.h"
+#include "util/aligned_allocator.h"
+#include "sfm/pba_config.h"
+#include "sfm/pba_types.h"
 
 //BYTE-ALIGNMENT for data allocation (16 required for SSE, 32 required for AVX)
 //PREVIOUS version uses only SSE. The new version will include AVX.
@@ -31,132 +30,33 @@
 #define VECTOR_ALIGNMENT_MASK (VECTOR_ALIGNMENT - 1)
 #define ALIGN_PTR(p)	  (( ((size_t) p) + VECTOR_ALIGNMENT_MASK)  & (~VECTOR_ALIGNMENT_MASK))
 
-template <class Float> class avec
+SFM_NAMESPACE_BEGIN
+
+class avec : public std::vector<double, util::AlignedAllocator<double, VECTOR_ALIGNMENT> >
 {
-    bool   _owner;
-    Float* _data;
-    Float* _last;
-    size_t _size;
-    size_t _capacity;
 public:
-    static Float* allocate(size_t count)
-    {
-        size_t size = count * sizeof(Float);
-#ifdef _MSC_VER
-        Float* p = (Float*) _aligned_malloc(size, VECTOR_ALIGNMENT);
-        if(p == NULL) throw std::bad_alloc();
-        return p;
-#else
-        char * p = (char*) malloc(size + VECTOR_ALIGNMENT + 4);
-        if(p == NULL) throw std::bad_alloc();
-        char * p1 = p + 1;
-        char * p2 = (char*) ALIGN_PTR(p1);//(char*) (((((size_t)p1) + 15) >> 4) << 4);
-        char * p3 = ( p2 - 1);
-        p3[0] = (p2 - p);
-        return (Float*) p2;
-#endif
+    avec() {}
+    avec(size_t sz) : std::vector<double, util::AlignedAllocator<double, VECTOR_ALIGNMENT> >(sz) {}
 
-    }
-    static void deallocate(void* p)
+    inline void set(double* data, size_t size)
     {
-#ifdef _MSC_VER
-        _aligned_free(p);
-#else
-        char* p3 = ((char*) p) - 1;
-        free(((char*) p) - p3[0]);
-#endif
+        this->assign(data, data+size);
     }
 
-public:
-    avec()
-    {
-        _owner = true;
-        _last = _data = NULL;
-        _size = _capacity = 0;
-    }
-    avec(size_t count)
-    {
-        _data = allocate(count);
-        _size = _capacity = count;
-        _last = _data + count;
-        _owner = true;
-    }
-    ~avec()
-    {
-        if(_data && _owner) deallocate(_data);
-    }
-
-    inline void resize(size_t newcount)
-    {
-        if(!_owner)
-        {
-            _data = _last = NULL;
-            _capacity = _size = 0;
-            _owner = true;
-        }
-        if(newcount <= _capacity)
-        {
-            _size = newcount;
-            _last = _data + newcount;
-        }else
-        {
-            if(_data && _owner) deallocate(_data);
-            _data = allocate(newcount);
-            _size = _capacity = newcount;
-            _last = _data + newcount;
-        }
-    }
-
-    inline void set(Float* data, size_t count)
-    {
-        if(_data && _owner) deallocate(_data);
-        _data = data;
-        _owner = false;
-        _size = count;
-        _last = _data + _size;
-        _capacity = count;
-    }
-    inline void swap(avec<Float>& next)
-    {
-        bool _owner_bak = _owner;
-        Float* _data_bak = _data;
-        Float* _last_bak = _last;
-        size_t _size_bak = _size;
-        size_t _capa_bak = _capacity;
-
-        _owner = next._owner;
-        _data = next._data;
-        _last = next._last;
-        _size = next._size;
-        _capacity = next._capacity;
-
-        next._owner = _owner_bak;
-        next._data = _data_bak;
-        next._last = _last_bak;
-        next._size = _size_bak;
-        next._capacity = _capa_bak;
-
-    }
-
-    inline operator Float* ()               {return _size? _data : NULL;}
-    inline operator const Float* () const    {return _data; }
-    inline Float* begin()                   {return _size? _data : NULL;}
-    inline Float* data()                   {return _size? _data : NULL;}
-    inline Float* end()                     {return _last;}
-    inline const Float* begin() const       {return _size? _data : NULL;}
-    inline const Float* end()   const       {return _last;}
-    inline size_t size() const              {return _size;}
-    inline size_t IsValid() const           {return _size;}
+    inline operator double* ()               {return this->empty() ? NULL : &this->front();}
+    inline operator const double* () const   {return this->empty() ? NULL : &this->front();}
+    inline double* begin()                   {return this->empty() ? NULL : &this->front();}
+    inline double* end()                     {return this->empty() ? NULL : &this->back()+1;}
+    inline const double* begin() const       {return this->empty() ? NULL : &this->front();}
+    inline const double* end()   const       {return this->empty() ? NULL : &this->back()+1;}
     void   SaveToFile(const char* name);
 };
 
-template<class Float>
-class SparseBundleCPU : public ParallelBA, public ConfigBA
+class SparseBundleCPU : public ConfigBA
 {
 public:
-    typedef avec<Float>   VectorF;
-    typedef vector<int>   VectorI;
-    typedef float         float_t;
+    typedef avec   VectorF;
+    typedef std::vector<int>   VectorI;
 
 protected:      //cpu data
     int             _num_camera;
@@ -212,8 +112,8 @@ protected:
     VectorF		 _cuCameraQMapW;
     VectorF		 _cuCameraQListW;
 protected:
-    bool		ProcessIndexCameraQ(vector<int>&qmap, vector<int>& qlist);
-    void		ProcessWeightCameraQ(vector<int>&cpnum, vector<int>&qmap, Float* qmapw, Float* qlistw);
+    bool		ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int>& qlist);
+    void		ProcessWeightCameraQ(std::vector<int>&cpnum, std::vector<int>&qmap, double* qmapw, double* qlistw);
 
 protected:      //internal functions
     int         ValidateInputData();
@@ -272,6 +172,6 @@ public:
     virtual int RunBundleAdjustment();
 };
 
-ParallelBA* NewSparseBundleCPU(bool dp);
-#endif
+SFM_NAMESPACE_END
 
+#endif // SFM_PBA_CPU_HEADER
