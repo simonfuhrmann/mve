@@ -37,6 +37,7 @@
 // ---------------------------------------------------------------------------
 
 SFM_NAMESPACE_BEGIN
+SFM_PBA_NAMESPACE_BEGIN
 
 struct CameraT
 {
@@ -322,6 +323,7 @@ struct Point2D
     float x, y;
 };
 
+SFM_PBA_NAMESPACE_END
 SFM_NAMESPACE_END
 
 #endif // SFM_PBA_TYPES_HEADER
