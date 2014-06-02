@@ -12,12 +12,12 @@
 
 AddinOffscreenRenderer::AddinOffscreenRenderer (void)
 {
-    this->output_frame_dir = new QFileSelector();
+    this->output_frame_dir = new FileSelector();
     this->output_frame_dir->set_ellipsize(20);
     this->output_frame_dir->set_directory_mode();
     this->output_frame_dir->setToolTip("Set output frame directory");
 
-    this->sequence_file = new QFileSelector();
+    this->sequence_file = new FileSelector();
     this->sequence_file->set_ellipsize(20);
     this->sequence_file->setToolTip("Set input sequence file");
 

@@ -66,7 +66,7 @@ public:
 /* ---------------------------------------------------------------- */
 
 /** File or directory selector button. */
-class QFileSelector : public QPushButton
+class FileSelector : public QPushButton
 {
     Q_OBJECT
 
@@ -79,7 +79,7 @@ private slots:
     void on_clicked (void);
 
 public:
-    QFileSelector (QWidget* parent = NULL);
+    FileSelector (QWidget* parent = NULL);
     void set_directory_mode (void);
     void set_ellipsize (std::size_t chars);
     std::string const& get_filename (void) const;
