@@ -41,6 +41,7 @@ struct AppSettings
     bool lowres_matching;
     bool skip_sfm;
     bool always_full_ba;
+    int video_matching;
 };
 
 void
@@ -109,6 +110,7 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     matching_opts.ransac_opts.threshold = 3.0f;
     matching_opts.ransac_opts.verbose_output = false;
     matching_opts.use_lowres_matching = conf.lowres_matching;
+    matching_opts.match_num_previous_frames = conf.video_matching;
 
     std::cout << "Performing feature matching..." << std::endl;
     {
@@ -393,6 +395,7 @@ main (int argc, char** argv)
     args.add_option('\0', "no-prediction", false, "Disables matchability prediction");
     args.add_option('\0', "skip-sfm", false, "Compute prebundle, skip SfM reconstruction");
     args.add_option('\0', "always-full-ba", false, "Run full bundle adjustment after every view");
+    args.add_option('\0', "video-matching", true, "Only match to ARG previous frames [0]");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -406,6 +409,7 @@ main (int argc, char** argv)
     conf.lowres_matching = true;
     conf.skip_sfm = false;
     conf.always_full_ba = false;
+    conf.video_matching = 0;
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
@@ -429,6 +433,8 @@ main (int argc, char** argv)
             conf.skip_sfm = true;
         else if (i->opt->lopt == "always-full-ba")
             conf.always_full_ba = true;
+        else if (i->opt->lopt == "video-matching")
+            conf.video_matching = i->get_arg<int>();
         else
             throw std::invalid_argument("Unexpected option");
     }

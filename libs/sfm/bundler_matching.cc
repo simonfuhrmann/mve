@@ -27,7 +27,14 @@ Matching::compute (ViewportList const& viewports,
     }
 
     for (std::size_t i = 0; i < viewports.size(); ++i)
-        for (std::size_t j = 0; j < i; ++j)
+    {
+        std::size_t start = 0;
+        if (this->opts.match_num_previous_frames > 0)
+            start = i > this->opts.match_num_previous_frames
+                ? i - this->opts.match_num_previous_frames
+                : 0;
+
+        for (std::size_t j = start; j < i; ++j)
         {
             current_pair += 1;
             if (this->progress != NULL)
@@ -56,6 +63,7 @@ Matching::compute (ViewportList const& viewports,
             matching.view_2_id = j;
             std::swap(matching.matches, matches);
         }
+    }
 
     std::cout << "Found a total of " << pairwise_matching->size()
         << " matching image pairs." << std::endl;

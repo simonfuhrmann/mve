@@ -58,6 +58,8 @@ public:
         int num_lowres_features;
         /** Minimum number of matches from low-res matching. */
         int min_lowres_matches;
+        /** Only match to a few previous frames. Disabled by default. */
+        int match_num_previous_frames;
     };
 
     struct Progress
@@ -95,6 +97,7 @@ Matching::Options::Options (void)
     , use_lowres_matching(false)
     , num_lowres_features(500)
     , min_lowres_matches(5)
+    , match_num_previous_frames(0)
 {
 }
 
