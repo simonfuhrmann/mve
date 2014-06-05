@@ -11,6 +11,10 @@
 #include <limits>
 #include <cstdlib>
 
+#ifdef _WIN32
+#   include <malloc.h>
+#endif
+
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN

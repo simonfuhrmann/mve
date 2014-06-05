@@ -16,7 +16,6 @@
 #ifndef SFM_PBA_CPU_HEADER
 #define SFM_PBA_CPU_HEADER
 
-#include <malloc.h>
 #include "sfm/defines.h"
 #include "util/aligned_allocator.h"
 #include "sfm/pba_config.h"

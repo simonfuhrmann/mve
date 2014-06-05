@@ -134,7 +134,7 @@ namespace ProgramCPU
 {
     using namespace MYSSE;
     #define SSE_ZERO SSE<double>::zero()
-    #define SSE_T typename SSE<double>::sse_type
+    #define SSE_T SSE<double>::sse_type
     /////////////////////////////
     inline void   ScaleJ4(float* jcx, float* jcy, const float* sj)
     {
@@ -1973,7 +1973,7 @@ namespace ProgramCPU
     END_THREAD_RPOC(MultiplyBlockConditionerC)
 
     template<class Float>
-    void MultiplyBlockConditionerC(int ncam, const Float* bi, const Float*  x, Float* vx, int vn, int mt = 0)
+    void MultiplyBlockConditionerC(int ncam, const Float* bi, const Float*  x, Float* vx, int vn, int mt)
     {
         if(mt > 1 && ncam >= mt)
         {
@@ -2009,7 +2009,7 @@ namespace ProgramCPU
     END_THREAD_RPOC(MultiplyBlockConditionerP)
 
     template<class Float>
-    void MultiplyBlockConditionerP(int npoint, const Float* bi, const Float*  x, Float* vx, int mt = 0)
+    void MultiplyBlockConditionerP(int npoint, const Float* bi, const Float*  x, Float* vx, int mt)
     {
         if(mt > 1 && npoint >= mt)
         {
@@ -2061,7 +2061,7 @@ namespace ProgramCPU
 
     template<class Float>
     void ComputeJX( size_t nproj, size_t ncam,  const Float* x, const Float*  jc,
-                    const Float* jp, const int* jmap, Float* jx, int mode, int mt = 2)
+                    const Float* jp, const int* jmap, Float* jx, int mode, int mt )
     {
         if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
         {
