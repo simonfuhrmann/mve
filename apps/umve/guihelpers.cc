@@ -218,7 +218,7 @@ QCollapsible::set_content_indent(int pixels)
 /* ---------------------------------------------------------------- */
 /* ---------------------------------------------------------------- */
 
-QFileSelector::QFileSelector (QWidget* parent)
+FileSelector::FileSelector (QWidget* parent)
     : QPushButton(parent)
 {
     this->dironly = false;
@@ -231,25 +231,25 @@ QFileSelector::QFileSelector (QWidget* parent)
 }
 
 void
-QFileSelector::set_directory_mode (void)
+FileSelector::set_directory_mode (void)
 {
     this->dironly = true;
 }
 
 void
-QFileSelector::set_ellipsize (std::size_t chars)
+FileSelector::set_ellipsize (std::size_t chars)
 {
     this->ellipsize = chars;
 }
 
 std::string const&
-QFileSelector::get_filename (void) const
+FileSelector::get_filename (void) const
 {
     return this->filename;
 }
 
 void
-QFileSelector::on_clicked (void)
+FileSelector::on_clicked (void)
 {
     QString filename;
     if (this->dironly)

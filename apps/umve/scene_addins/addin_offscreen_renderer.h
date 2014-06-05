@@ -32,8 +32,8 @@ private:
 private:
     ogl::Camera* camera;
     QVBoxLayout* main_box;
-    QFileSelector* sequence_file;
-    QFileSelector* output_frame_dir;
+    FileSelector* sequence_file;
+    FileSelector* output_frame_dir;
     QPushButton* play_but;
     QSpinBox* width_spin;
     QSpinBox* height_spin;
