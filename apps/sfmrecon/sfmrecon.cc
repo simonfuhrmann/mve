@@ -373,6 +373,32 @@ sfm_reconstruct (AppSettings const& conf)
     }
 }
 
+void
+check_prebundle (AppSettings const& conf)
+{
+    std::string const prebundle_path
+        = util::fs::join_path(conf.scene_path, conf.prebundle_file);
+
+    if (util::fs::exists(prebundle_path.c_str()))
+        return;
+
+    /* Check if the prebundle is writable. */
+    std::ofstream out(prebundle_path.c_str());
+    if (!out.good())
+    {
+        out.close();
+        std::cerr << "Error: Specified prebundle not writable: "
+            << prebundle_path << std::endl;
+        std::cerr << "Note: The prebundle is relative to the scene."
+            << std::endl;
+        std::exit(1);
+    }
+    out.close();
+
+    /* Looks good. Delete created prebundle. */
+    util::fs::unlink(prebundle_path.c_str());
+}
+
 int
 main (int argc, char** argv)
 {
@@ -383,8 +409,8 @@ main (int argc, char** argv)
     args.set_nonopt_maxnum(1);
     args.set_nonopt_minnum(1);
     args.set_helptext_indent(23);
-    args.set_description("This utility reconstructs camera parameters "
-        "for MVE scenes using Structure-from-Motion techniques. Note: the "
+    args.set_description("Reconstruction of camera parameters "
+        "for MVE scenes using Structure-from-Motion. Note: the "
         "prebundle and the log file are relative to the scene directory.");
     args.add_option('o', "original", true, "Original image embedding [original]");
     args.add_option('e', "exif", true, "EXIF data embedding [exif]");
@@ -411,7 +437,7 @@ main (int argc, char** argv)
     conf.always_full_ba = false;
     conf.video_matching = 0;
 
-    /* General settings. */
+    /* Read arguments. */
     for (util::ArgResult const* i = args.next_option();
         i != NULL; i = args.next_option())
     {
@@ -439,6 +465,7 @@ main (int argc, char** argv)
             throw std::invalid_argument("Unexpected option");
     }
 
+    check_prebundle(conf);
     sfm_reconstruct(conf);
 
     return 0;
