@@ -30,7 +30,7 @@ Matching::compute (ViewportList const& viewports,
     {
         std::size_t start = 0;
         if (this->opts.match_num_previous_frames > 0)
-            start = i > this->opts.match_num_previous_frames
+            start = static_cast<int>(i) > this->opts.match_num_previous_frames
                 ? i - this->opts.match_num_previous_frames
                 : 0;
 
