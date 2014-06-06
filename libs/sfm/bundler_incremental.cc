@@ -443,7 +443,7 @@ Incremental::triangulate_new_tracks (void)
         if (track_behind_camera)
         {
             num_behind_camera_tracks += 1;
-            delete_track(i);
+            this->delete_track(i);
             continue;
         }
         else if (square_error > square_thres)
