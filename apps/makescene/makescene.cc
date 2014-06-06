@@ -351,7 +351,11 @@ import_bundle_nvm (AppSettings const& conf)
     /* Create and write views. */
     std::cout << "Writing MVE views..." << std::endl;
 #pragma omp parallel for schedule(dynamic, 1)
+#if !defined(_MSC_VER)
     for (std::size_t i = 0; i < cameras.size(); ++i)
+#else
+    for (int i = 0; i < cameras.size(); ++i)
+#endif
     {
         mve::CameraInfo& mve_cam = cameras[i];
         mve::NVMCameraInfo const& nvm_cam = nvm_cams[i];

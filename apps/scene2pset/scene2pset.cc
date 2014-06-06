@@ -192,8 +192,12 @@ main (int argc, char** argv)
     /* Iterate over views and get points. */
     mve::Scene::ViewList& views(scene->get_views());
 #pragma omp parallel for schedule(dynamic)
+#if !defined(_MSC_VER)
     for (std::size_t i = 0; i < views.size(); ++i)
-    {
+#else
+    for (int i = 0; i < views.size(); ++i)
+#endif
+		{
         mve::View::Ptr view = views[i];
         if (view == nullptr)
             continue;
