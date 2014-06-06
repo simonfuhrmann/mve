@@ -41,7 +41,8 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
             continue;
 
         /* Rescale image until maximum image size is met. */
-        while (image->width() * image->height() > this->opts.max_image_size)
+        while (this->opts.max_image_size > 0
+            && image->width() * image->height() > this->opts.max_image_size)
             image = mve::image::rescale_half_size<uint8_t>(image);
 
 #pragma omp critical
