@@ -13,6 +13,7 @@
  *  General Public License for more details.
  */
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <ctime>
