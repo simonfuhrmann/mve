@@ -796,8 +796,8 @@ namespace ProgramCPU
 
 #ifdef _WIN32
 #define DEFINE_THREAD_DATA(X)       template<class Float> struct X##_STRUCT {
-#define DECLEAR_THREAD_DATA(X, ...) X##_STRUCT <Float>  tdata = { __VA_ARGS__ }; \
-                                    X##_STRUCT <Float>* newdata = new X##_STRUCT <Float>(tdata)
+#define DECLEAR_THREAD_DATA(X, ...) X##_STRUCT <double>  tdata = { __VA_ARGS__ }; \
+                                    X##_STRUCT <double>* newdata = new X##_STRUCT <double>(tdata)
 #define BEGIN_THREAD_PROC(X)        }; template<class Float> DWORD X##_PROC(X##_STRUCT <Float> * q) {
 #define END_THREAD_RPOC(X)          delete q; return 0;}
 
@@ -809,7 +809,7 @@ namespace ProgramCPU
 #else
 #define MYTHREAD HANDLE
 #define RUN_THREAD(X, t, ...)       DECLEAR_THREAD_DATA(X, __VA_ARGS__);\
-                                    t = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)X##_PROC <Float>, newdata, 0, 0)
+                                    t = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)X##_PROC <double>, newdata, 0, 0)
 #define WAIT_THREAD(tv, n)    {     WaitForMultipleObjects((DWORD)n, tv, TRUE, INFINITE); \
                                     for(size_t i = 0; i < size_t(n); ++i) CloseHandle(tv[i]); }
 #endif
