@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include "camera_database.h"
 
 SFM_NAMESPACE_BEGIN
