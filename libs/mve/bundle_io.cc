@@ -93,7 +93,7 @@ load_nvm_bundle (std::string const& filename,
 
     /* Read views. */
     std::cout << "NVM: Number of views: " << num_views << std::endl;
-    std::string nvm_path = util::fs::basename(filename);
+    std::string nvm_path = util::fs::dirname(filename);
     for (int i = 0; i < num_views; ++i)
     {
         NVMCameraInfo nvm_cam;
