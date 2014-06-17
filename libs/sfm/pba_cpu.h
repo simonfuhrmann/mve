@@ -30,6 +30,7 @@
 #define ALIGN_PTR(p)	  (( ((size_t) p) + VECTOR_ALIGNMENT_MASK)  & (~VECTOR_ALIGNMENT_MASK))
 
 SFM_NAMESPACE_BEGIN
+SFM_PBA_NAMESPACE_BEGIN
 
 class avec : public std::vector<double, util::AlignedAllocator<double, VECTOR_ALIGNMENT> >
 {
@@ -171,6 +172,7 @@ public:
     virtual int RunBundleAdjustment();
 };
 
+SFM_PBA_NAMESPACE_END
 SFM_NAMESPACE_END
 
 #endif // SFM_PBA_CPU_HEADER

@@ -80,6 +80,7 @@
 #define AUTO_MT_NUM(sz) int((log((double) sz) / log(2.0) - 18.5 ) * __num_cpu_cores / 16.0)
 
 SFM_NAMESPACE_BEGIN
+SFM_PBA_NAMESPACE_BEGIN
 
 void avec::SaveToFile(const char* name)
 {
@@ -4121,4 +4122,5 @@ int SparseBundleCPU::FindProcessorCoreNum()
 #endif
 }
 
+SFM_PBA_NAMESPACE_END
 SFM_NAMESPACE_END

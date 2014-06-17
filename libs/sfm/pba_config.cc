@@ -33,6 +33,7 @@
 #endif
 
 SFM_NAMESPACE_BEGIN
+SFM_PBA_NAMESPACE_BEGIN
 
 ConfigBA::ConfigBA()
 {
@@ -538,4 +539,5 @@ void ConfigBA::ParseParam(int argc, char** argv)
     }
 }
 
+SFM_PBA_NAMESPACE_END
 SFM_NAMESPACE_END
