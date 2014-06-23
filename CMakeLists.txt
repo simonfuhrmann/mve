@@ -10,6 +10,10 @@ else(WIN32 AND NOT UNIX)
 endif(WIN32 AND NOT UNIX)
 include(CPack)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 if(WIN32 AND ${CMAKE_VERSION} VERSION_GREATER 3.0)
     add_subdirectory(3rdparty)
 endif()
