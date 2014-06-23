@@ -10,6 +10,10 @@ else(WIN32 AND NOT UNIX)
 endif(WIN32 AND NOT UNIX)
 include(CPack)
 
+if(WIN32 AND ${CMAKE_VERSION} VERSION_GREATER 3.0)
+    add_subdirectory(3rdparty)
+endif()
+
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(TIFF REQUIRED)
