@@ -25,9 +25,10 @@ class Tokenizer : public std::vector<std::string>
 public:
     /**
      * Very simple tokenziation at a given delimiter characater.
-     * Two subsequent delimiter characters lead to an empty token.
+     * If requested, subsequent delimiter characters lead to empty tokens.
      */
-    void split (std::string const& str, char delim = ' ');
+    void split (std::string const& str, char delim = ' ',
+        bool keep_empty = false);
 
     /**
      * A tokenizer that parses shell commands into tokens.
@@ -47,22 +48,22 @@ public:
 /* ---------------------------------------------------------------- */
 
 inline void
-Tokenizer::split (std::string const& str, char delim)
+Tokenizer::split (std::string const& str, char delim, bool keep_empty)
 {
     this->clear();
-    std::size_t last = 0;
-    std::size_t cur = 0;
-    for (; cur < str.size(); ++cur)
-        if (str[cur] == delim)
+    std::size_t new_tok = 0;
+    std::size_t cur_pos = 0;
+    for (; cur_pos < str.size(); ++cur_pos)
+        if (str[cur_pos] == delim)
         {
-            std::string token = str.substr(last, cur - last);
-            if (!token.empty())
+            std::string token = str.substr(new_tok, cur_pos - new_tok);
+            if (keep_empty || !token.empty())
                 this->push_back(token);
-            last = cur + 1;
+            new_tok = cur_pos + 1;
         }
 
-    if (last < str.size())
-        this->push_back(str.substr(last));
+    if (keep_empty || new_tok < str.size())
+        this->push_back(str.substr(new_tok));
 }
 
 /* ---------------------------------------------------------------- */
