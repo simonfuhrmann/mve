@@ -19,7 +19,11 @@ set(GTEST_URL "https://googletest.googlecode.com/files/${GTEST_FILENAME}")
 
 find_file(WIN32_MAK_LOCATION win32.mak
 	DOC "Location of win32.mak"
-	PATHS ENV Path)
+	PATHS
+		"C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.0A\\Include"
+		"C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1\\Include"
+		"C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Include"
+		ENV Path)
 ExternalProject_Add(libjpeg
 	PREFIX libjpeg
 	URL ${LIBJPEG_URL}
