@@ -17,6 +17,8 @@ set(GLEW_URL "http://downloads.sourceforge.net/project/glew/glew/1.10.0/${GLEW_F
 set(QT5_URL "http://download.qt-project.org/official_releases/qt/5.2/5.2.1/single/${QT5_FILENAME}")
 set(GTEST_URL "https://googletest.googlecode.com/files/${GTEST_FILENAME}")
 
+set(PATCHES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/patches")
+
 find_file(WIN32_MAK_LOCATION win32.mak
 	DOC "Location of win32.mak"
 	PATHS
@@ -67,18 +69,28 @@ ExternalProject_Add(libtiff
 	INSTALL_COMMAND "")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug"
-		OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+		OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"
+		OR NOT CMAKE_BUILD_TYPE)
 	set(VS_CONFIG "Debug")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release"
 		OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
 	set(VS_CONFIG "Release")
+endif()
+
+if(CMAKE_CL_64)
+	set(VS_PLATFORM "x64")
+else()
+	set(VS_PLATFORM "Win32")
 endif()
 ExternalProject_Add(glew
 	PREFIX glew
 	URL ${GLEW_URL}
 	URL_HASH SHA256=43c6229d787673ac1d35ebaad52dfdcc78c8b55d13ee78d8e4d7e4a6cb72b050
 	CONFIGURE_COMMAND ""
-	BUILD_COMMAND cd build/vc10 COMMAND msbuild glew.sln /m /p:Configuration=${VS_CONFIG}
+	PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${PATCHES_DIR}/glew.rc build
+	BUILD_COMMAND cd build/vc10
+		COMMAND devenv /upgrade glew.sln
+		COMMAND msbuild glew.sln /m /p:Configuration=${VS_CONFIG} /p:Platform=${VS_PLATFORM}
 	BUILD_IN_SOURCE 1
 	INSTALL_COMMAND "")
 
