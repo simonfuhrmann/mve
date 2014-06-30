@@ -27,12 +27,19 @@ find_file(WIN32_MAK_LOCATION win32.mak
 		"C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Include"
 		ENV Path)
 ExternalProject_Add(libjpeg
-	PREFIX libjpeg
+	PREFIX build/libjpeg
 	URL ${LIBJPEG_URL}
 	URL_HASH SHA256=144aeeb75240241fbfae3f1ddc86829525174ba04405ef9159884f241e112752
 	CONFIGURE_COMMAND nmake /f makefile.vc setup-v10
 	BUILD_COMMAND nmake /f makefile.vc
-	INSTALL_COMMAND ""
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
+		COMMAND	${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jerror.h   ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jmorecfg.h ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jpegint.h  ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jpeglib.h  ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/lib
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/libjpeg.lib  ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/lib
 	BUILD_IN_SOURCE 1)
 ExternalProject_Add_Step(libjpeg copy_win32_mak
 	COMMAND ${CMAKE_COMMAND} -E copy ${WIN32_MAK_LOCATION} <SOURCE_DIR>
@@ -60,13 +67,24 @@ ExternalProject_Add(libpng
 	BUILD_IN_SOURCE 1)
 
 ExternalProject_Add(libtiff
-	PREFIX libtiff
+	PREFIX build/libtiff
 	URL ${LIBTIFF_URL}
 	URL_HASH SHA256=c77f0d23b4c6fef96ed18ddc811990b35687848ccd2bacd7edc327b5795b6481
 	CONFIGURE_COMMAND ""
 	BUILD_COMMAND nmake /f Makefile.vc lib
-	BUILD_IN_SOURCE 1
-	INSTALL_COMMAND "")
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffconf.h ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiff.h     ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffio.h   ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffio.hxx ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffvers.h ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/lib
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff.lib   ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/lib
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff_i.lib ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/lib
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/bin
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff.dll ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/bin
+	BUILD_IN_SOURCE 1)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug"
 		OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"
@@ -83,7 +101,7 @@ else()
 	set(VS_PLATFORM "Win32")
 endif()
 ExternalProject_Add(glew
-	PREFIX glew
+	PREFIX build/glew
 	URL ${GLEW_URL}
 	URL_HASH SHA256=43c6229d787673ac1d35ebaad52dfdcc78c8b55d13ee78d8e4d7e4a6cb72b050
 	CONFIGURE_COMMAND ""
@@ -91,8 +109,14 @@ ExternalProject_Add(glew
 	BUILD_COMMAND cd build/vc10
 		COMMAND devenv /upgrade glew.sln
 		COMMAND msbuild glew.sln /m /p:Configuration=${VS_CONFIG} /p:Platform=${VS_PLATFORM}
-	BUILD_IN_SOURCE 1
-	INSTALL_COMMAND "")
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew/include
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/include ${CMAKE_CURRENT_SOURCE_DIR}/glew/include
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/lib/${VS_CONFIG}/${VS_PLATFORM} ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew/bin
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/bin/${VS_CONFIG}/${VS_PLATFORM} ${CMAKE_CURRENT_SOURCE_DIR}/glew/bin
+	BUILD_IN_SOURCE 1)
 
 ExternalProject_Add(qt5
 	PREFIX qt5
@@ -111,12 +135,15 @@ ExternalProject_Add(qt5
 	INSTALL_COMMAND "")
 
 ExternalProject_Add(gtest
-	PREFIX gtest
+	PREFIX build/gtest
 	URL ${GTEST_URL}
 	URL_HASH SHA256=247ca18dd83f53deb1328be17e4b1be31514cedfc1e3424f672bf11fd7e0d60d
 	CMAKE_ARGS
 		-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-		-DCMAKE_INSTALL_PREFIX:STRING=${CMAKE_CURRENT_SOURCE_DIR}/gtest
-		-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/gtest
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/gtest/include
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/gtest/src/gtest/include ${CMAKE_CURRENT_SOURCE_DIR}/gtest/include
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/gtest/lib
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/gtest/src/gtest/${CMAKE_BUILD_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/gtest/lib
 	BUILD_IN_SOURCE 1)
 
