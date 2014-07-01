@@ -11,12 +11,17 @@ class ClickImage : public QLabel
 
 private:
     double scale_factor;
+    QPoint get_mouse_coordinates (QMouseEvent* event);
 
 protected:
     void mousePressEvent (QMouseEvent* event);
+    void mouseMoveEvent (QMouseEvent* event);
+    void mouseReleaseEvent (QMouseEvent* event);
 
 signals:
     void mouse_clicked (int x, int y, QMouseEvent* event);
+    void mouse_released (int x, int y, QMouseEvent* event);
+    void mouse_moved (int x, int y, QMouseEvent* event);
 
 public:
     ClickImage (void);
@@ -65,27 +70,42 @@ ClickImage::update_size (void)
 inline void
 ClickImage::mousePressEvent (QMouseEvent* event)
 {
-    QPoint const& pnt(event->pos());
-    int img_x = 0;
-    int img_y = 0;
-    
+    QPoint const& pnt = this->get_mouse_coordinates(event);
+    emit this->mouse_clicked(pnt.x(), pnt.y(), event);
+}
+
+inline void
+ClickImage::mouseReleaseEvent (QMouseEvent* event)
+{
+    QPoint const& pnt = this->get_mouse_coordinates(event);
+    emit this->mouse_released(pnt.x(), pnt.y(), event);
+}
+
+inline void
+ClickImage::mouseMoveEvent (QMouseEvent* event)
+{
+    QPoint const& pnt = this->get_mouse_coordinates(event);
+    emit this->mouse_moved(pnt.x(), pnt.y(), event);
+}
+
+inline QPoint 
+ClickImage::get_mouse_coordinates (QMouseEvent* event)
+{
+    QPoint pnt(event->pos());
+
     if (this->hasScaledContents())
     {
         QSize ps(this->pixmap()->size());
         QSize ws(this->size());
-    
+
         float scale_x = (float)ps.width() / (float)ws.width();
         float scale_y = (float)ps.height() / (float)ws.height();
 
-        img_x = (int)((float)pnt.x() * scale_x);
-        img_y = (int)((float)pnt.y() * scale_y);
+        pnt.setX((int)((float)pnt.x() * scale_x));
+        pnt.setY((int)((float)pnt.y() * scale_y));
     }
-    else
-    {
-        img_x = pnt.x();
-        img_y = pnt.y();
-    }
-    emit this->mouse_clicked(img_x, img_y, event);
+
+    return pnt;
 }
 
 #endif /* CLICK_IMAGE_HEADER */
