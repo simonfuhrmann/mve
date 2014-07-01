@@ -227,8 +227,8 @@ load_nvm_bundle (std::string const& filename,
  * <cam 1 line 4> // Rotation matrix row 3: r31 r32 r33
  * <cam 1 line 5> // Translation vector: t1 t2 t3
  * ...
- * <point 1 position (float)> // x y z
- * <point 1 color (uchar)> // r g b
+ * <point 1 position> // x y z (floats)
+ * <point 1 color> // r g b (uchars)
  * <point 1 visibility> // <list length (uint)> ( <img id (uint)> <sift id (uint)> <reproj. quality (float)> ) ...
  * ...
  *
@@ -243,8 +243,8 @@ load_nvm_bundle (std::string const& filename,
  * <cam 1 line 4> // Rotation matrix row 3: r31 r32 r33
  * <cam 1 line 5> // Translation vector: t1 t2 t3
  * ...
- * <point 1 position (float)> // x y z
- * <point 1 color (uchar)> // r g b
+ * <point 1 position> // x y z (floats)
+ * <point 1 color> // r g b (uchars)
  * <point 1 visibility> // <list length (uint)> ( <img ID (uint)> <sift ID (uint)> <x (float)> <y (float)> ) ...
  * ...
  *
