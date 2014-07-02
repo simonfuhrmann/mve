@@ -4,15 +4,8 @@ file (GLOB SOURCES "*.cc" "viewinspect/*.cc" "scene_inspect/*.cc" "scene_addins/
 set(UMVE_QT_COMPONENTS Core Gui OpenGL Svg Widgets)
 find_package(Qt5 5.2.0 REQUIRED ${UMVE_QT_COMPONENTS})
 find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
-include_directories(. ${GLEW_INCLUDE_DIRS})
 
-qt5_wrap_cpp(HEADERS_MOC ${HEADERS})
-qt5_add_resources(RESOURCES_RCC umve.qrc)
-
-add_executable(umve ${SOURCES} ${HEADERS_MOC} ${RESOURCES_RCC})
-set_target_properties(umve PROPERTIES ENABLE_EXPORTS TRUE)
-target_link_libraries(umve
+set(UMVE_LIBS
 	Qt5::Core
 	Qt5::Gui
 	Qt5::OpenGL
@@ -22,8 +15,26 @@ target_link_libraries(umve
     ${JPEG_LIBRARIES}
     ${TIFF_LIBRARIES}
     ${OPENGL_LIBRARIES}
-    ${GLEW_LIBRARIES}
-    mve_dmrecon mve mve_ogl mve_util
+    mve_dmrecon
+	mve
+	mve_ogl
+	mve_util
+)
+
+if(WIN32)
+    find_package(GLEW REQUIRED)
+    include_directories(${GLEW_INCLUDE_DIRS})
+	set(UMVE_LIBS ${UMVE_LIBS} ${GLEW_LIBRARIES})
+endif()
+include_directories(.)
+
+qt5_wrap_cpp(HEADERS_MOC ${HEADERS})
+qt5_add_resources(RESOURCES_RCC umve.qrc)
+
+add_executable(umve ${SOURCES} ${HEADERS_MOC} ${RESOURCES_RCC})
+set_target_properties(umve PROPERTIES ENABLE_EXPORTS TRUE)
+target_link_libraries(umve
+	${UMVE_LIBS}
 )
 
 add_subdirectory(plugins)
