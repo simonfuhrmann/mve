@@ -40,28 +40,6 @@ target_link_libraries(umve
 add_subdirectory(plugins)
 
 if(WIN32)
-	set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
-    if(MSVC)
-        # HACK: Install Visual Studio's OpenMP library
-        if(MSVC11)
-            set(MSVC_VER "11")
-        elseif(MSVC12)
-            set(MSVC_VER "12")
-        else()
-            message(FATAL_ERROR "Unsupported Visual Studio version")
-        endif()
-
-        if(CMAKE_CL_64)
-            set(CMAKE_MSVC_ARCH x64)
-        else()
-            set(CMAKE_MSVC_ARCH x86)
-        endif()
-
-        set(OpenMP_REDIST_LIB "${MSVC${MSVC_VER}_REDIST_DIR}/${CMAKE_MSVC_ARCH}/Microsoft.VC${MSVC_VER}0.OpenMP/vcomp${MSVC_VER}0.dll")
-        set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} ${OpenMP_REDIST_LIB})
-        include(InstallRequiredSystemLibraries)
-    endif()
-
     # Install Qt5 DLLs
 	set(QT5_BASE_DIR "${_qt5Core_install_prefix}")
     foreach(component ${UMVE_QT_COMPONENTS})
