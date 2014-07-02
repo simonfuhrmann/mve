@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.0)
 include(ExternalProject)
 
 set(LIBJPEG_FILENAME "jpegsr9a.zip")
@@ -19,6 +19,10 @@ set(GTEST_URL "https://googletest.googlecode.com/files/${GTEST_FILENAME}")
 
 set(PATCHES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/patches")
 
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib")
+
 find_file(WIN32_MAK_LOCATION win32.mak
 	DOC "Location of win32.mak"
 	PATHS
@@ -32,14 +36,12 @@ ExternalProject_Add(libjpeg
 	URL_HASH SHA256=144aeeb75240241fbfae3f1ddc86829525174ba04405ef9159884f241e112752
 	CONFIGURE_COMMAND nmake /f makefile.vc setup-v10
 	BUILD_COMMAND nmake /f makefile.vc
-	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
-		COMMAND	${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jerror.h   ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jmorecfg.h ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jpegint.h  ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jpeglib.h  ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/include
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/lib
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/libjpeg.lib  ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg/lib
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jconfig.h ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jerror.h   ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jmorecfg.h ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jpegint.h  ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/jpeglib.h  ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libjpeg/src/libjpeg/libjpeg.lib  ${CMAKE_CURRENT_SOURCE_DIR}/lib
 	BUILD_IN_SOURCE 1)
 ExternalProject_Add_Step(libjpeg copy_win32_mak
 	COMMAND ${CMAKE_COMMAND} -E copy ${WIN32_MAK_LOCATION} <SOURCE_DIR>
@@ -52,7 +54,7 @@ ExternalProject_Add(zlib
 	URL_HASH SHA256=879d73d8cd4d155f31c1f04838ecd567d34bebda780156f0e82a20721b3973d5
 	CMAKE_ARGS
 		-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-		-DCMAKE_INSTALL_PREFIX:STRING=${CMAKE_CURRENT_SOURCE_DIR}/zlib
+		-DCMAKE_INSTALL_PREFIX:STRING=${CMAKE_CURRENT_SOURCE_DIR}
 	BUILD_IN_SOURCE 1)
 
 ExternalProject_Add(libpng
@@ -62,8 +64,8 @@ ExternalProject_Add(libpng
 	URL_HASH SHA256=d6d884e22c2af9ccef21349acd88064e38f551fd79a4ef86255781d2e65ea202
 	CMAKE_ARGS
 		-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-		-DCMAKE_INSTALL_PREFIX:STRING=${CMAKE_CURRENT_SOURCE_DIR}/libpng
-		-DZLIB_ROOT:STRING=${CMAKE_CURRENT_SOURCE_DIR}/zlib
+		-DCMAKE_INSTALL_PREFIX:STRING=${CMAKE_CURRENT_SOURCE_DIR}
+		-DZLIB_ROOT:STRING=${CMAKE_CURRENT_SOURCE_DIR}
 	BUILD_IN_SOURCE 1)
 
 ExternalProject_Add(libtiff
@@ -72,18 +74,14 @@ ExternalProject_Add(libtiff
 	URL_HASH SHA256=c77f0d23b4c6fef96ed18ddc811990b35687848ccd2bacd7edc327b5795b6481
 	CONFIGURE_COMMAND ""
 	BUILD_COMMAND nmake /f Makefile.vc lib
-	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffconf.h ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiff.h     ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffio.h   ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffio.hxx ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffvers.h ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/include
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/lib
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff.lib   ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/lib
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff_i.lib ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/lib
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/bin
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff.dll ${CMAKE_CURRENT_SOURCE_DIR}/libtiff/bin
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffconf.h ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiff.h     ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffio.h   ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffio.hxx ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/tiffvers.h ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff.lib   ${CMAKE_CURRENT_SOURCE_DIR}/lib
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff_i.lib ${CMAKE_CURRENT_SOURCE_DIR}/lib
+		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/build/libtiff/src/libtiff/libtiff/libtiff.dll ${CMAKE_CURRENT_SOURCE_DIR}/bin
 	BUILD_IN_SOURCE 1)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug"
@@ -109,13 +107,9 @@ ExternalProject_Add(glew
 	BUILD_COMMAND cd build/vc10
 		COMMAND devenv /upgrade glew.sln
 		COMMAND msbuild glew.sln /m /p:Configuration=${VS_CONFIG} /p:Platform=${VS_PLATFORM}
-	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew/include
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/include ${CMAKE_CURRENT_SOURCE_DIR}/glew/include
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/lib/${VS_CONFIG}/${VS_PLATFORM} ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/glew/bin
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/bin/${VS_CONFIG}/${VS_PLATFORM} ${CMAKE_CURRENT_SOURCE_DIR}/glew/bin
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/include ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/lib/${VS_CONFIG}/${VS_PLATFORM} ${CMAKE_CURRENT_SOURCE_DIR}/lib
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/glew/src/glew/bin/${VS_CONFIG}/${VS_PLATFORM} ${CMAKE_CURRENT_SOURCE_DIR}/bin
 	BUILD_IN_SOURCE 1)
 
 ExternalProject_Add(qt5
@@ -140,10 +134,7 @@ ExternalProject_Add(gtest
 	URL_HASH SHA256=247ca18dd83f53deb1328be17e4b1be31514cedfc1e3424f672bf11fd7e0d60d
 	CMAKE_ARGS
 		-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-	INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/gtest
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/gtest/include
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/gtest/src/gtest/include ${CMAKE_CURRENT_SOURCE_DIR}/gtest/include
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/gtest/lib
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/gtest/src/gtest/${CMAKE_BUILD_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/gtest/lib
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/gtest/src/gtest/include ${CMAKE_CURRENT_SOURCE_DIR}/include
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/gtest/src/gtest/${CMAKE_BUILD_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/lib
 	BUILD_IN_SOURCE 1)
 
