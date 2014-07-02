@@ -1,3 +1,27 @@
+if(WIN32 AND MSVC)
+	set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
+    if(MSVC)
+        # HACK: Install Visual Studio's OpenMP library
+        if(MSVC11)
+            set(MSVC_VER "11")
+        elseif(MSVC12)
+            set(MSVC_VER "12")
+        else()
+            message(FATAL_ERROR "Unsupported Visual Studio version")
+        endif()
+
+        if(CMAKE_CL_64)
+            set(CMAKE_MSVC_ARCH x64)
+        else()
+            set(CMAKE_MSVC_ARCH x86)
+        endif()
+
+        include(InstallRequiredSystemLibraries)
+        set(OpenMP_REDIST_LIB "${MSVC${MSVC_VER}_REDIST_DIR}/${CMAKE_MSVC_ARCH}/Microsoft.VC${MSVC_VER}0.OpenMP/vcomp${MSVC_VER}0.dll")
+        install(PROGRAMS ${OpenMP_REDIST_LIB} DESTINATION ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION})
+    endif()
+endif()
+
 add_subdirectory(bundle2ply)
 add_subdirectory(dmrecon)
 add_subdirectory(makescene)
