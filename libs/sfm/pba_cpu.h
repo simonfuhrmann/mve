@@ -32,24 +32,98 @@
 SFM_NAMESPACE_BEGIN
 SFM_PBA_NAMESPACE_BEGIN
 
-class avec : public std::vector<double, util::AlignedAllocator<double, VECTOR_ALIGNMENT> >
+class avec
 {
+    typedef util::AlignedAllocator<double, VECTOR_ALIGNMENT> Allocator;
+    Allocator allocator;
+
+    bool _owner;
+    double* _data;
+    double* _last;
+    size_t _size;
+    size_t _capacity;
+
 public:
-    avec() {}
-    avec(size_t sz) : std::vector<double, util::AlignedAllocator<double, VECTOR_ALIGNMENT> >(sz) {}
+    avec()
+    {
+        _owner = true;
+        _last = _data = NULL;
+        _size = _capacity = 0;
+    }
+    avec(size_t count)
+    {
+        _data = allocator.allocate(count);
+        _size = _capacity = count;
+        _last = _data + count;
+        _owner = true;
+    }
+    ~avec()
+    {
+        if(_data && _owner) allocator.deallocate(_data, _capacity);
+    }
+
+    inline void resize(size_t newcount)
+    {
+        if(!_owner)
+        {
+            _data = _last = NULL;
+            _capacity = _size = 0;
+            _owner = true;
+        }
+        if(newcount <= _capacity)
+        {
+            _size = newcount;
+            _last = _data + newcount;
+        }else
+        {
+            if(_data && _owner) allocator.deallocate(_data, _capacity);
+            _data = allocator.allocate(newcount);
+            _size = _capacity = newcount;
+            _last = _data + newcount;
+        }
+    }
 
     inline void set(double* data, size_t size)
     {
-        this->assign(data, data+size);
+        if(_data && _owner) allocator.deallocate(_data, _capacity);
+        _data = data;
+        _owner = false;
+        _size = size;
+        _last = _data + _size;
+        _capacity = size;
+    }
+    inline void swap(avec& next)
+    {
+        bool _owner_bak = _owner;
+        double* _data_bak = _data;
+        double* _last_bak = _last;
+        size_t _size_bak = _size;
+        size_t _capa_bak = _capacity;
+
+        _owner = next._owner;
+        _data = next._data;
+        _last = next._last;
+        _size = next._size;
+        _capacity = next._capacity;
+
+        next._owner = _owner_bak;
+        next._data = _data_bak;
+        next._last = _last_bak;
+        next._size = _size_bak;
+        next._capacity = _capa_bak;
+
     }
 
-    inline operator double* ()               {return this->empty() ? NULL : &this->front();}
-    inline operator const double* () const   {return this->empty() ? NULL : &this->front();}
-    inline double* begin()                   {return this->empty() ? NULL : &this->front();}
-    inline double* end()                     {return this->empty() ? NULL : &this->back()+1;}
-    inline const double* begin() const       {return this->empty() ? NULL : &this->front();}
-    inline const double* end()   const       {return this->empty() ? NULL : &this->back()+1;}
-    void   SaveToFile(const char* name);
+    inline operator double* () {return _size? _data : NULL;}
+    inline operator const double* () const {return _data; }
+    inline double* begin() {return _size? _data : NULL;}
+    inline double* data() {return _size? _data : NULL;}
+    inline double* end() {return _last;}
+    inline const double* begin() const {return _size? _data : NULL;}
+    inline const double* end() const {return _last;}
+    inline size_t size() const {return _size;}
+    inline size_t IsValid() const {return _size;}
+    void SaveToFile(const char* name);
 };
 
 class SparseBundleCPU : public ConfigBA
