@@ -14,12 +14,17 @@
 #define MATH_GEOM_NAMESPACE_BEGIN namespace geom {
 #define MATH_GEOM_NAMESPACE_END }
 
+#define MATH_INTERNAL_NAMESPACE_BEGIN namespace internal {
+#define MATH_INTERNAL_NAMESPACE_END }
+
 /** Vector, Matrix, basic operations, etc. */
 MATH_NAMESPACE_BEGIN
 /** Algorithms, functors, value interpolation, etc. */
 MATH_ALGO_NAMESPACE_BEGIN MATH_ALGO_NAMESPACE_END
 /** Computation of geometric quantities and predicates. */
 MATH_GEOM_NAMESPACE_BEGIN MATH_GEOM_NAMESPACE_END
+/** Math internals. */
+MATH_INTERNAL_NAMESPACE_BEGIN MATH_INTERNAL_NAMESPACE_END
 MATH_NAMESPACE_END
 
 /*

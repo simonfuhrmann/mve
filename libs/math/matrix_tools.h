@@ -268,7 +268,7 @@ template <typename T>
 T*
 matrix_set_identity (T* mat, int n)
 {
-    int len = n * n;
+    int const len = n * n;
     std::fill(mat, mat + len, T(0));
     for (int i = 0; i < len; i += n + 1)
         mat[i] = T(1);

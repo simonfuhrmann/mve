@@ -12,9 +12,12 @@ TEST(BundlerTracksTest, RemoveConflictsTest)
         sfm::bundler::Viewport v1;
         sfm::bundler::Viewport v2;
         sfm::bundler::Viewport v3;
-        v1.colors.resize(8);
-        v2.colors.resize(9);
-        v3.colors.resize(10);
+        v1.features.colors.resize(8, math::Vec3uc(0, 0, 0));
+        v1.features.positions.resize(8, math::Vec2f(0.0f));
+        v2.features.colors.resize(9, math::Vec3uc(0, 0, 0));
+        v2.features.positions.resize(9, math::Vec2f(0.0f));
+        v3.features.colors.resize(10, math::Vec3uc(0, 0, 0));
+        v3.features.positions.resize(10, math::Vec2f(0.0f));
         viewports.push_back(v1);
         viewports.push_back(v2);
         viewports.push_back(v3);
