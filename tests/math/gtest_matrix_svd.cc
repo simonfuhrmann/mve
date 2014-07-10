@@ -677,3 +677,154 @@ TEST(MatrixSVDTest, TestLargeBeforeAfter)
     delete[] multiply_temp;
     delete[] multiply_result;
 }
+
+TEST(MatrixSVDTest, BeforeAfter1)
+{
+    math::Matrix<double, 2, 2> A;
+    A(0,0) = 1.0f; A(0,1) = 2.0f;
+    A(1,0) = 3.0f; A(1,1) = 4.0f;
+
+    math::Matrix<double, 2, 2> U;
+    math::Matrix<double, 2, 2> S;
+    math::Matrix<double, 2, 2> V;
+    math::matrix_svd(A, &U, &S, &V, 1e-12);
+
+    EXPECT_TRUE(A.is_similar(U * S * V.transposed(), 1e-12));
+    EXPECT_GT(S(0,0), S(1,1));
+}
+
+TEST(MatrixSVDTest, BeforeAfter2)
+{
+    double values[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+    math::Matrix<double, 3, 2> A(values);
+
+    math::Matrix<double, 3, 2> U;
+    math::Matrix<double, 2, 2> S;
+    math::Matrix<double, 2, 2> V;
+    math::matrix_svd(A, &U, &S, &V, 1e-12);
+
+    EXPECT_TRUE(A.is_similar(U * S * V.transposed(), 1e-12));
+    EXPECT_GT(S(0,0), S(1,1));
+}
+
+TEST(MatrixSVDTest, BeforeAfter3)
+{
+    double values[] = {1.0, 2.0, 3.0, 4.0 };
+    math::Matrix<double, 2, 2> A(values);
+
+    math::Matrix<double, 2, 2> U;
+    math::Matrix<double, 2, 2> S;
+    math::Matrix<double, 2, 2> V;
+    math::matrix_svd<double>(*A, 2, 2, *U, *S, *V, 1e-12);
+    std::swap(S(0,1), S(1,1)); // Swap the eigenvalues into place.
+
+    EXPECT_TRUE(A.is_similar(U * S * V.transposed(), 1e-12));
+    EXPECT_GT(S(0,0), S(1,1));
+}
+
+TEST(MatrixSVDTest, BeforeAfter4)
+{
+    double values[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+    math::Matrix<double, 3, 2> A(values);
+
+    math::Matrix<double, 3, 2> U;
+    math::Matrix<double, 2, 2> S;
+    math::Matrix<double, 2, 2> V;
+    math::matrix_svd(*A, 3, 2, *U, *S, *V, 1e-12);
+    std::swap(S(0,1), S(1,1)); // Swap the eigenvalues into place.
+
+    EXPECT_TRUE(A.is_similar(U * S * V.transposed(), 1e-12));
+    EXPECT_GT(S(0,0), S(1,1));
+}
+
+TEST(MatrixSVDTest, SortedEigenvalues)
+{
+    double values[] = { 0.0697553, 0.949327, 0.525995, 0.0860558, 0.192214, 0.663227 };
+    math::Matrix<double, 3, 2> U, mat(values);
+    math::Matrix<double, 2, 2> S, V;
+    math::matrix_svd<double, 3, 2>(mat, &U, &S, &V, 1e-12);
+    EXPECT_GT(S(0,0), S(1,1));
+}
+
+#if 0
+namespace
+{
+    double
+    getrand (void)
+    {
+        return std::rand() / static_cast<double>(RAND_MAX);
+    }
+
+} // namespace
+
+// Note: Random is a bad thing in test cases! Don't do it!
+TEST(MatrixSVDTest, ForbiddenRandomTest)
+{
+    std::srand(0);
+    math::Matrix<double, 3, 2> A;
+    for (int i = 0; i < 10; ++i)
+    {
+        A(0,0) = getrand(); A(0,1) = getrand();
+        A(1,0) = getrand(); A(1,1) = getrand();
+        A(2,0) = getrand(); A(2,1) = getrand();
+
+        math::Matrix<double, 3, 2> U;
+        math::Matrix<double, 2, 2> S;
+        math::Matrix<double, 2, 2> V;
+        math::matrix_svd(A, &U, &S, &V, 1e-12);
+
+        EXPECT_TRUE(A.is_similar(U * S * V.transposed(), 1e-12));
+        EXPECT_GT(S(0,0), S(1,1));
+    }
+}
+#endif
+
+TEST(MatrixSVDTest, TestPseudoInverse)
+{
+    math::Matrix<double, 3, 2> mat;
+    mat[0] = 1.0;  mat[1] = 2.0;
+    mat[2] = 3.0;  mat[3] = 4.0;
+    mat[4] = 5.0;  mat[5] = 6.0;
+
+    math::Matrix<double, 2, 3> pinv;
+    math::matrix_pseudo_inverse(mat, &pinv, 1e-10);
+
+    math::Matrix<double, 3, 2> mat2 = mat * pinv * mat;
+    for (int i = 0; i < 6; ++i)
+        EXPECT_NEAR(mat2[i], mat[i], 1e-14);
+
+    math::Matrix<double, 2, 3> pinv2 = pinv * mat * pinv;
+    for (int i = 0; i < 6; ++i)
+        EXPECT_NEAR(pinv2[i], pinv[i], 1e-14);
+}
+
+TEST(MatrixSVDTest, TestPseudoInverseGoldenData1)
+{
+    double a_values[] = { 2, -4,  5, 6, 0, 3, 2, -4, 5, 6, 0, 3 };
+    double a_inv_values[] = { -2, 6, -2, 6, -5, 3, -5, 3, 4, 0, 4, 0 };
+    math::Matrix<double, 4, 3> A(a_values);
+    math::Matrix<double, 3, 4> Ainv(a_inv_values);
+    Ainv /= 72.0;
+
+    math::Matrix<double, 3, 4> result;
+    math::matrix_pseudo_inverse(A, &result, 1e-10);
+
+    for (int r = 0; r < 3; ++r)
+        for (int c = 0; c < 4; ++c)
+            EXPECT_NEAR(Ainv(r, c), result(r, c), 1e-16);
+}
+
+TEST(MatrixSVDTest, TestPseudoInverseGoldenData2)
+{
+    double a_values[] = { 1, 1, 1, 1, 5, 7, 7, 9 };
+    double a_inv_values[] = { 2, -0.25, 0.25, 0, 0.25, 0, -1.5, 0.25 };
+    math::Matrix<double, 2, 4> A(a_values);
+    math::Matrix<double, 4, 2> Ainv(a_inv_values);
+
+    math::Matrix<double, 4, 2> result;
+    math::matrix_pseudo_inverse(A, &result, 1e-10);
+
+    for (int r = 0; r < 4; ++r)
+        for (int c = 0; c < 2; ++c)
+            EXPECT_NEAR(Ainv(r, c), result(r, c), 1e-14);
+}

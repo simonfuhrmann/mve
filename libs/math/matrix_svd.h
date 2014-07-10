@@ -49,7 +49,7 @@ matrix_svd (T const* mat_a, int rows, int cols,
 /**
  * SVD for compile-time fixed-size matrices. The implementation of this
  * function uses the dynamic-size matrices interface in the background.
- * Any of the results can be NULL, however, this does not safe operations.
+ * Any of the results can be NULL, however, this does not save operations.
  */
 template <typename T, int M, int N>
 void
@@ -64,8 +64,8 @@ matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
  */
 template <typename T, int M, int N>
 void
-matrix_pseudo_inverse (math::Matrix<double, M, N> const& A,
-    math::Matrix<double, N, M>* result, T const& epsilon);
+matrix_pseudo_inverse (Matrix<T, M, N> const& A,
+    Matrix<T, N, M>* result, T const& epsilon);
 
 MATH_NAMESPACE_END
 
@@ -88,8 +88,8 @@ matrix_is_submatrix_zero_enclosed (T const* mat, int m, int k, T const& epsilon)
     if (j < 0)
         return true;
     for (int i = m - k; i < m; ++i)
-        if (!MATH_EPSILON_EQ(T(0), mat[j * m + i], epsilon)
-            || !MATH_EPSILON_EQ(T(0), mat[i * m + j], epsilon))
+        if (!MATH_EPSILON_EQ(mat[j * m + i], T(0), epsilon)
+            || !MATH_EPSILON_EQ(mat[i * m + j], T(0), epsilon))
             return false;
     return true;
 }
@@ -149,7 +149,7 @@ matrix_householder_vector (T const* input, int length,
     for (int i = 1; i < length; ++i)
         vector[i] = input[i] / norm_factor;
 
-    if (std::abs(sigma) < epsilon)
+    if (MATH_EPSILON_EQ(sigma, T(0), epsilon))
     {
         *beta = T(0);
         return;
@@ -480,10 +480,8 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
         for (int i = 0; i < cols * cols; ++i)
         {
             T const& entry = mat_b[i];
-            if(std::abs(entry) < epsilon)
-            {
+            if (MATH_EPSILON_EQ(entry, T(0), epsilon))
                 mat_b[i] = T(0);
-            }
         }
 
         /* GK 2a. */
@@ -501,23 +499,23 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
         int q = 0;
         for (int k = 0; k < cols; ++k)
         {
-            int slice_length = k + 1;
-            T mat_b33[slice_length * slice_length];
-            for (int i = 0; i < slice_length; ++i)
+            int const slice_len = k + 1;
+            T mat_b33[slice_len * slice_len];
+            for (int i = 0; i < slice_len; ++i)
             {
-                for (int j = 0; j < slice_length; ++j)
+                for (int j = 0; j < slice_len; ++j)
                 {
-                    mat_b33[i * slice_length + j] = mat_b[(cols - k - 1 + i) * cols
-                        + (cols - k - 1 + j)];
+                    mat_b33[i * slice_len + j]
+                        = mat_b[(cols - k - 1 + i) * cols + (cols - k - 1 + j)];
                 }
             }
 
-            if (matrix_is_diagonal(mat_b33, slice_length, slice_length, epsilon))
+            if (matrix_is_diagonal(mat_b33, slice_len, slice_len, epsilon))
             {
                 if (k < cols - 1)
                 {
-                    if (matrix_is_submatrix_zero_enclosed(mat_b, cols, k + 1,
-                        epsilon))
+                    if (matrix_is_submatrix_zero_enclosed(
+                        mat_b, cols, k + 1, epsilon))
                     {
                         q = k + 1;
                     }
@@ -534,17 +532,18 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
         T* mat_b22_tmp = new T[(cols - q) * (cols - q)];
         for (int k = 0; k < (cols - q); ++k)
         {
-            int slice_length = k + 1;
-            for (int i = 0; i < slice_length; ++i)
+            int const slice_len = k + 1;
+            for (int i = 0; i < slice_len; ++i)
             {
-                for (int j = 0; j < slice_length; ++j)
+                for (int j = 0; j < slice_len; ++j)
                 {
-                    mat_b22_tmp[i * slice_length + j] = mat_b[(cols - q - k - 1 + i) *
-                        cols + (cols - q - k - 1 + j)];
+                    mat_b22_tmp[i * slice_len + j]
+                        = mat_b[(cols - q - k - 1 + i)
+                        * cols + (cols - q - k - 1 + j)];
                 }
             }
-            if (matrix_is_superdiagonal_nonzero(mat_b22_tmp, slice_length,
-                slice_length, epsilon))
+            if (matrix_is_superdiagonal_nonzero(
+                mat_b22_tmp, slice_len, slice_len, epsilon))
             {
                 z = k + 1;
             }
@@ -560,7 +559,7 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
         bool diagonal_non_zero = true;
         for (int i = p; i < (cols - q - 1); ++i)
         {
-            if (std::abs(mat_b[i * cols + i]) < epsilon)
+            if (MATH_EPSILON_EQ(mat_b[i * cols + i], T(0), epsilon))
             {
                 diagonal_non_zero = false;
                 mat_b[i * cols + i] = T(0);
@@ -568,10 +567,7 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
         }
 
         if (diagonal_non_zero)
-        {
-            matrix_gk_svd_step(rows, cols, mat_b, mat_q, mat_p, p, q,
-                epsilon);
-        }
+            matrix_gk_svd_step(rows, cols, mat_b, mat_q, mat_p, p, q, epsilon);
     }
 
     /* Create resulting matrices and vector from temporary entities. */
@@ -601,8 +597,8 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
  */
 template <typename T>
 void
-matrix_r_svd (T const* mat_a, int rows, int cols, T* mat_u, T* vec_s, T* mat_v,
-    T const& epsilon)
+matrix_r_svd (T const* mat_a, int rows, int cols,
+    T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
 {
     /* Allocate memory for temp matrices. */
     int const mat_q_size = rows * rows;
@@ -621,6 +617,25 @@ matrix_r_svd (T const* mat_a, int rows, int cols, T* mat_u, T* vec_s, T* mat_v,
     matrix_multiply(mat_q, rows, rows, mat_u_tmp, cols, mat_u);
 }
 
+/**
+ * Returns the index of the largest eigenvalue. If all eigenvalues are
+ * zero, -1 is returned.
+ */
+template <typename T>
+int
+find_largest_ev_index (T const* values, int length)
+{
+    T largest = T(0);
+    int index = -1;
+    for (int i = 0; i < length; ++i)
+        if (values[i] > largest)
+        {
+            largest = values[i];
+            index = i;
+        }
+    return index;
+}
+
 MATH_INTERNAL_NAMESPACE_END
 MATH_NAMESPACE_END
 
@@ -633,6 +648,16 @@ void
 matrix_svd (T const* mat_a, int rows, int cols,
     T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
 {
+    /*
+     * The SVD can only handle systems where rows > cols. Thus, in case
+     * of cols > rows, the input matrix is transposed and the resulting
+     * solution converted to the desired solution:
+     *
+     *   A* = (U S V*)* = V S* U* = V S U*
+     *
+     * In order to output same-sized matrices for every problem, many zero
+     * rows and columns can appear in systems with cols > rows.
+     */
     std::vector<T> mat_a_tmp;
     bool was_transposed = false;
     if (cols > rows)
@@ -686,6 +711,19 @@ matrix_svd (T const* mat_a, int rows, int cols,
                 mat_v[y * cols + x] = T(0);
         }
     }
+
+    /* Sort the eigenvalues in S and adapt the columns of U and V. */
+    for (int i = 0; i < cols; ++i)
+    {
+        int pos = internal::find_largest_ev_index(vec_s + i, cols - i);
+        if (pos < 0)
+            break;
+        if (pos == 0)
+            continue;
+        std::swap(vec_s[i], vec_s[i + pos]);
+        matrix_swap_columns(mat_u, rows, cols, i, i + pos);
+        matrix_swap_columns(mat_v, cols, cols, i, i + pos);
+    }
 }
 
 template <typename T, int M, int N>
@@ -701,9 +739,9 @@ matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
         tmp_u.begin(), tmp_s.begin(), tmp_v.begin(), epsilon);
 
     if (mat_u != NULL)
-        std::swap(tmp_u, *mat_u);
+        *mat_u = tmp_u;
     if (mat_v != NULL)
-        std::swap(tmp_v, *mat_v);
+        *mat_v = tmp_v;
     if (mat_s != NULL)
     {
         mat_s->fill(T(0));
@@ -714,17 +752,17 @@ matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
 
 template <typename T, int M, int N>
 void
-matrix_pseudo_inverse (math::Matrix<T, M, N> const& A,
-    math::Matrix<T, N, M>* result, T const& epsilon)
+matrix_pseudo_inverse (Matrix<T, M, N> const& A,
+    Matrix<T, N, M>* result, T const& epsilon)
 {
-    math::Matrix<T, M, N> U;
-    math::Matrix<T, N, N> S;
-    math::Matrix<T, N, N> V;
-    math::matrix_svd(A, &U, &S, &V);
+    Matrix<T, M, N> U;
+    Matrix<T, N, N> S;
+    Matrix<T, N, N> V;
+    matrix_svd(A, &U, &S, &V, epsilon);
 
     /* Invert diagonal of S. */
     for (int i = 0; i < N; ++i)
-        if (MATH_EPSILON_EQ(S(i, i), 0.0, epsilon))
+        if (MATH_EPSILON_EQ(S(i, i), T(0), epsilon))
             S(i, i) = T(0);
         else
             S(i, i) = T(1) / S(i, i);
