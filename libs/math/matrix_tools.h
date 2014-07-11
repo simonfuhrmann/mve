@@ -96,6 +96,14 @@ Matrix<T,N,N>&
 matrix_set_diagonal (Matrix<T,N,N>& mat, T const* diag);
 
 /**
+ * Checks whether the input matrix is a diagonal matrix. This is done by
+ * testing if all non-diagonal entries are zero (up to some epsilon).
+ */
+template <typename T>
+bool
+matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon = T(0));
+
+/**
  * Returns the diagonal elements of the matrix as a vector.
  */
 template <typename T, int N>
@@ -151,14 +159,6 @@ matrix_multiply (T const* mat_a, int rows_a, int cols_a,
     T const* mat_b, int cols_b, T* mat_res);
 
 /**
- * Checks whether the input matrix is a diagonal matrix. This is done by
- * testing if all non-diagonal entries are zero (up to some epsilon).
- */
-template <typename T>
-bool
-matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon = T(0));
-
-/**
  * Swaps the rows r1 and r2 of matrix mat with dimension rows, cols.
  */
 template <typename T>
@@ -171,6 +171,20 @@ matrix_swap_rows (T* mat, int rows, int cols, int r1, int r2);
 template <typename T>
 void
 matrix_swap_columns (T* const mat, int rows, int cols, int c1, int c2);
+
+/**
+ * Rotates the entries of the given matrix by 180 degrees in-place.
+ */
+template <typename T, int N>
+void
+matrix_rotate_180_inplace (Matrix<T, N, N>* mat_a);
+
+/**
+ * Rotates the entries of the given matrix by 180 degrees.
+ */
+template <typename T, int N>
+Matrix<T, N, N>
+matrix_rotate_180 (Matrix<T, N, N> const& mat_a);
 
 MATH_NAMESPACE_END
 
@@ -570,6 +584,23 @@ matrix_swap_rows (T* mat, int /*rows*/, int cols, int r1, int r2)
     r2 = cols * r2;
     for (int i = 0; i < cols; ++i, ++r1, ++r2)
         std::swap(mat[r1], mat[r2]);
+}
+
+template <typename T, int N>
+void
+matrix_rotate_180_inplace (Matrix<T, N, N>* mat_a)
+{
+    for (int i = 0, j = N * N - 1; i < j; ++i, --j)
+        std::swap((*mat_a)[i], (*mat_a)[j]);
+}
+
+template <typename T, int N>
+Matrix<T, N, N>
+matrix_rotate_180 (Matrix<T, N, N> const& mat_a)
+{
+    Matrix<T, N, N> ret = mat_a;
+    matrix_rotate_180_inplace(&ret);
+    return  ret;
 }
 
 MATH_NAMESPACE_END

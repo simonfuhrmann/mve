@@ -6,6 +6,7 @@
 #include <iostream>
 #include <gtest/gtest.h>
 
+#include "math/matrix_tools.h"
 #include "math/matrix_qr.h"
 
 TEST(MatrixQRTest, MatrixApplyGivensRotation)
@@ -225,3 +226,27 @@ TEST(MatrixQRTest, MatrixQRVectorTest)
     EXPECT_NEAR(groundtruth_mat_r[1], mat_r[1], 1e-14);
 }
 
+TEST(MatrixQRTest, TestMatrixInterface)
+{
+    double A_values[] = { 1, 2, 3,  4, 5, 6,  7, 8, 9,  10, 11, 12 };
+    math::Matrix<double, 4, 3> A(A_values);
+    math::Matrix<double, 4, 4> Q;
+    math::Matrix<double, 4, 3> R;
+    math::matrix_qr(A, &Q, &R, 1e-16);
+
+    /* Check if Q is orthogonal. */
+    math::Matrix<double, 4, 4> QQ1 = Q * Q.transposed();
+    EXPECT_TRUE(math::matrix_is_identity(QQ1, 1e-14));
+    math::Matrix<double, 4, 4> QQ2 = Q.transposed() * Q;
+    EXPECT_TRUE(math::matrix_is_identity(QQ2, 1e-14));
+
+    /* Check if R is upper diagonal. */
+    for (int y = 1; y < 4; ++y)
+        for (int x = 0; x < y; ++x)
+            EXPECT_NEAR(0.0, R(y, x), 1e-14);
+
+    /* Check if A can be reproduced. */
+    math::Matrix<double, 4, 3> newA = Q * R;
+    for (int i = 0; i < 12; ++i)
+        EXPECT_NEAR(newA[i], A[i], 1e-14);
+}

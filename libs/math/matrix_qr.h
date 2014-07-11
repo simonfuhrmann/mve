@@ -27,6 +27,15 @@ void
 matrix_qr (T const* mat_a, int rows, int cols,
     T* mat_q, T* mat_r, T const& epsilon);
 
+/**
+ * Matrix QR decomposition for compile-time fixed-size matrices. The
+ * implementation uses the dynamic-size matrices interface in the background.
+ */
+template <typename T, int M, int N>
+void
+matrix_qr (Matrix<T, M, N> const& mat_a, Matrix<T, M, M>* mat_q,
+    Matrix<T, M, N>* mat_r, T const& epsilon);
+
 MATH_NAMESPACE_END
 
 /* ------------------------- QR Internals ------------------------- */
@@ -152,6 +161,14 @@ matrix_qr (T const* mat_a, int rows, int cols,
                 givens_c, givens_s);
         }
     }
+}
+
+template <typename T, int M, int N>
+void
+matrix_qr (Matrix<T, M, N> const& mat_a, Matrix<T, M, M>* mat_q,
+    Matrix<T, M, N>* mat_r, T const& epsilon)
+{
+    matrix_qr(mat_a.begin(), M, N, mat_q->begin(), mat_r->begin(), epsilon);
 }
 
 MATH_NAMESPACE_END
