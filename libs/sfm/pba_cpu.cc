@@ -71,12 +71,6 @@
 SFM_NAMESPACE_BEGIN
 SFM_PBA_NAMESPACE_BEGIN
 
-void avec::SaveToFile(const char* name)
-{
-    std::ofstream out(name);
-    for(double* p = begin(); p < end(); ++p) out << (*p) <<  '\n';
-}
-
 #ifdef CPUPBA_USE_SSE
 #define CPUPBA_USE_SIMD
 namespace MYSSE
@@ -748,6 +742,7 @@ namespace ProgramCPU
     }
 #endif
 
+    // TODO: currently dead code because __lm_check_gradient == false
     double  ComputeVectorMax(const avec& vec)
     {
         double v = 0;
@@ -842,82 +837,6 @@ namespace ProgramCPU
         }
     }
 
-    void GetRodriguesRotation(const double m[3][3], double r[3])
-    {
-        //http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/index.htm
-        double a = (m[0][0]+m[1][1]+m[2][2]-1.0)/2.0;
-        const double epsilon = 0.01;
-        if( fabs(m[0][1] - m[1][0]) < epsilon &&
-            fabs(m[1][2] - m[2][1]) < epsilon &&
-            fabs(m[0][2] - m[2][0]) < epsilon )
-        {
-            if( fabs(m[0][1] + m[1][0]) < 0.1 &&
-                fabs(m[1][2] + m[2][1]) < 0.1 &&
-                fabs(m[0][2] + m[2][0]) < 0.1 && a > 0.9)
-            {
-                r[0]    =    0;
-                r[1]    =    0;
-                r[2]    =    0;
-            }
-            else
-            {
-                const double ha = double(sqrt(0.5) * PBA_PI);
-                double xx = (m[0][0]+1.0)/2.0;
-                double yy = (m[1][1]+1.0)/2.0;
-                double zz = (m[2][2]+1.0)/2.0;
-                double xy = (m[0][1]+m[1][0])/4.0;
-                double xz = (m[0][2]+m[2][0])/4.0;
-                double yz = (m[1][2]+m[2][1])/4.0;
-
-                if ((xx > yy) && (xx > zz))
-                {
-                    if (xx< epsilon)
-                    {
-                        r[0] = 0;    r[1] = r[2] = ha;
-                    } else
-                    {
-                        double t = sqrt(xx) ;
-                        r[0] = double(t * PBA_PI);
-                        r[1] = double(xy/t * PBA_PI);
-                        r[2] = double(xz/t * PBA_PI);
-                    }
-                } else if (yy > zz)
-                {
-                    if (yy< epsilon)
-                    {
-                        r[0] = r[2]  = ha; r[1] = 0;
-                    } else
-                    {
-                        double t = sqrt(yy);
-                        r[0] = double(xy/t* PBA_PI);
-                        r[1] = double( t * PBA_PI);
-                        r[2] = double(yz/t* PBA_PI);
-                    }
-                } else
-                {
-                    if (zz< epsilon)
-                    {
-                        r[0] = r[1] = ha; r[2] = 0;
-                    } else
-                    {
-                        double t  = sqrt(zz);
-                        r[0]  = double(xz/ t* PBA_PI);
-                        r[1]  = double(yz/ t* PBA_PI);
-                        r[2]  = double( t * PBA_PI);
-                    }
-                }
-            }
-        }
-        else
-        {
-            a = acos(a);
-            double b = 0.5*a/sin(a);
-            r[0]    =    double(b*(m[2][1]-m[1][2]));
-            r[1]    =    double(b*(m[0][2]-m[2][0]));
-            r[2]    =    double(b*(m[1][0]-m[0][1]));
-        }
-    }
-
     void UncompressRodriguesRotation(const double r[3], double m[])
     {
         double a = sqrt(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]);
@@ -959,9 +878,6 @@ namespace ProgramCPU
             nc[11] = m[6] * c[4+1] + m[7] * c[4+4] + m[8] * c[4+7];
             nc[12] = m[6] * c[4+2] + m[7] * c[4+5] + m[8] * c[4+8];
 
-            //Float temp[3];
-            //GetRodriguesRotation((Float (*)[3])  (nc + 4), temp);
-            //UncompressRodriguesRotation(temp, nc + 4);
             nc[14] = c[14];
             nc[15] = c[15];
         }
@@ -1102,6 +1018,7 @@ namespace ProgramCPU
 
     }
 
+    // TODO: currently dead code because _num_imgpt_q == 0
     void ComputeProjectionQ(size_t nq, const double* camera,const int * qmap,  const double* wq, double* pj)
     {
         for(size_t i = 0;i < nq; ++i, qmap += 2, pj += 2, wq += 2)
@@ -1113,6 +1030,7 @@ namespace ProgramCPU
         }
     }
 
+    // TODO: currently dead code because _num_imgpt_q == 0
     void ComputeJQX( size_t nq, const double* x,  const int* qmap, const double* wq,const double* sj, double* jx)
     {
         if(sj)
@@ -1139,6 +1057,7 @@ namespace ProgramCPU
         }
     }
 
+    // TODO: currently dead code because _num_imgpt_q == 0
     void ComputeJQtEC(size_t ncam, const double* pe, const int* qlist, const double* wq, const double* sj, double* v)
     {
         if(sj)
@@ -1363,6 +1282,7 @@ namespace ProgramCPU
         }
     }
 
+    // TODO: currently dead code because _num_imgpt_q == 0
     void ComputeDiagonalAddQ(size_t ncam, const double* qw, double* d, const double* sj = NULL)
     {
         if(sj)
@@ -1700,6 +1620,7 @@ namespace ProgramCPU
         }
     }
 
+    // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set
     void ComputeDiagonalBlock_(float lambda, bool dampd, const avec& camerav,  const avec& pointv,
                              const avec& meas,  const std::vector<int>& jmapv,  const avec& sjv,
                              avec&qwv, avec& diag, avec& blocks,
@@ -2019,6 +1940,7 @@ namespace ProgramCPU
                     q->jmap, q->intrinsic_fixed, q->radial_distortion, q->mode, 0);
     END_THREAD_RPOC(ComputeJX_)
 
+    // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set.
     void ComputeJX_(size_t nproj, size_t ncam,  const double* x, double* jx, const double* camera,
                     const double* point,  const double* ms, const double* sj, const int*  jmap,
                     bool intrinsic_fixed, int radial_distortion, int mode, int mt = 16)
@@ -2245,6 +2167,7 @@ namespace ProgramCPU
                      q->cmlist, q->intrinsic_fixed, q->radial_distortion, 0);
     END_THREAD_RPOC(ComputeJtEC_)
 
+    // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set.
     template<class Float>
     void ComputeJtEC_(  size_t ncam, const Float* ee,  Float* jte,
                         const Float* c, const Float* point, const Float* ms,
@@ -2294,6 +2217,7 @@ namespace ProgramCPU
         }
     }
 
+    // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set.
     template<class Float>
     void ComputeJtE_(   size_t /*nproj*/, size_t ncam, size_t npt, const Float* ee,  Float* jte,
                         const Float* camera, const Float* point, const Float* ms, const int* jmap,
@@ -2311,6 +2235,7 @@ namespace ProgramCPU
         }
     }
 
+    // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set.
     template<class Float>
     void ComputeJtE_(   size_t nproj, size_t ncam, size_t npt, const Float* ee,  Float* jte,
                         const Float* camera, const Float* point, const Float* ms, const int* jmap,
@@ -2431,6 +2356,7 @@ void SparseBundleCPU:: SetCameraData(size_t ncam,  CameraT* cams)
     _focal_mask  = NULL;
 }
 
+// TODO: currently dead code
 void SparseBundleCPU::SetFocalMask(const int* fmask, float weight)
 {
     _focal_mask = fmask;
@@ -2481,8 +2407,6 @@ int SparseBundleCPU::InitializeBundle()
     TimerBA timer(this, TIMER_GPU_ALLOCATION);
     InitializeStorageForSFM();
     InitializeStorageForCG();
-
-    if(__debug_pba) DumpCooJacobian();
 
     return STATUS_SUCCESS;
 }
@@ -2642,6 +2566,7 @@ bool SparseBundleCPU::InitializeStorageForSFM()
     return true;
 }
 
+// TODO: currently dead code because _weight_q is not set (<= 0).
 bool SparseBundleCPU::ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int>& qlist)
 {
     ///////////////////////////////////
@@ -2714,6 +2639,7 @@ bool SparseBundleCPU::ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int
     return true;
 }
 
+// TODO: currently dead code because _weight_q is not set (<= 0).
 void SparseBundleCPU::ProcessWeightCameraQ(std::vector<int>&cpnum, std::vector<int>&qmap, double* qmapw, double* qlistw)
 {
     //set average focal length and average radial distortion
@@ -3187,6 +3113,7 @@ void SparseBundleCPU::DenormalizeData()
     }
 }
 
+// TODO: currently dead code because __cg_schur_complement is not set.
 int SparseBundleCPU:: SolveNormalEquationPCGX(float lambda)
 {
     //----------------------------------------------------------
@@ -3433,70 +3360,6 @@ int SparseBundleCPU::SolveNormalEquation(float lambda)
     }
 }
 
-void SparseBundleCPU::DumpCooJacobian()
-{
-    //////////
-    std::ofstream jo("j.txt");
-    int cn = __use_radial_distortion ? 8 : 7;
-    int width = cn * _num_camera + 3 * _num_point;
-    jo <<"%%MatrixMarket matrix coordinate real general\n";
-    jo << (_num_imgpt * 2)  << " " << width << " " << (cn + 3) * _num_imgpt * 2 <<'\n';
-    for(int i = 0; i < _num_imgpt; ++i)
-    {
-        int ci = _camera_idx[i];
-        int pi = _point_idx[i];
-        int row = i * 2 +1;
-        //Float * jc = _cuJacobianCamera.data() + i * 16;
-        //Float * jp = _cuJacobianPoint.data() + i * 6;
-        int idx1 = ci * cn;
-        int idx2 = _num_camera * cn + 3 * pi;
-
-        for(int k = 0; k < 2; ++k, ++row)
-        {
-            for(int j = 0; j < cn; ++j)
-            {
-                jo << row << " " << (idx1 + j + 1) << " 1\n";
-            }
-            for(int j =0; j < 3; ++j)
-            {
-                jo << row << " " << (idx2 + j +1) << " 1\n";
-            }
-        }
-    }
-
-    std::ofstream jt("jt.txt");
-    jt <<"%%MatrixMarket matrix coordinate real general\n";
-    jt << width << " " << (_num_imgpt * 2)  << " " << (cn + 3) * _num_imgpt * 2<< '\n';
-
-    int * lisc = &_cuCameraMeasurementList[0];
-    int * mapc = &_cuCameraMeasurementMap[0];
-    int * mapp = &_cuPointMeasurementMap[0];
-
-    for(int i = 0; i < _num_camera; ++i)
-    {
-        int c0 = mapc[i];
-        int c1 = mapc[i + 1];
-        for(int k = 0; k < cn; ++k)
-        {
-            int row = i * cn + k + 1;
-            for(int j = c0; j < c1; ++j)
-                jt  << row << " " << ( lisc[j]* 2 +1) << " 1\n"
-                    << row << " " << (2 * lisc[j] + 2) << " 1\n"; ;
-        }
-    }
-    for(int i = 0; i < _num_point; ++i)
-    {
-        int p0 = mapp[i];
-        int p1 = mapp[i + 1];
-        for(int k = 0; k < 3; ++k)
-        {
-            int row = i * 3 + _num_camera * cn + k + 1;
-            for(int j = p0; j < p1; ++j)
-                jt  << row << " " << ( 2 * j +1) << " 1\n"
-                    << row << " " << (2 * j + 2) << " 1\n"; ;
-        }
-    }
-}
 
 void SparseBundleCPU::RunTestIterationLM(bool reduced)
 {

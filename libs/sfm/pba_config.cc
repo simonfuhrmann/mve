@@ -101,7 +101,6 @@ ConfigBA::ConfigBA()
     __num_cpu_thread_all = 0;
 
     ///////////////////////
-    __debug_pba = false;
     __profile_pba = 0;
     __cpu_thread_profile = false;
     __warmup_device = false;
@@ -513,9 +512,6 @@ void ConfigBA::ParseParam(int argc, char** argv)
             break;
         case MAKEINT3(d, c, e):
             if(i + 1 < argc && sscanf(param, "%f", &argf) && argf > 0 && argf <= 0.01) __depth_check_epsilon = argf;
-            break;
-        case MAKEINT4(d, e, b, u):
-            __debug_pba = true;
             break;
         case MAKEINT4(e, v, a, l):
             __lm_max_iteration = 100;
