@@ -223,8 +223,6 @@ protected:
     void        RunProfileSteps();
     void        RunTestIterationLM(bool reduced);
     void        DumpCooJacobian();
-private:
-    static int	FindProcessorCoreNum();
 public:
 
     virtual void AbortBundleAdjustment()                    {__abort_flag = true;}

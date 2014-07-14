@@ -63,6 +63,8 @@
     #include <unistd.h>
 #endif
 
+#include <omp.h>
+
 //maximum thread count
 #define THREAD_NUM_MAX 64
 //compute the number of threads for vector operatoins, pure heuristics...
@@ -2304,7 +2306,7 @@ SparseBundleCPU:: SparseBundleCPU()
     , _num_imgpt_q(0)
 {
     __cpu_data_precision = sizeof(double);
-    if(__num_cpu_cores == 0)	__num_cpu_cores = FindProcessorCoreNum();
+    if(__num_cpu_cores == 0)	__num_cpu_cores = omp_get_num_procs();
     if(__verbose_level)			std::cout  << "CPU " << (__cpu_data_precision == 4 ? "single" : "double")
                                            << "-precisoin solver; " << __num_cpu_cores << " cores"
 #ifdef CPUPBA_USE_AVX
@@ -3865,20 +3867,6 @@ void SparseBundleCPU::RunProfileSteps()
     PROFILE(ComputeJtE, (_cuImageProj, _cuVectorJtE));
     PROFILE(ComputeBlockPC, (0.001f, true));
     std::cout <<  "---------------------------------\n";
-}
-
-int SparseBundleCPU::FindProcessorCoreNum()
-{
-#ifdef _WIN32
-    #if defined(WINAPI_FAMILY) && WINAPI_FAMILY==WINAPI_FAMILY_APP
-    SYSTEM_INFO sysinfo;	GetNativeSystemInfo( &sysinfo );
-    #else
-    SYSTEM_INFO sysinfo;	GetSystemInfo( &sysinfo );
-    #endif
-    return sysinfo.dwNumberOfProcessors;
-#else
-    return sysconf( _SC_NPROCESSORS_ONLN );
-#endif
 }
 
 SFM_PBA_NAMESPACE_END
