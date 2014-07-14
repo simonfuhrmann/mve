@@ -34,18 +34,7 @@
 #endif
 
 //#define POINT_DATA_ALIGN4
-#if defined(__arm__) || defined(_M_ARM)
-    #undef CPUPBA_USE_SSE
-    #undef CPUPBA_USE_AVX
-    #undef POINT_DATA_ALIGN4
-    #if defined(_M_ARM) && _M_ARM >=7 && !defined (DISABLE_CPU_NEON)
-        #include <arm_neon.h>
-        #define CPUPBA_USE_NEON
-    #elif defined(__ARM_NEON__)  && !defined (DISABLE_CPU_NEON)
-        #include <arm_neon.h>
-        #define CPUPBA_USE_NEON
-    #endif
-#elif defined(CPUPBA_USE_AVX)// Using AVX
+#if defined(CPUPBA_USE_AVX)// Using AVX
     #include <immintrin.h>
     #undef CPUPBA_USE_SSE
     #undef POINT_DATA_ALIGN4
@@ -409,99 +398,6 @@ namespace ProgramCPU
     }
 };
 
-#endif
-
-#ifdef CPUPBA_USE_NEON
-#define CPUPBA_USE_SIMD
-#define SIMD_NO_SQRT
-#define SIMD_NO_DOUBLE
-namespace MYNEON
-{
-    template<class Float> class SSE{};
-    template<>  class SSE<float>  { public: typedef  float32x4_t sse_type;   };
-
-    ////////////////////////////////////////////
-    template <class Float> inline size_t sse_step()    {return 16 / sizeof(Float); };
-    inline float32x4_t sse_load1(const float* p)     {return vld1q_dup_f32(p); }
-    inline float32x4_t sse_load(const float* p)      {return vld1q_f32(p);}
-    inline float32x4_t sse_loadzero(){float z = 0; return sse_load1(&z); }
-    inline float32x4_t sse_add(float32x4_t s1, float32x4_t s2)     {return vaddq_f32(s1, s2);}
-    inline float32x4_t sse_sub(float32x4_t s1, float32x4_t s2)     {return vsubq_f32(s1, s2);}
-    inline float32x4_t sse_mul(float32x4_t s1, float32x4_t s2)     {return vmulq_f32(s1, s2);}
-    //inline float32x4_t sse_sqrt(float32x4_t s)                {return _mm_sqrt_ps(s); }
-    inline float    sse_sum(float32x4_t s)    {float *f = (float*) (&s); return (f[0] + f[2]) + (f[1] + f[3]);}
-    inline void     sse_store(float *p, float32x4_t s){vst1q_f32(p, s); }
-    inline void		data_prefetch(const void* p) {}
-};
-namespace ProgramCPU
-{
-    using namespace MYNEON;
-    #define SSE_ZERO sse_loadzero()
-    #define SSE_T typename SSE<Float>::sse_type
-    /////////////////////////////
-    inline void   ScaleJ4(float* jcx, float* jcy, const float* sj)
-    {
-         float32x4_t ps = sse_load(sj);
-        sse_store(jcx, sse_mul(sse_load(jcx), ps));
-        sse_store(jcy, sse_mul(sse_load(jcy), ps));
-    }
-    inline void   ScaleJ8(float* jcx, float* jcy, const float* sj)
-    {
-        ScaleJ4(jcx, jcy, sj);
-        ScaleJ4(jcx + 4, jcy + 4, sj + 4);
-    }
-
-    inline float   DotProduct8(const float* v1, const float* v2)
-    {
-        float32x4_t ds = sse_add(
-            sse_mul(sse_load(v1),     sse_load(v2)),
-            sse_mul(sse_load(v1 + 4), sse_load(v2 + 4)));
-        return sse_sum(ds);
-    }
-
-    inline void  ComputeTwoJX(const float* jc, const float* jp, const float* xc, const float* xp, float* jx)
-    {
-#ifdef POINT_DATA_ALIGN4
-        float32x4_t xc1 = sse_load(xc), xc2 = sse_load(xc + 4), mxp = sse_load(xp);
-        float32x4_t ds1 = sse_add(sse_mul(sse_load(jc),  xc1), sse_mul(sse_load(jc + 4), xc2));
-        float32x4_t dx1 = sse_add(ds1, sse_mul(sse_load(jp), mxp));
-        jx[0] = sse_sum(dx1);
-        float32x4_t ds2 = sse_add(sse_mul(sse_load(jc + 8), xc1), sse_mul(sse_load(jc + 12), xc2));
-        float32x4_t dx2 = sse_add(ds2, sse_mul(sse_load(jp + 4), mxp));
-        jx[1] = sse_sum(dx2);
-#else
-        float32x4_t xc1 = sse_load(xc),		xc2 = sse_load(xc + 4);
-        float32x4_t jc1 = sse_load(jc),       jc2 = sse_load(jc + 4);
-        float32x4_t jc3 = sse_load(jc + 8),   jc4 = sse_load(jc + 12);
-        float32x4_t ds1 = sse_add(sse_mul(jc1, xc1), sse_mul(jc2, xc2));
-        float32x4_t ds2 = sse_add(sse_mul(jc3, xc1), sse_mul(jc4, xc2));
-        jx[0] = sse_sum(ds1) + (jp[0] * xp[0] + jp[1] * xp[1] + jp[2] * xp[2]);
-        jx[1] = sse_sum(ds2) + (jp[POINT_ALIGN] * xp[0] + jp[POINT_ALIGN+1] * xp[1] + jp[POINT_ALIGN+2] * xp[2]);
-        /*jx[0] = (sse_dot(jc1, xc1) + sse_dot(jc2, xc2)) + (jp[0] * xp[0] + jp[1] * xp[1] + jp[2] * xp[2]);
-        jx[1] = (sse_dot(jc3, xc1) + sse_dot(jc4, xc2)) + (jp[POINT_ALIGN] * xp[0] + jp[POINT_ALIGN+1] * xp[1] + jp[POINT_ALIGN+2] * xp[2]);*/
-#endif
-    }
-
-    //v += ax
-    inline void   AddScaledVec8(float a, const float* x, float* v)
-    {
-        float32x4_t aa = sse_load1(&a);
-        sse_store(v  , sse_add( sse_mul(sse_load(x    ), aa), sse_load(v  )));
-        sse_store(v+4, sse_add( sse_mul(sse_load(x + 4), aa), sse_load(v+4)));
-    }
-
-    inline void AddBlockJtJ(const float * jc, float * block, int vn)
-    {
-        float32x4_t j1 = sse_load(jc);
-        float32x4_t j2 = sse_load(jc + 4);
-        for(int i = 0; i < vn; ++i, ++jc, block += 8)
-        {
-            float32x4_t a = sse_load1(jc);
-            sse_store(block + 0, sse_add(sse_mul(a, j1), sse_load(block + 0)));
-            sse_store(block + 4, sse_add(sse_mul(a, j2), sse_load(block + 4)));
-        }
-    }
-};
 #endif
 
 namespace ProgramCPU
