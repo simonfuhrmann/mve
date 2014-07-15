@@ -29,7 +29,7 @@ MATH_NAMESPACE_BEGIN
  * SVD for dynamic-size matrices of size MxN (M rows, N columns).
  * The function decomposes input matrix A such that A = USV^T where
  * A is MxN, U is MxN, S is a N-vector and V is NxN.
- * None of U, S or V must be NULL as the memory is internally used.
+ * Any of U, S or V can be NULL, however, this does not save operations.
  *
  * If m < n, the SVD is applied to the transposed matrix. The output is
  * transposed afterwards such that A = USV^T holds for the input matrix.
@@ -44,7 +44,7 @@ MATH_NAMESPACE_BEGIN
 template <typename T>
 void
 matrix_svd (T const* mat_a, int rows, int cols,
-    T* mat_u, T* vec_s, T* mat_v, T const& epsilon);
+    T* mat_u, T* vec_s, T* mat_v, T const& epsilon = 1e-12);
 
 /**
  * SVD for compile-time fixed-size matrices. The implementation of this
@@ -54,7 +54,7 @@ matrix_svd (T const* mat_a, int rows, int cols,
 template <typename T, int M, int N>
 void
 matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
-    Matrix<T, N, N>* mat_s, Matrix<T, N, N>* mat_v, T const& epsilon);
+    Matrix<T, N, N>* mat_s, Matrix<T, N, N>* mat_v, T const& epsilon = 1e-12);
 
 /**
  * Computes the Moore–Penrose pseudoinverse of matrix A using the SVD.
@@ -65,7 +65,7 @@ matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
 template <typename T, int M, int N>
 void
 matrix_pseudo_inverse (Matrix<T, M, N> const& A,
-    Matrix<T, N, M>* result, T const& epsilon);
+    Matrix<T, N, M>* result, T const& epsilon = 1e-12);
 
 MATH_NAMESPACE_END
 
@@ -253,10 +253,17 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
     for (int k = 0; k < steps; ++k)
     {
         int const sub_length = cols - k + (rows == cols ? 0 : 1);
-        T input_vec[sub_length];
-        T house_vec[sub_length];
-        T house_mat[sub_length * sub_length];
+        std::vector<T> buffer(sub_length // input_vec
+            + sub_length // house_vec
+            + sub_length * sub_length // house_mat
+            + rows * rows // update_u
+            + rows * rows); // mat_u_tmp
+        T* input_vec = &buffer[0];
+        T* house_vec = input_vec + sub_length;
+        T* house_mat = house_vec + sub_length;
         T house_beta;
+        T* update_u = house_mat + sub_length * sub_length;
+        T* mat_u_tmp = update_u + rows * rows;
 
         for (int i = 0; i < sub_length; ++i)
             input_vec[i] = mat_b[(k + i) * cols + k];
@@ -272,7 +279,6 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
             mat_b[i * cols + k] = T(0);
 
         /* Construct U update matrix and update U. */
-        T update_u[rows * rows];
         std::fill(update_u, update_u + rows * rows, T(0));
         for (int i = 0; i < k; ++i)
             update_u[i * rows + i] = T(1);
@@ -286,7 +292,6 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
         }
 
         /* Copy matrix U for multiplication. */
-        T mat_u_tmp[rows * rows];
         std::copy(mat_u, mat_u + rows * rows, mat_u_tmp);
         matrix_multiply(mat_u_tmp, rows, rows, update_u, rows, mat_u);
 
@@ -299,11 +304,25 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
             if (MATH_EPSILON_EQ(norm, T(0), epsilon))
                 norm = T(1);
 
-            int inner_sub_length = cols - (k + 1);
-            T inner_input_vec[inner_sub_length];
-            T inner_house_vec[inner_sub_length];
-            T inner_house_mat[inner_sub_length * inner_sub_length];
+            int const inner_sub_length = cols - (k + 1);
+            int const slice_rows = rows - k;
+            int const slice_cols = cols - k - 1;
+            std::vector<T> buffer2(inner_sub_length // inner_input_vec
+                + inner_sub_length // inner_house_vec
+                + inner_sub_length * inner_sub_length // inner_house_mat
+                + slice_rows * slice_cols // mat_b_res
+                + slice_rows * slice_cols // mat_b_tmp
+                + cols * cols // update_v
+                + cols * cols); // mat_v_tmp
+
+            T* inner_input_vec = &buffer2[0];
+            T* inner_house_vec = inner_input_vec + inner_sub_length;
+            T* inner_house_mat = inner_house_vec + inner_sub_length;
             T inner_house_beta;
+            T* mat_b_res = inner_house_mat  + inner_sub_length * inner_sub_length;
+            T* mat_b_tmp = mat_b_res + slice_rows * slice_cols;
+            T* update_v = mat_b_tmp + slice_rows * slice_cols;
+            T* mat_v_tmp = update_v + cols * cols;
 
             for (int i = 0; i < cols - k - 1; ++i)
                 inner_input_vec[i] = mat_b[k * cols + (k + 1 + i)];
@@ -314,10 +333,6 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
                 inner_house_beta, inner_house_mat);
 
             /* Cut out mat_b(k:m, (k+1):n). */
-            int slice_rows = rows - k;
-            int slice_cols = cols - k - 1;
-            T mat_b_res[slice_rows * slice_cols];
-            T mat_b_tmp[slice_rows * slice_cols];
             for (int i = 0; i < slice_rows; ++i)
             {
                 for (int j = 0; j < slice_cols; ++j)
@@ -342,7 +357,6 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
             for (int i = k + 2; i < cols; ++i)
                 mat_b[k * cols + i] = T(0);
 
-            T update_v[cols * cols];
             std::fill(update_v, update_v + cols * cols, T(0));
             for (int i = 0; i < k + 1; ++i)
                 update_v[i * cols + i] = T(1);
@@ -356,7 +370,6 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
             }
 
             /* Copy matrix v for multiplication. */
-            T mat_v_tmp[cols * cols];
             std::copy(mat_v, mat_v + cols * cols, mat_v_tmp);
             matrix_multiply(mat_v_tmp, cols, cols, update_v, cols, mat_v);
         }
@@ -500,7 +513,7 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
         for (int k = 0; k < cols; ++k)
         {
             int const slice_len = k + 1;
-            T mat_b33[slice_len * slice_len];
+            std::vector<T> mat_b33(slice_len * slice_len);
             for (int i = 0; i < slice_len; ++i)
             {
                 for (int j = 0; j < slice_len; ++j)
@@ -510,7 +523,7 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
                 }
             }
 
-            if (matrix_is_diagonal(mat_b33, slice_len, slice_len, epsilon))
+            if (matrix_is_diagonal(&mat_b33[0], slice_len, slice_len, epsilon))
             {
                 if (k < cols - 1)
                 {
@@ -648,6 +661,26 @@ void
 matrix_svd (T const* mat_a, int rows, int cols,
     T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
 {
+    /* Allow for NULL result matrices. */
+    std::vector<T> mat_u_tmp;
+    std::vector<T> vec_s_tmp;
+    std::vector<T> mat_v_tmp;
+    if (mat_u == NULL)
+    {
+        mat_u_tmp.resize(rows * cols);
+        mat_u = &mat_u_tmp[0];
+    }
+    if (vec_s == NULL)
+    {
+        vec_s_tmp.resize(cols);
+        vec_s = &vec_s_tmp[0];
+    }
+    if (mat_v == NULL)
+    {
+        mat_v_tmp.resize(cols * cols);
+        mat_v = &mat_v_tmp[0];
+    }
+
     /*
      * The SVD can only handle systems where rows > cols. Thus, in case
      * of cols > rows, the input matrix is transposed and the resulting
@@ -671,15 +704,14 @@ matrix_svd (T const* mat_a, int rows, int cols,
         was_transposed = true;
     }
 
+    /* Perform economy SVD if rows > 5/3 cols to save some operations. */
     if (rows >= 5 * cols / 3)
     {
-        /* Perform economy SVD to save some operations. */
         internal::matrix_r_svd(mat_a, rows, cols,
             mat_u, vec_s, mat_v, epsilon);
     }
     else
     {
-        /* Perform SVD. */
         internal::matrix_gk_svd(mat_a, rows, cols,
             mat_u, vec_s, mat_v, epsilon);
     }
@@ -731,22 +763,19 @@ void
 matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
     Matrix<T, N, N>* mat_s, Matrix<T, N, N>* mat_v, T const& epsilon)
 {
-    Matrix<T, M, N> tmp_u;
-    Vector<T, N> tmp_s;
-    Matrix<T, N, N> tmp_v;
+    T* mat_u_ptr = mat_u ? mat_u->begin() : NULL;
+    T* mat_s_ptr = mat_s ? mat_s->begin() : NULL;
+    T* mat_v_ptr = mat_v ? mat_v->begin() : NULL;
 
     matrix_svd<T>(mat_a.begin(), M, N,
-        tmp_u.begin(), tmp_s.begin(), tmp_v.begin(), epsilon);
+        mat_u_ptr, mat_s_ptr, mat_v_ptr, epsilon);
 
-    if (mat_u != NULL)
-        *mat_u = tmp_u;
-    if (mat_v != NULL)
-        *mat_v = tmp_v;
-    if (mat_s != NULL)
+    /* Swap elements of S into place. */
+    if (mat_s_ptr)
     {
-        mat_s->fill(T(0));
-        for (int i = 0; i < N; ++i)
-            (*mat_s)(i, i) = tmp_s[i];
+        std::fill(mat_s_ptr + N, mat_s_ptr + N * N, T(0));
+        for (int x = 1, i = N + 1; x < N; ++x, i += N + 1)
+            std::swap(mat_s_ptr[x], mat_s_ptr[i]);
     }
 }
 
