@@ -191,24 +191,20 @@ IsoOctree::print_progress (std::size_t voxels_done, std::size_t voxels_total)
     /* Compute percentage and nice elapsed and ETA strings. */
     unsigned int elapsed_mins = elapsed / (1000 * 60);
     unsigned int elapsed_secs = (elapsed / 1000) % 60;
-    unsigned int elapsed_msec = elapsed % 1000;
     float percentage = static_cast<float>(voxels_done)
         / static_cast<float>(voxels_total) ;
     unsigned int total = static_cast<unsigned int>(elapsed / percentage);
     unsigned int remaining = total - elapsed;
     unsigned int remaining_mins = remaining / (1000 * 60);
     unsigned int remaining_secs = (remaining / 1000) % 60;
-    unsigned int remaining_msec = remaining % 1000;
 
     std::cout << "\rProcessing voxel " //<< this->voxels.size()
         << this->num_processed
         << " (" << util::string::get_fixed(percentage * 100.0f, 2) << "%, "
         << elapsed_mins << ":"
-        << util::string::get_filled(elapsed_secs, 2, '0') << "."
-        << util::string::get_filled(elapsed_msec, 3, '0') << ", ETA "
+        << util::string::get_filled(elapsed_secs, 2, '0') << ", ETA "
         << remaining_mins << ":"
-        << util::string::get_filled(remaining_secs, 2, '0') << "."
-        << util::string::get_filled(remaining_msec, 3, '0') << ")..."
+        << util::string::get_filled(remaining_secs, 2, '0') << ")..."
         << std::flush;
 }
 
