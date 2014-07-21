@@ -67,7 +67,8 @@ PointSet::read_from_file (std::string const& filename)
             num_skipped_zero_normal += 1;
             continue;
         }
-        else if (MATH_EPSILON_EQ(1.0f, s.normal.square_norm(), 0.05f))
+
+        if (!MATH_EPSILON_EQ(1.0f, s.normal.square_norm(), 1e-5f))
         {
             s.normal.normalize();
             num_unnormalized_normals += 1;
