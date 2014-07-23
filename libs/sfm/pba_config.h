@@ -188,7 +188,6 @@ protected:
     int     __recent_cg_status;
     int     __profile_pba;
     bool    __cpu_thread_profile;
-    bool    __debug_pba;
     bool    __warmup_device;
     size_t  __memory_usage;
     /////////////////////////////////////

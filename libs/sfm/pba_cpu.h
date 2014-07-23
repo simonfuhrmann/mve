@@ -123,7 +123,6 @@ public:
     inline const double* end() const {return _last;}
     inline size_t size() const {return _size;}
     inline size_t IsValid() const {return _size;}
-    void SaveToFile(const char* name);
 };
 
 class SparseBundleCPU : public ConfigBA
@@ -224,8 +223,6 @@ protected:
     void        RunProfileSteps();
     void        RunTestIterationLM(bool reduced);
     void        DumpCooJacobian();
-private:
-    static int	FindProcessorCoreNum();
 public:
 
     virtual void AbortBundleAdjustment()                    {__abort_flag = true;}
