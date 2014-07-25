@@ -15,7 +15,7 @@ for details on MVE, and the next section for downloading and building MVE.
     http://www.gris.tu-darmstadt.de/projects/multiview-environment/
 
 
-Downlaoding and Building MVE and FSSR
+Downloading and Building MVE and FSSR
 ======================================================================
 
 MVE requires libjpeg, libpng and libtiff as dependencies, which can be obtained
