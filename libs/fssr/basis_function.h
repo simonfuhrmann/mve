@@ -47,10 +47,10 @@ T
 gaussian_normalized (Sample const& sample, math::Vector<T, 3> const& pos);
 
 /*
- * The Gaussian derivative function in 3D. The is actually the function
- * where the derivative is only taken in x-direction, the y and z direction
- * are usual Gaussians. This basis function expects 'pos' to be shifted and
- * rotated properly.
+ * The Gaussian derivative function in 3D. This is actually the function
+ * where the Gaussian derivative is used in x-direction (along the normal),
+ * the y and z direction are usual Gaussians. This function expects 'pos'
+ * to be shifted and rotated into the local coordinate system of the sample.
  */
 template <typename T>
 T
@@ -58,9 +58,10 @@ gaussian_derivative (T const& sigma, math::Vector<T, 3> const& pos);
 
 /**
  * Evaluates the 3D derivative of the Gaussian with respect to the sample's
- * position and orientation for the given query position. The derivative
- * is rotated in such a way that along the normal direction (i.e. in front
- * of the surface) the function takes positive values.
+ * position and orientation for the given query position. The query is
+ * shifted and rotated into the local coordinate systen of the sample, such
+ * that the function takes positive values in front and negative values
+ * behind the sample.
  */
 template <typename T>
 T
