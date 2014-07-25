@@ -10,7 +10,7 @@ Surface Reconstruction software accompanying the following paper:
     http://tinyurl.com/floating-scale-surface-recon
 
 This software is based on MVE, the Multi-View Environment. See the link below
-for details on MVE, and the next section for downloading and building MVE. 
+for details on MVE, and the next section for downloading and building MVE.
 
     http://www.gris.tu-darmstadt.de/projects/multiview-environment/
 
@@ -54,6 +54,7 @@ input format. All required and optional attributes are listed below:
 
 A typical PLY header (without color) then looks like this:
 
+    ply
     format binary_little_endian 1.0
     element vertex 36228
     property float x
