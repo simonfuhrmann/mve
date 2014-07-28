@@ -25,6 +25,9 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 
+message("Forcing build type to \"Release\"")
+set(CMAKE_BUILD_TYPE Release)
+
 find_file(WIN32_MAK_LOCATION win32.mak
 	DOC "Location of win32.mak"
 	PATHS
