@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
+
+project(3rdparty)
 include(ExternalProject)
 
 set(LIBJPEG_FILENAME "jpegsr9a.zip")
