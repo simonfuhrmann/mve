@@ -32,9 +32,7 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         if (views[i] == NULL)
             continue;
 
-        Viewport* viewport = (viewports == NULL ? NULL : &viewports->at(i));
         mve::View::Ptr view = views[i];
-
         mve::ByteImage::Ptr image
             = view->get_byte_image(this->opts.image_embedding);
         if (image == NULL)
@@ -51,6 +49,7 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
             << ")..." << std::endl;
 
         /* Compute features for view. */
+        Viewport* viewport = &viewports->at(i);
         viewport->features.set_options(this->opts.feature_options);
         viewport->features.compute_features(image);
         viewport->width = image->width();
