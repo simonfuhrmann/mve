@@ -180,6 +180,13 @@ sfm_reconstruct (AppSettings const& conf)
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].features.clean_descriptors();
 
+    /* Check if there are some matching images. */
+    if (pairwise_matching.empty())
+    {
+        std::cerr << "No matching image pairs. Exiting." << std::endl;
+        std::exit(1);
+    }
+
     /* Start timer for incremental SfM. */
     util::WallTimer timer;
 
@@ -392,7 +399,7 @@ main (int argc, char** argv)
     args.add_option('e', "exif", true, "EXIF data embedding [exif]");
     args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing [6000000]");
     args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
-    args.add_option('\0', "prebundle", true, "Load/store pre-bundle from file [prebundle.sfm]");
+    args.add_option('\0', "prebundle", true, "Load/store pre-bundle file [prebundle.sfm]");
     args.add_option('\0', "log-file", true, "Logs some timings to file []");
     args.add_option('\0', "no-prediction", false, "Disables matchability prediction");
     args.add_option('\0', "skip-sfm", false, "Compute prebundle, skip SfM reconstruction");
