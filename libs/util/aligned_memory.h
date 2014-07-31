@@ -6,6 +6,7 @@
 #ifndef UTIL_ALIGNED_MEMORY_HEADER
 #define UTIL_ALIGNED_MEMORY_HEADER
 
+#include <algorithm>
 #include <cstddef>
 
 #include "util/defines.h"

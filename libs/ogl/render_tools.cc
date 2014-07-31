@@ -86,18 +86,18 @@ create_fullscreen_quad (ShaderProgram::Ptr shader)
     mve::TriangleMesh::NormalList& vnormals(mesh->get_vertex_normals());
     mve::TriangleMesh::TexCoordList& vtexuv(mesh->get_vertex_texcoords());
 
-    verts.push_back(math::Vec3f(-1.0f, -1.0f, 0.0f));
-    verts.push_back(math::Vec3f(1.0f, -1.0f, 0.0f));
-    verts.push_back(math::Vec3f(1.0f, 1.0f, 0.0f));
     verts.push_back(math::Vec3f(-1.0f, 1.0f, 0.0f));
+    verts.push_back(math::Vec3f(-1.0f, -1.0f, 0.0f));
+    verts.push_back(math::Vec3f(1.0f, 1.0f, 0.0f));
+    verts.push_back(math::Vec3f(1.0f, -1.0f, 0.0f));
     vnormals.push_back(math::Vec3f(0.0f, 0.0f, 1.0f));
     vnormals.push_back(math::Vec3f(0.0f, 0.0f, 1.0f));
     vnormals.push_back(math::Vec3f(0.0f, 0.0f, 1.0f));
     vnormals.push_back(math::Vec3f(0.0f, 0.0f, 1.0f));
-    vtexuv.push_back(math::Vec2f(0.0f, 1.0f));
-    vtexuv.push_back(math::Vec2f(1.0f, 1.0f));
-    vtexuv.push_back(math::Vec2f(1.0f, 0.0f));
     vtexuv.push_back(math::Vec2f(0.0f, 0.0f));
+    vtexuv.push_back(math::Vec2f(0.0f, 1.0f));
+    vtexuv.push_back(math::Vec2f(1.0f, 0.0f));
+    vtexuv.push_back(math::Vec2f(1.0f, 1.0f));
 
     /* Generate the renderer. */
     MeshRenderer::Ptr ret(MeshRenderer::create());

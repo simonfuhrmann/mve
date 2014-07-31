@@ -75,7 +75,10 @@ public:
     /**
      * Stores the 3x3 calibration (or projection) matrix (K-matrix in
      * Hartley, Zisserman). The matrix projects a point in camera coordinates
-     * to the image plane with dimensions 'w' and 'h'.
+     * to the image plane with dimensions 'width' and 'height'. The convention
+     * is that the camera looks along the positive z-axis. To obtain the
+     * pixel coordinates after projection, 0.5 must be subtracted from the
+     * coordinates.
      *
      * If the dimensions of the image are unknown, the generic projection
      * matrix with w=1 and h=1 can be used. Image coordinates x' and y' for
@@ -88,8 +91,9 @@ public:
 
     /**
      * Stores 3x3 inverse calibration (or inverse projection) matrix.
-     * The matrix projects a point (x, y, 1) on the image plane into
-     * the camera coordinate system.
+     * The matrix projects a point (x, y, 1) from the image plane into
+     * the camera coordinate system. Note that 0.5 must be added to the pixel
+     * coordinates x and y before projection.
      */
     void fill_inverse_calibration (float* mat,
         float width, float height) const;

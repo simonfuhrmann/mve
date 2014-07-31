@@ -143,27 +143,32 @@ struct JobDMRecon : public JobProgress
     {
         if (!this->thread_started)
             return "Waiting for slot";
-        if (this->message.empty() && this->progress == NULL)
+
+        if (this->progress == NULL)
+        {
+            if (!this->message.empty())
+                return this->message.c_str();
             return "Waiting...";
-        if (!this->message.empty() && this->progress == NULL)
-            return this->message.c_str();
-        if (this->progress && this->progress->cancelled)
+        }
+
+        if (this->progress->cancelled)
             return "Cancelling...";
+
         switch (this->progress->status)
         {
-        case mvs::RECON_IDLE: return "MVS is idle";
-        case mvs::RECON_GLOBALVS: return "Global VS...";
-        case mvs::RECON_FEATURES: return "Processing Features...";
-        case mvs::RECON_SAVING: return "Saving reconstruction...";
-        case mvs::RECON_CANCELLED: return "Cancelled";
-        case mvs::RECON_QUEUE:
-        {
-            std::stringstream ss;
-            ss << "Queue: " << progress->queueSize;
-            this->message = ss.str();
-            return this->message.c_str();
-        }
-        default: return "Unknown status";
+            case mvs::RECON_IDLE: return "MVS is idle";
+            case mvs::RECON_GLOBALVS: return "Global VS...";
+            case mvs::RECON_FEATURES: return "Processing Features...";
+            case mvs::RECON_SAVING: return "Saving reconstruction...";
+            case mvs::RECON_CANCELLED: return "Cancelled";
+            case mvs::RECON_QUEUE:
+            {
+                std::stringstream ss;
+                ss << "Queue: " << progress->queueSize;
+                this->message = ss.str();
+                return this->message.c_str();
+            }
+            default: return "Unknown status";
         }
     }
     void cancel_job (void)
@@ -173,12 +178,6 @@ struct JobDMRecon : public JobProgress
             return;
 
         this->progress->cancelled = true;
-        std::cout << "Should cancel job \"" << name << "\"" << std::endl;
-        std::cout << "  Running: " << this->future.isRunning() << std::endl
-            << "  Paused: " << this->future.isPaused() << std::endl
-            << "  Finished: " << this->future.isFinished() << std::endl
-            << "  Started: " << this->future.isStarted() << std::endl
-            << "  Canceled: " << this->future.isCanceled() << std::endl;
     }
 };
 
@@ -266,7 +265,6 @@ ImageOperationsWidget::threaded_dmrecon (JobDMRecon* job)
             job->message = "Cancelled!";
         else
             job->message = "Finished.";
-
         job->progress = NULL;
         std::cout << "Reconstruction finished!" << std::endl;
 

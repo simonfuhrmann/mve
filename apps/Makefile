@@ -1,5 +1,5 @@
 all:
-	@echo "Apps need to be build separately."
+	@echo "Apps need to be built separately."
 	@echo "For apps requiring qmake: Run 'qmake', then 'make'."
 
 clean:

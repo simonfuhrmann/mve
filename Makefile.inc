@@ -1,8 +1,9 @@
 # Default values.
 CXX ?= g++
-CXXFLAGS ?= -Wall -Wextra -Wundef -pedantic -g -O3
+CXXFEATURES ?= -funsafe-math-optimizations -fno-math-errno
+CXXFLAGS ?= -Wall -Wextra -Wundef -pedantic -g -O3 ${CXXFEATURES}
 
-# Delete this if libgomp.a is not installed! (e.g., OS X without gcc)
+# Delete this if OpenMP is not available (e.g., OS X without gcc)
 OPENMP ?= -fopenmp
 
 # Always compile programs and libs with multi-threading.
