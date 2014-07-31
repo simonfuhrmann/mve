@@ -503,11 +503,14 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     /* Configure PBA. */
     pba::SparseBundleCPU pba;
     pba.EnableRadialDistortion(PBA_DISTORTION_TYPE);
+    pba.SetNextTimeBudget(0);
     if (single_camera_ba >= 0)
         pba.SetNextBundleMode(pba::BUNDLE_ONLY_MOTION);
     else
         pba.SetNextBundleMode(pba::BUNDLE_FULL);
-    pba.SetNextTimeBudget(0);
+
+    if (this->opts.ba_fixed_intrinsics)
+        pba.SetFixedIntrinsics(true);
 
     pba.GetInternalConfig()->__verbose_cg_iteration = false;
     pba.GetInternalConfig()->__verbose_level = -1;

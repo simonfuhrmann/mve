@@ -41,7 +41,10 @@ struct AppSettings
     bool lowres_matching;
     bool skip_sfm;
     bool always_full_ba;
+    bool fixed_intrinsics;
     int video_matching;
+    float track_error_thres_factor;
+    float new_track_error_thres;
 };
 
 void
@@ -212,7 +215,7 @@ sfm_reconstruct (AppSettings const& conf)
     init_pair_opts.homography_opts.already_normalized = false;
     init_pair_opts.homography_opts.threshold = 3.0f;
     init_pair_opts.homography_opts.verbose_output = false;
-    init_pair_opts.max_homography_inliers = 0.5f;
+    init_pair_opts.max_homography_inliers = 0.6f;
     init_pair_opts.verbose_output = true;
 
     sfm::bundler::InitialPair::Result init_pair_result;
@@ -244,9 +247,10 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.pose_p3p_opts.threshold = 10.0f;
     //incremental_opts.pose_p3p_opts.max_iterations = 1000;
     incremental_opts.pose_p3p_opts.verbose_output = false;
-    //incremental_opts.track_error_threshold_factor = 50.0;
-    //incremental_opts.new_track_error_threshold = 10.0;
+    incremental_opts.track_error_threshold_factor = conf.track_error_thres_factor;
+    incremental_opts.new_track_error_threshold = conf.new_track_error_thres;
     //incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
+    incremental_opts.ba_fixed_intrinsics = conf.fixed_intrinsics;
     incremental_opts.verbose_output = true;
 
     sfm::bundler::Incremental incremental(incremental_opts);
@@ -405,6 +409,9 @@ main (int argc, char** argv)
     args.add_option('\0', "skip-sfm", false, "Compute prebundle, skip SfM reconstruction");
     args.add_option('\0', "always-full-ba", false, "Run full bundle adjustment after every view");
     args.add_option('\0', "video-matching", true, "Only match to ARG previous frames [0]");
+    args.add_option('\0', "fixed-intrinsics", false, "Do not optimize camera intrinsics");
+    args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [10]");
+    args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [25]");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -419,6 +426,9 @@ main (int argc, char** argv)
     conf.skip_sfm = false;
     conf.always_full_ba = false;
     conf.video_matching = 0;
+    conf.fixed_intrinsics = false;
+    conf.track_error_thres_factor = 25.0f;
+    conf.new_track_error_thres = 10.0f;
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
@@ -444,6 +454,12 @@ main (int argc, char** argv)
             conf.always_full_ba = true;
         else if (i->opt->lopt == "video-matching")
             conf.video_matching = i->get_arg<int>();
+        else if (i->opt->lopt == "fixed-intrinsics")
+            conf.fixed_intrinsics = true;
+        else if (i->opt->lopt == "track-error-thres")
+            conf.new_track_error_thres = i->get_arg<float>();
+        else if (i->opt->lopt == "track-thres-factor")
+            conf.track_error_thres_factor = i->get_arg<float>();
         else
             throw std::invalid_argument("Unexpected option");
     }
