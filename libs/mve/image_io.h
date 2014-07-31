@@ -45,11 +45,27 @@ void
 save_file (ByteImage::ConstPtr image, std::string const& filename);
 
 /**
+ * Saves a byte image to file, detecting file type.
+ * Overloaded for non-const pointers to avoid cast ambiguities.
+ * May throw util::Exception.
+ */
+void
+save_file (ByteImage::Ptr image, std::string const& filename);
+
+/**
  * Saves a float image to file, detecting file type.
  * May throw util::Exception.
  */
 void
 save_file (FloatImage::ConstPtr image, std::string const& filename);
+
+/**
+ * Saves a float image to file, detecting file type.
+ * Overloaded for non-const pointers to avoid cast ambiguities.
+ * May throw util::Exception.
+ */
+void
+save_file (FloatImage::Ptr image, std::string const& filename);
 
 /* -------------------------- PNG support ------------------------- */
 
