@@ -79,7 +79,7 @@ IsoOctree::compute_all_voxels (void)
         << " positions, fetch a beer..." << std::endl;
 
     /* Sample the implicit function for every voxel. */
-    this->num_processed = 0;
+    std::size_t num_processed = 0;
 #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < voxels.size(); ++i)
     {
@@ -90,8 +90,8 @@ IsoOctree::compute_all_voxels (void)
 
 #pragma omp critical
         {
-            this->num_processed += 1;
-            this->print_progress(this->num_processed, this->voxels.size());
+            num_processed += 1;
+            this->print_progress(num_processed, this->voxels.size());
         }
     }
 
@@ -172,20 +172,14 @@ IsoOctree::print_progress (std::size_t voxels_done, std::size_t voxels_total)
     static unsigned int last_elapsed = 0;
 
     /* Make sure we don't call timer.get_elapsed() too often. */
-    if (voxels_done != voxels_total)
-    {
-        if (voxels_done - last_voxels_done < 500)
-            return;
-    }
+    if (voxels_done != voxels_total && voxels_done - last_voxels_done < 1000)
+        return;
     last_voxels_done = voxels_done;
 
     /* Make sure we don't print the progress too often, every 100ms. */
     unsigned int elapsed = timer.get_elapsed();
-    if (voxels_done != voxels_total)
-    {
-        if (elapsed - last_elapsed < 100)
-            return;
-    }
+    if (voxels_done != voxels_total && elapsed - last_elapsed < 100)
+        return;
     last_elapsed = elapsed;
 
     /* Compute percentage and nice elapsed and ETA strings. */
@@ -198,8 +192,7 @@ IsoOctree::print_progress (std::size_t voxels_done, std::size_t voxels_total)
     unsigned int remaining_mins = remaining / (1000 * 60);
     unsigned int remaining_secs = (remaining / 1000) % 60;
 
-    std::cout << "\rProcessing voxel " //<< this->voxels.size()
-        << this->num_processed
+    std::cout << "\rProcessing voxel " << voxels_done
         << " (" << util::string::get_fixed(percentage * 100.0f, 2) << "%, "
         << elapsed_mins << ":"
         << util::string::get_filled(elapsed_secs, 2, '0') << ", ETA "

@@ -62,7 +62,6 @@ private:
 private:
     int max_level;
     VoxelVector voxels;
-    std::size_t num_processed;
 };
 
 FSSR_NAMESPACE_END

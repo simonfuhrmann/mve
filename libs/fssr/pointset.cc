@@ -85,7 +85,7 @@ PointSet::read_from_file (std::string const& filename)
     if (num_skipped_invalid_confidence > 0)
     {
         std::cout << "WARNING: Skipped " << num_skipped_invalid_confidence
-            << " samples with invalid confidence." << std::endl;
+            << " samples with zero confidence." << std::endl;
     }
     if (num_skipped_zero_normal > 0)
     {

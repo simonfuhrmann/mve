@@ -68,7 +68,7 @@ A typical PLY header (without color) then looks like this:
     end_header
 
 If you are using MVE and want to create a surface from a set of depth maps,
-you can use the 'scene2pset' tools, which is included in the MVE distribution.
+you can use the 'scene2pset' tool, which is included in the MVE distribution.
 
     Usage: scene2pset [ OPTS ] SCENE_DIR MESH_OUT
 
