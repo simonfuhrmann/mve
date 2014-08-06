@@ -63,7 +63,12 @@
     #include <unistd.h>
 #endif
 
-#include <omp.h>
+#if defined(_OPENMP)
+#   include <omp.h>
+#else
+inline int omp_get_thread_num() { return 0;}
+inline int omp_get_num_procs (void) { return 1; }
+#endif
 
 //maximum thread count
 #define THREAD_NUM_MAX 64
