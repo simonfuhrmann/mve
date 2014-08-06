@@ -31,7 +31,23 @@ MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
 /*
- * ---------------------- Loading and Saving ----------------------
+ * -------------------------------------------------------------------
+ */
+
+void
+save_file (ByteImage::Ptr image, std::string const& filename)
+{
+    save_file(ByteImage::ConstPtr(image), filename);
+}
+
+void
+save_file (FloatImage::Ptr image, std::string const& filename)
+{
+    save_file(FloatImage::ConstPtr(image), filename);
+}
+
+/*
+ * ------------------------ Loading and Saving -----------------------
  */
 
 ByteImage::Ptr
