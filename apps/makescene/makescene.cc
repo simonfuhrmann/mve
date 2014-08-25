@@ -330,49 +330,11 @@ import_bundle_nvm (AppSettings const& conf)
         view->save_mve_file_as(conf.views_path + fname);
     }
 
-    // TODO: Use MVE to write MVE bundle file.
-
-    /* Write output bundle file for MVE. */
+    /* Use MVE to write MVE bundle file. */
     std::cout << "Writing bundle file..." << std::endl;
-    std::ofstream out((conf.output_path + "/synth_0.out").c_str());
-    if (!out.good())
-    {
-        std::cerr << "Error: Cannot open output bundle file" << std::endl;
-        return;
-    }
-
-    out << "drews 1.0" << std::endl;
-    out << cameras.size() << " " << features.size() << std::endl;
-    for (std::size_t i = 0; i < cameras.size(); ++i)
-    {
-        mve::CameraInfo const& mve_cam = cameras[i];
-        mve::NVMCameraInfo const& nvm_cam = nvm_cams[i];
-
-        out << mve_cam.flen << " "
-            << nvm_cam.radial_distortion << " 0" << std::endl;
-
-        float const* rot = mve_cam.rot;
-        out << rot[0] << " " << rot[1] << " " << rot[2] << std::endl;
-        out << rot[3] << " " << rot[4] << " " << rot[5] << std::endl;
-        out << rot[6] << " " << rot[7] << " " << rot[8] << std::endl;
-        float const* trans = mve_cam.trans;
-        out << trans[0] << " " << trans[1] << " " << trans[2] << std::endl;
-    }
-    for (std::size_t i = 0; i < features.size(); ++i)
-    {
-        mve::Bundle::Feature3D const& feature = features[i];
-        out << feature.pos[0] << " " << feature.pos[1]
-            << " " << feature.pos[2] << std::endl;
-        out << static_cast<int>(feature.color[0] * 255.0f + 0.5f) << " "
-            << static_cast<int>(feature.color[1] * 255.0f + 0.5f) << " "
-            << static_cast<int>(feature.color[2] * 255.0f + 0.5f) << std::endl;
-        out << feature.refs.size();
-        for (std::size_t j = 0; j < feature.refs.size(); ++j)
-            out << " " << feature.refs[j].view_id << " "
-                << feature.refs[j].feature_id << " 0";
-        out << std::endl;
-    }
-    out.close();
+    std::string bundle_filename
+        = util::fs::join_path(conf.output_path, "synth_0.out");
+    mve::save_mve_bundle(bundle, bundle_filename);
 
     std::cout << std::endl << "Done importing NVM file!" << std::endl;
 }
