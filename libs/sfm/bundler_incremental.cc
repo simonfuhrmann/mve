@@ -201,8 +201,11 @@ Incremental::find_next_view (void) const
 void
 Incremental::find_next_views (std::vector<int>* next_views)
 {
-    std::vector<std::pair<int, int> > valid_tracks(this->cameras.size());
+    /* Update internal camera vector after viewports are externally updated. */
+    if (this->viewports->size() != this->cameras.size())
+        this->cameras.resize(this->viewports->size());
 
+    std::vector<std::pair<int, int> > valid_tracks(this->cameras.size());
     for (std::size_t i = 0; i < valid_tracks.size(); ++i)
         valid_tracks[i] = std::pair<int, int>(0, static_cast<int>(i));
 
