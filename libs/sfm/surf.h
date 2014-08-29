@@ -95,7 +95,7 @@ public:
     typedef std::vector<Descriptor> Descriptors;
 
 public:
-    Surf (Options const& options);
+    explicit Surf (Options const& options);
 
     /** Sets the input image. */
     void set_image (mve::ByteImage::ConstPtr image);

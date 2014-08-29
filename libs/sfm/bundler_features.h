@@ -43,7 +43,7 @@ public:
     };
 
 public:
-    Features (Options const& options);
+    explicit Features (Options const& options);
 
     /**
      * Computes features for all images in the scene.

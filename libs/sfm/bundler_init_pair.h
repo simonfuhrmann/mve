@@ -52,7 +52,7 @@ public:
     };
 
 public:
-    InitialPair (Options const& options);
+    explicit InitialPair (Options const& options);
     void compute (ViewportList const& viewports,
         PairwiseMatching const& matching, Result* result);
 

@@ -31,7 +31,7 @@ public:
     };
 
 public:
-    Tracks (Options const& options);
+    explicit Tracks (Options const& options);
 
     /**
      * Computes viewport connectivity information by propagating track IDs.

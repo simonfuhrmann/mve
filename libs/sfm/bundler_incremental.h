@@ -47,7 +47,7 @@ public:
     };
 
 public:
-    Incremental (Options const& options);
+    explicit Incremental (Options const& options);
 
     /**
      * Initializes the incremental bundler and sets required data.
