@@ -37,6 +37,7 @@ DAMAGE.
 #include "BinaryNode.h"
 #include "MarchingCubes.h"
 
+/* Stores a (by construction) regular octree. Each node has either zero or eight child nodes. */
 template<class NodeData, class Real=float>
 class OctNode
 {
@@ -55,6 +56,12 @@ public:  // Types
     };
 
 public:  // Variables
+    /*
+     * Children are stored as an array of eight OctNodes. This allows each node to find its own
+     * position relative to the parent node in constant time with
+     *   index = (this - this->parent->children);
+     */
+
     OctNode* parent;
     OctNode* children;
     NodeData nodeData;
