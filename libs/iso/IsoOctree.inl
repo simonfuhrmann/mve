@@ -250,34 +250,6 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
         ri.node=finest;
         ri.edgeIndex=finestIndex;
         ri.key=getRootKey(finestNIdx, finestIndex);
-
-        /*
-        // imho, code below is equivalent to getRootKey above. [br]
-        int o,i1,i2;
-        Cube::FactorEdgeIndex(finestIndex,o,i1,i2);
-        int offset,eIndex[2];
-        offset=BinaryNode<Real>::Index(finestNIdx.depth,finestNIdx.offset[o]);
-        switch(o)
-        {
-        case 0:
-            eIndex[0]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[1],i1);
-            eIndex[1]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[2],i2);
-            break;
-        case 1:
-            eIndex[0]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[0],i1);
-            eIndex[1]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[2],i2);
-            break;
-        case 2:
-            eIndex[0]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[0],i1);
-            eIndex[1]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[1],i2);
-            break;
-        default: // SIMON
-            eIndex[0] = 0;
-            eIndex[1] = 0;
-            fprintf(stderr, "Error setting eIndex in %s:%d\n", __FILE__, __LINE__);
-        }
-        ri.key= (long long)(o) | (long long)(eIndex[0])<<5 | (long long)(eIndex[1])<<25 | (long long)(offset)<<45;
-        */
         return 1;
     }
 }
@@ -575,58 +547,6 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
         polygonSize++;
     }
 }
-
-/*
- // dead code
-template<class NodeData,class Real,class VertexData>
-template<class C>
-void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(std::vector<std::pair<C,C> >& edges,
-                                                       std::vector<std::vector<C> >& polygons)
-{
-    int polygonSize=polygons.size();
-    C frontIdx,backIdx;
-    std::pair<C,C> e,temp;
-
-    while(edges.size())
-    {
-        std::vector<std::pair<C,C> > front,back;
-        e=edges[0];
-        polygons.resize(polygonSize+1);
-        edges[0]=edges[edges.size()-1];
-        edges.pop_back();
-        frontIdx=e.second;
-        backIdx=e.first;
-        for(int j=int(edges.size())-1;j>=0;j--){
-            if(edges[j].first==frontIdx || edges[j].second==frontIdx){
-                if(edges[j].first==frontIdx)	{temp=edges[j];}
-                else							{temp.first=edges[j].second;temp.second=edges[j].first;}
-                frontIdx=temp.second;
-                front.push_back(temp);
-                edges[j]=edges[edges.size()-1];
-                edges.pop_back();
-                j=int(edges.size());
-            }
-            else if(edges[j].first==backIdx || edges[j].second==backIdx){
-                if(edges[j].second==backIdx)	{temp=edges[j];}
-                else							{temp.first=edges[j].second;temp.second=edges[j].first;}
-                backIdx=temp.first;
-                back.push_back(temp);
-                edges[j]=edges[edges.size()-1];
-                edges.pop_back();
-                j=int(edges.size());
-            }
-        }
-        polygons[polygonSize].resize(back.size()+front.size()+1);
-        int idx=0;
-        for(int j=int(back.size())-1;j>=0;j--)
-            polygons[polygonSize][idx++]=back[j].first;
-        polygons[polygonSize][idx++]=e.first;
-        for(int j=0;j<int(front.size());j++)
-            polygons[polygonSize][idx++]=front[j].first;
-        polygonSize++;
-    }
-}
-*/
 
 template<class NodeData,class Real,class VertexData>
 void IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue,const int& useFull)
