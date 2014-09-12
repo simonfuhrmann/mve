@@ -71,6 +71,8 @@ IsoOctree<NodeData,Real,VertexData>::getRootPosition(
     if(!MarchingCubes::HasEdgeRoots(node->nodeData.mcIndex,eIndex))
         return 0;
 
+    /* Interpolate vertex position/attributes according to corner values. */
+
     Real w;
     VertexType p1,p2;
     int x,y,z;
@@ -100,6 +102,8 @@ IsoOctree<NodeData,Real,VertexData>::getRootPosition(
 template<class NodeData,class Real,class VertexData>
 long long IsoOctree<NodeData,Real,VertexData>::getRootKey(const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const int& edgeIndex)
 {
+    /* Assign a unique key to a root along an edge, corresponding to the 3d position of the edge. */
+
     int offset,eIndex[2],o,i1,i2;
     Cube::FactorEdgeIndex(edgeIndex,o,i1,i2);
     offset=BinaryNode<Real>::Index(nIdx.depth,nIdx.offset[o]);
@@ -129,6 +133,17 @@ template<class NodeData,class Real,class VertexData>
 int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* node,
                                                       const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
                                                       const int& edgeIndex,RootInfo& ri){
+    /*
+     * Find the finest edge coincident with the given one, that contains the given root
+     * (see "Defining Consistent Isovertices" in the paper).
+     *
+     * If there is an uneven number of zero-crossings along an edge, this algorithm finds
+     * the "lone" root that has no twin vertex (cf. getRootPair).
+     *
+     * This is needed to assign a unique index to each iso-vertex so that neighboring nodes
+     * share iso-vertices on coincident edges.
+     */
+
     int c1,c2,f1,f2;
     const OctNode<NodeData,Real> *temp,*finest;
     int finestIndex;
@@ -149,6 +164,8 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
 
     finest=node;
     finestIndex=edgeIndex;
+
+    /* Check for finer edges in adjacent nodes. */
 
     Cube::FacesAdjacentToEdge(edgeIndex,f1,f2);
     if(nIdx.depth<maxDepth)
@@ -232,31 +249,7 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
         ri.nIdx=finestNIdx;
         ri.node=finest;
         ri.edgeIndex=finestIndex;
-
-        int o,i1,i2;
-        Cube::FactorEdgeIndex(finestIndex,o,i1,i2);
-        int offset,eIndex[2];
-        offset=BinaryNode<Real>::Index(finestNIdx.depth,finestNIdx.offset[o]);
-        switch(o)
-        {
-        case 0:
-            eIndex[0]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[1],i1);
-            eIndex[1]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[2],i2);
-            break;
-        case 1:
-            eIndex[0]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[0],i1);
-            eIndex[1]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[2],i2);
-            break;
-        case 2:
-            eIndex[0]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[0],i1);
-            eIndex[1]=BinaryNode<Real>::CornerIndex(maxDepth+1,finestNIdx.depth,finestNIdx.offset[1],i2);
-            break;
-        default: // SIMON
-            eIndex[0] = 0;
-            eIndex[1] = 0;
-            fprintf(stderr, "Error setting eIndex in %s:%d\n", __FILE__, __LINE__);
-        }
-        ri.key= (long long)(o) | (long long)(eIndex[0])<<5 | (long long)(eIndex[1])<<25 | (long long)(offset)<<45;
+        ri.key=getRootKey(finestNIdx, finestIndex);
         return 1;
     }
 }
@@ -270,7 +263,7 @@ void IsoOctree<NodeData,Real,VertexData>::getRoots(
     std::vector<VertexType>& vertices,
     std::vector<VertexData>& vdata)
 {
-
+    /* Compute all root positions along (leaf) edges. */
 
     int eIndex;
     RootInfo ri;
@@ -302,6 +295,11 @@ void IsoOctree<NodeData,Real,VertexData>::getRoots(
 template<class NodeData,class Real,class VertexData>
 int IsoOctree<NodeData,Real,VertexData>::getRootPair(const RootInfo& ri,const int& /*maxDepth*/,RootInfo& pair)
 {
+    /*
+     * Get the twin isovertex to a given one, i.e., find another root
+     * in neighboring leafs of the edge tree without crossing the iso-surface. (see figure 3)
+     */
+
     const OctNode<NodeData,Real>* node=ri.node;
     typename OctNode<NodeData,Real>::NodeIndex nIdx=ri.nIdx;
     int c1,c2,c;
@@ -311,6 +309,8 @@ int IsoOctree<NodeData,Real,VertexData>::getRootPair(const RootInfo& ri,const in
         c=int(node-node->parent->children);
         if(c!=c1 && c!=c2)
             return 0;
+
+        /* Check edge "value". */
         if(!MarchingCubes::HasEdgeRoots(node->parent->nodeData.mcIndex,ri.edgeIndex))
         {
             if(c==c1)
@@ -318,6 +318,8 @@ int IsoOctree<NodeData,Real,VertexData>::getRootPair(const RootInfo& ri,const in
             else
                 return getRootIndex(&node->parent->children[c1],nIdx.parent().child(c2),ri.edgeIndex,pair);
         }
+
+        /* Go to parent edge. */
         node=node->parent;
         --nIdx;
     }
@@ -332,6 +334,8 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoFaceEdges(
     std::vector<std::pair<RootInfo,RootInfo> >& edges,
     const int& flip,const int& useFull)
 {
+    /* Get all iso-edges that lie fully within a cube (octree node) face. */
+
     int c1,c2,c3,c4;
     if(node->children)
     {
@@ -352,8 +356,10 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoFaceEdges(
             size_t pSize=table[i].size();
             for(size_t j=0;j<pSize;j++)
             {
+                /* If the two edges form a face... */
                 if(faceIndex==Cube::FaceAdjacentToEdges(table[i][j],table[i][(j+1)%pSize]))
                 {
+                    /* connect the two roots. */
                     if(getRootIndex(node,nIdx,table[i][j],ri1) && getRootIndex(node,nIdx,table[i][(j+1)%pSize],ri2))
                     {
                         if(flip)
@@ -385,6 +391,7 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
     /* SIMON: If this is not max level, iterate over faces and get neighbors.
      * If neighbors are finer, get their ISO face edges, otherwise use own.
      */
+
     int x[3];
     nKey.getNeighbors(node);
     x[0]=x[1]=x[2]=1;
@@ -397,6 +404,7 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
                 getIsoFaceEdges(node,nIdx,Cube::FaceIndex(i,j),riEdges,0,useFull);
             else
             {
+                /* If the coincident face in the neighboring node provides a finer subdivision, use it. */
                 typename OctNode<NodeData,Real>::NodeIndex idx=nIdx;
                 if(j)	idx.offset[i]++;
                 else	idx.offset[i]--;
@@ -407,7 +415,10 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
         x[i]=1;
     }
 
-
+    /*
+     * establish invariant: vertexCount == outgoingEdges - incomingEdges
+     * so that vertexCount can be used to check for "open isovertices" (cf. figure 3).
+     */
 
     for(size_t i=0;i<riEdges.size();i++)
     {
@@ -428,7 +439,10 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
         vertexCount[riEdges[i].second.key].second--;
     }
 
-
+    /*
+     * "edges" now contains all edges between roots on adjacent cube edges,
+     * now add more edges to guarantee closed loops (proof in paper).
+     */
 
     for(int i=0;i<int(edges.size());i++)
     {
@@ -437,6 +451,8 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
             printf("Could not find vertex: %lld\n",edges[i].first);
         else if(vertexCount[edges[i].first].second)
         {
+            /* Start vertex is "unbalanced", add an incoming edge to twin vertex. */
+
             RootInfo ri;
             if(!getRootPair(vertexCount[edges[i].first].first,maxDepth,ri))
                 fprintf(stderr,"Failed to get root pair 1: %lld %d\n",edges[i].first,vertexCount[edges[i].first].second);
@@ -456,6 +472,8 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
             printf("Could not find vertex: %lld\n",edges[i].second);
         else if(vertexCount[edges[i].second].second)
         {
+            /* End vertex is "unbalanced", add an outgoing edge to twin vertex. */
+
             RootInfo ri;
             if(!getRootPair(vertexCount[edges[i].second].first,maxDepth,ri))
                 fprintf(stderr,"Failed to get root pair 2: %lld %d\n",edges[i].second,vertexCount[edges[i].second].second);
@@ -479,6 +497,8 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
     stdext::hash_map<C,int>& roots,
     std::vector<std::vector<int> >& polygons)
 {
+    /* Join all edges to form polygons, see section "Closing the Isopolylines". */
+
     size_t polygonSize=polygons.size();
     C frontIdx,backIdx;
     std::pair<C,C> e,temp;
@@ -486,12 +506,17 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
     while(edges.size())
     {
         std::vector<std::pair<C,C> > front,back;
+
+        /* Grab an edge and start a new polygon. */
         e=edges[0];
         polygons.resize(polygonSize+1);
         edges[0]=edges[edges.size()-1];
         edges.pop_back();
+
         frontIdx=e.second;
         backIdx=e.first;
+
+        /* Find all edges that share a point with one of the ends of the polyline (not yet a loop). */
         for(int j=int(edges.size())-1;j>=0;j--){
             if(edges[j].first==frontIdx || edges[j].second==frontIdx){
                 if(edges[j].first==frontIdx)	{temp=edges[j];}
@@ -512,59 +537,13 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
                 j=int(edges.size());
             }
         }
+
+        /* Collect iso-vertices to form polygon. */
         polygons[polygonSize].resize(back.size()+front.size()+1);
         int idx=0;
         for(int j=int(back.size())-1;j>=0;j--)	polygons[polygonSize][idx++]=roots[back[j].first];
         polygons[polygonSize][idx++]=roots[e.first];
         for(int j=0;j<int(front.size());j++)	polygons[polygonSize][idx++]=roots[front[j].first];
-        polygonSize++;
-    }
-}
-template<class NodeData,class Real,class VertexData>
-template<class C>
-void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(std::vector<std::pair<C,C> >& edges,
-                                                       std::vector<std::vector<C> >& polygons)
-{
-    int polygonSize=polygons.size();
-    C frontIdx,backIdx;
-    std::pair<C,C> e,temp;
-
-    while(edges.size())
-    {
-        std::vector<std::pair<C,C> > front,back;
-        e=edges[0];
-        polygons.resize(polygonSize+1);
-        edges[0]=edges[edges.size()-1];
-        edges.pop_back();
-        frontIdx=e.second;
-        backIdx=e.first;
-        for(int j=int(edges.size())-1;j>=0;j--){
-            if(edges[j].first==frontIdx || edges[j].second==frontIdx){
-                if(edges[j].first==frontIdx)	{temp=edges[j];}
-                else							{temp.first=edges[j].second;temp.second=edges[j].first;}
-                frontIdx=temp.second;
-                front.push_back(temp);
-                edges[j]=edges[edges.size()-1];
-                edges.pop_back();
-                j=int(edges.size());
-            }
-            else if(edges[j].first==backIdx || edges[j].second==backIdx){
-                if(edges[j].second==backIdx)	{temp=edges[j];}
-                else							{temp.first=edges[j].second;temp.second=edges[j].first;}
-                backIdx=temp.first;
-                back.push_back(temp);
-                edges[j]=edges[edges.size()-1];
-                edges.pop_back();
-                j=int(edges.size());
-            }
-        }
-        polygons[polygonSize].resize(back.size()+front.size()+1);
-        int idx=0;
-        for(int j=int(back.size())-1;j>=0;j--)
-            polygons[polygonSize][idx++]=back[j].first;
-        polygons[polygonSize][idx++]=e.first;
-        for(int j=0;j<int(front.size());j++)
-            polygons[polygonSize][idx++]=front[j].first;
         polygonSize++;
     }
 }
@@ -574,12 +553,9 @@ void IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue,const 
 {
     OctNode<NodeData,Real>* temp;
 
-
-    // Clear the indices
     for(temp=tree.nextNode(NULL) ; temp ; temp=tree.nextNode(temp) )
         temp->nodeData.mcIndex=0;
 
-    // Get the values at the leaf nodes and propogate up to the parents
     typename OctNode<NodeData,Real>::NodeIndex nIdx;
     for(temp=tree.nextLeaf(NULL,nIdx) ; temp ; temp=tree.nextLeaf(temp,nIdx) )
     {
@@ -598,6 +574,8 @@ void IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue,const 
             //    skip_cube = true;
         }
 
+        /* Assign marching cubes indices according to sign pattern of node corners. */
+
         if (skip_cube)
             temp->nodeData.mcIndex = 0;
         else if (useFull)
@@ -605,6 +583,7 @@ void IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue,const 
         else
             temp->nodeData.mcIndex = MarchingCubes::GetIndex(cValues,isoValue);
 
+        /* Set marching cubes values of parents from child values. */
         if(temp->parent)
         {
             int cIndex=int(temp-temp->parent->children);
@@ -638,14 +617,15 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoSurface(
     stdext::hash_map<long long,int> roots;
     nKey.set(maxDepth);
 
-    // Set the marching cubes values
+    /* (1) Set marching cubes values. */
     setMCIndex(isoValue,useFull);
 
-    // Set the iso-vertex positions
+    /* (2) "Defining Consistent Isovertices" */
     typename OctNode<NodeData,Real>::NodeIndex nIdx;
     for(temp=tree.nextLeaf(NULL,nIdx) ; temp ; temp=tree.nextLeaf(temp,nIdx) )
         getRoots(temp,nIdx,isoValue,roots,vertices,vertex_data);
 
+    /* (3) "Closing the Isopolylines" */
     nIdx=typename OctNode<NodeData,Real>::NodeIndex();
     for(temp=tree.nextLeaf(NULL,nIdx) ; temp ; temp=tree.nextLeaf(temp,nIdx) )
         getIsoPolygons(temp,nIdx,roots,polygons,useFull);

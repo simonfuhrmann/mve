@@ -33,6 +33,7 @@ DAMAGE.
 
 #include "Octree.h"
 
+/* Stores the 3x3x3 neighborhood of an octree node. */
 template<class NodeData, class Real>
 struct Neighbors
 {
@@ -43,6 +44,7 @@ struct Neighbors
     typename OctNode<NodeData,Real>::NodeIndex nIndex;
 };
 
+/* Stores 3x3x3 neighborhoods of an octree node and each of its parents. */
 template<class NodeData, class Real>
 class NeighborKey
 {
@@ -63,6 +65,7 @@ private:
     Neighbors<NodeData,Real>& _getNeighbors(OctNode<NodeData,Real>* node,const int& d);
 };
 
+/* Uses the above NeighborKey to find all octree nodes surrounding a corner. */
 template<class NodeData, class Real>
 class IsoNeighborKey : public NeighborKey<NodeData,Real>
 {

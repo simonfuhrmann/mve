@@ -114,9 +114,6 @@ private:  // Methods
     template<class C>
     void getEdgeLoops(std::vector<std::pair<C,C> >& edges,stdext::hash_map<C,int>& roots,std::vector<std::vector<int> >& polygons);
 
-    template<class C>
-    void getEdgeLoops(std::vector<std::pair<C,C> >& edges,std::vector<std::vector<C> >& loops);
-
     // Assumes NodeData::mcIndex
     void setMCIndex(const Real& isoValue,const int& useFull);
 };
