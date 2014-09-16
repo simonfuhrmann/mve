@@ -713,7 +713,7 @@ TEST(MatrixSVDTest, BeforeAfter3)
     math::Matrix<double, 2, 2> A(values);
 
     math::Matrix<double, 2, 2> U;
-    math::Matrix<double, 2, 2> S;
+    math::Matrix<double, 2, 2> S(0.0);
     math::Matrix<double, 2, 2> V;
     math::matrix_svd<double>(*A, 2, 2, *U, *S, *V, 1e-12);
     std::swap(S(0,1), S(1,1)); // Swap the eigenvalues into place.
@@ -728,7 +728,7 @@ TEST(MatrixSVDTest, BeforeAfter4)
     math::Matrix<double, 3, 2> A(values);
 
     math::Matrix<double, 3, 2> U;
-    math::Matrix<double, 2, 2> S;
+    math::Matrix<double, 2, 2> S(0.0);
     math::Matrix<double, 2, 2> V;
     math::matrix_svd(*A, 3, 2, *U, *S, *V, 1e-12);
     std::swap(S(0,1), S(1,1)); // Swap the eigenvalues into place.
