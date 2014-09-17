@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "math/matrix_tools.h"
-#include "sfm/matrixsvd.h"
+#include "math/matrix_svd.h"
 #include "sfm/pose.h"
 #include "sfm/fundamental.h"
 #include "sfm/ransac.h"

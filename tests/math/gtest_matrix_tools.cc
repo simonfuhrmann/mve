@@ -185,3 +185,14 @@ TEST(MatrixToolsTest, MatrixSwapColumns)
     for (int i = 0; i < 4; ++i)
         EXPECT_EQ(m4_gt_values[i], m4[i]) << "for i=" << i;
 }
+
+TEST(MatrixToolsTest, MatrixRotate180)
+{
+    int values[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    int rotated_values[] = { 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+    math::Matrix<int, 3, 3> mat(values);
+    math::Matrix<int, 3, 3> rotated(rotated_values);
+    ASSERT_TRUE(rotated == math::matrix_rotate_180(mat));
+    math::matrix_rotate_180_inplace(&rotated);
+    ASSERT_TRUE(rotated == mat);
+}

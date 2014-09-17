@@ -87,7 +87,6 @@ TEST(HomographyTest, TestHomographyDLTLeastSquares)
 
     sfm::HomographyMatrix H(0.0);
     sfm::homography_dlt(c, &H);
-
     H = H / H[8];
 
     for (int i = 0; i < 9; ++i)

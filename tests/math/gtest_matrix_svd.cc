@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "math/matrix_svd.h"
+//#include "sfm/matrixsvd.h"//tmp
 
 TEST(MatrixSVDTest, MatrixSimpleTest1)
 {
@@ -611,10 +612,10 @@ TEST(MatrixSVDTest, MatrixSVDUnderdeterminedTest)
 
     double groundtruth_mat_u[2 * 3];
     groundtruth_mat_u[0] = -0.619629483829340;
-    groundtruth_mat_u[1] = 0.784894453267053;
+    groundtruth_mat_u[1] = -0.784894453267053;
     groundtruth_mat_u[2] = 0.0;
     groundtruth_mat_u[3] = -0.784894453267052;
-    groundtruth_mat_u[4] = -0.619629483829340;
+    groundtruth_mat_u[4] = 0.619629483829340;
     groundtruth_mat_u[5] = 0.0;
 
     double groundtruth_mat_s[3];
@@ -624,14 +625,14 @@ TEST(MatrixSVDTest, MatrixSVDUnderdeterminedTest)
 
     double groundtruth_mat_v[3 * 3];
     groundtruth_mat_v[0] = -0.229847696400071;
-    groundtruth_mat_v[1] = -0.883461017698525;
-    groundtruth_mat_v[2] = 0.0;
+    groundtruth_mat_v[1] = 0.883461017698525;
+    groundtruth_mat_v[2] = -0.408248290463863;
     groundtruth_mat_v[3] = -0.524744818760294;
-    groundtruth_mat_v[4] = -0.240782492132546;
-    groundtruth_mat_v[5] = 0.0;
+    groundtruth_mat_v[4] = 0.240782492132546;
+    groundtruth_mat_v[5] = 0.816496580927726;
     groundtruth_mat_v[6] = -0.819641941120516;
-    groundtruth_mat_v[7] = 0.401896033433432;
-    groundtruth_mat_v[8] = 0.0;
+    groundtruth_mat_v[7] = -0.401896033433432;
+    groundtruth_mat_v[8] = -0.408248290463863;
 
     for (int i = 0; i < 6; ++i)
         EXPECT_NEAR(groundtruth_mat_u[i], mat_u[i], 1e-13);
@@ -737,6 +738,43 @@ TEST(MatrixSVDTest, BeforeAfter4)
     EXPECT_GT(S(0,0), S(1,1));
 }
 
+TEST(MatrixSVDTest, BeforeAfter5)
+{
+    math::Matrix<double, 3, 3> A;
+    A[0] = 0.0000000000; A[1] = 0.476880000; A[2] = -0.00303147;
+    A[3] = -1.58207e-15; A[4] = 2.35922e-16; A[5] = -0.48534700;
+    A[6] = 4.16334e-17;  A[7] = 0.732604000; A[8] = 0.017472400;
+
+    math::Matrix<double, 3, 3> U, S, V;
+    math::matrix_svd<double>(A, &U, &S, &V);
+    math::Matrix<double, 3, 3> X = U * S * V.transposed();
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(A[i], X[i], 1e-6);
+}
+
+TEST(MatrixSVDTest, BeforeAfter6)
+{
+    math::Matrix<double, 3, 3> A;
+    A[0] = 0.0; A[1] = 1.0; A[2] = 1.0;
+    A[3] = 0.0; A[4] = 1.0; A[5] = 1.0;
+    A[6] = 0.0; A[7] = 1.0; A[8] = 1.0;
+
+    math::Matrix<double, 3, 3> U, S, V;
+    math::matrix_svd<double>(A, &U, &S, &V);
+    //svd::matrix_svd<double>(A, &U, &S, &V);
+    math::Matrix<double, 3, 3> X = U * S * V.transposed();
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
+
+#if 0
+    std::cout << "Matrix A:" << std::endl << A << std::endl;
+    std::cout << "Matrix U:" << std::endl << U << std::endl;
+    std::cout << "Matrix S:" << std::endl << S << std::endl;
+    std::cout << "Matrix V:" << std::endl << V << std::endl;
+    std::cout << "Matrix USV^t:" << std::endl << X << std::endl;
+#endif
+}
+
 TEST(MatrixSVDTest, SortedEigenvalues)
 {
     double values[] = { 0.0697553, 0.949327, 0.525995, 0.0860558, 0.192214, 0.663227 };
@@ -826,5 +864,5 @@ TEST(MatrixSVDTest, TestPseudoInverseGoldenData2)
 
     for (int r = 0; r < 4; ++r)
         for (int c = 0; c < 2; ++c)
-            EXPECT_NEAR(Ainv(r, c), result(r, c), 1e-14);
+            EXPECT_NEAR(Ainv(r, c), result(r, c), 1e-13);
 }
