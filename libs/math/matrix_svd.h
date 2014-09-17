@@ -26,20 +26,19 @@
 MATH_NAMESPACE_BEGIN
 
 /**
- * SVD for dynamic-size matrices of size MxN (M rows, N columns).
+ * SVD for dynamic-size matrices A of size MxN (M rows, N columns).
  * The function decomposes input matrix A such that A = USV^T where
  * A is MxN, U is MxN, S is a N-vector and V is NxN.
  * Any of U, S or V can be NULL, however, this does not save operations.
  *
- * If m < n, the SVD is applied to the transposed matrix. The output is
- * transposed afterwards such that A = USV^T holds for the input matrix.
- * If m > 5/3*n, uses QR decomposition to do an economy SVD after Chan that
- * saves some operations.
+ * Usually, M >= N, i.e. the input matrix has more rows than columns.
+ * If M > 5/3 N, QR decomposition is used to do an economy SVD after Chan
+ * that saves some operations. This SVD also handles the case where M < N. In
+ * this case, zero rows are internally added to A until A is a square matrix.
  *
  * References:
  * - "Matrix Computations" by Gloub and Loan (page 455, algo 8.6.2, [GK-SVD])
- * - "An Improved Algorithm for Computing the Singular Value Decomposition"
- *   by Chan (1987) [R-SVD].
+ * - "An Improved Algorithm for Computing the SVD" by Chan (1987) [R-SVD].
  */
 template <typename T>
 void
@@ -664,6 +663,85 @@ matrix_svd (T const* mat_a, int rows, int cols,
     /* Allow for NULL result matrices. */
     std::vector<T> mat_u_tmp;
     std::vector<T> vec_s_tmp;
+    if (vec_s == NULL)
+    {
+        vec_s_tmp.resize(cols);
+        vec_s = &vec_s_tmp[0];
+    }
+    std::vector<T> mat_v_tmp;
+    if (mat_v == NULL)
+    {
+        mat_v_tmp.resize(cols * cols);
+        mat_v = &mat_v_tmp[0];
+    }
+
+    /*
+     * Handle two cases: The regular case, where M >= N (rows >= cols), and
+     * the irregular case, where M < N (rows < cols). In the latter one,
+     * zero rows are appended to A until A is a square matrix.
+     */
+    if (rows >= cols)
+    {
+        /* Allow for NULL result U matrix. */
+        if (mat_u == NULL)
+        {
+            mat_u_tmp.resize(rows * cols);
+            mat_u = &mat_u_tmp[0];
+        }
+
+        /* Perform economy SVD if rows > 5/3 cols to save some operations. */
+        if (rows >= 5 * cols / 3)
+        {
+            internal::matrix_r_svd(mat_a, rows, cols,
+                mat_u, vec_s, mat_v, epsilon);
+        }
+        else
+        {
+            internal::matrix_gk_svd(mat_a, rows, cols,
+                mat_u, vec_s, mat_v, epsilon);
+        }
+    }
+    else
+    {
+        /* Append zero rows to A until A is square. */
+        std::vector<T> mat_a_tmp(cols * cols, T(0));
+        std::copy(mat_a, mat_a + cols * rows, &mat_a_tmp[0]);
+
+        /* Temporarily resize U, allow for NULL result matrices. */
+        mat_u_tmp.resize(cols * cols);
+        internal::matrix_gk_svd(&mat_a_tmp[0], cols, cols,
+            &mat_u_tmp[0], vec_s, mat_v, epsilon);
+
+        /* Copy the result back to U leaving out the last rows. */
+        if (mat_u != NULL)
+            std::copy(&mat_u_tmp[0], &mat_u_tmp[0] + rows * cols, mat_u);
+        else
+            mat_u = &mat_u_tmp[0];
+    }
+
+    /* Sort the eigenvalues in S and adapt the columns of U and V. */
+    for (int i = 0; i < cols; ++i)
+    {
+        int pos = internal::find_largest_ev_index(vec_s + i, cols - i);
+        if (pos < 0)
+            break;
+        if (pos == 0)
+            continue;
+        std::swap(vec_s[i], vec_s[i + pos]);
+        matrix_swap_columns(mat_u, rows, cols, i, i + pos);
+        matrix_swap_columns(mat_v, cols, cols, i, i + pos);
+    }
+}
+
+#if 0
+template <typename T>
+void
+matrix_svd (T const* mat_a, int rows, int cols,
+    T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
+{
+    /* Allow for NULL result matrices. */
+    std::vector<T> mat_u_tmp;
+    std::vector<T> vec_s_tmp;
     std::vector<T> mat_v_tmp;
     if (mat_u == NULL)
     {
@@ -757,6 +835,7 @@ matrix_svd (T const* mat_a, int rows, int cols,
         matrix_swap_columns(mat_v, cols, cols, i, i + pos);
     }
 }
+#endif
 
 template <typename T, int M, int N>
 void
