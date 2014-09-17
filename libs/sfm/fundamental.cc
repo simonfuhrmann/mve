@@ -10,9 +10,10 @@
 #include <stdexcept>
 
 #include "math/matrix_tools.h"
+//#include "math/matrix_svd.h"
+#include "sfm/matrixsvd.h" // TMP
 #include "math/functions.h"
 #include "sfm/fundamental.h"
-#include "sfm/matrixsvd.h"
 
 SFM_NAMESPACE_BEGIN
 
@@ -46,9 +47,7 @@ fundamental_least_squares (Correspondences const& points,
     if (points.size() < 8)
         throw std::invalid_argument("At least 8 points required");
 
-    /*
-     * Create Nx9 matrix A. Each correspondence creates on row in A.
-     */
+    /* Create Nx9 matrix A. Each correspondence creates on row in A. */
     std::vector<double> A(points.size() * 9);
     for (std::size_t i = 0; i < points.size(); ++i)
     {
@@ -64,11 +63,12 @@ fundamental_least_squares (Correspondences const& points,
         A[i * 9 + 8] = 1.0     * 1.0;
     }
 
-    /*
-     * Compute fundamental matrix using SVD.
-     */
+    /* Compute fundamental matrix using SVD. */
     std::vector<double> V(9 * 9);
-    math::matrix_svd<double>(&A[0], points.size(), 9, NULL, NULL, &V[0]);
+    //math::matrix_svd<double>(&A[0], points.size(), 9, NULL, NULL, &V[0]);
+    svd::matrix_svd<double>(&A[0], points.size(), 9, NULL, NULL, &V[0]);
+
+    /* Use last column of V as solution. */
     for (int i = 0; i < 9; ++i)
         (*result)[i] = V[i * 9 + 8];
 
@@ -102,10 +102,9 @@ fundamental_8_point (Eight2DPoints const& points_view_1,
      * The fundamental matrix F is created from the singular
      * vector corresponding to the smallest eigenvalue of A.
      */
-    math::Matrix<double, 8, 8> U;
-    math::Matrix<double, 8, 9> S;
     math::Matrix<double, 9, 9> V;
-    math::matrix_svd(A, &U, &S, &V);
+    //math::matrix_svd<double, 8, 9>(A, NULL, NULL, &V);
+    svd::matrix_svd<double, 8, 9>(A, NULL, NULL, &V);
     math::Vector<double, 9> f = V.col(8);
     std::copy(*f, *f + 9, **result);
 
@@ -123,7 +122,8 @@ enforce_fundamental_constraints (FundamentalMatrix* matrix)
      * are the largest and second largest eigenvalues of F.
      */
     math::Matrix<double, 3, 3> U, S, V;
-    math::matrix_svd(*matrix, &U, &S, &V);
+    //math::matrix_svd(*matrix, &U, &S, &V);
+    svd::matrix_svd(*matrix, &U, &S, &V);
     S(2, 2) = 0.0;
     *matrix = U * S * V.transposed();
 }
@@ -139,7 +139,8 @@ enforce_essential_constraints (EssentialMatrix* matrix)
      * and s1 and s2 are the largest and second largest eigenvalues of F.
      */
     math::Matrix<double, 3, 3> U, S, V;
-    math::matrix_svd(*matrix, &U, &S, &V);
+    //math::matrix_svd(*matrix, &U, &S, &V);
+    svd::matrix_svd(*matrix, &U, &S, &V);
     double avg = (S(0, 0) + S(0, 1)) / 2.0;
     S(0, 0) = avg;
     S(1, 1) = avg;
@@ -165,7 +166,8 @@ pose_from_essential (EssentialMatrix const& matrix,
     Wt(0, 1) = 1.0; Wt(1, 0) = -1.0; Wt(2, 2) = 1.0;
 
     math::Matrix<double, 3, 3> U, S, V;
-    math::matrix_svd(matrix, &U, &S, &V);
+    //math::matrix_svd(matrix, &U, &S, &V);
+    svd::matrix_svd(matrix, &U, &S, &V);
 
     // This seems to ensure that det(R) = 1 (instead of -1).
     // FIXME: Is this the correct way to do it?
@@ -219,7 +221,8 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
     // not pixel coordinates? Test and document that.
 
     math::Matrix<double, 4, 3> P1inv;
-    matrix_pseudo_inverse(P1, &P1inv);
+    //math::matrix_pseudo_inverse(P1, &P1inv);
+    svd::matrix_pseudo_inverse(P1, &P1inv);
 
     *result = ex * P2 * P1inv;
 }

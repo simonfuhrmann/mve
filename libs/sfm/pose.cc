@@ -1,9 +1,8 @@
-#include <iostream> // TMP
-
 #include "math/matrix_tools.h"
+//#include "math/matrix_svd.h"
+#include "sfm/matrixsvd.h" // TMP
+#include "math/matrix_qr.h"
 #include "sfm/pose.h"
-#include "sfm/matrixsvd.h"
-#include "sfm/matrixqrdecomp.h"
 
 SFM_NAMESPACE_BEGIN
 
@@ -169,7 +168,10 @@ pose_from_2d_3d_correspondences (Correspondences2D3D const& corresp,
     }
 
     std::vector<double> V(12 * 12);
-    math::matrix_svd<double>(&A[0], corresp.size() * 2, 12, NULL, NULL, &V[0]);
+    //math::matrix_svd<double>(&A[0], corresp.size() * 2, 12, NULL, NULL, &V[0]);
+    svd::matrix_svd<double>(&A[0], corresp.size() * 2, 12, NULL, NULL, &V[0]);
+
+    /* Consider the last column of V as the solution. */
     for (int i = 0; i < 12; ++i)
         (*p_matrix)[i] = V[i * 12 + 11];
 }
@@ -193,7 +195,7 @@ pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
     p_sub.transpose();
     math::matrix_rotate_180_inplace(&p_sub);
     math::Matrix<double, 3, 3> Q, R;
-    math::matrix_qr_decomp(p_sub, &Q, &R);
+    math::matrix_qr(p_sub, &Q, &R);
     R.transpose();
     Q.transpose();
     math::matrix_rotate_180_inplace(&R);
@@ -236,8 +238,9 @@ math::Matrix<double, 3, 3>
 matrix_optimal_rotation (math::Matrix<double, 3, 3> const& matrix)
 {
     /* Compute SVD of matrix A. */
-    math::Matrix<double, 3, 3> mat_u, mat_s, mat_v;
-    math::matrix_svd(matrix, &mat_u, &mat_s, &mat_v);
+    math::Matrix<double, 3, 3> mat_u, mat_v;
+    //math::matrix_svd(matrix, &mat_u, NULL, &mat_v);
+    svd::matrix_svd<double, 3, 3>(matrix, &mat_u, NULL, &mat_v);
 
     /* Invert last column of V if input has negative determinant. */
     if (math::matrix_determinant(matrix) < 0.0)

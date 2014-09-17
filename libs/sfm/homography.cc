@@ -3,8 +3,9 @@
 #include <vector>
 
 #include "math/matrix_tools.h"
+//#include "math/matrix_svd.h"
+#include "sfm/matrixsvd.h" // TMP
 #include "sfm/homography.h"
-#include "sfm/matrixsvd.h"
 
 SFM_NAMESPACE_BEGIN
 
@@ -14,9 +15,7 @@ homography_dlt (Correspondences const& points, HomographyMatrix* result)
     if (points.size() < 4)
         throw std::invalid_argument("At least 4 matches required");
 
-    /*
-     * Create 2Nx9 matrix A. Each correspondence creates two rows in A.
-     */
+    /* Create 2Nx9 matrix A. Each correspondence creates two rows in A. */
     std::vector<double> A(2 * points.size() * 9);
     for (std::size_t i = 0; i < points.size(); ++i)
     {
@@ -43,11 +42,12 @@ homography_dlt (Correspondences const& points, HomographyMatrix* result)
         A[row2 + 8] =  match.p2[0];
     }
 
-    /*
-     * Compute homography matrix using SVD and normalize matrix.
-     */
-    std::vector<double> V(9 * 9);
-    math::matrix_svd<double>(&A[0], 2 * points.size(), 9, NULL, NULL, &V[0]);
+    /* Compute homography matrix using SVD. */
+    math::Matrix<double, 9, 9> V;
+    //math::matrix_svd<double>(&A[0], 2 * points.size(), 9, NULL, NULL, V.begin());
+    svd::matrix_svd<double>(&A[0], 2 * points.size(), 9, NULL, NULL, V.begin());
+
+    /* Only consider the last column of V as the solution. */
     for (int i = 0; i < 9; ++i)
         (*result)[i] = V[i * 9 + 8];
 
