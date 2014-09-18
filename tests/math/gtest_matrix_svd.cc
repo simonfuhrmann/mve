@@ -741,18 +741,34 @@ TEST(MatrixSVDTest, BeforeAfter4)
 TEST(MatrixSVDTest, BeforeAfter5)
 {
     math::Matrix<double, 3, 3> A;
-    A[0] = 0.0000000000; A[1] = 0.476880000; A[2] = -0.00303147;
-    A[3] = -1.58207e-15; A[4] = 2.35922e-16; A[5] = -0.48534700;
-    A[6] = 4.16334e-17;  A[7] = 0.732604000; A[8] = 0.017472400;
+    A[0] = 1.0; A[1] = 0.0; A[2] = 1.0;
+    A[3] = 1.0; A[4] = 0.0; A[5] = 1.0;
+    A[6] = 1.0; A[7] = 0.0; A[8] = 1.0;
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd<double>(A, &U, &S, &V);
+    //svd::matrix_svd<double>(A, &U, &S, &V);
     math::Matrix<double, 3, 3> X = U * S * V.transposed();
     for (int i = 0; i < 9; ++i)
-        EXPECT_NEAR(A[i], X[i], 1e-6);
+        EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
 }
 
 TEST(MatrixSVDTest, BeforeAfter6)
+{
+    math::Matrix<double, 3, 3> A;
+    A[0] = 1.0; A[1] = 1.0; A[2] = 0.0;
+    A[3] = 1.0; A[4] = 1.0; A[5] = 0.0;
+    A[6] = 1.0; A[7] = 1.0; A[8] = 0.0;
+
+    math::Matrix<double, 3, 3> U, S, V;
+    math::matrix_svd<double>(A, &U, &S, &V);
+    //svd::matrix_svd<double>(A, &U, &S, &V);
+    math::Matrix<double, 3, 3> X = U * S * V.transposed();
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
+}
+
+TEST(MatrixSVDTest, BeforeAfter7)
 {
     math::Matrix<double, 3, 3> A;
     A[0] = 0.0; A[1] = 1.0; A[2] = 1.0;
@@ -773,6 +789,51 @@ TEST(MatrixSVDTest, BeforeAfter6)
     std::cout << "Matrix V:" << std::endl << V << std::endl;
     std::cout << "Matrix USV^t:" << std::endl << X << std::endl;
 #endif
+}
+
+TEST(MatrixSVDTest, BeforeAfter8)
+{
+    math::Matrix<double, 3, 3> A;
+    A[0] = 0.0; A[1] = 0.0; A[2] = 0.0;
+    A[3] = 1.0; A[4] = 1.0; A[5] = 1.0;
+    A[6] = 1.0; A[7] = 1.0; A[8] = 1.0;
+
+    math::Matrix<double, 3, 3> U, S, V;
+    math::matrix_svd<double>(A, &U, &S, &V);
+    //svd::matrix_svd<double>(A, &U, &S, &V);
+    math::Matrix<double, 3, 3> X = U * S * V.transposed();
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
+}
+
+TEST(MatrixSVDTest, BeforeAfter9)
+{
+    math::Matrix<double, 3, 3> A;
+    A[0] = 1.0; A[1] = 1.0; A[2] = 1.0;
+    A[3] = 0.0; A[4] = 0.0; A[5] = 0.0;
+    A[6] = 1.0; A[7] = 1.0; A[8] = 1.0;
+
+    math::Matrix<double, 3, 3> U, S, V;
+    math::matrix_svd<double>(A, &U, &S, &V);
+    //svd::matrix_svd<double>(A, &U, &S, &V);
+    math::Matrix<double, 3, 3> X = U * S * V.transposed();
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
+}
+
+TEST(MatrixSVDTest, BeforeAfter10)
+{
+    math::Matrix<double, 3, 3> A;
+    A[0] = 1.0; A[1] = 1.0; A[2] = 1.0;
+    A[3] = 1.0; A[4] = 1.0; A[5] = 1.0;
+    A[6] = 0.0; A[7] = 0.0; A[8] = 0.0;
+
+    math::Matrix<double, 3, 3> U, S, V;
+    math::matrix_svd<double>(A, &U, &S, &V);
+    //svd::matrix_svd<double>(A, &U, &S, &V);
+    math::Matrix<double, 3, 3> X = U * S * V.transposed();
+    for (int i = 0; i < 9; ++i)
+        EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
 }
 
 TEST(MatrixSVDTest, SortedEigenvalues)
