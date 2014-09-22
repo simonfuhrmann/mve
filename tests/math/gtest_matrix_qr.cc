@@ -42,15 +42,15 @@ TEST(MatrixQRTest, MatrixApplyGivensRotation)
     for (int i = 0; i < 20; ++i)
         groundtruth_mat_row[i] = static_cast<double>(i + 1);
 
-    groundtruth_mat_row[1 * 4 + 0] = 5.813776741499453;
-    groundtruth_mat_row[1 * 4 + 1] = 6.260990336999411;
-    groundtruth_mat_row[1 * 4 + 2] = 6.708203932499369;
-    groundtruth_mat_row[1 * 4 + 3] = 7.155417527999328;
+    groundtruth_mat_row[1 * 4 + 0] = -10.285912696499032;
+    groundtruth_mat_row[1 * 4 + 1] = -11.627553482998907;
+    groundtruth_mat_row[1 * 4 + 2] = -12.969194269498779;
+    groundtruth_mat_row[1 * 4 + 3] = -14.310835055998654;
 
-    groundtruth_mat_row[2 * 4 + 0] = -8.497058314499201;
-    groundtruth_mat_row[2 * 4 + 1] = -9.838699100999076;
-    groundtruth_mat_row[2 * 4 + 2] = -11.180339887498949;
-    groundtruth_mat_row[2 * 4 + 3] = -12.521980673998822;
+    groundtruth_mat_row[2 * 4 + 0] = 0.447213595499958;
+    groundtruth_mat_row[2 * 4 + 1] = 0.894427190999916;
+    groundtruth_mat_row[2 * 4 + 2] = 1.341640786499874;
+    groundtruth_mat_row[2 * 4 + 3] = 1.788854381999831;
 
     double givens_c, givens_s;
     math::internal::matrix_givens_rotation(1.0, 2.0, &givens_c, &givens_s, 1e-14);

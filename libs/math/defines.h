@@ -77,6 +77,9 @@ MATH_NAMESPACE_END
 #define MATH_FLT_EPS (MATH_FLT_MIN * 1e8f) // approx. 1.17e-30
 #define MATH_DBL_EPS (MATH_DBL_MIN * 1e58) // approx. 2.22e-250
 
+/* Misc operations. */
+#define MATH_SIGN(x) ((x) < 0 ? -1 : 1)
+
 /* Floating-point epsilon comparisons. */
 #define MATH_EPSILON_EQ(x,v,eps) (((v - eps) <= x) && (x <= (v + eps)))
 #define MATH_EPSILON_LESS(x,v,eps) ((x + eps) < v)

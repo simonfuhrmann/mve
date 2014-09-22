@@ -433,7 +433,7 @@ matrix_gk_svd_step (int rows, int cols, T* mat_b, T* mat_q, T* mat_p,
         beta = mat_b[(k + 1) * cols + k];
         matrix_givens_rotation(alpha, beta, &givens_c, &givens_s, epsilon);
         internal::matrix_apply_givens_row(mat_b, cols, cols, k, k + 1,
-            givens_c, -givens_s);
+            givens_c, givens_s);
         internal::matrix_apply_givens_column(mat_q, rows, cols, k, k + 1,
             givens_c, givens_s);
 
@@ -442,6 +442,32 @@ matrix_gk_svd_step (int rows, int cols, T* mat_b, T* mat_q, T* mat_p,
             alpha = mat_b[k * cols + (k + 1)];
             beta = mat_b[k * cols + (k + 2)];
         }
+    }
+}
+
+template <typename T>
+void
+matrix_svd_clear_super_entry(int rows, int cols, T* mat_b, T* mat_q,
+    int row_index, T const& epsilon)
+{
+    for (int i = row_index + 1; i < cols; ++i)
+    {
+        if (MATH_EPSILON_EQ(mat_b[row_index * cols + i], T(0), epsilon))
+        {
+            mat_b[row_index * cols + i] = T(0);
+            break;
+        }
+
+        T norm = MATH_POW2(mat_b[row_index * cols + i])
+            + MATH_POW2(mat_b[i * cols + i]);
+        norm = std::sqrt(norm) * MATH_SIGN(mat_b[i * cols + i]);
+
+        T givens_c = mat_b[i * cols + i] / norm;
+        T givens_s = mat_b[row_index * cols + i] / norm;
+        matrix_apply_givens_row(mat_b, cols, cols, row_index,
+            i, givens_c, givens_s);
+        matrix_apply_givens_column(mat_q, rows, cols, row_index,
+            i, givens_c, givens_s);
     }
 }
 
@@ -569,17 +595,21 @@ matrix_gk_svd (T const* mat_a, int rows, int cols,
             break;
 
         bool diagonal_non_zero = true;
-        for (int i = p; i < (cols - q - 1); ++i)
+        int nz = 0;
+        for (nz = p; nz < (cols - q - 1); ++nz)
         {
-            if (MATH_EPSILON_EQ(mat_b[i * cols + i], T(0), epsilon))
+            if (MATH_EPSILON_EQ(mat_b[nz * cols + nz], T(0), epsilon))
             {
                 diagonal_non_zero = false;
-                mat_b[i * cols + i] = T(0);
+                mat_b[nz * cols + nz] = T(0);
+                break;
             }
         }
 
         if (diagonal_non_zero)
             matrix_gk_svd_step(rows, cols, mat_b, mat_q, mat_p, p, q, epsilon);
+        else
+            matrix_svd_clear_super_entry(rows, cols, mat_b, mat_q, nz, epsilon);
     }
 
     /* Create resulting matrices and vector from temporary entities. */

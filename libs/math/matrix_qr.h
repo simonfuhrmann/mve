@@ -104,8 +104,8 @@ matrix_apply_givens_row (T* mat, int /*rows*/, int cols, int givens_i,
     {
         T const tao1 = mat[givens_i * cols + j];
         T const tao2 = mat[givens_k * cols + j];
-        mat[givens_i * cols + j] = givens_c * tao1 + givens_s * tao2;
-        mat[givens_k * cols + j] = -givens_s * tao1 + givens_c * tao2;
+        mat[givens_i * cols + j] = givens_c * tao1 - givens_s * tao2;
+        mat[givens_k * cols + j] = givens_s * tao1 + givens_c * tao2;
     }
 }
 

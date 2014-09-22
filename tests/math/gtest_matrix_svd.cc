@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "math/matrix_svd.h"
-//#include "sfm/matrixsvd.h"//tmp
+#include "sfm/matrixsvd.h"//tmp
 
 TEST(MatrixSVDTest, MatrixSimpleTest1)
 {
@@ -855,6 +855,26 @@ namespace
     }
 
 } // namespace
+
+TEST(MatrixSVDTest, ForbiddenRandomTestLargeMatrix)
+{
+#define TEST_ROWS 10000
+#define TEST_COLS 10
+    std::srand(0);
+    math::Matrix<double, TEST_ROWS, TEST_COLS> A;
+    for (int i = 0; i < TEST_ROWS * TEST_COLS; ++i)
+        A[i] = getrand();
+
+    math::Matrix<double, TEST_ROWS, TEST_COLS> U;
+    math::Matrix<double, TEST_COLS, TEST_COLS> S;
+    math::Matrix<double, TEST_COLS, TEST_COLS> V;
+    math::matrix_svd(A, &U, &S, &V, 1e-10);
+    //svd::matrix_svd(A, &U, &S, &V);
+
+    math::Matrix<double, TEST_ROWS, TEST_COLS> X = U * S * V.transposed();
+    for (int i = 0; i < TEST_ROWS * TEST_COLS; ++i)
+        EXPECT_NEAR(A[i], X[i], 1e-10);
+}
 
 // Note: Random is a bad thing in test cases! Don't do it!
 TEST(MatrixSVDTest, ForbiddenRandomTest)
