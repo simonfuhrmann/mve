@@ -7,7 +7,6 @@
 #include <gtest/gtest.h>
 
 #include "math/matrix_svd.h"
-#include "sfm/matrixsvd.h"//tmp
 
 TEST(MatrixSVDTest, MatrixSimpleTest1)
 {
@@ -747,7 +746,6 @@ TEST(MatrixSVDTest, BeforeAfter5)
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd<double>(A, &U, &S, &V);
-    //svd::matrix_svd<double>(A, &U, &S, &V);
     math::Matrix<double, 3, 3> X = U * S * V.transposed();
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
@@ -762,7 +760,6 @@ TEST(MatrixSVDTest, BeforeAfter6)
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd<double>(A, &U, &S, &V);
-    //svd::matrix_svd<double>(A, &U, &S, &V);
     math::Matrix<double, 3, 3> X = U * S * V.transposed();
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
@@ -777,18 +774,9 @@ TEST(MatrixSVDTest, BeforeAfter7)
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd<double>(A, &U, &S, &V);
-    //svd::matrix_svd<double>(A, &U, &S, &V);
     math::Matrix<double, 3, 3> X = U * S * V.transposed();
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
-
-#if 0
-    std::cout << "Matrix A:" << std::endl << A << std::endl;
-    std::cout << "Matrix U:" << std::endl << U << std::endl;
-    std::cout << "Matrix S:" << std::endl << S << std::endl;
-    std::cout << "Matrix V:" << std::endl << V << std::endl;
-    std::cout << "Matrix USV^t:" << std::endl << X << std::endl;
-#endif
 }
 
 TEST(MatrixSVDTest, BeforeAfter8)
@@ -800,7 +788,6 @@ TEST(MatrixSVDTest, BeforeAfter8)
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd<double>(A, &U, &S, &V);
-    //svd::matrix_svd<double>(A, &U, &S, &V);
     math::Matrix<double, 3, 3> X = U * S * V.transposed();
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
@@ -815,7 +802,6 @@ TEST(MatrixSVDTest, BeforeAfter9)
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd<double>(A, &U, &S, &V);
-    //svd::matrix_svd<double>(A, &U, &S, &V);
     math::Matrix<double, 3, 3> X = U * S * V.transposed();
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
@@ -830,7 +816,6 @@ TEST(MatrixSVDTest, BeforeAfter10)
 
     math::Matrix<double, 3, 3> U, S, V;
     math::matrix_svd<double>(A, &U, &S, &V);
-    //svd::matrix_svd<double>(A, &U, &S, &V);
     math::Matrix<double, 3, 3> X = U * S * V.transposed();
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR(A[i], X[i], 1e-6) << " at " << i;
@@ -869,7 +854,6 @@ TEST(MatrixSVDTest, ForbiddenRandomTestLargeMatrix)
     math::Matrix<double, TEST_COLS, TEST_COLS> S;
     math::Matrix<double, TEST_COLS, TEST_COLS> V;
     math::matrix_svd(A, &U, &S, &V, 1e-10);
-    //svd::matrix_svd(A, &U, &S, &V);
 
     math::Matrix<double, TEST_ROWS, TEST_COLS> X = U * S * V.transposed();
     for (int i = 0; i < TEST_ROWS * TEST_COLS; ++i)
