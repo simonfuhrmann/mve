@@ -29,7 +29,8 @@ Incremental::initialize (ViewportList* viewports, TrackList* tracks)
 bool
 Incremental::is_initialized (void) const
 {
-    return !this->viewports->empty() && !this->tracks->empty();
+    return this->viewports != NULL && this->tracks != NULL
+        && !this->viewports->empty() && !this->tracks->empty();
 }
 
 void
