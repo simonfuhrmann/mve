@@ -859,34 +859,6 @@ Sift::keypoint_absolute_scale (Keypoint const& kp)
 /* ---------------------------------------------------------------- */
 
 void
-Sift::dump_octaves (void)
-{
-    /* Dumps all octaves to disc, for debugging purposes. */
-    std::cout << "SIFT: Dumping images to /tmp ..." << std::endl;
-    for (std::size_t i = 0; i < this->octaves.size(); ++i)
-    {
-        Octave const& oct(this->octaves[i]);
-        for (std::size_t j = 0; j < oct.img.size(); ++j)
-        {
-            std::stringstream ss;
-            ss << "/tmp/sift-octave_" << i << "-layer_" << j << ".png";
-            mve::ByteImage::Ptr img = mve::image::float_to_byte_image(oct.img[j]);
-            mve::image::save_file(img, ss.str());
-        }
-
-        for (std::size_t j = 0; j < oct.dog.size(); ++j)
-        {
-            std::stringstream ss;
-            ss << "/tmp/sift-octave_" << i << "-dog_" << j << ".png";
-            mve::ByteImage::Ptr img = mve::image::float_to_byte_image(oct.dog[j], -0.5f, 0.5f);
-            mve::image::save_file(img, ss.str());
-        }
-    }
-}
-
-/* ---------------------------------------------------------------- */
-
-void
 Sift::load_lowe_descriptors (std::string const& filename, Descriptors* result)
 {
     std::ifstream in(filename.c_str());

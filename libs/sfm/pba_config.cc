@@ -13,6 +13,7 @@
  *  General Public License for more details.
  */
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <ctime>
@@ -32,6 +33,7 @@
 #endif
 
 SFM_NAMESPACE_BEGIN
+SFM_PBA_NAMESPACE_BEGIN
 
 ConfigBA::ConfigBA()
 {
@@ -99,7 +101,6 @@ ConfigBA::ConfigBA()
     __num_cpu_thread_all = 0;
 
     ///////////////////////
-    __debug_pba = false;
     __profile_pba = 0;
     __cpu_thread_profile = false;
     __warmup_device = false;
@@ -512,9 +513,6 @@ void ConfigBA::ParseParam(int argc, char** argv)
         case MAKEINT3(d, c, e):
             if(i + 1 < argc && sscanf(param, "%f", &argf) && argf > 0 && argf <= 0.01) __depth_check_epsilon = argf;
             break;
-        case MAKEINT4(d, e, b, u):
-            __debug_pba = true;
-            break;
         case MAKEINT4(e, v, a, l):
             __lm_max_iteration = 100;
             __warmup_device = true;
@@ -537,4 +535,5 @@ void ConfigBA::ParseParam(int argc, char** argv)
     }
 }
 
+SFM_PBA_NAMESPACE_END
 SFM_NAMESPACE_END

@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include "camera_database.h"
 
 SFM_NAMESPACE_BEGIN
@@ -568,6 +570,7 @@ CameraDatabase::CameraDatabase (void)
     this->add("SAMSUNG TECHWIN", "VLUU NV10, NV10", 7.144f, 5.358f, 3648, 2736);
     this->add("SAMSUNG TECHWIN", "Pro 815", 8.8f, 6.6f, 3264, 2448);
     this->add("Samsung Techwin", "<Digimax V700 / Kenox V10>", 7.144f, 5.358f, 3072, 2304);
+    this->add("SAMSUNG", "GT-I9100", 4.55f, 3.41f, 3264, 2448);
 
     /* Cameras from Sigma. */
     this->add("SIGMA", "SIGMA SD1", 24.0f, 16.0f, 4800, 3200);

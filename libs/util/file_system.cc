@@ -263,7 +263,10 @@ get_binary_path (void)
 
 #elif defined(__APPLE__)
 
-    // http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man3/dyld.3.html
+    /*
+     * http://developer.apple.com/library/mac/#documentation/
+     * ...    Darwin/Reference/ManPages/man3/dyld.3.html
+     */
     uint32_t pathmax = PATH_MAX;
     int success = _NSGetExecutablePath(path, &pathmax);
     int n_chars = 0;

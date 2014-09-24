@@ -31,7 +31,23 @@ MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
 /*
- * ---------------------- Loading and Saving ----------------------
+ * -------------------------------------------------------------------
+ */
+
+void
+save_file (ByteImage::Ptr image, std::string const& filename)
+{
+    save_file(ByteImage::ConstPtr(image), filename);
+}
+
+void
+save_file (FloatImage::Ptr image, std::string const& filename)
+{
+    save_file(FloatImage::ConstPtr(image), filename);
+}
+
+/*
+ * ------------------------ Loading and Saving -----------------------
  */
 
 ByteImage::Ptr
@@ -76,7 +92,7 @@ load_file (std::string const& filename)
 /* ---------------------------------------------------------------- */
 
 void
-save_file (ByteImage::Ptr image, std::string const& filename)
+save_file (ByteImage::ConstPtr image, std::string const& filename)
 {
     using namespace util::string;
     std::string fext4 = lowercase(right(filename, 4));
@@ -118,7 +134,7 @@ save_file (ByteImage::Ptr image, std::string const& filename)
 /* ---------------------------------------------------------------- */
 
 void
-save_file (FloatImage::Ptr image, std::string const& filename)
+save_file (FloatImage::ConstPtr image, std::string const& filename)
 {
 
     using namespace util::string;
@@ -232,7 +248,7 @@ load_png_file (std::string const& filename)
 /* ---------------------------------------------------------------- */
 
 void
-save_png_file (ByteImage::Ptr image, std::string const& filename)
+save_png_file (ByteImage::ConstPtr image, std::string const& filename)
 {
     if (image == NULL)
         throw std::invalid_argument("NULL image given");
@@ -288,9 +304,10 @@ save_png_file (ByteImage::Ptr image, std::string const& filename)
     /* Setup row pointers. */
     std::vector<png_bytep> row_pointers;
     row_pointers.resize(image->height());
-    ByteImage::ImageData& data = image->get_data();
+    ByteImage::ImageData const& data = image->get_data();
     for (int i = 0; i < image->height(); ++i)
-        row_pointers[i] = &data[i * image->width() * image->channels()];
+        row_pointers[i] = const_cast<png_bytep>(
+            &data[i * image->width() * image->channels()]);
 
     /* Setup transformations. */
     int png_transforms = PNG_TRANSFORM_IDENTITY;
@@ -411,7 +428,7 @@ load_jpg_file (std::string const& filename, std::string* exif)
 // http://download.blender.org/source/chest/blender_2.03_tree/jpeg/example.c
 
 void
-save_jpg_file (ByteImage::Ptr image, std::string const& filename, int quality)
+save_jpg_file (ByteImage::ConstPtr image, std::string const& filename, int quality)
 {
     if (image == NULL)
         throw std::invalid_argument("NULL image given");
@@ -452,11 +469,12 @@ save_jpg_file (ByteImage::Ptr image, std::string const& filename, int quality)
     jpeg_set_quality(&cinfo, quality, TRUE);
     jpeg_start_compress(&cinfo, TRUE);
 
-    ByteImage::ImageData& data = image->get_data();
+    ByteImage::ImageData const& data = image->get_data();
     int row_stride = image->width() * image->channels();
     while (cinfo.next_scanline < cinfo.image_height)
     {
-        JSAMPROW row_pointer = &data[cinfo.next_scanline * row_stride];
+        JSAMPROW row_pointer = const_cast<JSAMPROW>(
+            &data[cinfo.next_scanline * row_stride]);
         jpeg_write_scanlines(&cinfo, &row_pointer, 1);
     }
     jpeg_finish_compress(&cinfo);

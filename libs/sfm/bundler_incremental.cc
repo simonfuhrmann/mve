@@ -201,8 +201,11 @@ Incremental::find_next_view (void) const
 void
 Incremental::find_next_views (std::vector<int>* next_views)
 {
-    std::vector<std::pair<int, int> > valid_tracks(this->cameras.size());
+    /* Update internal camera vector after viewports are externally updated. */
+    if (this->viewports->size() != this->cameras.size())
+        this->cameras.resize(this->viewports->size());
 
+    std::vector<std::pair<int, int> > valid_tracks(this->cameras.size());
     for (std::size_t i = 0; i < valid_tracks.size(); ++i)
         valid_tracks[i] = std::pair<int, int>(0, static_cast<int>(i));
 
@@ -493,21 +496,24 @@ Incremental::bundle_adjustment_single_cam (int view_id)
 
 /* ---------------------------------------------------------------- */
 
-//#define PBA_DISTORTION_TYPE ConfigBA::PBA_PROJECTION_DISTORTION
-#define PBA_DISTORTION_TYPE ConfigBA::PBA_MEASUREMENT_DISTORTION
-//#define PBA_DISTORTION_TYPE ConfigBA::PBA_NO_DISTORTION
+//#define PBA_DISTORTION_TYPE pba::PROJECTION_DISTORTION
+#define PBA_DISTORTION_TYPE pba::MEASUREMENT_DISTORTION
+//#define PBA_DISTORTION_TYPE pba::NO_DISTORTION
 
 void
 Incremental::bundle_adjustment_intern (int single_camera_ba)
 {
     /* Configure PBA. */
-    SparseBundleCPU pba;
+    pba::SparseBundleCPU pba;
     pba.EnableRadialDistortion(PBA_DISTORTION_TYPE);
-    if (single_camera_ba >= 0)
-        pba.SetNextBundleMode(ConfigBA::BUNDLE_ONLY_MOTION);
-    else
-        pba.SetNextBundleMode(ConfigBA::BUNDLE_FULL);
     pba.SetNextTimeBudget(0);
+    if (single_camera_ba >= 0)
+        pba.SetNextBundleMode(pba::BUNDLE_ONLY_MOTION);
+    else
+        pba.SetNextBundleMode(pba::BUNDLE_FULL);
+
+    if (this->opts.ba_fixed_intrinsics)
+        pba.SetFixedIntrinsics(true);
 
     pba.GetInternalConfig()->__verbose_cg_iteration = false;
     pba.GetInternalConfig()->__verbose_level = -1;
@@ -521,7 +527,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     //pba.GetInternalConfig()->__lm_mse_threshold = 1E-2;
 
     /* Prepare camera data. */
-    std::vector<CameraT> pba_cams;
+    std::vector<pba::CameraT> pba_cams;
     std::vector<int> pba_cams_mapping(this->cameras.size(), -1);
     for (std::size_t i = 0; i < this->cameras.size(); ++i)
     {
@@ -529,7 +535,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
             continue;
 
         CameraPose const& pose = this->cameras[i];
-        CameraT cam;
+        pba::CameraT cam;
         cam.f = pose.get_focal_length();
         std::copy(pose.t.begin(), pose.t.end(), cam.t);
         std::copy(pose.R.begin(), pose.R.end(), cam.m[0]);
@@ -545,7 +551,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     pba.SetCameraData(pba_cams.size(), &pba_cams[0]);
 
     /* Prepare tracks data. */
-    std::vector<Point3D> pba_tracks;
+    std::vector<pba::Point3D> pba_tracks;
     std::vector<int> pba_tracks_mapping(this->tracks->size(), -1);
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
@@ -553,7 +559,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         if (!track.is_valid())
             continue;
 
-        Point3D point;
+        pba::Point3D point;
         std::copy(track.pos.begin(), track.pos.end(), point.xyz);
         pba_tracks_mapping[i] = pba_tracks.size();
         pba_tracks.push_back(point);
@@ -561,7 +567,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     pba.SetPointData(pba_tracks.size(), &pba_tracks[0]);
 
     /* Prepare feature positions in the images. */
-    std::vector<Point2D> pba_2d_points;
+    std::vector<pba::Point2D> pba_2d_points;
     std::vector<int> pba_track_ids;
     std::vector<int> pba_cam_ids;
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
@@ -580,7 +586,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
             Viewport const& view = this->viewports->at(view_id);
             math::Vec2f f2d = view.features.positions[feature_id];
 
-            Point2D point;
+            pba::Point2D point;
             point.x = f2d[0] - static_cast<float>(view.width) / 2.0f;
             point.y = f2d[1] - static_cast<float>(view.height) / 2.0f;
 
@@ -604,7 +610,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 
         CameraPose& pose = this->cameras[i];
         Viewport& view = this->viewports->at(i);
-        CameraT const& cam = pba_cams[pba_cam_counter];
+        pba::CameraT const& cam = pba_cams[pba_cam_counter];
         std::copy(cam.t, cam.t + 3, pose.t.begin());
         std::copy(cam.m[0], cam.m[0] + 9, pose.R.begin());
 
@@ -628,7 +634,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         if (!track.is_valid())
             continue;
 
-        Point3D const& point = pba_tracks[pba_track_counter];
+        pba::Point3D const& point = pba_tracks[pba_track_counter];
         std::copy(point.xyz, point.xyz + 3, track.pos.begin());
 
         pba_track_counter += 1;

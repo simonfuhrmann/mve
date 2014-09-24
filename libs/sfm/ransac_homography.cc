@@ -7,7 +7,6 @@
 #include "math/algo.h"
 #include "math/matrix_tools.h"
 #include "sfm/ransac_homography.h"
-#include "sfm/matrixsvd.h"
 
 SFM_NAMESPACE_BEGIN
 

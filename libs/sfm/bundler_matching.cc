@@ -26,6 +26,7 @@ Matching::compute (ViewportList const& viewports,
         this->progress->num_done = 0;
     }
 
+    pairwise_matching->clear();
     for (std::size_t i = 0; i < viewports.size(); ++i)
     {
         std::size_t start = 0;
@@ -150,6 +151,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
     }
 
     /* Create Two-View matching result. */
+    matches->clear();
     matches->reserve(num_inliers);
     for (int i = 0; i < num_inliers; ++i)
     {

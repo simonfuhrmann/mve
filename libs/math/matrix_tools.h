@@ -79,7 +79,7 @@ matrix_set_identity (T* mat, int n);
  */
 template <typename T, int N>
 bool
-matrix_is_identity (Matrix<T,N,N> const& mat);
+matrix_is_identity (Matrix<T,N,N> const& mat, T const& epsilon = T(0));
 
 /**
  * Returns a diagonal matrix from the given vector.
@@ -94,6 +94,14 @@ matrix_from_diagonal (math::Vector<T,N> const& v);
 template <typename T, int N>
 Matrix<T,N,N>&
 matrix_set_diagonal (Matrix<T,N,N>& mat, T const* diag);
+
+/**
+ * Checks whether the input matrix is a diagonal matrix. This is done by
+ * testing if all non-diagonal entries are zero (up to some epsilon).
+ */
+template <typename T>
+bool
+matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon = T(0));
 
 /**
  * Returns the diagonal elements of the matrix as a vector.
@@ -151,12 +159,32 @@ matrix_multiply (T const* mat_a, int rows_a, int cols_a,
     T const* mat_b, int cols_b, T* mat_res);
 
 /**
- * Checks whether the input matrix is a diagonal matrix. This is done by
- * testing if all non-diagonal entries are zero (up to some epsilon).
+ * Swaps the rows r1 and r2 of matrix mat with dimension rows, cols.
  */
 template <typename T>
-bool
-matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon);
+void
+matrix_swap_rows (T* mat, int rows, int cols, int r1, int r2);
+
+/**
+ * Swaps the columns c1 and c2 of matrix mat with dimension rows, cols.
+ */
+template <typename T>
+void
+matrix_swap_columns (T* const mat, int rows, int cols, int c1, int c2);
+
+/**
+ * Rotates the entries of the given matrix by 180 degrees in-place.
+ */
+template <typename T, int N>
+void
+matrix_rotate_180_inplace (Matrix<T, N, N>* mat_a);
+
+/**
+ * Rotates the entries of the given matrix by 180 degrees.
+ */
+template <typename T, int N>
+Matrix<T, N, N>
+matrix_rotate_180 (Matrix<T, N, N> const& mat_a);
 
 MATH_NAMESPACE_END
 
@@ -268,7 +296,7 @@ template <typename T>
 T*
 matrix_set_identity (T* mat, int n)
 {
-    int len = n * n;
+    int const len = n * n;
     std::fill(mat, mat + len, T(0));
     for (int i = 0; i < len; i += n + 1)
         mat[i] = T(1);
@@ -277,11 +305,12 @@ matrix_set_identity (T* mat, int n)
 
 template <typename T, int N>
 bool
-matrix_is_identity (Matrix<T,N,N> const& mat)
+matrix_is_identity (Matrix<T,N,N> const& mat, T const& epsilon)
 {
     for (int y = 0, i = 0; y < N; ++y)
         for (int x = 0; x < N; ++x, ++i)
-            if ((x == y && mat[i] != T(1)) || (x != y && mat[i] != T(0)))
+            if ((x == y && !MATH_EPSILON_EQ(mat[i], T(1), epsilon))
+                || (x != y && !MATH_EPSILON_EQ(mat[i], T(0), epsilon)))
                 return false;
     return true;
 }
@@ -537,6 +566,41 @@ matrix_is_diagonal (T* const mat, int rows, int cols, T const& epsilon)
                 return false;
     }
     return true;
+}
+
+template <typename T>
+void
+matrix_swap_columns (T* mat, int rows, int cols, int c1, int c2)
+{
+    for (int i = 0; i < rows; ++i, c1 += cols, c2 += cols)
+        std::swap(mat[c1], mat[c2]);
+}
+
+template <typename T>
+void
+matrix_swap_rows (T* mat, int /*rows*/, int cols, int r1, int r2)
+{
+    r1 = cols * r1;
+    r2 = cols * r2;
+    for (int i = 0; i < cols; ++i, ++r1, ++r2)
+        std::swap(mat[r1], mat[r2]);
+}
+
+template <typename T, int N>
+void
+matrix_rotate_180_inplace (Matrix<T, N, N>* mat_a)
+{
+    for (int i = 0, j = N * N - 1; i < j; ++i, --j)
+        std::swap((*mat_a)[i], (*mat_a)[j]);
+}
+
+template <typename T, int N>
+Matrix<T, N, N>
+matrix_rotate_180 (Matrix<T, N, N> const& mat_a)
+{
+    Matrix<T, N, N> ret = mat_a;
+    matrix_rotate_180_inplace(&ret);
+    return  ret;
 }
 
 MATH_NAMESPACE_END

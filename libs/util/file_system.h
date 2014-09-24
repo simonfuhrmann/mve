@@ -53,23 +53,19 @@ bool unlink (char const* pathname);
 /** Renames the given file 'from' to new name 'to'. */
 bool rename (char const* from, char const* to);
 
-///** Creates an empty file. */
-//http://www.koders.com/c/fid96336B4591FD0C5D2C4DADA2D264D3A04F21A934.aspx
-//bool touch (char const* pathname);
-
 /*
  * ----------------------------- File IO  ----------------------------
  */
 
-/* Reads the whole file into a string. Throws on error. */
+/** Reads the whole file into a string. Throws on error. */
 void
 read_file_to_string (std::string const& filename, std::string* data);
 
-/* Writes the given data into a file. Throws on error. */
+/** Writes the given data into a file. Throws on error. */
 void
 write_string_to_file (std::string const& data, std::string const& filename);
 
-/* Writes the given data into a file. Throws on error. */
+/** Writes the given data into a file. Throws on error. */
 void
 write_string_to_file (char const* data, int len, std::string const& filename);
 

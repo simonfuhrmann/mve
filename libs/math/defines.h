@@ -14,12 +14,17 @@
 #define MATH_GEOM_NAMESPACE_BEGIN namespace geom {
 #define MATH_GEOM_NAMESPACE_END }
 
+#define MATH_INTERNAL_NAMESPACE_BEGIN namespace internal {
+#define MATH_INTERNAL_NAMESPACE_END }
+
 /** Vector, Matrix, basic operations, etc. */
 MATH_NAMESPACE_BEGIN
 /** Algorithms, functors, value interpolation, etc. */
 MATH_ALGO_NAMESPACE_BEGIN MATH_ALGO_NAMESPACE_END
 /** Computation of geometric quantities and predicates. */
 MATH_GEOM_NAMESPACE_BEGIN MATH_GEOM_NAMESPACE_END
+/** Math internals. */
+MATH_INTERNAL_NAMESPACE_BEGIN MATH_INTERNAL_NAMESPACE_END
 MATH_NAMESPACE_END
 
 /*
@@ -57,8 +62,8 @@ MATH_NAMESPACE_END
 #define MATH_POW4(x) (MATH_POW2(MATH_POW2(x)))
 
 /* Angle conversions macros, DEG <-> RAD. */
-#define MATH_RAD2DEG(x) (x * (180.0 / MATH_PI))
-#define MATH_DEG2RAD(x) (x * (MATH_PI / 180.0))
+#define MATH_RAD2DEG(x) ((x) * (180.0 / MATH_PI))
+#define MATH_DEG2RAD(x) ((x) * (MATH_PI / 180.0))
 
 /* Float and double limits and epsilon values. */
 #ifndef __FLT_MIN__
@@ -71,6 +76,9 @@ MATH_NAMESPACE_END
 #define MATH_DBL_MIN __DBL_MIN__
 #define MATH_FLT_EPS (MATH_FLT_MIN * 1e8f) // approx. 1.17e-30
 #define MATH_DBL_EPS (MATH_DBL_MIN * 1e58) // approx. 2.22e-250
+
+/* Misc operations. */
+#define MATH_SIGN(x) ((x) < 0 ? -1 : 1)
 
 /* Floating-point epsilon comparisons. */
 #define MATH_EPSILON_EQ(x,v,eps) (((v - eps) <= x) && (x <= (v + eps)))

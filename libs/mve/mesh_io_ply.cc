@@ -435,30 +435,36 @@ load_ply_mesh (std::string const& filename)
             case PLY_V_FLOAT_X:
             case PLY_V_FLOAT_Y:
             case PLY_V_FLOAT_Z:
-                vertex[(int)elem - PLY_V_FLOAT_X] = ply_get_value<float>(input, ply_format);
+                vertex[(int)elem - PLY_V_FLOAT_X]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_NX:
             case PLY_V_FLOAT_NY:
             case PLY_V_FLOAT_NZ:
-                vnormal[(int)elem - PLY_V_FLOAT_NX] = ply_get_value<float>(input, ply_format);
+                vnormal[(int)elem - PLY_V_FLOAT_NX]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_UCHAR_R:
             case PLY_V_UCHAR_G:
             case PLY_V_UCHAR_B:
-                color[(int)elem - PLY_V_UCHAR_R] = (float)ply_get_value<unsigned char>(input, ply_format) * (1.0f / 255.0f);
+                color[(int)elem - PLY_V_UCHAR_R]
+                    = (float)ply_get_value<unsigned char>(input, ply_format)
+                    * (1.0f / 255.0f);
                 break;
 
             case PLY_V_FLOAT_R:
             case PLY_V_FLOAT_G:
             case PLY_V_FLOAT_B:
-                color[(int)elem - PLY_V_FLOAT_R] = ply_get_value<float>(input, ply_format);
+                color[(int)elem - PLY_V_FLOAT_R]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_U:
             case PLY_V_FLOAT_V:
-                tex_coord[(int)elem - PLY_V_FLOAT_U] = ply_get_value<float>(input, ply_format);
+                tex_coord[(int)elem - PLY_V_FLOAT_U]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_CONF:
@@ -507,7 +513,7 @@ load_ply_mesh (std::string const& filename)
             PlyFaceElement elem = (PlyFaceElement)f_format[n];
             switch (elem)
             {
-            case PLY_F_VERTEX_INDICES:
+                case PLY_F_VERTEX_INDICES:
                 {
                     /* Read the amount of vertex indices for the face. */
                     unsigned char n_verts = ply_get_value<unsigned char>(input, ply_format);
@@ -554,14 +560,14 @@ load_ply_mesh (std::string const& filename)
                     break;
                 }
 
-            case PLY_F_INT_IGNORE:
-                ply_get_value<int>(input, ply_format);
-                break;
+                case PLY_F_INT_IGNORE:
+                    ply_get_value<int>(input, ply_format);
+                    break;
 
-            default:
-            case PLY_F_BYTE_IGNORE:
-                ply_get_value<unsigned char>(input, ply_format);
-                break;
+                default:
+                case PLY_F_BYTE_IGNORE:
+                    ply_get_value<unsigned char>(input, ply_format);
+                    break;
             }
 
             eof = input.eof();

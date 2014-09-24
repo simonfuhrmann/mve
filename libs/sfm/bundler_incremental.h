@@ -40,12 +40,14 @@ public:
         double new_track_error_threshold;
         /** Minimum angle for track triangulation in RAD. */
         double min_triangulation_angle;
+        /** Bundle Adjustment fixed intrinsics. */
+        bool ba_fixed_intrinsics;
         /** Produce status messages on the console. */
         bool verbose_output;
     };
 
 public:
-    Incremental (Options const& options);
+    explicit Incremental (Options const& options);
 
     /**
      * Initializes the incremental bundler and sets required data.
@@ -101,6 +103,7 @@ Incremental::Options::Options (void)
     : track_error_threshold_factor(25.0)
     , new_track_error_threshold(10.0)
     , min_triangulation_angle(MATH_DEG2RAD(1.0))
+    , ba_fixed_intrinsics(false)
     , verbose_output(false)
 {
 }

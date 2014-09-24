@@ -49,7 +49,7 @@ public:
 
 public:
     FeatureSet (void);
-    FeatureSet (Options const& options);
+    explicit FeatureSet (Options const& options);
     void set_options (Options const& options);
 
     /** Computes the features specified in the options. */

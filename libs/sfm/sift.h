@@ -207,8 +207,6 @@ protected:
     float keypoint_relative_scale (Keypoint const& kp);
     float keypoint_absolute_scale (Keypoint const& kp);
 
-    void dump_octaves (void); // for debugging
-
 private:
     Options options;
     mve::FloatImage::ConstPtr orig; // Original input image

@@ -126,16 +126,21 @@ void DMRecon::start()
         processFeatures();
         processQueue();
 
-        if (progress.cancelled) {
+        if (progress.cancelled)
+        {
             progress.status = RECON_CANCELLED;
             return;
         }
 
         progress.status = RECON_SAVING;
         SingleView::Ptr refV(views[settings.refViewNr]);
-        if (settings.writePlyFile) {
+        if (settings.writePlyFile)
+        {
             if (!settings.quiet)
-                std::cout << "Saving ply file as " << settings.plyPath << "/" << refV->createFileName(settings.scale) << ".ply" << std::endl;
+                std::cout << "Saving ply file as "
+                    << settings.plyPath << "/"
+                    << refV->createFileName(settings.scale)
+                    << ".ply" << std::endl;
             refV->saveReconAsPly(settings.plyPath, settings.scale);
         }
 
@@ -146,19 +151,22 @@ void DMRecon::start()
         name += util::string::get(settings.scale);
         view->set_image(name, refV->depthImg);
 
-        if (settings.keepDzMap) {
+        if (settings.keepDzMap)
+        {
             name = "dz-L";
             name += util::string::get(settings.scale);
             view->set_image(name, refV->dzImg);
         }
 
-        if (settings.keepConfidenceMap) {
+        if (settings.keepConfidenceMap)
+        {
             name = "conf-L";
             name += util::string::get(settings.scale);
             view->set_image(name, refV->confImg);
         }
 
-        if (settings.scale != 0) {
+        if (settings.scale != 0)
+        {
             name = "undist-L";
             name += util::string::get(settings.scale);
             view->set_image(name, refV->getScaledImg()->duplicate());
@@ -180,14 +188,13 @@ void DMRecon::start()
         }
 
         /* Output required time to process the image */
-        {
-            size_t mvs_time = std::time(NULL) - progress.start_time;
-            if (!settings.quiet)
-                std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
-            log << "MVS took " << mvs_time << " seconds." << std::endl;
-
-        }
-    } catch (util::Exception e) {
+        size_t mvs_time = std::time(NULL) - progress.start_time;
+        if (!settings.quiet)
+            std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
+        log << "MVS took " << mvs_time << " seconds." << std::endl;
+    }
+    catch (util::Exception e)
+    {
         if (!settings.quiet)
             std::cout << "Reconstruction failed: " << e << std::endl;
         log << "Reconstruction failed: " << e << std::endl;
@@ -269,8 +276,10 @@ void DMRecon::processFeatures()
     /* select features that should be processed:
        take features only from master view for the moment */
     if (!settings.quiet)
-        std::cout << "Started to process " << features.size() << " features." << std::endl;
-    log << "Started to process " << features.size() << " features." << std::endl;
+        std::cout << "Started to process " << features.size()
+            << " features." << std::endl;
+    log << "Started to process " << features.size()
+        << " features." << std::endl;
     size_t success = 0, processed = 0;
 
     for (size_t i = 0; i < features.size() && !progress.cancelled; ++i)
@@ -291,9 +300,9 @@ void DMRecon::processFeatures()
         if (!useFeature)
             continue;
         math::Vec3f featPos(features[i].pos);
-        if (!refV->pointInFrustum(featPos)) {
+        if (!refV->pointInFrustum(featPos))
             continue;
-        }
+
         math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
         int x = math::round(pixPosF[0]);
         int y = math::round(pixPosF[1]);
@@ -304,18 +313,18 @@ void DMRecon::processFeatures()
         ++processed;
         float conf = patch.computeConfidence();
         size_t index = y * this->width + x;
-        if (conf == 0) {
+        if (conf == 0)
             continue;
-        }
 
         // optimization was successful:
         ++success;
         float depth = patch.getDepth();
         math::Vec3f normal = patch.getNormal();
-        if (refV->confImg->at(index) < conf) {
-            if (refV->confImg->at(index) <= 0) {
+        if (refV->confImg->at(index) < conf)
+        {
+            if (refV->confImg->at(index) <= 0)
                 ++progress.filled;
-            }
+
             refV->depthImg->at(index) = depth;
             refV->normalImg->at(index, 0) = normal[0];
             refV->normalImg->at(index, 1) = normal[1];

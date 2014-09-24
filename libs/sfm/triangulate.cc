@@ -1,4 +1,4 @@
-#include "sfm/matrixsvd.h"
+#include "math/matrix_svd.h"
 #include "sfm/triangulate.h"
 
 SFM_NAMESPACE_BEGIN
@@ -21,8 +21,8 @@ triangulate_match (Correspondence const& match,
         A(3, i) = match.p2[1] * P2(2, i) - P2(1, i);
     }
 
-    math::Matrix<double, 4, 4> U, S, V;
-    math::matrix_svd(A, &U, &S, &V);
+    math::Matrix<double, 4, 4> V;
+    math::matrix_svd<double, 4, 4>(A, NULL, NULL, &V);
     math::Vector<double, 4> x = V.col(3);
     return math::Vector<double, 3>(x[0] / x[3], x[1] / x[3], x[2] / x[3]);
 }
@@ -49,8 +49,12 @@ triangulate_track (std::vector<math::Vec2f> const& pos,
         }
     }
 
+    /* Compute SVD. */
     math::Matrix<double, 4, 4> mat_v;
-    math::matrix_svd<double>(&A[0], 2 * poses.size(), 4, NULL, NULL, mat_v.begin());
+    math::matrix_svd<double>(&A[0], 2 * poses.size(), 4,
+        NULL, NULL, mat_v.begin());
+
+    /* Consider the last column of V and extract 3D point. */
     math::Vector<double, 4> x = mat_v.col(3);
     return math::Vector<double, 3>(x[0] / x[3], x[1] / x[3], x[2] / x[3]);
 }

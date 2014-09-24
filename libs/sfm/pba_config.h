@@ -20,34 +20,34 @@
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
+SFM_PBA_NAMESPACE_BEGIN
+
+enum StatusT
+{
+    STATUS_SUCCESS = 0,
+    STATUS_CAMERA_MISSING = 1,
+    STATUS_POINT_MISSING,
+    STATUS_PROJECTION_MISSING,
+    STATUS_MEASURMENT_MISSING,
+    STATUS_ALLOCATION_FAIL
+};
+
+enum DistortionT
+{
+    MEASUREMENT_DISTORTION = -1, //single parameter, apply to measurements
+    NO_DISTORTION = 0,           //no radial distortion
+    PROJECTION_DISTORTION = 1    //single parameter, apply to projection
+};
+
+enum BundleModeT
+{
+    BUNDLE_FULL = 0,
+    BUNDLE_ONLY_MOTION = 1,
+    BUNDLE_ONLY_STRUCTURE = 2
+};
 
 class ConfigBA
 {
-public:
-    enum StatusT
-    {
-        STATUS_SUCCESS = 0,
-        STATUS_CAMERA_MISSING = 1,
-        STATUS_POINT_MISSING,
-        STATUS_PROJECTION_MISSING,
-        STATUS_MEASURMENT_MISSING,
-        STATUS_ALLOCATION_FAIL
-    };
-
-    enum DistortionT
-    {
-        PBA_MEASUREMENT_DISTORTION = -1, //single parameter, apply to measurements
-        PBA_NO_DISTORTION = 0,           //no radial distortion
-        PBA_PROJECTION_DISTORTION = 1    //single parameter, apply to projectino
-    };
-
-    enum BundleModeT
-    {
-        BUNDLE_FULL = 0,
-        BUNDLE_ONLY_MOTION = 1,
-        BUNDLE_ONLY_STRUCTURE = 2
-    };
-
 protected:
     enum
     {
@@ -188,7 +188,6 @@ protected:
     int     __recent_cg_status;
     int     __profile_pba;
     bool    __cpu_thread_profile;
-    bool    __debug_pba;
     bool    __warmup_device;
     size_t  __memory_usage;
     /////////////////////////////////////
@@ -233,6 +232,7 @@ public:
 
 };
 
+SFM_PBA_NAMESPACE_END
 SFM_NAMESPACE_END
 
 #endif // SFM_PBA_CONFIG_HEADER

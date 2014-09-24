@@ -33,6 +33,7 @@
  * - neon functions     __ARM_NEON__
  */
 
+#include <algorithm>
 #include <limits>
 #include <iostream>
 #include <emmintrin.h> // SSE2
