@@ -13,15 +13,14 @@
 MVE_NAMESPACE_BEGIN
 
 /**
- * Per-view low-level camera information (as in the bundle).
+ * Per-view camera information with various helper functions.
  * An invalid camera is indicated with focal length set to 0.0f.
  */
 struct CameraInfo
 {
 public:
     /**
-     * Default ctor that invalidates the camera.
-     * An invalid camera always has focal length 'flen' set to 0.0f.
+     * Creates a new camera and invalidates it (sets 'flen' to 0.0f).
      */
     CameraInfo (void);
 
