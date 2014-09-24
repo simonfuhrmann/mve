@@ -58,6 +58,7 @@ protected slots:
     void on_recon_init_pair (void);
     void on_recon_next_camera (void);
     void on_recon_all_cameras (void);
+    void on_apply_to_scene (void);
 
 private:
     QVBoxLayout* create_sfm_layout (void);

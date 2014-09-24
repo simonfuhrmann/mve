@@ -17,6 +17,8 @@
 #include "util/file_system.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
+#include "mve/bundle.h"
+#include "mve/bundle_io.h"
 #include "sfm/sift.h"
 #include "sfm/bundler_common.h"
 #include "sfm/bundler_matching.h"
@@ -112,11 +114,13 @@ SfmControls::create_sfm_layout (void)
     QPushButton* sfm_recon_init_pair = new QPushButton("Recon Init Pair");
     QPushButton* sfm_recon_next_camera = new QPushButton("Recon Next Camera");
     QPushButton* sfm_recon_all_cameras = new QPushButton("Recon All Cameras");
+    QPushButton* sfm_apply_to_scene = new QPushButton("Apply to Scene");
     QFormLayout* sfm_form = new QFormLayout();
     sfm_form->setVerticalSpacing(0);
     sfm_form->addRow(sfm_recon_init_pair);
     sfm_form->addRow(sfm_recon_next_camera);
     sfm_form->addRow(sfm_recon_all_cameras);
+    sfm_form->addRow(sfm_apply_to_scene);
 
     /* SfM Settings. */
     QFormLayout* settings_form = new QFormLayout();
@@ -151,6 +155,8 @@ SfmControls::create_sfm_layout (void)
         this, SLOT(on_recon_next_camera()));
     this->connect(sfm_recon_all_cameras, SIGNAL(clicked()),
         this, SLOT(on_recon_all_cameras()));
+    this->connect(sfm_apply_to_scene, SIGNAL(clicked()),
+        this, SLOT(on_apply_to_scene()));
 
     return layout;
 }
@@ -182,11 +188,19 @@ SfmControls::mouse_event (const ogl::MouseEvent &event)
 void
 SfmControls::set_scene (mve::Scene::Ptr scene)
 {
+    this->state.scene = scene;
+    this->sfm_points_renderer.reset();
+    this->update_frusta_renderer();
+
+    /* Don't clear data if this is just a refresh operation. */
+    if (this->state.scene == scene)
+        return;
+
     /* Clear old SfM state data. */
     this->pairwise_matching.clear();
     this->viewports.clear();
+    this->tracks.clear();
 
-    this->state.scene = scene;
     this->state.repaint();
 }
 
@@ -294,7 +308,15 @@ SfmControls::paint_impl (void)
     /* Render SfM points. */
     if (this->sfm_points_renderer == NULL)
         this->create_sfm_points_renderer();
-    this->sfm_points_renderer->draw();
+
+    try
+    {
+        this->sfm_points_renderer->draw();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Error rendering: " << e.what() << std::endl;
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -481,7 +503,7 @@ SfmControls::on_matching_compute (void)
     this->feature_opts.feature_options.feature_types = sfm::FeatureSet::FEATURE_ALL;
 
     JobMatching* job = new JobMatching();
-    job->name = "SfM Reconstruct";
+    job->name = "SfM Matching";
     job->message = "Waiting...";
     job->scene = this->state.scene;
     job->matching_options = this->matching_opts;
@@ -679,4 +701,123 @@ SfmControls::on_recon_all_cameras (void)
 {
     QMessageBox::information(this->tab_widget,
         "Notice", "This is not implemented yet.");
+}
+
+void
+SfmControls::on_apply_to_scene (void)
+{
+    if (this->state.scene == NULL)
+    {
+        QMessageBox::critical(this->tab_widget,
+            "SfM Error", "There is no scene loaded!");
+        return;
+    }
+
+    if (!this->incremental_sfm.is_initialized())
+    {
+        QMessageBox::critical(this->tab_widget,
+            "SfM Error", "Incremental SfM not initialized.");
+        return;
+    }
+
+    /* Remind user that this can destroy the scene. */
+    QMessageBox::StandardButton answer = QMessageBox::question(this->tab_widget,
+        tr("Apply SfM to Scene?"),
+        tr("This action will do the following:\n\n"
+           "- Overwrite camera parameters for all views\n"
+           "- Overwrite the current bundle file\n"
+           "- Save all views (this can take some time)\n\n"
+           "Careful! Do you want to continue?"),
+        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes);
+
+    if (answer != QMessageBox::Yes)
+        return;
+
+    /*
+     * TODO: This is copied from the sfmrecon app. Use common codebase?
+     */
+
+    std::cout << "Normalizing scene..." << std::endl;
+    this->incremental_sfm.normalize_scene();
+
+    /* Save bundle file to scene. */
+    std::cout << "Creating bundle data structure..." << std::endl;
+    mve::Bundle::Ptr bundle = this->incremental_sfm.create_bundle();
+    mve::save_mve_bundle(bundle, this->state.scene->get_path() + "/synth_0.out");
+
+    /* Apply bundle cameras to views. */
+    mve::Bundle::Cameras const& bundle_cams = bundle->get_cameras();
+    mve::Scene::ViewList const& views = this->state.scene->get_views();
+    if (bundle_cams.size() != views.size())
+    {
+        std::cerr << "Error: Invalid number of cameras!" << std::endl;
+        std::exit(1);
+    }
+
+    std::string original_image_name
+        = this->matching_image_embedding->text().toStdString();
+    // TODO Make configurable
+    std::string undistorted_image_name = "undistorted";
+
+    /* Progress information: Create dialog. */
+    // FIXME: Progress not working.
+    std::size_t progress_value = 0;
+    QProgressDialog win("Exporting PLY files...",
+        "Cancel", 0, views.size(), this->tab_widget);
+    win.setAutoClose(true);
+    win.setMinimumDuration(0);
+    win.setValue(progress_value);
+
+    while (QCoreApplication::hasPendingEvents())
+        QCoreApplication::processEvents();
+
+#pragma omp parallel for
+    for (std::size_t i = 0; i < bundle_cams.size(); ++i)
+    {
+        if (win.wasCanceled())
+            continue;
+
+#pragma omp critical
+        {
+            /* Progress information: Update dialog. */
+            win.setLabelText("Undistorting and saving views...");
+            win.setValue(progress_value);
+            while (QCoreApplication::hasPendingEvents())
+                QCoreApplication::processEvents();
+            win.update();
+        }
+
+        /* Update view camera. */
+        mve::View::Ptr view = views[i];
+        mve::CameraInfo const& cam = bundle_cams[i];
+        if (view == NULL)
+            continue;
+        if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
+            continue; // No need to change view.
+        view->set_camera(cam);
+
+        /* Undistort image. */
+        if (true)
+        {
+            mve::ByteImage::Ptr original
+                = view->get_byte_image(original_image_name);
+            if (original == NULL)
+                continue;
+            mve::ByteImage::Ptr undist
+                = mve::image::image_undistort_vsfm<uint8_t>
+                (original, cam.flen, cam.dist[0]);
+            view->set_image(undistorted_image_name, undist);
+        }
+
+#pragma omp critical
+        std::cout << "Saving MVE view " << view->get_filename() << std::endl;
+        view->save_mve_file();
+        view->cache_cleanup();
+    }
+
+    win.setValue(views.size());
+
+    SceneManager::get().refresh_scene();
+    this->state.scene->reset_bundle();
+    SceneManager::get().refresh_bundle();
 }

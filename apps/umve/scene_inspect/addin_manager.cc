@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include <QFormLayout>
 #include <QBoxLayout>
 #include <QColorDialog>
