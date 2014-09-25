@@ -33,6 +33,15 @@ template <typename T>
 void
 draw_circle (Image<T>& image, int x, int y, int radius, T const* color);
 
+/**
+ * Draws a rectangle from (x1,y1) to (x2,y2) on the image.
+ * Length of the color array is expected to be the number of channels.
+ */
+template <typename T>
+void
+draw_rectangle (Image<T>& image, int x1, int y1, int x2, int y2,
+    T const* color);
+
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
 
@@ -119,6 +128,30 @@ draw_circle (Image<T>& image, int x, int y, int radius, T const* color)
     }
 }
 
+template <typename T>
+void
+draw_rectangle (Image<T>& image, int x1, int y1, int x2, int y2, T const* color)
+{
+    if (x1 > x2)
+        std::swap(x1, x2);
+    if (y1 > y2)
+        std::swap(y1, y2);
+    x1 = std::max(0, x1);
+    x2 = std::max(0, x2);
+    x1 = std::min(image.width() - 1, x1);
+    x2 = std::min(image.width() - 1, x2);
+    y1 = std::max(0, y1);
+    y2 = std::max(0, y2);
+    y1 = std::min(image.height() - 1, y1);
+    y2 = std::min(image.height() - 1, y2);
+
+    int const row_stride = image.width() * image.channels();
+    T* ptr = image.begin();
+    for (int y = y1; y <= y2; ++y)
+        for (int x = x1; x <= x2; ++x)
+            std::copy(color, color + image.channels(),
+                ptr + x * image.channels() + y * row_stride);
+}
 
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END

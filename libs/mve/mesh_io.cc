@@ -8,6 +8,7 @@
 #include "mve/mesh_io_npts.h"
 #include "mve/mesh_io_pbrt.h"
 #include "mve/mesh_io_smf.h"
+#include "mve/mesh_io_obj.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
@@ -46,6 +47,8 @@ save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
         save_npts_mesh(mesh, filename, true);
     else if (util::string::right(filename, 4) == ".smf")
         save_smf_mesh(mesh, filename);
+    else if (util::string::right(filename, 4) == ".obj")
+        save_obj_mesh(mesh, filename);
     else
         throw std::runtime_error("Extension not recognized");
 }
