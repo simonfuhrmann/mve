@@ -126,7 +126,6 @@ Matching::oneway_match (Matching::Options const& options,
     nn.set_elements(set_2, set_2_size);
     nn.set_element_dimensions(options.descriptor_length);
 
-#pragma omp parallel for
     for (std::size_t i = 0; i < set_1_size; ++i)
     {
         typename NearestNeighbor<T>::Result nn_result;

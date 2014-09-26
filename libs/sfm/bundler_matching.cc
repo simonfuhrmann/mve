@@ -9,7 +9,6 @@
 #include "sfm/ransac.h"
 #include "sfm/bundler_matching.h"
 
-
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
@@ -18,7 +17,7 @@ Matching::compute (ViewportList const& viewports,
     PairwiseMatching* pairwise_matching)
 {
     std::size_t num_pairs = viewports.size() * (viewports.size() - 1) / 2;
-    std::size_t current_pair = 0;
+    std::size_t num_done = 0;
 
     if (this->progress != NULL)
     {
@@ -26,53 +25,66 @@ Matching::compute (ViewportList const& viewports,
         this->progress->num_done = 0;
     }
 
-    pairwise_matching->clear();
-    for (std::size_t i = 0; i < viewports.size(); ++i)
+#pragma omp parallel for schedule(dynamic)
+    for (std::size_t i = 0; i < num_pairs; ++i)
     {
-        std::size_t start = 0;
-        if (this->opts.match_num_previous_frames > 0)
-            start = static_cast<int>(i) > this->opts.match_num_previous_frames
-                ? i - this->opts.match_num_previous_frames
-                : 0;
+        std::size_t view_1_id = (std::size_t)(0.5 + std::sqrt(0.25 + 2.0 * i));
+        std::size_t view_2_id = i - view_1_id * (view_1_id - 1) / 2;;
+        FeatureSet const& view_1 = viewports[view_1_id].features;
+        FeatureSet const& view_2 = viewports[view_2_id].features;
+        if (view_1.positions.empty() || view_2.positions.empty())
+            continue;
 
-        for (std::size_t j = start; j < i; ++j)
+#pragma omp critical
         {
-            current_pair += 1;
+            num_done += 1;
             if (this->progress != NULL)
                 this->progress->num_done += 1;
 
-            FeatureSet const& view_1 = viewports[i].features;
-            FeatureSet const& view_2 = viewports[j].features;
-            if (view_1.positions.empty() || view_2.positions.empty())
-                continue;
+            float percent = (num_done * 1000 / num_pairs) / 10.0f;
+            std::cout << "\rMatching pair " << num_done << " of "
+                << num_pairs << " (" << percent << "%)..." << std::flush;
+        }
 
-            /* Debug output. */
-            int percent = current_pair * 100 / num_pairs;
-            std::cout << "Processing pair " << i << ","
-                << j << " (" << percent << "%)..." << std::endl;
+        /* Match the views. */
+        util::WallTimer timer;
+        std::stringstream message;
+        CorrespondenceIndices matches;
+        this->two_view_matching(view_1, view_2, &matches, message);
+        std::size_t matching_time = timer.get_elapsed();
 
-            /* Match the views. */
-            CorrespondenceIndices matches;
-            this->two_view_matching(view_1, view_2, &matches);
-            if (matches.empty())
-                continue;
+        if (matches.empty())
+        {
+#pragma omp critical
+            std::cout << "\rPair (" << view_1_id << ","
+                << view_2_id << ") rejected, "
+                << message.str() << std::endl;
+            continue;
+        }
 
-            /* Successful two view matching. Add the pair. */
-            pairwise_matching->push_back(TwoViewMatching());
-            TwoViewMatching& matching = pairwise_matching->back();
-            matching.view_1_id = i;
-            matching.view_2_id = j;
-            std::swap(matching.matches, matches);
+        /* Successful two view matching. Add the pair. */
+        TwoViewMatching matching;
+        matching.view_1_id = view_1_id;
+        matching.view_2_id = view_2_id;
+        std::swap(matching.matches, matches);
+
+#pragma omp critical
+        {
+            pairwise_matching->push_back(matching);
+            std::cout << "\rPair (" << view_1_id << ","
+                << view_2_id << ") matched, " << matching.matches.size()
+                << " inliers, took " << matching_time << " ms." << std::endl;
         }
     }
 
-    std::cout << "Found a total of " << pairwise_matching->size()
+    std::cout << "\rFound a total of " << pairwise_matching->size()
         << " matching image pairs." << std::endl;
 }
 
 void
 Matching::two_view_matching (FeatureSet const& view_1,
-    FeatureSet const& view_2, CorrespondenceIndices* matches)
+    FeatureSet const& view_2, CorrespondenceIndices* matches,
+    std::stringstream& message)
 {
     /* Low-res matching if number of features is large. */
     if (this->opts.use_lowres_matching
@@ -82,30 +94,24 @@ Matching::two_view_matching (FeatureSet const& view_1,
             this->opts.num_lowres_features);
         if (num_matches < this->opts.min_lowres_matches)
         {
-            std::cout << "  Only " << num_matches
+            message << "only " << num_matches
                 << " of " << this->opts.min_lowres_matches
-                << " low-res matches. Rejecting pair." << std::endl;
+                << " low-res matches.";// << std::endl;
             return;
         }
     }
 
     /* Perform two-view descriptor matching. */
     sfm::Matching::Result matching_result;
-    int num_matches = 0;
-    {
-        util::WallTimer timer;
-        view_1.match(view_2, &matching_result);
-        num_matches = sfm::Matching::count_consistent_matches(matching_result);
-        std::cout << "  Matching took " << timer.get_elapsed() << "ms, "
-            << num_matches << " matches." << std::endl;
-    }
+    view_1.match(view_2, &matching_result);
+    int num_matches = sfm::Matching::count_consistent_matches(matching_result);
 
     /* Require at least 8 matches. Check threshold. */
     int const min_matches_thres = std::max(8, this->opts.min_feature_matches);
     if (num_matches < min_matches_thres)
     {
-        std::cout << "  Matches below threshold of "
-            << min_matches_thres << ". Skipping." << std::endl;
+        message << "matches below threshold of "
+            << min_matches_thres << ".";// << std::endl;
         return;
     }
 
@@ -134,19 +140,16 @@ Matching::two_view_matching (FeatureSet const& view_1,
     int num_inliers = 0;
     {
         sfm::RansacFundamental ransac(this->opts.ransac_opts);
-        util::WallTimer timer;
         ransac.estimate(unfiltered_matches, &ransac_result);
         num_inliers = ransac_result.inliers.size();
-        std::cout << "  RANSAC took " << timer.get_elapsed() << "ms, "
-            << ransac_result.inliers.size() << " inliers." << std::endl;
     }
 
     /* Require at least 8 inlier matches. */
     int const min_inlier_thres = std::max(8, this->opts.min_matching_inliers);
     if (num_inliers < min_inlier_thres)
     {
-        std::cout << "  Inliers below threshold of "
-            << min_inlier_thres << ". Skipping." << std::endl;
+        message << "inliers below threshold of "
+            << min_inlier_thres << ".";// << std::endl;
         return;
     }
 

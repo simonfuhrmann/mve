@@ -41,8 +41,6 @@ InitialPair::compute (ViewportList const& viewports,
     if (this->opts.verbose_output)
         std::cout << "Searching for initial pair..." << std::endl;
 
-    this->opts.homography_opts.already_normalized = false;
-    this->opts.homography_opts.threshold = 3.0f;
     RansacHomography homography_ransac(this->opts.homography_opts);
     Correspondences correspondences;
     for (std::size_t i = 0; i < pairs.size(); ++i)

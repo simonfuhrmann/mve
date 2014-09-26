@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 
 #include "sfm/matching.h"
 #include "sfm/ransac_fundamental.h"
@@ -81,7 +82,7 @@ public:
 
 private:
     void two_view_matching (FeatureSet const& view_1, FeatureSet const& view_2,
-        CorrespondenceIndices* matches);
+        CorrespondenceIndices* matches, std::stringstream& message);
 
 private:
     Options opts;
