@@ -34,7 +34,7 @@ twoview_matching (std::vector<DESCR> const& descr1,
     /* Perform matching. */
     sfm::Matching::Options matchopts;
     matchopts.descriptor_length = DIM;
-    matchopts.lowe_ratio_threshold = 0.9f;
+    matchopts.lowe_ratio_threshold = 0.8f;
     matchopts.distance_threshold = std::numeric_limits<float>::max();
 
     util::WallTimer timer;
@@ -56,7 +56,36 @@ visualize_matching (sfm::Matching::Result const& matching,
     mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2,
     std::vector<DESCR> const& descr1, std::vector<DESCR> const& descr2)
 {
-    /* Visualize keypoints. */
+#if 0
+    /* Draw features. */
+    std::vector<sfm::Visualizer::Keypoint> features1;
+    for (std::size_t i = 0; i < descr1.size(); ++i)
+    {
+        sfm::Visualizer::Keypoint kp;
+        kp.orientation = descr1[i].orientation;
+        kp.radius = descr1[i].scale * 3.0f;
+        kp.x = descr1[i].x;
+        kp.y = descr1[i].y;
+        features1.push_back(kp);
+    }
+    image1 = sfm::Visualizer::draw_keypoints(image1,
+        features1, sfm::Visualizer::RADIUS_BOX_ORIENTATION);
+
+    std::vector<sfm::Visualizer::Keypoint> features2;
+    for (std::size_t i = 0; i < descr2.size(); ++i)
+    {
+        sfm::Visualizer::Keypoint kp;
+        kp.orientation = descr2[i].orientation;
+        kp.radius = descr2[i].scale * 3.0f;
+        kp.x = descr2[i].x;
+        kp.y = descr2[i].y;
+        features2.push_back(kp);
+    }
+    image2 = sfm::Visualizer::draw_keypoints(image2,
+        features2, sfm::Visualizer::RADIUS_BOX_ORIENTATION);
+#endif
+
+    /* Visualize matches. */
     sfm::Correspondences vis_matches;
     for (std::size_t i = 0; i < matching.matches_1_2.size(); ++i)
     {
