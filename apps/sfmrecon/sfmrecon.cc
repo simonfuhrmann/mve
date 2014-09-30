@@ -54,14 +54,7 @@ log_message (AppSettings const& conf, std::string const& message)
         return;
     std::string fname = util::fs::join_path(conf.scene_path, conf.log_file);
     std::ofstream out(fname.c_str(), std::ios::app);
-    out << message << std::endl;
-    out.close();
-}
-
-void
-log_start_of_sfm (AppSettings const& conf)
-{
-    if (conf.log_file.empty())
+    if (!out.good())
         return;
 
     time_t rawtime;
@@ -70,7 +63,9 @@ log_start_of_sfm (AppSettings const& conf)
     timeinfo = std::localtime(&rawtime);
     char timestr[20];
     std::strftime(timestr, 20, "%Y-%m-%d %H:%M:%S", timeinfo);
-    log_message(conf, "Starting SfM (" + std::string(timestr) + ")");
+
+    out << timestr << "  " << message << std::endl;
+    out.close();
 }
 
 void
@@ -154,7 +149,7 @@ sfm_reconstruct (AppSettings const& conf)
         = util::fs::join_path(scene->get_path(), conf.prebundle_file);
 
     /* Log time and date if a log file is specified. */
-    log_start_of_sfm(conf);
+    log_message(conf, "Starting SfM reconstruction.");
 
     sfm::bundler::ViewportList viewports;
     sfm::bundler::PairwiseMatching pairwise_matching;
@@ -249,7 +244,7 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.pose_p3p_opts.verbose_output = false;
     incremental_opts.track_error_threshold_factor = conf.track_error_thres_factor;
     incremental_opts.new_track_error_threshold = conf.new_track_error_thres;
-    //incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
+    incremental_opts.min_triangulation_angle = MATH_DEG2RAD(3.0);
     incremental_opts.ba_fixed_intrinsics = conf.fixed_intrinsics;
     incremental_opts.verbose_output = true;
 
@@ -337,7 +332,7 @@ sfm_reconstruct (AppSettings const& conf)
     std::cout << "SfM reconstruction took " << timer.get_elapsed()
         << " ms." << std::endl;
     log_message(conf, "SfM reconstruction took "
-        + util::string::get(timer.get_elapsed()) + "ms.\n");
+        + util::string::get(timer.get_elapsed()) + "ms.");
 
     std::cout << "Normalizing scene..." << std::endl;
     incremental.normalize_scene();
@@ -384,6 +379,8 @@ sfm_reconstruct (AppSettings const& conf)
         view->save_mve_file();
         view->cache_cleanup();
     }
+
+    log_message(conf, "SfM reconstruction done.\n");
 }
 
 void
