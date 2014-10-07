@@ -440,17 +440,16 @@ Incremental::triangulate_new_tracks (void)
         }
         square_error /= static_cast<double>(poses.size());
 
-        /*
-         * Reject track if the reprojection error is large, or the track
-         * appears behind the camera. In the latter case, delete it.
-         */
+        /* Reject track if it appears behind the camera. */
         if (track_behind_camera)
         {
             num_behind_camera_tracks += 1;
-            this->delete_track(i);
+            this->delete_track(i);  // FIXME: Delete?
             continue;
         }
-        else if (square_error > square_thres)
+
+        /* Reject track if the reprojection error is too large. */
+        if (square_error > square_thres)
         {
             num_large_error_tracks += 1;
             continue;
@@ -699,7 +698,7 @@ Incremental::delete_large_error_tracks (void)
     {
         if (all_errors[i].first > square_threshold)
         {
-            this->delete_track(all_errors[i].second);
+            this->delete_track(all_errors[i].second); // FIXME: delete?
             num_deleted_tracks += 1;
         }
     }

@@ -57,8 +57,8 @@ aabb_from_string (std::string const& str,
 
     for (int i = 0; i < 3; ++i)
     {
-        (*aabb_min)[i] = util::string::convert<float>(tok[i]);
-        (*aabb_max)[i] = util::string::convert<float>(tok[i + 3]);
+        (*aabb_min)[i] = tok.get_as<float>(i);
+        (*aabb_max)[i] = tok.get_as<float>(i + 3);
     }
     std::cout << "Using AABB: (" << (*aabb_min) << ") / ("
         << (*aabb_max) << ")" << std::endl;

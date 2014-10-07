@@ -12,6 +12,7 @@
 #include "util/timer.h"
 #include "util/arguments.h"
 #include "util/file_system.h"
+#include "util/tokenizer.h"
 #include "mve/scene.h"
 #include "mve/bundle.h"
 #include "mve/bundle_io.h"
@@ -38,6 +39,8 @@ struct AppSettings
     std::string prebundle_file;
     std::string log_file;
     int max_image_size;
+    int initial_pair_1;
+    int initial_pair_2;
     bool lowres_matching;
     bool skip_sfm;
     bool always_full_ba;
@@ -194,22 +197,37 @@ sfm_reconstruct (AppSettings const& conf)
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].features.colors.clear();
 
-    /* Find initial pair. */
-    sfm::bundler::InitialPair::Options init_pair_opts;
-    init_pair_opts.homography_opts.max_iterations = 1000;
-    init_pair_opts.homography_opts.already_normalized = false;
-    init_pair_opts.homography_opts.threshold = 3.0f;
-    init_pair_opts.homography_opts.verbose_output = false;
-    init_pair_opts.max_homography_inliers = 0.6f;
-    init_pair_opts.verbose_output = true;
-
     sfm::bundler::InitialPair::Result init_pair_result;
-    sfm::bundler::InitialPair init_pair(init_pair_opts);
-    init_pair.compute(viewports, pairwise_matching, &init_pair_result);
+    if (conf.initial_pair_1 < 0 || conf.initial_pair_2 < 0)
+    {
+        /* Find initial pair. */
+        sfm::bundler::InitialPair::Options init_pair_opts;
+        init_pair_opts.homography_opts.max_iterations = 1000;
+        init_pair_opts.homography_opts.already_normalized = false;
+        init_pair_opts.homography_opts.threshold = 1.0f;
+        init_pair_opts.homography_opts.verbose_output = false;
+        init_pair_opts.max_homography_inliers = 0.6f;
+        init_pair_opts.verbose_output = true;
+
+        sfm::bundler::InitialPair init_pair(init_pair_opts);
+        init_pair.compute(viewports, pairwise_matching, &init_pair_result);
+    }
+    else
+    {
+        init_pair_result.view_1_id = conf.initial_pair_1;
+        init_pair_result.view_2_id = conf.initial_pair_2;
+    }
 
     if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0)
     {
         std::cerr << "Error finding initial pair, exiting!" << std::endl;
+        std::exit(1);
+    }
+
+    if (init_pair_result.view_1_id >= static_cast<int>(viewports.size())
+        || init_pair_result.view_2_id >= static_cast<int>(viewports.size()))
+    {
+        std::cerr << "Invalid initial pair specified, exiting!" << std::endl;
         std::exit(1);
     }
 
@@ -425,6 +443,7 @@ main (int argc, char** argv)
     args.add_option('\0', "fixed-intrinsics", false, "Do not optimize camera intrinsics");
     args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [10]");
     args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [25]");
+    args.add_option('\0', "initial-pair", true, "Manually specify initial pair IDs [-1,-1]");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -435,6 +454,8 @@ main (int argc, char** argv)
     conf.exif_name = "exif";
     conf.prebundle_file = "prebundle.sfm";
     conf.max_image_size = 6000000;
+    conf.initial_pair_1 = -1;
+    conf.initial_pair_2 = -1;
     conf.lowres_matching = true;
     conf.skip_sfm = false;
     conf.always_full_ba = false;
@@ -473,6 +494,20 @@ main (int argc, char** argv)
             conf.new_track_error_thres = i->get_arg<float>();
         else if (i->opt->lopt == "track-thres-factor")
             conf.track_error_thres_factor = i->get_arg<float>();
+        else if (i->opt->lopt == "initial-pair")
+        {
+            util::Tokenizer tok;
+            tok.split(i->arg, ',');
+            if (tok.size() != 2)
+            {
+                std::cerr << "Error: Cannot parse initial pair." << std::endl;
+                std::exit(1);
+            }
+            conf.initial_pair_1 = tok.get_as<int>(0);
+            conf.initial_pair_2 = tok.get_as<int>(1);
+            std::cout << "Using initial pair (" << conf.initial_pair_1
+                << "," << conf.initial_pair_2 << ")." << std::endl;
+        }
         else
             throw std::invalid_argument("Unexpected option");
     }

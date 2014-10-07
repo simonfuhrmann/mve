@@ -59,6 +59,7 @@ InitialPair::compute (ViewportList const& viewports,
             std::copy(pos1.begin(), pos1.end(), c.p1);
             std::copy(pos2.begin(), pos2.end(), c.p2);
         }
+
         /* Run RANSAC. */
         RansacHomography::Result ransac_result;
         homography_ransac.estimate(correspondences, &ransac_result);

@@ -11,6 +11,7 @@
 #include <sstream>
 #include <algorithm>
 
+#include "util/string.h"
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
@@ -42,7 +43,13 @@ public:
      * starting from token at position 'pos'. Passing '0' as
      * 'num' argument means to concat all remaining tokens.
      */
-    std::string concat (std::size_t pos, std::size_t num = 0);
+    std::string concat (std::size_t pos, std::size_t num = 0) const;
+
+    /**
+     * Returns the requested token as the specified type.
+     */
+    template <typename T>
+    T get_as (std::size_t pos) const;
 };
 
 /* ---------------------------------------------------------------- */
@@ -94,7 +101,7 @@ Tokenizer::parse_cmd (std::string const& str)
 /* ---------------------------------------------------------------- */
 
 inline std::string
-Tokenizer::concat (std::size_t pos, std::size_t num)
+Tokenizer::concat (std::size_t pos, std::size_t num) const
 {
     std::stringstream ss;
     std::size_t max = (num == 0
@@ -108,6 +115,15 @@ Tokenizer::concat (std::size_t pos, std::size_t num)
     }
 
     return ss.str();
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+inline T
+Tokenizer::get_as (std::size_t pos) const
+{
+    return string::convert<T>(this->at(pos));
 }
 
 UTIL_NAMESPACE_END
