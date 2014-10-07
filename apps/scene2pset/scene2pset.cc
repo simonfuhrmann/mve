@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cerrno>
 
+#include "math/octree_tools.h"
 #include "util/arguments.h"
 #include "util/tokenizer.h"
 #include "mve/depthmap.h"
@@ -40,6 +41,27 @@ poisson_scale_normals (mve::TriangleMesh::ConfidenceList const& confs,
         throw std::invalid_argument("Invalid confidences or normals");
     for (std::size_t i = 0; i < confs.size(); ++i)
         normals->at(i) *= confs[i];
+}
+
+void
+aabb_from_string (std::string const& str,
+    math::Vec3f* aabb_min, math::Vec3f* aabb_max)
+{
+    util::Tokenizer tok;
+    tok.split(str, ',');
+    if (tok.size() != 6)
+    {
+        std::cerr << "Error: Invalid AABB given" << std::endl;
+        std::exit(1);
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        (*aabb_min)[i] = util::string::convert<float>(tok[i]);
+        (*aabb_max)[i] = util::string::convert<float>(tok[i + 3]);
+    }
+    std::cout << "Using AABB: (" << (*aabb_min) << ") / ("
+        << (*aabb_max) << ")" << std::endl;
 }
 
 int
@@ -118,23 +140,8 @@ main (int argc, char** argv)
     /* If requested, use given AABB. */
     math::Vec3f aabbmin, aabbmax;
     if (!conf.aabb.empty())
-    {
-        util::Tokenizer tok;
-        tok.split(conf.aabb, ',');
-        if (tok.size() != 6)
-        {
-            std::cout << "Error: Invalid AABB given" << std::endl;
-            std::exit(1);
-        }
+        aabb_from_string(conf.aabb, &aabbmin, &aabbmax);
 
-        for (int i = 0; i < 3; ++i)
-        {
-            aabbmin[i] = util::string::convert<float>(tok[i]);
-            aabbmax[i] = util::string::convert<float>(tok[i + 3]);
-        }
-        std::cout << "Using AABB: (" << aabbmin << ") / ("
-            << aabbmax << ")" << std::endl;
-    }
     std::cout << "Using depthmap: " << conf.dmname << " and color image: "
           << conf.image << std::endl;
 
@@ -263,15 +270,12 @@ main (int argc, char** argv)
             /* Check every point if a bounding box is given.  */
             for (std::size_t i = 0; i < mverts.size(); ++i)
             {
-                math::Vec3f const& pt = mverts[i];
-                if (pt[0] < aabbmin[0] || pt[0] > aabbmax[0]
-                    || pt[1] < aabbmin[1] || pt[1] > aabbmax[1]
-                    || pt[2] < aabbmin[2] || pt[2] > aabbmax[2])
+                if (!math::geom::point_box_overlap(mverts[i], aabbmin, aabbmax))
                     continue;
 
 #pragma omp critical
                 {
-                    verts.push_back(pt);
+                    verts.push_back(mverts[i]);
                     if (!mvcol.empty())
                         vcolor.push_back(mvcol[i]);
                     if (conf.with_normals)

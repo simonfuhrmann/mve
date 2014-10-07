@@ -7,6 +7,7 @@
 
 #include "math/vector.h"
 #include "math/functions.h"
+#include "math/octree_tools.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
 #include "util/file_system.h"
@@ -115,7 +116,8 @@ DMRecon::~DMRecon()
         log.close();
 }
 
-void DMRecon::start()
+void
+DMRecon::start()
 {
     try
     {
@@ -208,7 +210,8 @@ void DMRecon::start()
  * Attach features that are visible in the reference view (according to
  * the bundle) to all other views if inside the frustum.
  */
-void DMRecon::analyzeFeatures()
+void
+DMRecon::analyzeFeatures()
 {
     progress.status = RECON_FEATURES;
 
@@ -223,6 +226,10 @@ void DMRecon::analyzeFeatures()
         if (!refV->pointInFrustum(featurePos))
             continue;
 
+        if (!math::geom::point_box_overlap(featurePos,
+            this->settings.aabbMin, this->settings.aabbMax))
+            continue;
+
         for (std::size_t j = 0; j < features[i].refs.size(); ++j)
         {
             int view_id = features[i].refs[j].view_id;
@@ -235,7 +242,8 @@ void DMRecon::analyzeFeatures()
     }
 }
 
-void DMRecon::globalViewSelection()
+void
+DMRecon::globalViewSelection()
 {
     progress.status = RECON_GLOBALVS;
     if (progress.cancelled)
@@ -261,47 +269,60 @@ void DMRecon::globalViewSelection()
     log << ss.str();
 
     /* Load selected images. */
+    if (!settings.quiet)
+        std::cout << "Loading color images..." << std::endl;
     for (IndexSet::const_iterator iter = neighViews.begin();
         iter != neighViews.end() && !progress.cancelled; ++iter)
         views[*iter]->loadColorImage(0);
 }
 
-void DMRecon::processFeatures()
+void
+DMRecon::processFeatures()
 {
     progress.status = RECON_FEATURES;
-    if (progress.cancelled)  return;
+    if (progress.cancelled)
+        return;
     SingleView::Ptr refV = views[settings.refViewNr];
     mve::Bundle::Features const& features = bundle->get_features();
 
-    /* select features that should be processed:
-       take features only from master view for the moment */
     if (!settings.quiet)
-        std::cout << "Started to process " << features.size()
-            << " features." << std::endl;
-    log << "Started to process " << features.size()
-        << " features." << std::endl;
-    size_t success = 0, processed = 0;
+        std::cout << "Processing " << features.size()
+            << " features..." << std::endl;
+    log << "Processing " << features.size()
+        << " features..." << std::endl;
 
-    for (size_t i = 0; i < features.size() && !progress.cancelled; ++i)
+    std::size_t success = 0;
+    std::size_t processed = 0;
+    for (std::size_t i = 0; i < features.size() && !progress.cancelled; ++i)
     {
+        /*
+         * Use feature if visible in reference view or
+         * at least one neighboring view.
+         */
         bool useFeature = false;
         if (features[i].contains_view_id(settings.refViewNr))
             useFeature = true;
-        else {
-            IndexSet::const_iterator id = neighViews.begin();
-            while (id != neighViews.end()) {
-                if (features[i].contains_view_id(*id)) {
-                    useFeature = true;
-                    break;
-                }
-                ++id;
-            }
+
+        for (IndexSet::const_iterator id = neighViews.begin();
+            useFeature == false && id != neighViews.end(); ++id)
+        {
+            if (features[i].contains_view_id(*id))
+                useFeature = true;
         }
         if (!useFeature)
             continue;
+
         math::Vec3f featPos(features[i].pos);
         if (!refV->pointInFrustum(featPos))
             continue;
+
+        /* Check if feature is inside AABB. */
+        if (!math::geom::point_box_overlap(featPos,
+            this->settings.aabbMin, this->settings.aabbMax))
+            continue;
+
+        /* Start processing the feature. */
+        processed += 1;
 
         math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
         int x = math::round(pixPosF[0]);
@@ -310,14 +331,13 @@ void DMRecon::processFeatures()
         PatchOptimization patch(views, settings, x, y, initDepth,
             0.f, 0.f, neighViews, IndexSet());
         patch.doAutoOptimization();
-        ++processed;
         float conf = patch.computeConfidence();
-        size_t index = y * this->width + x;
-        if (conf == 0)
+        if (conf <= 0.0f)
             continue;
 
-        // optimization was successful:
-        ++success;
+        /* Feature depth optimization was successful. */
+        success += 1;
+        size_t index = y * this->width + x;
         float depth = patch.getDepth();
         math::Vec3f normal = patch.getNormal();
         if (refV->confImg->at(index) < conf)
@@ -460,6 +480,5 @@ DMRecon::processQueue()
         }
     }
 }
-
 
 MVS_NAMESPACE_END

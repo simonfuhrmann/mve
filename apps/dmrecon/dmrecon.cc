@@ -39,6 +39,27 @@ reconstruct (mve::Scene::Ptr scene, mvs::Settings settings)
     handle.setDone();
 }
 
+void
+aabb_from_string (std::string const& str,
+    math::Vec3f* aabb_min, math::Vec3f* aabb_max)
+{
+    util::Tokenizer tok;
+    tok.split(str, ',');
+    if (tok.size() != 6)
+    {
+        std::cerr << "Error: Invalid AABB given" << std::endl;
+        std::exit(1);
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        (*aabb_min)[i] = util::string::convert<float>(tok[i]);
+        (*aabb_max)[i] = util::string::convert<float>(tok[i + 3]);
+    }
+    std::cout << "Using AABB: (" << (*aabb_min) << ") / ("
+        << (*aabb_max) << ")" << std::endl;
+}
+
 int
 main (int argc, char** argv)
 {
@@ -59,13 +80,13 @@ main (int argc, char** argv)
     args.add_option('l', "list-view", true,
         "reconstructs given view IDs (given as string \"0-10\")");
     args.add_option('s', "scale", true,
-        "reconstruction on given scale (0 is original size)");
+        "reconstruction on given scale, 0 is original [0]");
     args.add_option('f', "filter-width", true,
-        "patch size for NCC based comparison (default is 5)");
+        "patch size for NCC based comparison [5]");
     args.add_option('\0', "nocolorscale", false,
         "turn off color scale");
     args.add_option('i', "image", true,
-        "specify image embedding used in reconstruction");
+        "specify source image embedding [undistorted]");
     args.add_option('\0', "keep-dz", false,
         "store dz map into view");
     args.add_option('\0', "keep-conf", false,
@@ -76,9 +97,11 @@ main (int argc, char** argv)
         "path suffix appended to scene dir to write ply files");
     args.add_option('\0', "logdest", true,
         "path suffix appended to scene dir to write log files");
+    args.add_option('\0', "bounding-box", true,
+        "Six comma separated values used as AABB [disabled]");
     args.add_option('\0', "progress", true,
         "progress output style: 'silent', 'simple' or 'fancy'");
-    args.add_option('\0', "force", false, "Re-reconstruct existing depthmaps");
+    args.add_option('\0', "force", false, "Reconstruct existing depthmaps");
     args.parse(argc, argv);
 
     std::string basePath = args.get_nth_nonopt(0);
@@ -125,8 +148,8 @@ main (int argc, char** argv)
             plyDest = arg->arg;
         else if (arg->opt->lopt == "logdest")
             logDest = arg->arg;
-        else if (arg->opt->lopt == "force")
-            force_recon = true;
+        else if (arg->opt->lopt == "bounding-box")
+            aabb_from_string(arg->arg, &mySettings.aabbMin, &mySettings.aabbMax);
         else if (arg->opt->lopt == "progress")
         {
             if (arg->arg == "silent")
@@ -138,6 +161,8 @@ main (int argc, char** argv)
             else
                 std::cerr << "WARNING: unrecognized progress style" << std::endl;
         }
+        else if (arg->opt->lopt == "force")
+            force_recon = true;
         else
         {
             std::cerr << "WARNING: unrecognized option" << std::endl;
