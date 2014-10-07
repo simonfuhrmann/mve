@@ -51,6 +51,7 @@ SfmControls::SfmControls (GLWidget* gl_widget, QTabWidget* tab_widget)
     QFormLayout* rendering_form = new QFormLayout();
     rendering_form->setVerticalSpacing(0);
     rendering_form->addRow(this->clear_color_cb);
+    rendering_form->addRow(this->axis_renderer->get_sidebar_widget());
 
     /* Create sidebar headers. */
     QCollapsible* rendering_header = new QCollapsible("Scene Rendering",
