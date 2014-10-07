@@ -28,13 +28,6 @@ Matching::compute (ViewportList const& viewports,
 #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < num_pairs; ++i)
     {
-        std::size_t view_1_id = (std::size_t)(0.5 + std::sqrt(0.25 + 2.0 * i));
-        std::size_t view_2_id = i - view_1_id * (view_1_id - 1) / 2;;
-        FeatureSet const& view_1 = viewports[view_1_id].features;
-        FeatureSet const& view_2 = viewports[view_2_id].features;
-        if (view_1.positions.empty() || view_2.positions.empty())
-            continue;
-
 #pragma omp critical
         {
             num_done += 1;
@@ -45,6 +38,13 @@ Matching::compute (ViewportList const& viewports,
             std::cout << "\rMatching pair " << num_done << " of "
                 << num_pairs << " (" << percent << "%)..." << std::flush;
         }
+
+        std::size_t view_1_id = (std::size_t)(0.5 + std::sqrt(0.25 + 2.0 * i));
+        std::size_t view_2_id = i - view_1_id * (view_1_id - 1) / 2;;
+        FeatureSet const& view_1 = viewports[view_1_id].features;
+        FeatureSet const& view_2 = viewports[view_2_id].features;
+        if (view_1.positions.empty() || view_2.positions.empty())
+            continue;
 
         /* Match the views. */
         util::WallTimer timer;

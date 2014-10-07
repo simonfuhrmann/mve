@@ -86,16 +86,6 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
         sfm::bundler::Features bundler_features(feature_opts);
         bundler_features.compute(scene, viewports);
 
-        std::cout << "Viewport statistics:" << std::endl;
-        for (std::size_t i = 0; i < viewports->size(); ++i)
-        {
-            sfm::bundler::Viewport const& view = viewports->at(i);
-            std::cout << "  View " << i << ": "
-                << view.width << "x" << view.height << ", "
-                << view.features.positions.size() << " features, "
-                << "focal length: " << view.focal_length << std::endl;
-        }
-
         std::cout << "Computing features took " << timer.get_elapsed()
             << " ms." << std::endl;
         log_message(conf, "Feature detection took "

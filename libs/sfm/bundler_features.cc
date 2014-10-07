@@ -1,3 +1,4 @@
+#include "util/timer.h"
 #include "mve/image_exif.h"
 #include "mve/image_tools.h"
 #include "sfm/bundler_common.h"
@@ -25,10 +26,22 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         viewports->resize(views.size());
     }
 
+    std::size_t num_views = viewports->size();
+    std::size_t num_done = 0;
+    std::size_t total_features = 0;
+
     /* Iterate the scene and compute features. */
 #pragma omp parallel for schedule(dynamic,1)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
+#pragma omp critical
+        {
+            num_done += 1;
+            float percent = (num_done * 1000 / num_views) / 10.0f;
+            std::cout << "\rDetecting features, view " << num_done << " of "
+                << num_views << " (" << percent << "%)..." << std::flush;
+        }
+
         if (views[i] == NULL)
             continue;
 
@@ -38,15 +51,12 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         if (image == NULL)
             continue;
 
+
         /* Rescale image until maximum image size is met. */
+        util::WallTimer timer;
         while (this->opts.max_image_size > 0
             && image->width() * image->height() > this->opts.max_image_size)
             image = mve::image::rescale_half_size<uint8_t>(image);
-
-#pragma omp critical
-        std::cout << "Computing features for view ID " << view->get_id()
-            << " (" << image->width() << "x" << image->height()
-            << ")..." << std::endl;
 
         /* Compute features for view. */
         Viewport* viewport = &viewports->at(i);
@@ -54,6 +64,7 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         viewport->features.compute_features(image);
         viewport->width = image->width();
         viewport->height = image->height();
+        std::size_t num_feats = viewport->features.positions.size();
 
         /* Try to get an estimate for the focal length. */
         this->estimate_focal_length(view, viewport);
@@ -61,7 +72,22 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         /* Clean up unused embeddings. */
         image.reset();
         view->cache_cleanup();
+
+#pragma omp critical
+        {
+            std::cout << "\rView ID "
+                << util::string::get_filled(view->get_id(), 4, '0') << " ("
+                << viewport->width << "x" << viewport->height << "), "
+                << util::string::get_filled(num_feats, 5, ' ') << " features, "
+                << "flen: " << viewport->focal_length << ", took "
+                << timer.get_elapsed() << " ms." << std::endl;
+            total_features += viewport->features.positions.size();
+        }
     }
+
+    std::cout << "\rComputed " << total_features << " features "
+        << "for " << num_views << " views (average "
+        << (total_features / num_views) << ")." << std::endl;
 }
 
 void
