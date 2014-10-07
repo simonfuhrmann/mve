@@ -24,7 +24,9 @@ RCC_DIR = build
 macx {
     CONFIG -= app_bundle
     QMAKE_LFLAGS += -L/usr/local/lib
+    QMAKE_LFLAGS -= -fopenmp
     INCLUDEPATH += /usr/local/include
+    QMAKE_CXXFLAGS -= -fopenmp
 }
 
 # Options specific to Windows.
