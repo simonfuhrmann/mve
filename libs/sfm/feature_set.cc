@@ -230,7 +230,7 @@ FeatureSet::match (FeatureSet const& other, Matching::Result* result) const
 }
 
 void
-FeatureSet::clean_descriptors (void)
+FeatureSet::clear_descriptors (void)
 {
     this->num_sift_descriptors = 0;
     this->sift_descr.deallocate();

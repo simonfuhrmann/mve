@@ -169,7 +169,7 @@ sfm_reconstruct (AppSettings const& conf)
     /* Drop descriptors and embeddings to save memory. */
     scene->cache_cleanup();
     for (std::size_t i = 0; i < viewports.size(); ++i)
-        viewports[i].features.clean_descriptors();
+        viewports[i].features.clear_descriptors();
 
     /* Check if there are some matching images. */
     if (pairwise_matching.empty())

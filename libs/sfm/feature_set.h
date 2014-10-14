@@ -65,8 +65,8 @@ public:
      */
     int match_lowres (FeatureSet const& other, int num_features) const;
 
-    /** Clean up descriptor data. */
-    void clean_descriptors (void);
+    /** Clear descriptor data. */
+    void clear_descriptors (void);
 
 public:
     /** Image dimension used for feature computation. */
