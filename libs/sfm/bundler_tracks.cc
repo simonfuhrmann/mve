@@ -25,11 +25,15 @@ Tracks::compute (PairwiseMatching const& matching,
 
     std::size_t track_counter = 0;
     std::size_t num_conflicts = 0;
+
+    /* Iterate over all pairwise matchings. */
     for (std::size_t i = 0; i < matching.size(); ++i)
     {
         TwoViewMatching const& tvm = matching[i];
         Viewport& viewport1 = viewports->at(tvm.view_1_id);
         Viewport& viewport2 = viewports->at(tvm.view_2_id);
+
+        /* Iterate over matches for a pair. */
         for (std::size_t j = 0; j < tvm.matches.size(); ++j)
         {
             CorrespondenceIndex idx = tvm.matches[j];
@@ -127,12 +131,21 @@ Tracks::compute (PairwiseMatching const& matching,
 int
 Tracks::remove_invalid_tracks (ViewportList* viewports, TrackList* tracks)
 {
-    std::size_t num_invalid_tracks = 0;
-
-    /* Detect invalid tracks where a track contains one view multiple times. */
+    /*
+     * Detect invalid tracks where a track contains no features, or
+     * multiple features from a single view.
+     */
     std::vector<bool> delete_tracks(tracks->size());
+    std::size_t num_invalid_tracks = 0;
     for (std::size_t i = 0; i < tracks->size(); ++i)
     {
+        if (tracks->at(i).features.empty())
+        {
+            num_invalid_tracks += 1;
+            delete_tracks[i] = true;
+            continue;
+        }
+
         std::set<int> view_ids;
         for (std::size_t j = 0; j < tracks->at(i).features.size(); ++j)
         {

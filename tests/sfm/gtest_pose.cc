@@ -9,7 +9,6 @@
 #include "sfm/fundamental.h"
 #include "sfm/ransac.h"
 #include "sfm/ransac_fundamental.h"
-#include "sfm/ransac_pose.h"
 #include "sfm/triangulate.h"
 #include "sfm/correspondence.h"
 

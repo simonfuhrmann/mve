@@ -237,7 +237,8 @@ Incremental::find_next_views (std::vector<int>* next_views)
 
 /* ---------------------------------------------------------------- */
 
-bool Incremental::reconstruct_next_view (int view_id)
+bool
+Incremental::reconstruct_next_view (int view_id)
 {
     Viewport const& viewport = this->viewports->at(view_id);
     FeatureSet const& features = viewport.features;
@@ -268,15 +269,6 @@ bool Incremental::reconstruct_next_view (int view_id)
             << " 2D-3D correspondences." << std::endl;
     }
 
-    /*
-     * Given correspondences, use either P3P or 6-point algorithm.
-     * 6-point, delete tracks threshold 10: 24134 features
-     * 3-point, delete tracks threshold 10: 25828 features
-     * 6-point, delete tracks threshold 20: 41018 features
-     * 3-point, delete tracks threshold 20: 42048 features
-     */
-#define USE_P3P_FOR_POSE 1
-
     /* Initialize a temporary camera. */
     float const maxdim = static_cast<float>
         (std::max(viewport.width, viewport.height));
@@ -285,7 +277,6 @@ bool Incremental::reconstruct_next_view (int view_id)
         static_cast<float>(viewport.width) / 2.0f,
         static_cast<float>(viewport.height) / 2.0f);
 
-#if USE_P3P_FOR_POSE
     /* Compute pose from 2D-3D correspondences using P3P. */
     RansacPoseP3P ransac(this->opts.pose_p3p_opts);
     RansacPoseP3P::Result ransac_result;
@@ -296,19 +287,6 @@ bool Incremental::reconstruct_next_view (int view_id)
         std::cout << "Selected " << ransac_result.inliers.size()
             << " 2D-3D correspondences inliers." << std::endl;
     }
-
-#else
-    /* Compute pose from 2D-3D correspondences using 6-point. */
-    RansacPose ransac(this->opts.pose_opts);
-    RansacPose::Result ransac_result;
-    ransac.estimate(corr, &ransac_result);
-
-    if (this->opts.verbose_output)
-    {
-        std::cout << "RANSAC found " << ransac_result.inliers.size()
-            << " inliers." << std::endl;
-    }
-#endif
 
     /* Cancel if inliers are below a threshold. */
     if (3 * ransac_result.inliers.size() < corr.size())
@@ -329,17 +307,10 @@ bool Incremental::reconstruct_next_view (int view_id)
     track_ids.clear();
     feature_ids.clear();
 
-#if USE_P3P_FOR_POSE
     /* In the P3P case, just use the known K and computed R and t. */
     this->cameras[view_id] = temp_camera;
     this->cameras[view_id].R = ransac_result.pose.delete_col(3);
     this->cameras[view_id].t = ransac_result.pose.col(3);
-#else
-    /* With 6-point, set full pose recovering R and t using known K. */
-    math::Matrix<double, 3, 4> p_matrix = ransac_result.p_matrix;
-    this->cameras[view_id] = temp_camera;
-    this->cameras[view_id].set_from_p_and_known_k(p_matrix);
-#endif
 
     if (this->opts.verbose_output)
     {
@@ -444,7 +415,7 @@ Incremental::triangulate_new_tracks (void)
         if (track_behind_camera)
         {
             num_behind_camera_tracks += 1;
-            this->delete_track(i);  // FIXME: Delete?
+            this->tracks->at(i).invalidate();
             continue;
         }
 
@@ -644,7 +615,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 /* ---------------------------------------------------------------- */
 
 void
-Incremental::delete_large_error_tracks (void)
+Incremental::invalidate_large_error_tracks (void)
 {
     /* Iterate over all tracks and sum reprojection error. */
     std::vector<std::pair<double, std::size_t> > all_errors;
@@ -698,7 +669,7 @@ Incremental::delete_large_error_tracks (void)
     {
         if (all_errors[i].first > square_threshold)
         {
-            this->delete_track(all_errors[i].second); // FIXME: delete?
+            this->tracks->at(all_errors[i].second).invalidate();
             num_deleted_tracks += 1;
         }
     }
@@ -842,25 +813,6 @@ Incremental::create_bundle (void) const
     }
 
     return bundle;
-}
-
-/* ---------------------------------------------------------------- */
-
-// TODO: Better invalidate the track?
-void
-Incremental::delete_track (int track_id)
-{
-    Track& track = this->tracks->at(track_id);
-    track.invalidate();
-
-    FeatureReferenceList& ref = track.features;
-    for (std::size_t i = 0; i < ref.size(); ++i)
-    {
-        int view_id = ref[i].view_id;
-        int feature_id = ref[i].feature_id;
-        this->viewports->at(view_id).track_ids[feature_id] = -1;
-    }
-    ref.clear();
 }
 
 SFM_BUNDLER_NAMESPACE_END

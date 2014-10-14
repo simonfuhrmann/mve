@@ -181,6 +181,9 @@ sfm_reconstruct (AppSettings const& conf)
     /* Start timer for incremental SfM. */
     util::WallTimer timer;
 
+    /* Sorting the pairs willlead to less conflicts while building tracks. */
+    std::sort(pairwise_matching.begin(), pairwise_matching.end());
+
     /* Compute connected feature components, i.e. feature tracks. */
     util::system::rand_seed(RAND_SEED_SFM);
     sfm::bundler::Tracks::Options tracks_options;
@@ -197,10 +200,10 @@ sfm_reconstruct (AppSettings const& conf)
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].features.colors.clear();
 
+    /* Search for a good initial pair, or use the user-specified one. */
     sfm::bundler::InitialPair::Result init_pair_result;
     if (conf.initial_pair_1 < 0 || conf.initial_pair_2 < 0)
     {
-        /* Find initial pair. */
         sfm::bundler::InitialPair::Options init_pair_opts;
         init_pair_opts.homography_opts.max_iterations = 1000;
         init_pair_opts.homography_opts.already_normalized = false;
@@ -218,16 +221,11 @@ sfm_reconstruct (AppSettings const& conf)
         init_pair_result.view_2_id = conf.initial_pair_2;
     }
 
-    if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0)
-    {
-        std::cerr << "Error finding initial pair, exiting!" << std::endl;
-        std::exit(1);
-    }
-
-    if (init_pair_result.view_1_id >= static_cast<int>(viewports.size())
+    if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0
+        || init_pair_result.view_1_id >= static_cast<int>(viewports.size())
         || init_pair_result.view_2_id >= static_cast<int>(viewports.size()))
     {
-        std::cerr << "Invalid initial pair specified, exiting!" << std::endl;
+        std::cerr << "Error finding initial pair, exiting!" << std::endl;
         std::exit(1);
     }
 
@@ -244,9 +242,6 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.fundamental_opts.threshold = 3.0f;
     //incremental_opts.fundamental_opts.max_iterations = 1000;
     incremental_opts.fundamental_opts.verbose_output = true;
-    incremental_opts.pose_opts.threshold = 4.0f;
-    //incremental_opts.pose_opts.max_iterations = 1000;
-    incremental_opts.pose_opts.verbose_output = true;
     incremental_opts.pose_p3p_opts.threshold = 10.0f;
     //incremental_opts.pose_p3p_opts.max_iterations = 1000;
     incremental_opts.pose_p3p_opts.verbose_output = false;
@@ -268,7 +263,7 @@ sfm_reconstruct (AppSettings const& conf)
     incremental.triangulate_new_tracks();
 
     /* Remove tracks with large errors. */
-    incremental.delete_large_error_tracks();
+    incremental.invalidate_large_error_tracks();
 
     /* Run bundle adjustment. */
     std::cout << "Running full bundle adjustment..." << std::endl;
@@ -311,7 +306,7 @@ sfm_reconstruct (AppSettings const& conf)
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
         incremental.triangulate_new_tracks();
-        incremental.delete_large_error_tracks();
+        incremental.invalidate_large_error_tracks();
         num_cameras_reconstructed += 1;
 
         /* Run full bundle adjustment only after a couple of views. */

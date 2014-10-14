@@ -9,7 +9,6 @@
 #include "mve/bundle.h"
 #include "sfm/fundamental.h"
 #include "sfm/ransac_fundamental.h"
-#include "sfm/ransac_pose.h"
 #include "sfm/ransac_pose_p3p.h"
 #include "sfm/bundler_common.h"
 #include "sfm/pose.h"
@@ -30,8 +29,6 @@ public:
 
         /** Options for computing initial pair fundamental matrix. */
         RansacFundamental::Options fundamental_opts;
-        /** Options for computing pose from 2D-3D correspondences. */
-        RansacPose::Options pose_opts;
         /** Options for computing pose from 2D-3D correspondences. */
         RansacPoseP3P::Options pose_p3p_opts;
         /** Threshold (factor of the median error) for large error tracks. */
@@ -72,7 +69,7 @@ public:
     /** Triangulates tracks without 3D position and at least 2 views. */
     void triangulate_new_tracks (void);
     /** Deletes tracks with a large reprojection error. */
-    void delete_large_error_tracks (void);
+    void invalidate_large_error_tracks (void);
     /** Runs bundle adjustment on both, structure and motion. */
     void bundle_adjustment_full (void);
     /** Runs bundle adjustment on a single camera without structure. */
@@ -87,7 +84,6 @@ public:
 
 private:
     void bundle_adjustment_intern (int single_camera_ba);
-    void delete_track (int track_id);
 
 private:
     Options opts;

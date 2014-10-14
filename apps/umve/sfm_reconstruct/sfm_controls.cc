@@ -405,9 +405,6 @@ SfmControls::initialize_options (void)
     this->incremental_opts.fundamental_opts.threshold = 3.0f;
     //this->incremental_opts.fundamental_opts.max_iterations = 1000;
     this->incremental_opts.fundamental_opts.verbose_output = true;
-    this->incremental_opts.pose_opts.threshold = 4.0f;
-    //this->incremental_opts.pose_opts.max_iterations = 1000;
-    this->incremental_opts.pose_opts.verbose_output = true;
     this->incremental_opts.pose_p3p_opts.threshold = 10.0f;
     //this->incremental_opts.pose_p3p_opts.max_iterations = 1000;
     this->incremental_opts.pose_p3p_opts.verbose_output = true;
@@ -640,7 +637,7 @@ SfmControls::on_recon_init_pair (void)
     this->incremental_sfm.triangulate_new_tracks();
 
     /* Remove tracks with large errors. */
-    this->incremental_sfm.delete_large_error_tracks();
+    this->incremental_sfm.invalidate_large_error_tracks();
 
     /* Run bundle adjustment. */
     std::cout << "Running full bundle adjustment..." << std::endl;
@@ -688,7 +685,7 @@ SfmControls::on_recon_next_camera (void)
 
     this->incremental_sfm.bundle_adjustment_single_cam(next_view_id);
     this->incremental_sfm.triangulate_new_tracks();
-    this->incremental_sfm.delete_large_error_tracks();
+    this->incremental_sfm.invalidate_large_error_tracks();
     this->incremental_sfm.bundle_adjustment_full();
 
     /* Redraw scene. */

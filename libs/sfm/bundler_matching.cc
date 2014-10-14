@@ -40,7 +40,7 @@ Matching::compute (ViewportList const& viewports,
         }
 
         std::size_t view_1_id = (std::size_t)(0.5 + std::sqrt(0.25 + 2.0 * i));
-        std::size_t view_2_id = i - view_1_id * (view_1_id - 1) / 2;;
+        std::size_t view_2_id = i - view_1_id * (view_1_id - 1) / 2;
         FeatureSet const& view_1 = viewports[view_1_id].features;
         FeatureSet const& view_2 = viewports[view_2_id].features;
         if (view_1.positions.empty() || view_2.positions.empty())
@@ -96,7 +96,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
         {
             message << "only " << num_matches
                 << " of " << this->opts.min_lowres_matches
-                << " low-res matches.";// << std::endl;
+                << " low-res matches.";
             return;
         }
     }
@@ -111,7 +111,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
     if (num_matches < min_matches_thres)
     {
         message << "matches below threshold of "
-            << min_matches_thres << ".";// << std::endl;
+            << min_matches_thres << ".";
         return;
     }
 
@@ -149,7 +149,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
     if (num_inliers < min_inlier_thres)
     {
         message << "inliers below threshold of "
-            << min_inlier_thres << ".";// << std::endl;
+            << min_inlier_thres << ".";
         return;
     }
 

@@ -108,6 +108,8 @@ typedef std::vector<Track> TrackList;
 /** The matching result between two views. */
 struct TwoViewMatching
 {
+    bool operator< (TwoViewMatching const& rhs) const;
+
     int view_1_id;
     int view_2_id;
     CorrespondenceIndices matches;
@@ -179,6 +181,14 @@ embedding_to_descriptors (mve::ByteImage::ConstPtr data,
     Surf::Descriptors* descriptors, int* width, int* height);
 
 /* ------------------------ Implementation ------------------------ */
+
+inline bool
+TwoViewMatching::operator< (TwoViewMatching const& rhs) const
+{
+    return this->view_1_id == rhs.view_1_id
+        ? this->view_2_id < rhs.view_2_id
+        : this->view_1_id < rhs.view_1_id;
+}
 
 inline
 Viewport::Viewport (void)
