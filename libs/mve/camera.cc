@@ -149,6 +149,28 @@ CameraInfo::fill_inverse_calibration (float* mat,
 
 /* ---------------------------------------------------------------- */
 
+void
+CameraInfo::fill_reprojection (CameraInfo const& destination,
+    float src_width, float src_height, float dst_width, float dst_height,
+    float* mat, float* vec) const
+{
+    math::Matrix3f dst_K, dst_R, src_Ri, src_Ki;
+    math::Vec3f dst_t, src_t;
+    destination.fill_calibration(dst_K.begin(), dst_width, dst_height);
+    destination.fill_world_to_cam_rot(dst_R.begin());
+    destination.fill_camera_translation(dst_t.begin());
+    this->fill_cam_to_world_rot(src_Ri.begin());
+    this->fill_inverse_calibration(src_Ki.begin(), src_width, src_height);
+    this->fill_camera_translation(src_t.begin());
+
+    math::Matrix3f ret_mat = dst_K * dst_R * src_Ri * src_Ki;
+    math::Vec3f ret_vec = dst_K * (dst_t - dst_R * src_Ri * src_t);
+    std::copy(ret_mat.begin(), ret_mat.end(), mat);
+    std::copy(ret_vec.begin(), ret_vec.end(), vec);
+}
+
+/* ---------------------------------------------------------------- */
+
 std::string
 CameraInfo::to_ext_string (void) const
 {

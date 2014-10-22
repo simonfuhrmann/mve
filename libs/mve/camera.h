@@ -98,6 +98,26 @@ public:
         float width, float height) const;
 
     /**
+     * Stores the reprojection operator (mat, vec) from pixel coordinates
+     * in this source view to the given destination view. The reprojection
+     * of a pixel coordinate 'xs' in a source view with respect to depth
+     * 'd' to coordinate 'xd' in a destination view is given by:
+     *
+     *   xd = Kd ( Rd Rs^-1 ( Ks^-1 * xs * d - ts ) + td )
+     *
+     * which gives rise to the reprojection operator (T,t) with
+     *
+     *   xd = T * xs * d + t
+     *
+     * Here, (T,t) is returned (mat, vec). Note that the depth in these
+     * formulas represents the distance along the z-axis in the camera
+     * frame, NOT the distance from the camera center.
+     */
+    void fill_reprojection (CameraInfo const& destination,
+        float src_width, float src_height, float dst_width, float dst_height,
+        float* mat, float* vec) const;
+
+    /**
      * Generates space separated list of floats for extrinsic parameters.
      * The list is in format: t1 t2 t3 r1 ... r9.
      */

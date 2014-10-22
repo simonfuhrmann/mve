@@ -382,7 +382,7 @@ sobel_edge (typename mve::Image<T>::ConstPtr img);
  */
 template <typename T>
 typename Image<T>::Ptr
-subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2);
+subtract (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2);
 
 /**
  * Creates a difference image by computing the absolute difference per value.
@@ -391,7 +391,7 @@ subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2);
  */
 template <typename T>
 typename Image<T>::Ptr
-difference (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2);
+difference (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2);
 
 /**
  * Applies gamma correction to float/double images (in-place).
@@ -1476,7 +1476,7 @@ sobel_edge (typename mve::Image<T>::ConstPtr img)
 
 template <typename T>
 typename Image<T>::Ptr
-subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
+subtract (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
 {
     int const iw = i1->width();
     int const ih = i1->height();
@@ -1502,7 +1502,7 @@ subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
 
 template <typename T>
 typename Image<T>::Ptr
-difference (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
+difference (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
 {
     int const iw = i1->width();
     int const ih = i1->height();

@@ -31,22 +31,6 @@ MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
 /*
- * -------------------------------------------------------------------
- */
-
-void
-save_file (ByteImage::Ptr image, std::string const& filename)
-{
-    save_file(ByteImage::ConstPtr(image), filename);
-}
-
-void
-save_file (FloatImage::Ptr image, std::string const& filename)
-{
-    save_file(FloatImage::ConstPtr(image), filename);
-}
-
-/*
  * ------------------------ Loading and Saving -----------------------
  */
 
@@ -134,6 +118,14 @@ save_file (ByteImage::ConstPtr image, std::string const& filename)
 /* ---------------------------------------------------------------- */
 
 void
+save_file (ByteImage::Ptr image, std::string const& filename)
+{
+    save_file(ByteImage::ConstPtr(image), filename);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 save_file (FloatImage::ConstPtr image, std::string const& filename)
 {
 
@@ -146,6 +138,14 @@ save_file (FloatImage::ConstPtr image, std::string const& filename)
     }
 
     throw util::Exception("Output filetype not supported");
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+save_file (FloatImage::Ptr image, std::string const& filename)
+{
+    save_file(FloatImage::ConstPtr(image), filename);
 }
 
 /* ---------------------------------------------------------------- */
