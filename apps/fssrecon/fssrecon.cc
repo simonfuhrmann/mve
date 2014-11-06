@@ -1,5 +1,5 @@
 /*
- * App to create and sample an implicit function defined by the input samples.
+ * Floating Scale Surface Reconstruction driver app.
  * Written by Simon Fuhrmann.
  *
  * The surface reconstruction approach implemented here is described in:
@@ -13,17 +13,14 @@
 #include <iostream>
 #include <string>
 
+#include "mve/mesh.h"
+#include "mve/mesh_io_ply.h"
 #include "util/timer.h"
 #include "util/arguments.h"
 #include "fssr/pointset.h"
 #include "fssr/iso_octree.h"
-
-#if 1
-#include "mve/mesh.h"
-#include "mve/mesh_io_ply.h"
 #include "iso/SimonIsoOctree.h"
 #include "iso/MarchingCubes.h"
-#endif
 
 struct AppSettings
 {
@@ -42,15 +39,16 @@ main (int argc, char** argv)
     args.set_exit_on_error(true);
     args.set_nonopt_minnum(2);
     args.set_helptext_indent(25);
-    args.set_usage(argv[0], "[ OPTS ] IN_PLY [ IN_PLY ... ] OUT_OCTREE");
+    args.set_usage(argv[0], "[ OPTS ] IN_PLY [ IN_PLY ... ] OUT_PLY");
     args.add_option('s', "scale-factor", true, "Multiply sample scale with factor [1.0]");
     args.add_option('r', "refine-octree", true, "Refines octree with N levels [0]");
     args.add_option('k', "skip-samples", true, "Skip input samples [0]");
-    args.set_description("Builds an octree from a set of input samples. "
-        "The samples must have normals and the \"values\" PLY attribute "
-        "(the scale of the samples). Both confidence values and vertex colors "
-        "are optional. The output octree is the sampled implicit function "
-        "ready for isosurface extraction.");
+    args.set_description("Samples the implicit function defined by the input "
+        "samples and produces a surface mesh. The input samples must have "
+        "normals and the \"values\" PLY attribute (the scale of the samples). "
+        "Both confidence values and vertex colors are optional. The final "
+        "surface should be cleaned (sliver triangles, isolated components, "
+        "low-confidence vertices) afterwards.");
     args.parse(argc, argv);
 
     /* Init default settings. */
@@ -141,14 +139,6 @@ main (int argc, char** argv)
     octree.print_stats(std::cout);
     octree.compute_voxels();
 
-#if 0
-    /* Save octree to file. */
-    std::cout << "Octree output file: " << conf.out_octree << std::endl;
-    std::cout << "Saving octree to file..." << std::flush;
-    octree.write_to_file(conf.out_octree);
-    std::cout << " done." << std::endl;
-#else
-
     /* Transfer octree. */
     std::cout << "Transfering octree and voxel data..." << std::flush;
     timer.reset();
@@ -188,8 +178,6 @@ main (int argc, char** argv)
 
     std::cout << std::endl;
     std::cout << "All done. Remember to clean the output mesh." << std::endl;
-
-#endif
 
     return 0;
 }
