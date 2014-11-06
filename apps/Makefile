@@ -1,7 +1,7 @@
 all:
-	$(MAKE) -C fssr_octree
-	$(MAKE) -C fssr_surface
+	$(MAKE) -C fssrecon
+	$(MAKE) -C meshclean
 
 clean:
-	$(MAKE) -C fssr_octree clean
-	$(MAKE) -C fssr_surface clean
+	$(MAKE) -C fssrecon clean
+	$(MAKE) -C meshclean clean

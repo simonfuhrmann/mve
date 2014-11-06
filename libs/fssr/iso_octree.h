@@ -46,13 +46,9 @@ public:
 
     /** Returns the map of computed voxels. */
     VoxelVector const& get_voxels (void) const;
-    /** Cleas the octree and voxels. */
-    void clear (void);
 
-    /** Writes the voxel data and octree hierarchy to file. */
-    void write_to_file (std::string const& filename) const;
-    /** Reads the voxel data and octree hierarchy from file. */
-    void read_from_file (std::string const& filename);
+    /** Cleans the octree and voxels. */
+    void clear (void);
 
 private:
     void compute_all_voxels (void);

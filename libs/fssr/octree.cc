@@ -428,77 +428,29 @@ Octree::remove_low_res_samples (int min_level)
 }
 
 void
-Octree::write_hierarchy (std::ostream& out, bool with_meta) const
+Octree::print_stats (std::ostream& out)
 {
-    if (with_meta)
-    {
-        out.write(reinterpret_cast<char const*>(&this->num_nodes),
-            sizeof(std::size_t));
-        out.write(reinterpret_cast<char const*>(*this->root_center),
-            3 * sizeof(double));
-        out.write(reinterpret_cast<char const*>(&this->root_size),
-            sizeof(double));
-    }
+    out << "Octree contains " << this->get_num_samples()
+        << " samples in " << this->get_num_nodes() << " nodes on "
+        << this->get_num_levels() << " levels." << std::endl;
 
-    std::list<Octree::Node const*> queue;
-    queue.push_back(this->root);
-    while (!queue.empty())
+    std::vector<std::size_t> octree_stats;
+    this->get_points_per_level(&octree_stats);
+
+    std::size_t index = 0;
+    while (index < octree_stats.size() && octree_stats[index] == 0)
+        index += 1;
+
+    out << "Samples per level:" << std::endl;
+    while (index < octree_stats.size())
     {
-        Octree::Node const* node = queue.front();
-        queue.pop_front();
-        out << (node == NULL ? "0" : "1");
-        if (node == NULL)
-            continue;
-        for (int i = 0; i < 8; ++i)
-            queue.push_back(node->children[i]);
+        out << "  Level " << index << ": "
+            << octree_stats[index] << " samples" << std::endl;
+        index += 1;
     }
 }
 
-void
-Octree::read_hierarchy (std::istream& in, bool with_meta)
-{
-    /* Clear octree. */
-    delete this->root;
-    this->root = NULL;
-    this->num_nodes = 0;
-    this->num_samples = 0;
-
-    if (with_meta)
-    {
-        in.read(reinterpret_cast<char*>(&this->num_nodes),
-            sizeof(std::size_t));
-        in.read(reinterpret_cast<char*>(*this->root_center),
-            3 * sizeof(double));
-        in.read(reinterpret_cast<char*>(&this->root_size),
-            sizeof(double));
-    }
-
-    std::list<Octree::Node*> queue;
-
-    char byte;
-    in >> byte;
-    if (byte == '1')
-    {
-        this->root = new Octree::Node();
-        queue.push_back(this->root);
-    }
-
-    while (!queue.empty())
-    {
-        Octree::Node* node = queue.front();
-        queue.pop_front();
-        for (int i = 0; i < 8; ++i)
-        {
-            in >> byte;
-            if (byte == '1')
-            {
-                node->children[i] = new Octree::Node();
-                queue.push_back(node->children[i]);
-            }
-        }
-    }
-}
-
+#if 0 // Dead code
 void
 Octree::octree_to_mesh (mve::TriangleMesh::Ptr mesh,
     Node const* node, NodeGeom const& node_geom)
@@ -563,28 +515,6 @@ Octree::child_center_for_octant (math::Vec3d const& old_center,
 
     return new_center;
 }
-
-void
-Octree::print_stats (std::ostream& out)
-{
-    out << "Octree contains " << this->get_num_samples()
-        << " samples in " << this->get_num_nodes() << " nodes on "
-        << this->get_num_levels() << " levels." << std::endl;
-
-    std::vector<std::size_t> octree_stats;
-    this->get_points_per_level(&octree_stats);
-
-    std::size_t index = 0;
-    while (index < octree_stats.size() && octree_stats[index] == 0)
-        index += 1;
-
-    out << "Samples per level:" << std::endl;
-    while (index < octree_stats.size())
-    {
-        out << "  Level " << index << ": "
-            << octree_stats[index] << " samples" << std::endl;
-        index += 1;
-    }
-}
+#endif
 
 FSSR_NAMESPACE_END

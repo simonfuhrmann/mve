@@ -25,16 +25,16 @@ The following commands should get you started:
 
     # Download and compile MVE
     git clone https://github.com/simonfuhrmann/mve.git
-    make -j8 -C mve
+    make -j12 -C mve
 
     # Download and compile FSSR
     git clone https://github.com/simonfuhrmann/fssr.git
-    make -j8 -C fssr
+    make -j12 -C fssr
 
-The binaries will be located and ready for execution here:
+The binaries will be located here:
 
-    fssr/apps/fssr_octree
-    fssr/apps/fssr_surface
+    fssr/apps/fssrecon
+    fssr/apps/meshclean
 
 
 FSSR Input Data
@@ -42,7 +42,7 @@ FSSR Input Data
 
 FSSR requires as input a point set which contains several required and
 some optional attributes per sample. Currently, only PLY is supported as
-input format. All required and optional attributes are listed below:
+input and output format. The attributes are listed below:
 
     Name           PLY Attribute(s)   Type                 Required?
     ------------------------------------------------------------------
@@ -80,22 +80,23 @@ parameters --with-normals, --with-scale and --with-conf.
 Running FSSR
 ======================================================================
 
-First, the implicit function defined by the input points is sampled and
-stored in an octree. This is done with the 'fssr_octree' tool.
+First, the implicit function defined by the input samples is evaluated
+and the isosurface is extracted. This is done with the 'fssrecon' tool.
 
-    Usage: fssr_octree [ OPTS ] IN_PLY [ IN_PLY ... ] OUT_OCTREE
+    Usage: fssrecon [ OPTS ] IN_PLY [ IN_PLY ... ] OUT_PLY
 
 It takes one or more PLY files as input (connectivity information is ignored)
-and samples the implicit function over an octree hierarchy. The result is
-stored in a binary format. (Check the code for details.)
+and samples the implicit function over an octree hierarchy. The isosurface
+is extracted and stored in a PLY mesh.
 
-Second, the sampling of the implicit function must be converted to a
-surface mesh. This is done with a second 'fssr_surface' tool.
+Second, the resulting mesh may contain low-confidence vertices, many small
+isolated components, and degenerated triangles from the isosurfacing. The
+resulting mesh should be cleaned with the 'meshclean' tool.
 
-    Usage: fssr_surface [ OPTS ] IN_OCTREE OUT_PLY_MESH
+    Usage: meshclean [ OPTS ] IN_PLY OUT_PLY
 
-The tool takes as input the octree and produces a mesh. Several options
-can control the resulting mesh. See the tools output for details.
+The tool takes as input a mesh, and produces a cleaned output mesh. Several
+options can control the resulting mesh. See the tools output for details.
 
 
 Trouble? Contact!

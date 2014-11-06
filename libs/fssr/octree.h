@@ -175,27 +175,15 @@ public:
      */
     void remove_low_res_samples (int min_level);
 
-    /**
-     * Writes the octree hierarchy to stream.
-     * This does NOT write the sample data, just the hierarchy.
-     */
-    void write_hierarchy (std::ostream& out, bool with_meta = true) const;
-
-    /**
-     * Reads the hierarchy from stream and builds the octree.
-     * This des NOT read the sample data, just the hierarchy.
-     */
-    void read_hierarchy (std::istream& in, bool with_meta = true);
-
-    /** Write an octree visualization to mesh. */
-    void octree_to_mesh (std::string const& filename);
-
-    /** Computes a new center for a child specified by octant. */
-    static math::Vec3d child_center_for_octant (math::Vec3d const& old_center,
-        double old_size, int octant);
-
     /** Prints some octree statitics to the stream. */
     void print_stats (std::ostream& out);
+
+    /** Write an octree visualization to mesh. */
+    //void octree_to_mesh (std::string const& filename);
+
+    /** Computes a new center for a child specified by octant. */
+    //static math::Vec3d child_center_for_octant (math::Vec3d const& old_center,
+    //    double old_size, int octant);
 
 private:
     /* Octree functions. */
