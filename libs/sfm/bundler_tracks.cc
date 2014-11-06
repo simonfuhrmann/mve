@@ -89,10 +89,7 @@ Tracks::compute (PairwiseMatching const& matching,
             int const track_id = viewport.track_ids[j];
             if (track_id < 0)
                 continue;
-            FeatureReference feature_ref;
-            feature_ref.view_id = i;
-            feature_ref.feature_id = j;
-            tracks->at(track_id).features.push_back(feature_ref);
+            tracks->at(track_id).features.push_back(FeatureReference(i, j));
         }
     }
 

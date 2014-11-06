@@ -81,6 +81,8 @@ load_viewports_data (std::string const& filename,
 /** References a 2D feature in a specific view. */
 struct FeatureReference
 {
+    FeatureReference (int view_id, int feature_id);
+
     int view_id;
     int feature_id;
 };
@@ -181,6 +183,13 @@ embedding_to_descriptors (mve::ByteImage::ConstPtr data,
     Surf::Descriptors* descriptors, int* width, int* height);
 
 /* ------------------------ Implementation ------------------------ */
+
+inline
+FeatureReference::FeatureReference (int view_id, int feature_id)
+    : view_id(view_id)
+    , feature_id(feature_id)
+{
+}
 
 inline bool
 TwoViewMatching::operator< (TwoViewMatching const& rhs) const

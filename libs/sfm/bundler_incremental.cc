@@ -282,15 +282,23 @@ Incremental::reconstruct_next_view (int view_id)
     RansacPoseP3P::Result ransac_result;
     ransac.estimate(corr, temp_camera.K, &ransac_result);
 
-    if (this->opts.verbose_output)
-    {
-        std::cout << "Selected " << ransac_result.inliers.size()
-            << " 2D-3D correspondences inliers." << std::endl;
-    }
-
     /* Cancel if inliers are below a threshold. */
     if (3 * ransac_result.inliers.size() < corr.size())
+    {
+        if (this->opts.verbose_output)
+            std::cout << "Only " << ransac_result.inliers.size()
+                << " 2D-3D correspondences inliers ("
+                << (100 * ransac_result.inliers.size() / corr.size())
+                << "%). Skipping view." << std::endl;
         return false;
+    }
+    else if (this->opts.verbose_output)
+    {
+        std::cout << "Selected " << ransac_result.inliers.size()
+            << " 2D-3D correspondences inliers ("
+            << (100 * ransac_result.inliers.size() / corr.size())
+            << "%)." << std::endl;
+    }
 
     /* Remove outliers from tracks and tracks from viewport. */
     int removed_outliers = 0;

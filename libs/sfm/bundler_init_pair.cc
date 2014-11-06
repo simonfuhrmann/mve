@@ -65,9 +65,9 @@ InitialPair::compute (ViewportList const& viewports,
         homography_ransac.estimate(correspondences, &ransac_result);
 
         /* Compute homography inliers percentage. */
-        float num_matches = tvm.matches.size();
-        float num_inliers = ransac_result.inliers.size();
-        float percentage = num_inliers / num_matches;
+        float const num_matches = tvm.matches.size();
+        float const num_inliers = ransac_result.inliers.size();
+        float const percentage = num_inliers / num_matches;
 
         if (this->opts.verbose_output)
         {
