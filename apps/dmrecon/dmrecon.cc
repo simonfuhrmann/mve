@@ -102,6 +102,7 @@ main (int argc, char** argv)
     args.add_option('\0', "progress", true,
         "progress output style: 'silent', 'simple' or 'fancy'");
     args.add_option('\0', "force", false, "Reconstruct existing depthmaps");
+    args.add_option('\0', "max-pixels", true, "Limit image size [disabled]");
     args.parse(argc, argv);
 
     std::string basePath = args.get_nth_nonopt(0);
@@ -111,6 +112,7 @@ main (int argc, char** argv)
     int master_id = -1;
     bool force_recon = false;
     ProgressStyle progress_style;
+    std::size_t max_pixels = 0;
 
 #ifdef _WIN32
     progress_style = PROGRESS_SIMPLE;
@@ -163,6 +165,8 @@ main (int argc, char** argv)
         }
         else if (arg->opt->lopt == "force")
             force_recon = true;
+        else if (arg->opt->lopt == "max-pixels")
+            max_pixels = arg->get_arg<std::size_t>();
         else
         {
             std::cerr << "WARNING: unrecognized option" << std::endl;
@@ -202,6 +206,14 @@ main (int argc, char** argv)
     {
         std::cout << "Reconstructing view with ID " << master_id << std::endl;
         mySettings.refViewNr = (std::size_t)master_id;
+        /* Calculate scale */
+        if (max_pixels > 0)
+        {
+            int w = scene->get_view_by_id(master_id)->get_proxy(mySettings.imageEmbedding)->width;
+            int h = scene->get_view_by_id(master_id)->get_proxy(mySettings.imageEmbedding)->height;
+            mySettings.scale = std::max(0,
+                (int)std::ceil(std::log(1.0f * w * h / max_pixels) / std::log(4)));
+        }
         fancyProgressPrinter.addRefView(master_id);
         try
         {
@@ -215,8 +227,6 @@ main (int argc, char** argv)
     else
     {
         mve::Scene::ViewList& views(scene->get_views());
-        std::string embedding_name = "depth-L" +
-            util::string::get(mySettings.scale);
         if (listIDs.empty())
         {
             std::cout << "Reconstructing all views..." << std::endl;
@@ -240,10 +250,23 @@ main (int argc, char** argv)
             }
             if (views[id] == NULL || !views[id]->is_camera_valid())
                 continue;
+
+            /* Calculate scale */
+            int scale = mySettings.scale;
+            if (max_pixels > 0)
+            {
+                int w = views[id]->get_proxy(mySettings.imageEmbedding)->width;
+                int h = views[id]->get_proxy(mySettings.imageEmbedding)->height;
+                scale = std::max(0,
+                    (int)std::ceil(std::log(1.0f * w * h / max_pixels) / std::log(4)));
+            }
+            std::string embedding_name = "depth-L" +
+                util::string::get(scale);
             if (!force_recon && views[id]->has_embedding(embedding_name))
                 continue;
 
             mvs::Settings settings(mySettings);
+            settings.scale = scale;
             settings.refViewNr = id;
             try
             {
