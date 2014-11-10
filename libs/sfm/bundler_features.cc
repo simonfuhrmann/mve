@@ -51,7 +51,6 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         if (image == NULL)
             continue;
 
-
         /* Rescale image until maximum image size is met. */
         util::WallTimer timer;
         while (this->opts.max_image_size > 0
@@ -111,10 +110,20 @@ Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
         return;
     }
 
-    mve::image::ExifInfo exif = mve::image::exif_extract
-        (exif_data->get_byte_pointer(), exif_data->get_byte_size(), false);
-    FocalLengthEstimate estimate = sfm::extract_focal_length(exif);
-    viewport->focal_length = estimate.first;
+    mve::image::ExifInfo exif;
+    FocalLengthEstimate estimate;
+    try
+    {
+        exif = mve::image::exif_extract(exif_data->get_byte_pointer(),
+            exif_data->get_byte_size(), false);
+        estimate = sfm::extract_focal_length(exif);
+        viewport->focal_length = estimate.first;
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "Warning: " << e.what() << std::endl;
+        estimate = sfm::extract_focal_length(mve::image::ExifInfo());
+    }
 
     /* Print warning in case extraction failed. */
 #pragma omp critical

@@ -66,7 +66,7 @@ public:
      */
     template <typename T>
     static void
-    oneway_match (Matching::Options const& options,
+    oneway_match (Options const& options,
         T const* set_1, std::size_t set_1_size,
         T const* set_2, std::size_t set_2_size,
         std::vector<int>* result);
@@ -110,7 +110,7 @@ Matching::Options::Options (void)
 
 template <typename T>
 void
-Matching::oneway_match (Matching::Options const& options,
+Matching::oneway_match (Options const& options,
     T const* set_1, std::size_t set_1_size,
     T const* set_2, std::size_t set_2_size,
     std::vector<int>* result)
@@ -143,10 +143,10 @@ Matching::oneway_match (Matching::Options const& options,
 
 template <typename T>
 void
-Matching::twoway_match (Matching::Options const& options,
+Matching::twoway_match (Options const& options,
     T const* set_1, std::size_t set_1_size,
     T const* set_2, std::size_t set_2_size,
-    Matching::Result* matches)
+    Result* matches)
 {
     Matching::oneway_match(options, set_1, set_1_size,
         set_2, set_2_size, &matches->matches_1_2);
