@@ -247,7 +247,7 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.pose_p3p_opts.verbose_output = false;
     incremental_opts.track_error_threshold_factor = conf.track_error_thres_factor;
     incremental_opts.new_track_error_threshold = conf.new_track_error_thres;
-    incremental_opts.min_triangulation_angle = MATH_DEG2RAD(3.0);
+    incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
     incremental_opts.ba_fixed_intrinsics = conf.fixed_intrinsics;
     incremental_opts.verbose_output = true;
 
