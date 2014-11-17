@@ -44,6 +44,9 @@ public:
     /** Provides the axis and angle of the quaternion. */
     void get_axis_angle (T* axis, T& angle);
 
+    /** Conversion to a 3x3 rotation matrix. */
+    void to_rotation_matrix (T* matrix) const;
+
     /* ---------------------- Unary operators --------------------- */
 
     /** Conjugates self and returns reference to self. */
@@ -114,7 +117,7 @@ Quaternion<T>::Quaternion (Vector<T,3> const& axis, T const& angle)
 }
 
 template <typename T>
-void
+inline void
 Quaternion<T>::set (Vector<T,3> const& axis, T const& angle)
 {
     this->v[0] = std::cos(angle / T(2));
@@ -146,25 +149,43 @@ Quaternion<T>::get_axis_angle (T* axis, T& angle)
 }
 
 template <typename T>
+void
+Quaternion<T>::to_rotation_matrix (T* matrix) const
+{
+    T const xxzz = this->v[1] * this->v[1] - this->v[3] * this->v[3];
+    T const rryy = this->v[0] * this->v[0] - this->v[2] * this->v[2];
+    T const yyrrxxzz = this->v[2] * this->v[2] + this->v[0] * this->v[0]
+        - this->v[1] * this->v[1] - this->v[3] * this->v[3];
+
+    T const xr2 = this->v[1] * this->v[0] * T(2);
+    T const xy2 = this->v[1] * this->v[2] * T(2);
+    T const xz2 = this->v[1] * this->v[3] * T(2);
+    T const yr2 = this->v[2] * this->v[0] * T(2);
+    T const yz2 = this->v[2] * this->v[3] * T(2);
+    T const zr2 = this->v[3] * this->v[0] * T(2);
+
+    matrix[0] = xxzz + rryy;
+    matrix[1] = xy2 + zr2;
+    matrix[2] = xz2 - yr2;
+    matrix[3] = xy2 - zr2;
+    matrix[4] = yyrrxxzz;
+    matrix[5] = yz2 + xr2;
+    matrix[6] = xz2 + yr2;
+    matrix[7] = yz2 - xr2;
+    matrix[8] = rryy - xxzz;
+}
+
+template <typename T>
 Vector<T,3>
 Quaternion<T>::rotate (Vector<T,3> const& vec) const
 {
-    T xxzz = this->v[1] * this->v[1] - this->v[3] * this->v[3];
-    T rryy = this->v[0] * this->v[0] - this->v[2] * this->v[2];
-    T yyrrxxzz = this->v[2] * this->v[2] + this->v[0] * this->v[0]
-        - this->v[1] * this->v[1] - this->v[3] * this->v[3];
-
-    T xr2 = this->v[1] * this->v[0] * T(2);
-    T xy2 = this->v[1] * this->v[2] * T(2);
-    T xz2 = this->v[1] * this->v[3] * T(2);
-    T yr2 = this->v[2] * this->v[0] * T(2);
-    T yz2 = this->v[2] * this->v[3] * T(2);
-    T zr2 = this->v[3] * this->v[0] * T(2);
+    T rot[9];
+    this->to_rotation_matrix(rot);
 
     Vector<T,3> ret;
-    ret[0] = (xxzz+rryy) * vec[0] + (xy2+zr2) * vec[1] + (xz2-yr2) * vec[2];
-    ret[1] = (xy2-zr2) * vec[0] + (yyrrxxzz) * vec[1] + (yz2+xr2) * vec[2];
-    ret[2] = (xz2+yr2) * vec[0] + (yz2-xr2) * vec[1] + (rryy-xxzz) * vec[2];
+    ret[0] = rot[0] * vec[0] + rot[1] * vec[1] + rot[2] * vec[2];
+    ret[1] = rot[3] * vec[0] + rot[4] * vec[1] + rot[5] * vec[2];
+    ret[2] = rot[6] * vec[0] + rot[7] * vec[1] + rot[8] * vec[2];
     return ret;
 }
 
@@ -172,15 +193,15 @@ template <typename T>
 inline Quaternion<T>
 Quaternion<T>::operator* (Quaternion<T> const& rhs) const
 {
-      return Quaternion<T>(
-          this->v[0] * rhs.v[0] - this->v[1] * rhs.v[1]
-          - this->v[2] * rhs.v[2] - this->v[3] * rhs.v[3],
-          this->v[0] * rhs.v[1] + this->v[1] * rhs.v[0]
-          + this->v[2] * rhs.v[3] - this->v[3] * rhs.v[2],
-          this->v[0] * rhs.v[2] - this->v[1] * rhs.v[3]
-          + this->v[2] * rhs.v[0] + this->v[3] * rhs.v[1],
-          this->v[0] * rhs.v[3] + this->v[1] * rhs.v[2]
-          - this->v[2] * rhs.v[1] + this->v[3] * rhs.v[0]);
+    return Quaternion<T>(
+        this->v[0] * rhs.v[0] - this->v[1] * rhs.v[1]
+        - this->v[2] * rhs.v[2] - this->v[3] * rhs.v[3],
+        this->v[0] * rhs.v[1] + this->v[1] * rhs.v[0]
+        + this->v[2] * rhs.v[3] - this->v[3] * rhs.v[2],
+        this->v[0] * rhs.v[2] - this->v[1] * rhs.v[3]
+        + this->v[2] * rhs.v[0] + this->v[3] * rhs.v[1],
+        this->v[0] * rhs.v[3] + this->v[1] * rhs.v[2]
+        - this->v[2] * rhs.v[1] + this->v[3] * rhs.v[0]);
 }
 
 template <typename T>
