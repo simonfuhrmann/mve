@@ -6,6 +6,20 @@
 #include "mve/mesh.h"
 #include "range_image.h"
 
+/**
+ * Reads a Meshlab alignment file and performs the transformation.
+ * Meshlab alignment file format:
+ *
+ * NUM_MESHES
+ *
+ * MESH_FILE_NAME
+ * R1 R2 R3 T1
+ * R4 R5 R6 T2
+ * R7 R8 R9 T3
+ *
+ * MESH_FILE_NAME
+ * ...
+ */
 class MeshlabAlignment
 {
 public:

@@ -9,8 +9,14 @@
 
 #include "range_image.h"
 
-/* ---------------------------------------------------------------- */
-
+/**
+ * Reads the Stanford alignment file and performs the transformation.
+ * Stanford alignment file format:
+ *
+ * camera T1 T2 T3 Q1 Q2 Q3 Q4
+ * bmesh FILE_NAME T1 T2 T3 Q1 Q2 Q3 Q4
+ * bmesh ...
+ */
 class StanfordDataset
 {
 public:

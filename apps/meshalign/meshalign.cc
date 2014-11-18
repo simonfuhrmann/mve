@@ -59,9 +59,9 @@ main (int argc, char** argv)
     args.set_usage(argv[0], "[ OPTS ] ALIGNMENT_FILE [...] OUT_MESH");
     args.set_description("Generates a combined mesh from Stanford or Meshlab "
         "alignment data. The combined mesh contains all triangulated range "
-        "images in a global, consistent coordinate system.\n\n"
+        "images in a global, consistent coordinate system. "
         "Stanford alignments are .conf files with global camera and a "
-        "list of meshes with alignment information.\n\n"
+        "list of meshes with alignment information. "
         "Meshlab alignment are .aln files with a list of meshes and a "
         "camera to world transformation matrix.");
     args.parse(argc, argv);
@@ -135,7 +135,8 @@ main (int argc, char** argv)
         }
         else
         {
-            std::cerr << "Invalid alignment: " << conf.input[i] << std::endl;
+            std::cerr << "Unknown alignment format: "
+                << conf.input[i] << std::endl;
             return 1;
         }
     }
