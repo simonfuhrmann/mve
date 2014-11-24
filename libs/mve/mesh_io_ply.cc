@@ -53,7 +53,8 @@ enum PlyFaceElement
 {
     PLY_F_VERTEX_INDICES,
     PLY_F_INT_IGNORE,
-    PLY_F_BYTE_IGNORE
+    PLY_F_BYTE_IGNORE,
+    PLY_F_FLOAT_IGNORE
 };
 
 /* Returns a data type from file depending on encoding. */
@@ -327,6 +328,8 @@ load_ply_mesh (std::string const& filename)
                     f_format.push_back(PLY_F_INT_IGNORE);
                 else if (header[1] == "uchar")
                     f_format.push_back(PLY_F_BYTE_IGNORE);
+                else if (header[1] == "float")
+                    f_format.push_back(PLY_F_FLOAT_IGNORE);
                 else
                 {
                     std::cout << "PLY Loader: Unrecognized face property \""
@@ -575,6 +578,10 @@ load_ply_mesh (std::string const& filename)
 
                 case PLY_F_INT_IGNORE:
                     ply_get_value<int>(input, ply_format);
+                    break;
+
+                case PLY_F_FLOAT_IGNORE:
+                    ply_get_value<float>(input, ply_format);
                     break;
 
                 default:
