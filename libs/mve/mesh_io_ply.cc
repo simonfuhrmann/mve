@@ -174,6 +174,7 @@ load_ply_mesh (std::string const& filename)
     bool reading_faces = false;
     bool reading_grid = false;
     bool reading_tristrips = false;
+    std::size_t skip_bytes = 0;
 
     while (input.good())
     {
@@ -240,6 +241,10 @@ load_ply_mesh (std::string const& filename)
                 std::cout << "PLY Loader: Element \"" << header[1]
                     << "\" not recognized" << std::endl;
             }
+
+            /* Aligned range images in PLY format may have a camera inside. */
+            if (header[1] == "camera")
+                skip_bytes = 23 * 4;
         }
         else if (header[0] == "obj_info")
         {
@@ -349,8 +354,8 @@ load_ply_mesh (std::string const& filename)
             }
             else
             {
-                std::cout << "PLY Loader: Ignoring property without subject."
-                     << std::endl;
+                std::cout << "PLY Loader: Skipping property \""
+                    << header[1] << "\" without element." << std::endl;
             }
         }
     }
@@ -408,6 +413,14 @@ load_ply_mesh (std::string const& filename)
             default:
                 break;
         }
+    }
+
+    /* Skip some bytes. Usually because of unknown PLY elements. */
+    if (skip_bytes > 0)
+    {
+        std::cout << "PLY Loader: Skipping " << skip_bytes
+            << " bytes." << std::endl;
+        input.ignore(skip_bytes);
     }
 
     /* Start reading the vertex data. */
