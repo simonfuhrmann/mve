@@ -980,8 +980,8 @@ main (int argc, char** argv)
         "a file \"list.txt\" in INPUT and the bundle file in the "
         "\"bundle\" directory.\n\n"
 
-        "For Photosynther, makescene expects the bundle directory as INPUT, "
-        "and an \"undistorted\" directory in INPUT with the bundled images. "
+        "For Photosynther, makescene expects as INPUT the directory that "
+        "contains the \"bundle\" and the \"undistorted\" directory. "
         "With Photosynther, it is not possible to keep invalid views "
         "or import original images.\n\n"
 
