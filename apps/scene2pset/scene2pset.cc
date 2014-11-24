@@ -87,6 +87,7 @@ main (int argc, char** argv)
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
     args.add_option('f', "min-fraction", true, "Minimum fraction of valid depth values [0.0]");
     args.add_option('p', "poisson-normals", false, "Scale normals according to confidence");
+    args.add_option('F', "fssr", true, "FSSR output, sets -nsc and -di with scale ARG");
     args.parse(argc, argv);
 
     /* Init default settings. */
@@ -119,6 +120,19 @@ main (int argc, char** argv)
             case 'b': conf.aabb = arg->arg; break;
             case 'f': conf.min_valid_fraction = arg->get_arg<float>(); break;
             case 'p': conf.poisson_normals = true; break;
+            case 'F':
+            {
+                conf.with_conf = true;
+                conf.with_normals = true;
+                conf.with_scale = true;
+                int const scale = arg->get_arg<int>();
+                conf.dmname = "depth-L" + util::string::get<int>(scale);
+                conf.image = (scale == 0)
+                    ? "undistorted"
+                    : "undist-L" + util::string::get<int>(scale);
+                break;
+            }
+
             default: throw std::runtime_error("Unknown option");
         }
     }
@@ -142,8 +156,8 @@ main (int argc, char** argv)
     if (!conf.aabb.empty())
         aabb_from_string(conf.aabb, &aabbmin, &aabbmax);
 
-    std::cout << "Using depthmap: " << conf.dmname << " and color image: "
-          << conf.image << std::endl;
+    std::cout << "Using depthmap \"" << conf.dmname
+        << "\" and color image \"" << conf.image << "\"" << std::endl;
 
     /* Prepare output mesh. */
     mve::TriangleMesh::Ptr pset(mve::TriangleMesh::create());
