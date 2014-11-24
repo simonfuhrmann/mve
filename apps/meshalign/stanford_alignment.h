@@ -17,13 +17,13 @@
  * bmesh FILE_NAME T1 T2 T3 Q1 Q2 Q3 Q4
  * bmesh ...
  */
-class StanfordDataset
+class StanfordAlignment
 {
 public:
     typedef std::vector<RangeImage> RangeImages;
 
 public:
-    StanfordDataset (void);
+    StanfordAlignment (void);
 
     void read_alignment (std::string const& conffile);
     RangeImages const& get_range_images (void) const;
@@ -36,12 +36,12 @@ private:
 /* ---------------------------------------------------------------- */
 
 inline
-StanfordDataset::StanfordDataset (void)
+StanfordAlignment::StanfordAlignment (void)
 {
 }
 
-inline StanfordDataset::RangeImages const&
-StanfordDataset::get_range_images (void) const
+inline StanfordAlignment::RangeImages const&
+StanfordAlignment::get_range_images (void) const
 {
     return this->images;
 }

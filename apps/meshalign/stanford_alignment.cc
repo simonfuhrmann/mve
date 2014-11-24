@@ -15,7 +15,7 @@
 #include "stanford_alignment.h"
 
 void
-StanfordDataset::read_alignment (std::string const& conffile)
+StanfordAlignment::read_alignment (std::string const& conffile)
 {
     std::string basepath = util::fs::dirname(conffile);
 
@@ -86,7 +86,7 @@ StanfordDataset::read_alignment (std::string const& conffile)
 /* ---------------------------------------------------------------- */
 
 mve::TriangleMesh::Ptr
-StanfordDataset::get_mesh (RangeImage const& ri)
+StanfordAlignment::get_mesh (RangeImage const& ri)
 {
     mve::TriangleMesh::Ptr ret;
     ret = mve::geom::load_mesh(ri.fullpath);

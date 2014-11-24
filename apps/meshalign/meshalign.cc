@@ -28,6 +28,7 @@ read_and_merge_meshlab (std::string const& config, mve::TriangleMesh::Ptr mesh)
     for (std::size_t i = 0; i < ris.size(); ++i)
     {
         RangeImage const& ri = ris[i];
+        std::cout << "Processing " << ri.filename << "..." << std::endl;
         mve::TriangleMesh::ConstPtr tmp = meshlab.get_mesh(ri);
         mve::geom::mesh_merge(tmp, mesh);
     }
@@ -36,13 +37,14 @@ read_and_merge_meshlab (std::string const& config, mve::TriangleMesh::Ptr mesh)
 void
 read_and_merge_stanford (std::string const& config, mve::TriangleMesh::Ptr mesh)
 {
-    StanfordDataset stanford;
+    StanfordAlignment stanford;
     stanford.read_alignment(config);
 
-    StanfordDataset::RangeImages const& ris = stanford.get_range_images();
+    StanfordAlignment::RangeImages const& ris = stanford.get_range_images();
     for (std::size_t i = 0; i < ris.size(); ++i)
     {
         RangeImage const& ri = ris[i];
+        std::cout << "Processing " << ri.filename << "..." <<  std::endl;
         mve::TriangleMesh::ConstPtr tmp = stanford.get_mesh(ri);
         mve::geom::mesh_merge(tmp, mesh);
     }
