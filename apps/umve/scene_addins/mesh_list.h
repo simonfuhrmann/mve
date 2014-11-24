@@ -36,6 +36,7 @@ private slots:
     void on_invert_faces (void);
     void on_delete_faces (void);
     void on_scale_and_center (void);
+    void on_compute_aabb (void);
     void on_save_mesh (void);
     void on_rename_mesh (void);
     void on_delete_vertex_normals (void);
