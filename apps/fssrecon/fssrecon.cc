@@ -160,6 +160,19 @@ main (int argc, char** argv)
         return 1;
     }
 
+    /* Surfaces between voxels with zero confidence are ghosts. */
+    std::cout << "Deleting zero confidence vertices..." << std::flush;
+    {
+        timer.reset();
+        std::size_t num_vertices = mesh->get_vertices().size();
+        mve::TriangleMesh::DeleteList delete_verts(num_vertices, false);
+        for (std::size_t i = 0; i < num_vertices; ++i)
+        if (mesh->get_vertex_confidences()[i] == 0.0f)
+            delete_verts[i] = true;
+        mesh->delete_vertices_fix_faces(delete_verts);
+    }
+    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
+
     /* Check for color and delete if not existing. */
     mve::TriangleMesh::ColorList& colors = mesh->get_vertex_colors();
     if (!colors.empty() && colors[0].minimum() < 0.0f)
