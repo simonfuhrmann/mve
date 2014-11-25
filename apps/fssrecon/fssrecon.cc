@@ -25,7 +25,7 @@
 struct AppSettings
 {
     std::vector<std::string> in_files;
-    std::string out_octree;
+    std::string out_mesh;
     int skip_samples;
     float scale_factor;
     int refine_octree;
@@ -82,7 +82,7 @@ main (int argc, char** argv)
         args.generate_helptext(std::cerr);
         return 1;
     }
-    conf.out_octree = conf.in_files.back();
+    conf.out_mesh = conf.in_files.back();
     conf.in_files.pop_back();
 
     if (conf.refine_octree < 0 || conf.refine_octree > 3)
@@ -173,8 +173,8 @@ main (int argc, char** argv)
     ply_opts.write_vertex_colors = true;
     ply_opts.write_vertex_confidences = true;
     ply_opts.write_vertex_values = true;
-    std::cout << "Mesh output file: " << conf.out_octree << std::endl; // FIXME
-    mve::geom::save_ply_mesh(mesh, conf.out_octree, ply_opts);
+    std::cout << "Mesh output file: " << conf.out_mesh << std::endl;
+    mve::geom::save_ply_mesh(mesh, conf.out_mesh, ply_opts);
 
     std::cout << std::endl;
     std::cout << "All done. Remember to clean the output mesh." << std::endl;
