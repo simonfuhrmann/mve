@@ -32,7 +32,6 @@ float parallax(math::Vec3f p, mvs::SingleView::Ptr v1, mvs::SingleView::Ptr v2);
     to a bilateral Gaussian (see [Furukawa 2010] for details) */
 float parallaxToWeight(float p);
 
-
 /* ------------------------- Implementation ----------------------- */
 
 inline float

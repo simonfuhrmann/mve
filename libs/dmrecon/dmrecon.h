@@ -18,7 +18,7 @@ MVS_NAMESPACE_BEGIN
 
 struct QueueData
 {
-    int x;              // pixel position
+    int x;
     int y;
     float confidence;
     float depth;
@@ -28,12 +28,6 @@ struct QueueData
     bool operator< (const QueueData& rhs) const;
 };
 
-inline bool
-QueueData::operator< (const QueueData& rhs) const
-{
-    return (confidence < rhs.confidence);
-}
-
 class DMRecon
 {
 public:
@@ -42,7 +36,7 @@ public:
 
     Progress const& getProgress() const;
     Progress& getProgress();
-    void start();            // according to settings
+    void start();
 
     std::size_t getRefViewNr() const;
 
@@ -67,6 +61,13 @@ private:
     void refillQueueFromLowRes();
 };
 
+/* ------------------------- Implementation ----------------------- */
+
+inline bool
+QueueData::operator< (const QueueData& rhs) const
+{
+    return (confidence < rhs.confidence);
+}
 
 inline const Progress&
 DMRecon::getProgress() const

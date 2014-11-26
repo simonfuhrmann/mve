@@ -34,7 +34,7 @@ Scene::save_bundle (void)
 {
     if (this->bundle == NULL || !this->bundle_dirty)
         return;
-    std::string filename = this->basedir + "/synth_0.out";
+    std::string filename = util::fs::join_path(this->basedir, "synth_0.out");
     save_mve_bundle(this->bundle, filename);
     this->bundle_dirty = false;
 }
@@ -146,7 +146,8 @@ Scene::init_views (void)
     util::WallTimer timer;
 
     /* Iterate over all mve files and create view. */
-    std::string views_path = this->basedir + "/" MVE_SCENE_VIEWS_DIR;
+    std::string views_path = util::fs::join_path(this->basedir,
+        MVE_SCENE_VIEWS_DIR);
     util::fs::Directory views_dir;
     try
     {
@@ -213,7 +214,8 @@ Scene::get_bundle (void)
 {
     if (this->bundle == NULL)
     {
-        std::string filename = this->basedir + "/" MVE_SCENE_BUNDLE_FILE;
+        std::string filename = util::fs::join_path(this->basedir,
+            MVE_SCENE_BUNDLE_FILE);
         this->bundle = load_mve_bundle(filename);
         this->bundle_dirty = false;
     }

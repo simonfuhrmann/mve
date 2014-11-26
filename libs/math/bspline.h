@@ -35,15 +35,6 @@ public:
     typedef std::vector<T> KnotVector;
     typedef std::vector<V> PointVector;
 
-private:
-    int n; ///< the degree of the polynom
-    KnotVector knots; ///< knot vector with m entries
-    PointVector points; ///< m-n-1 control points
-
-private:
-    /** De Boor algorithm to evaluate the basis polynomials. */
-    T deboor (int i, int k, T const& x) const;
-
 public:
     BSpline (void);
 
@@ -77,6 +68,15 @@ public:
 
     /** Transforms the B-Spline. */
     void transform (math::Matrix4f const& transf);
+
+private:
+    /** De Boor algorithm to evaluate the basis polynomials. */
+    T deboor (int i, int k, T const& x) const;
+
+private:
+    int n; ///< the degree of the polynom
+    KnotVector knots; ///< knot vector with m entries
+    PointVector points; ///< m-n-1 control points
 };
 
 MATH_NAMESPACE_END

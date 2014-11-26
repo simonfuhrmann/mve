@@ -382,7 +382,7 @@ sobel_edge (typename mve::Image<T>::ConstPtr img);
  */
 template <typename T>
 typename Image<T>::Ptr
-subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2);
+subtract (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2);
 
 /**
  * Creates a difference image by computing the absolute difference per value.
@@ -391,7 +391,7 @@ subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2);
  */
 template <typename T>
 typename Image<T>::Ptr
-difference (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2);
+difference (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2);
 
 /**
  * Applies gamma correction to float/double images (in-place).
@@ -889,7 +889,18 @@ gaussian_kernel (typename Image<T>::ConstPtr img,
     int const width = img->width();
     int const height = img->height();
 
-    /* Calculate kernel size for geometric gaussian (see bilateral.h). */
+    /*
+     * Calculate kernel size for geometric gaussian
+     * Kernel is cut off at y=1/N, x = sigma * sqrt(2 * ln N).
+     *
+     * For N=256: x = sigma * 3.33.
+     * For N=128: x = sigma * 3.12.
+     * For N=64: x = sigma * 2.884.
+     * For N=32: x = sigma * 2.63.
+     * For N=16: x = sigma * 2.355.
+     * For N=8: x = sigma * 2.04.
+     * For N=4: x = sigma * 1.67.
+     */
     float ks = sigma * 2.884f;
 
     /* Calculate min/max kernel position. */
@@ -967,6 +978,9 @@ typename Image<T>::Ptr
 crop (typename Image<T>::ConstPtr image, int width, int height,
     int left, int top, T const* fill_color)
 {
+    if (width < 0 || height < 0 || !image.get())
+        throw std::invalid_argument("Invalid width/height or NULL image given");
+
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(width, height, image->channels());
 
@@ -1462,7 +1476,7 @@ sobel_edge (typename mve::Image<T>::ConstPtr img)
 
 template <typename T>
 typename Image<T>::Ptr
-subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
+subtract (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
 {
     int const iw = i1->width();
     int const ih = i1->height();
@@ -1488,7 +1502,7 @@ subtract (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
 
 template <typename T>
 typename Image<T>::Ptr
-difference (typename Image<T>::Ptr i1, typename Image<T>::Ptr i2)
+difference (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
 {
     int const iw = i1->width();
     int const ih = i1->height();

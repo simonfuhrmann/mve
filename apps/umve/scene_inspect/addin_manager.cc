@@ -1,12 +1,6 @@
-#include <iostream>
-
 #include <QFormLayout>
 #include <QBoxLayout>
 #include <QColorDialog>
-
-#include "util/exception.h"
-#include "util/file_system.h"
-#include "ogl/render_tools.h"
 
 #include "guihelpers.h"
 #include "scene_inspect/addin_manager.h"
@@ -25,7 +19,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     /* Instanciate addins. */
     this->axis_renderer = new AddinAxisRenderer();
     this->sfm_renderer = new AddinSfmRenderer();
-    this->frusta_renderer = new AddinFrustaRenderer();
+    this->frusta_renderer = new AddinFrustaSceneRenderer();
     this->mesh_renderer = new AddinMeshesRenderer();
     this->dm_triangulate = new AddinDMTriangulate();
     this->dm_triangulate->set_selected_view(this->selected_view_2);
@@ -151,7 +145,7 @@ void
 AddinManager::set_scene (mve::Scene::Ptr scene)
 {
     this->state.scene = scene;
-    this->state.gl_widget->repaint();
+    this->state.repaint();
 }
 
 void
@@ -160,7 +154,13 @@ AddinManager::set_view (mve::View::Ptr view)
     this->state.view = view;
     this->selected_view_1->set_view(this->state.view);
     this->selected_view_2->set_view(this->state.view);
-    this->state.gl_widget->repaint();
+    this->state.repaint();
+}
+
+void
+AddinManager::load_shaders (void)
+{
+    this->state.load_shaders();
 }
 
 void
@@ -170,109 +170,7 @@ AddinManager::reset_scene (void)
     this->state.view = NULL;
     this->selected_view_1->set_view(mve::View::Ptr());
     this->selected_view_2->set_view(mve::View::Ptr());
-    this->state.gl_widget->repaint();
-}
-
-namespace
-{
-    static void
-    load_shaders_from_resources (ogl::ShaderProgram::Ptr prog, QString base)
-    {
-        {
-            QFile file(base + ".frag");
-            file.open(QIODevice::ReadOnly | QIODevice::Text);
-            QByteArray code = file.readAll();
-            std::string code_str(code.constData(), code.length());
-            file.close();
-            if (!code_str.empty())
-                prog->load_frag_code(code_str);
-            else
-                prog->unload_frag();
-        }
-
-        {
-            QFile file(base + ".geom");
-            file.open(QIODevice::ReadOnly | QIODevice::Text);
-            QByteArray code = file.readAll();
-            std::string code_str(code.constData(), code.length());
-            file.close();
-            if (!code_str.empty())
-                prog->load_geom_code(code_str);
-            else
-                prog->unload_geom();
-        }
-
-        {
-            QFile file(base + ".vert");
-            file.open(QIODevice::ReadOnly | QIODevice::Text);
-            QByteArray code = file.readAll();
-            std::string code_str(code.constData(), code.length());
-            file.close();
-            if (!code_str.empty())
-                prog->load_vert_code(code_str);
-            else
-                prog->unload_vert();
-        }
-    }
-}  /* namespace */
-
-void
-AddinManager::load_shaders (void)
-{
-    std::string home_dir = util::fs::get_home_dir();
-    std::string binary_dir = util::fs::dirname(util::fs::get_binary_path());
-
-    std::vector<std::string> shader_paths;
-    shader_paths.push_back(binary_dir + "/shader/");
-    shader_paths.push_back(home_dir + "/.local/share/umve/shader");
-    shader_paths.push_back("/usr/local/share/umve/shader/");
-    shader_paths.push_back("/usr/share/umve/shader/");
-
-    bool found_surface = false;
-    bool found_wireframe = false;
-    bool found_texture = false;
-
-    for (std::size_t i = 0; i < shader_paths.size(); ++i)
-    {
-        try
-        {
-            if (!found_surface)
-                found_surface = this->state.surface_shader->try_load_all
-                    (shader_paths[i] + "surface_120");
-            if (!found_wireframe)
-                found_wireframe = this->state.wireframe_shader->try_load_all
-                    (shader_paths[i] + "wireframe_120");
-            if (!found_texture)
-                found_texture = this->state.texture_shader->try_load_all
-                    (shader_paths[i] + "texture_120");
-        }
-        catch (util::Exception& e)
-        {
-            std::cout << "Error while loading shaders from "
-                << shader_paths[i] << "." << std::endl;
-            throw e;
-        }
-    }
-
-    /*
-     * Shaders loaded later override those loaded earlier, so try
-     * Qt Resources first and files afterwards.
-     */
-    if (!found_surface)
-    {
-        std::cout << "Falling back to built-in `surface' shader." << std::endl;
-        load_shaders_from_resources(this->state.surface_shader, ":/shader/surface_120");
-    }
-    if (!found_wireframe)
-    {
-        std::cout << "Falling back to built-in `wireframe' shader." << std::endl;
-        load_shaders_from_resources(this->state.wireframe_shader, ":/shader/wireframe_120");
-    }
-    if (!found_texture)
-    {
-        std::cout << "Falling back to built-in `texture' shader." << std::endl;
-        load_shaders_from_resources(this->state.texture_shader, ":/shader/texture_120");
-    }
+    this->state.repaint();
 }
 
 /* ---------------------------------------------------------------- */
@@ -280,22 +178,21 @@ AddinManager::load_shaders (void)
 void
 AddinManager::init_impl (void)
 {
-    std::cout << "Initializing OpenGL..." << std::endl;
-
+#ifdef _WIN32
     /* Initialize GLEW. */
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
     if (err != GLEW_OK)
+    {
         std::cout << "Error initializing GLEW: " << glewGetErrorString(err)
             << std::endl;
+        std::exit(1);
+    }
+#endif
 
     /* Load shaders. */
-    this->state.surface_shader = ogl::ShaderProgram::create();
-    this->state.wireframe_shader = ogl::ShaderProgram::create();
-    this->state.texture_shader = ogl::ShaderProgram::create();
-    this->load_shaders();
-    this->state.gui_renderer = ogl::create_fullscreen_quad(this->state.texture_shader);
-    this->state.gui_texture = ogl::Texture::create();
+    this->state.load_shaders();
+    this->state.init_ui();
 
     for (std::size_t i = 0; i < this->addins.size(); ++i)
     {
@@ -327,38 +224,15 @@ AddinManager::paint_impl (void)
         this->clear_color.blue() / 255.0f,
         this->clear_color.alpha() / 255.0f);
 
-    glClearDepth(1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glDepthFunc(GL_LESS);
     glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClearDepth(1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // TODO: Make configurable through GUI
-    //glPointSize(4.0f);
-    //glLineWidth(2.0f);
-
-    /* Setup wireframe shader. */
-    this->state.wireframe_shader->bind();
-    this->state.wireframe_shader->send_uniform("viewmat", this->camera.view);
-    this->state.wireframe_shader->send_uniform("projmat", this->camera.proj);
-
-    /* Setup surface shader. */
-    this->state.surface_shader->bind();
-    this->state.surface_shader->send_uniform("viewmat", this->camera.view);
-    this->state.surface_shader->send_uniform("projmat", this->camera.proj);
-
-    /* Setup texture shader. */
-    this->state.texture_shader->bind();
-    this->state.texture_shader->send_uniform("viewmat", this->camera.view);
-    this->state.texture_shader->send_uniform("projmat", this->camera.proj);
-
+    this->state.send_uniform(this->camera);
     if (this->state.ui_needs_redraw)
-    {
-        this->state.ui_image = mve::ByteImage::create(ogl::Context::width,
-            ogl::Context::height, 4);
-        this->state.ui_image->fill(0);
-    }
+        this->state.clear_ui(ogl::Context::width, ogl::Context::height);
 
     /* Paint all implementations. */
     for (std::size_t i = 0; i < this->addins.size(); ++i)
@@ -368,10 +242,11 @@ AddinManager::paint_impl (void)
         this->addins[i]->paint();
     }
 
+
+    /* Draw UI. */
     if (this->state.ui_needs_redraw)
         this->state.gui_texture->upload(this->state.ui_image);
 
-    /* Draw UI. */
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -379,10 +254,9 @@ AddinManager::paint_impl (void)
     this->state.gui_texture->bind();
     this->state.texture_shader->bind();
     this->state.gui_renderer->draw();
+    this->state.ui_needs_redraw = false;
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-
-    this->state.ui_needs_redraw = false;
 }
 
 /* ---------------------------------------------------------------- */

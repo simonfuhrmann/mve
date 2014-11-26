@@ -18,7 +18,7 @@ UTIL_NAMESPACE_BEGIN
  */
 class Exception : public std::exception, public std::string
 {
-  public:
+public:
     Exception (void) throw()
     { }
 
@@ -48,9 +48,6 @@ class Exception : public std::exception, public std::string
 class FileException : public Exception
 {
 public:
-    std::string filename;
-
-public:
     FileException(std::string const& filename, std::string const& msg) throw()
         : Exception(msg), filename(filename)
     { }
@@ -61,6 +58,9 @@ public:
 
     virtual ~FileException (void) throw()
     { }
+
+public:
+    std::string filename;
 };
 
 UTIL_NAMESPACE_END

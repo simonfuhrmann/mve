@@ -5,6 +5,7 @@ OGL_NAMESPACE_BEGIN
 VertexBuffer::VertexBuffer (void)
 {
     glGenBuffers(1, &this->vbo_id);
+    check_gl_error();
     this->vbo_target = GL_ARRAY_BUFFER;
     this->datatype = GL_FLOAT;
     this->usage = GL_STATIC_DRAW;
@@ -27,6 +28,7 @@ VertexBuffer::set_data (GLfloat const* data, GLsizei elems, GLint vpv)
 
     this->bind();
     glBufferData(this->vbo_target, this->bytes, data, this->usage);
+    check_gl_error();
 }
 
 /* ---------------------------------------------------------------- */
@@ -42,6 +44,7 @@ VertexBuffer::set_data (GLubyte const* data, GLsizei elems, GLint vpv)
 
     this->bind();
     glBufferData(this->vbo_target, this->bytes, data, this->usage);
+    check_gl_error();
 }
 
 /* ---------------------------------------------------------------- */
@@ -57,6 +60,7 @@ VertexBuffer::set_indices (GLuint const* data, GLsizei num_indices)
 
     this->bind();
     glBufferData(this->vbo_target, this->bytes, data, this->usage);
+    check_gl_error();
 }
 
 OGL_NAMESPACE_END

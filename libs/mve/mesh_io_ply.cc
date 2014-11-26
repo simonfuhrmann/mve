@@ -53,7 +53,8 @@ enum PlyFaceElement
 {
     PLY_F_VERTEX_INDICES,
     PLY_F_INT_IGNORE,
-    PLY_F_BYTE_IGNORE
+    PLY_F_BYTE_IGNORE,
+    PLY_F_FLOAT_IGNORE
 };
 
 /* Returns a data type from file depending on encoding. */
@@ -174,6 +175,7 @@ load_ply_mesh (std::string const& filename)
     bool reading_faces = false;
     bool reading_grid = false;
     bool reading_tristrips = false;
+    std::size_t skip_bytes = 0;
 
     while (input.good())
     {
@@ -240,6 +242,10 @@ load_ply_mesh (std::string const& filename)
                 std::cout << "PLY Loader: Element \"" << header[1]
                     << "\" not recognized" << std::endl;
             }
+
+            /* Aligned range images in PLY format may have a camera inside. */
+            if (header[1] == "camera")
+                skip_bytes = 23 * 4;
         }
         else if (header[0] == "obj_info")
         {
@@ -322,6 +328,8 @@ load_ply_mesh (std::string const& filename)
                     f_format.push_back(PLY_F_INT_IGNORE);
                 else if (header[1] == "uchar")
                     f_format.push_back(PLY_F_BYTE_IGNORE);
+                else if (header[1] == "float")
+                    f_format.push_back(PLY_F_FLOAT_IGNORE);
                 else
                 {
                     std::cout << "PLY Loader: Unrecognized face property \""
@@ -349,8 +357,8 @@ load_ply_mesh (std::string const& filename)
             }
             else
             {
-                std::cout << "PLY Loader: Ignoring property without subject."
-                     << std::endl;
+                std::cout << "PLY Loader: Skipping property \""
+                    << header[1] << "\" without element." << std::endl;
             }
         }
     }
@@ -410,6 +418,14 @@ load_ply_mesh (std::string const& filename)
         }
     }
 
+    /* Skip some bytes. Usually because of unknown PLY elements. */
+    if (skip_bytes > 0)
+    {
+        std::cout << "PLY Loader: Skipping " << skip_bytes
+            << " bytes." << std::endl;
+        input.ignore(skip_bytes);
+    }
+
     /* Start reading the vertex data. */
     std::cout << "Reading PLY: " << num_vertices << " verts..." << std::flush;
 
@@ -435,30 +451,36 @@ load_ply_mesh (std::string const& filename)
             case PLY_V_FLOAT_X:
             case PLY_V_FLOAT_Y:
             case PLY_V_FLOAT_Z:
-                vertex[(int)elem - PLY_V_FLOAT_X] = ply_get_value<float>(input, ply_format);
+                vertex[(int)elem - PLY_V_FLOAT_X]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_NX:
             case PLY_V_FLOAT_NY:
             case PLY_V_FLOAT_NZ:
-                vnormal[(int)elem - PLY_V_FLOAT_NX] = ply_get_value<float>(input, ply_format);
+                vnormal[(int)elem - PLY_V_FLOAT_NX]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_UCHAR_R:
             case PLY_V_UCHAR_G:
             case PLY_V_UCHAR_B:
-                color[(int)elem - PLY_V_UCHAR_R] = (float)ply_get_value<unsigned char>(input, ply_format) * (1.0f / 255.0f);
+                color[(int)elem - PLY_V_UCHAR_R]
+                    = (float)ply_get_value<unsigned char>(input, ply_format)
+                    * (1.0f / 255.0f);
                 break;
 
             case PLY_V_FLOAT_R:
             case PLY_V_FLOAT_G:
             case PLY_V_FLOAT_B:
-                color[(int)elem - PLY_V_FLOAT_R] = ply_get_value<float>(input, ply_format);
+                color[(int)elem - PLY_V_FLOAT_R]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_U:
             case PLY_V_FLOAT_V:
-                tex_coord[(int)elem - PLY_V_FLOAT_U] = ply_get_value<float>(input, ply_format);
+                tex_coord[(int)elem - PLY_V_FLOAT_U]
+                    = ply_get_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_CONF:
@@ -507,7 +529,7 @@ load_ply_mesh (std::string const& filename)
             PlyFaceElement elem = (PlyFaceElement)f_format[n];
             switch (elem)
             {
-            case PLY_F_VERTEX_INDICES:
+                case PLY_F_VERTEX_INDICES:
                 {
                     /* Read the amount of vertex indices for the face. */
                     unsigned char n_verts = ply_get_value<unsigned char>(input, ply_format);
@@ -554,14 +576,18 @@ load_ply_mesh (std::string const& filename)
                     break;
                 }
 
-            case PLY_F_INT_IGNORE:
-                ply_get_value<int>(input, ply_format);
-                break;
+                case PLY_F_INT_IGNORE:
+                    ply_get_value<int>(input, ply_format);
+                    break;
 
-            default:
-            case PLY_F_BYTE_IGNORE:
-                ply_get_value<unsigned char>(input, ply_format);
-                break;
+                case PLY_F_FLOAT_IGNORE:
+                    ply_get_value<float>(input, ply_format);
+                    break;
+
+                default:
+                case PLY_F_BYTE_IGNORE:
+                    ply_get_value<unsigned char>(input, ply_format);
+                    break;
             }
 
             eof = input.eof();

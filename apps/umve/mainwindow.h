@@ -10,6 +10,7 @@
 
 #include "viewinspect/viewinspect.h"
 #include "scene_inspect/scene_inspect.h"
+#include "sfm_reconstruct/sfm_reconstruct.h"
 #include "jobqueue.h"
 #include "sceneoverview.h"
 
@@ -31,6 +32,7 @@ private:
     JobQueue* jobqueue;
     ViewInspect* tab_viewinspect;
     SceneInspect* tab_sceneinspect;
+    SfmReconstruct* tab_sfm_recon;
 
     QAction* action_new_scene;
     QAction* action_open_scene;

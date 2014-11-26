@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <cctype>
 #include <cerrno> // errno
 #include <cstring> // std::strerror
 #include <cstdio> // std::rename
@@ -37,6 +38,7 @@ UTIL_FS_NAMESPACE_BEGIN
 
 // PATH_MAX might be long?
 char home_path[PATH_MAX] = { 0 };
+char app_data_path[PATH_MAX] = { 0 };
 
 bool
 exists (char const* pathname)
@@ -157,6 +159,32 @@ unlink (char const* pathname)
 /* ---------------------------------------------------------------- */
 
 char const*
+get_app_data_dir (void)
+{
+    if (*app_data_path != 0)
+        return app_data_path;
+
+    // TODO: Use environment variables?
+
+#ifdef _WIN32
+    // SHGetFolderPathA seems to expect non-wide chars
+    // http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
+    // FIXME: Max length of home path?
+    if (!SUCCEEDED(::SHGetFolderPathA(0, CSIDL_APPDATA, 0, 0, app_data_path)))
+        throw util::Exception("Cannot determine home directory");
+#else // _WIN32
+    std::string p = join_path(get_home_dir(), ".local/share");
+    if (p.size() >= PATH_MAX)
+        throw util::Exception("Cannot determine home directory");
+    std::strncpy(app_data_path, p.c_str(), PATH_MAX);
+#endif // _WIN32
+
+  return app_data_path;
+}
+
+/* ---------------------------------------------------------------- */
+
+char const*
 get_home_dir (void)
 {
     if (*home_path != 0)
@@ -235,12 +263,24 @@ get_binary_path (void)
 
 #elif defined(__APPLE__)
 
-    // http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man3/dyld.3.html
+    /*
+     * http://developer.apple.com/library/mac/#documentation/
+     * ...    Darwin/Reference/ManPages/man3/dyld.3.html
+     */
     uint32_t pathmax = PATH_MAX;
     int success = _NSGetExecutablePath(path, &pathmax);
     int n_chars = 0;
     if (success < 0)
-        n_chars = PATH_MAX; // Indicate error
+        throw std::runtime_error(
+            "Could not determine binary path: _NSGetExecutablePath failed!");
+    else
+    {
+        char real[PATH_MAX];
+        if (::realpath(path, real) == NULL)
+            throw std::runtime_error(
+                "Could not determine binary path: realpath failed!");
+        ::strncpy(path, real, PATH_MAX);
+    }
 
 #elif defined(__linux)
 
@@ -472,7 +512,7 @@ Directory::scan (std::string const& path)
             continue;
 
         this->push_back(File());
-        this->back().path = path + "/" + data.cFileName;
+        this->back().path = sanitize_path(path);
         this->back().name = data.cFileName;
         this->back().is_dir =
             (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;

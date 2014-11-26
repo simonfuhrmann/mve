@@ -51,9 +51,13 @@ QMeshContextMenu::build (void)
         this->connect(scale, SIGNAL(triggered()),
             this, SLOT(on_scale_and_center()));
         if (rep->mesh->get_vertices().empty())
-        {
             scale->setEnabled(false);
-        }
+
+        QAction* compute_aabb = vertices_menu->addAction(tr("Compute AABB"));
+        this->connect(compute_aabb, SIGNAL(triggered()),
+            this, SLOT(on_compute_aabb()));
+        if (rep->mesh->get_vertices().size() <= 1)
+            compute_aabb->setEnabled(false);
     }
 
     QMenu* faces_menu = this->addMenu(tr("Faces: %1").arg(num_faces.c_str()));
@@ -173,6 +177,57 @@ QMeshContextMenu::on_scale_and_center (void)
     mve::geom::mesh_scale_and_center(this->rep->mesh);
     this->rep->renderer.reset();
     emit this->parent->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_compute_aabb (void)
+{
+    math::Vec3f aabb_min(std::numeric_limits<float>::max());
+    math::Vec3f aabb_max(-std::numeric_limits<float>::max());
+
+    mve::TriangleMesh::VertexList const& verts = this->rep->mesh->get_vertices();
+    for (std::size_t i = 0; i < verts.size(); ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            aabb_min[j] = std::min(aabb_min[j], verts[i][j]);
+            aabb_max[j] = std::max(aabb_max[j], verts[i][j]);
+        }
+    }
+
+    std::stringstream aabb_ss;
+    aabb_ss << "<b>Exact AABB</b><br/>" << std::endl;
+    aabb_ss << "AABB min: " << aabb_min << "<br/>" << std::endl;
+    aabb_ss << "AABB max: " << aabb_max << "<br/>" << std::endl;
+    aabb_ss << "AABB string: "
+        << aabb_min[0] << ","
+        << aabb_min[1] << ","
+        << aabb_min[2] << ","
+        << aabb_max[0] << ","
+        << aabb_max[1] << ","
+        << aabb_max[2] << "<br/><br/>" << std::endl;
+
+    for (int j = 0; j < 3; ++j)
+    {
+        aabb_min[j] -= (aabb_max[j] - aabb_min[j]) / 20.0f;
+        aabb_max[j] += (aabb_max[j] - aabb_min[j]) / 20.0f;
+    }
+
+    aabb_ss << "<b>AABB with 10% border</b><br/>" << std::endl;
+    aabb_ss << "AABB min: " << aabb_min << "<br/>" << std::endl;
+    aabb_ss << "AABB max: " << aabb_max << "<br/>" << std::endl;
+    aabb_ss << "AABB string: "
+        << aabb_min[0] << ","
+        << aabb_min[1] << ","
+        << aabb_min[2] << ","
+        << aabb_max[0] << ","
+        << aabb_max[1] << ","
+        << aabb_max[2] << "<br/>" << std::endl;
+
+    QMessageBox::information(this->parent, "Mesh AABB",
+        tr(aabb_ss.str().c_str()));
 }
 
 /* ---------------------------------------------------------------- */

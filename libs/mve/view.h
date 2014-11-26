@@ -106,28 +106,6 @@ public:
     typedef util::RefPtr<View const> ConstPtr;
     typedef std::vector<MVEFileProxy> Proxies;
 
-private:
-    std::string filename; ///< Filename the view is associated with
-    MVEFileMeta meta; ///< Meta information, view name, camera, etc
-    CameraInfo camera; ///< Per-view camera information
-    Proxies proxies; ///< Proxies for all embeddings
-    bool needs_rebuild; ///< Disables direct-writing when saving
-    util::Atomic<int> loading_mutex; ///< Mutex to guard file access
-
-private:
-    void parse_header_line (std::string const& header_line);
-    void direct_write (MVEFileProxy& proxy);
-    ImageBase::Ptr get_image_for_proxy (MVEFileProxy& proxy);
-    MVEFileProxy* get_proxy_intern (std::string const& name);
-    void update_camera (void);
-
-private:
-    /** Default constructor. */
-    View (void);
-
-    /** Constructor that immediately loads the MVE file. */
-    View (std::string const& filename);
-
 public:
     static View::Ptr create (void);
     static View::Ptr create (std::string const& filename);
@@ -187,6 +165,16 @@ public:
      * Returns true if an embedding by the given name exists.
      */
     bool has_embedding (std::string const& name) const;
+
+    /**
+     * Returns true if an image embedding by the given name exists.
+     */
+    bool has_image_embedding (std::string const& name) const;
+
+    /**
+     * Returns true if a data embedding by the given name exists.
+     */
+    bool has_data_embedding (std::string const& name) const;
 
     /**
      * Returns true if the embedding by that name has been removed.
@@ -306,6 +294,28 @@ public:
 
     /** Debug output. */
     void print_debug (void) const;
+
+protected:
+    /** Default constructor. */
+    View (void);
+
+    /** Constructor that immediately loads the MVE file. */
+    View (std::string const& filename);
+
+private:
+    void parse_header_line (std::string const& header_line);
+    void direct_write (MVEFileProxy& proxy);
+    ImageBase::Ptr get_image_for_proxy (MVEFileProxy& proxy);
+    MVEFileProxy* get_proxy_intern (std::string const& name);
+    void update_camera (void);
+
+private:
+    std::string filename; ///< Filename the view is associated with
+    MVEFileMeta meta; ///< Meta information, view name, camera, etc
+    CameraInfo camera; ///< Per-view camera information
+    Proxies proxies; ///< Proxies for all embeddings
+    bool needs_rebuild; ///< Disables direct-writing when saving
+    util::Atomic<int> loading_mutex; ///< Mutex to guard file access
 };
 
 /* ---------------------------------------------------------------- */
@@ -415,6 +425,20 @@ inline bool
 View::has_embedding (std::string const& name) const
 {
     return this->get_proxy(name) != NULL;
+}
+
+inline bool
+View::has_image_embedding (std::string const& name) const
+{
+    MVEFileProxy const* proxy = this->get_proxy(name);
+    return proxy != NULL && proxy->is_image == true;
+}
+
+inline bool
+View::has_data_embedding (std::string const& name) const
+{
+    MVEFileProxy const* proxy = this->get_proxy(name);
+    return proxy != NULL && proxy->is_image == false;
 }
 
 inline std::size_t

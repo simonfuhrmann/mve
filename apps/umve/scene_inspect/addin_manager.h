@@ -1,5 +1,5 @@
-#ifndef UMVE_SCENE_ADDINS_HEADER
-#define UMVE_SCENE_ADDINS_HEADER
+#ifndef UMVE_SCENE_ADDIN_MANAGER_HEADER
+#define UMVE_SCENE_ADDIN_MANAGER_HEADER
 
 #include "ogl/opengl.h"
 
@@ -19,7 +19,7 @@
 #include "scene_addins/addin_base.h"
 #include "scene_addins/addin_axis_renderer.h"
 #include "scene_addins/addin_sfm_renderer.h"
-#include "scene_addins/addin_frusta_renderer.h"
+#include "scene_addins/addin_frusta_scene_renderer.h"
 #include "scene_addins/addin_mesh_renderer.h"
 #include "scene_addins/addin_dm_triangulate.h"
 #include "scene_addins/addin_offscreen_renderer.h"
@@ -62,13 +62,13 @@ protected slots:
         mve::TriangleMesh::Ptr mesh);
 
 private:
-    AddinBase::State state;
+    AddinState state;
     std::vector<AddinBase*> addins;
 
     /* Addins. */
     AddinAxisRenderer* axis_renderer;
     AddinSfmRenderer* sfm_renderer;
-    AddinFrustaRenderer* frusta_renderer;
+    AddinFrustaSceneRenderer* frusta_renderer;
     AddinMeshesRenderer* mesh_renderer;
     AddinDMTriangulate* dm_triangulate;
     AddinOffscreenRenderer* offscreen_renderer;
@@ -86,4 +86,4 @@ private:
     QCheckBox* clear_color_cb;
 };
 
-#endif /* UMVE_SCENE_ADDINS_HEADER */
+#endif /* UMVE_SCENE_ADDIN_MANAGER_HEADER */

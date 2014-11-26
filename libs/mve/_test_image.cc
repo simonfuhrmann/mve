@@ -10,7 +10,6 @@
 #include "mve/image_tools.h"
 #include "mve/image_io.h"
 #include "mve/image_exif.h"
-#include "mve/bilateral.h"
 
 int
 main (int argc, char** argv)
@@ -24,15 +23,6 @@ main (int argc, char** argv)
 
     mve::image::ExifInfo exif = mve::image::exif_extract(&data[0], data.size(), true);
     mve::image::exif_debug_print(std::cout, exif);
-#endif
-
-#if 0
-    /* Timing test for bilateral filter. */
-    mve::ByteImage::Ptr img = mve::image::load_file("/tmp/mouse.jpg");
-    util::WallTimer timer;
-    img = mve::image::bilateral_filter<uint8_t, 3>(img, 20.0f, 50.0f);
-    std::cout << "Took " << timer.get_elapsed() << "ms." << std::endl;
-    mve::image::save_file(img, "/tmp/bilateral.png");
 #endif
 
 #if 0

@@ -48,15 +48,13 @@ gaussian_2d (T const& x, T const& y, T const& sigma_x, T const& sigma_y)
 }
 
 /**
- * Gaussian function in N dimensions with bell height 1
- * and center (0,...,0). The covariance matrix needs to
- * be inverted beforehand.
+ * Removes the fractional part of the value to the closest integer.
  */
-template <typename T, int N>
+template <typename T>
 inline T
-gaussian_nd (Vector<T,N> const& x, Matrix<T,N,N> const& covariance_inv)
+round (T const& x)
 {
-    return std::exp(-x.dot(covariance_inv * x) / T(2));
+   return x > T(0) ? std::floor(x + T(0.5)) : std::ceil(x - T(0.5));
 }
 
 /* ------------------------- Interpolation ------------------------ */

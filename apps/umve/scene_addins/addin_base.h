@@ -4,14 +4,10 @@
 #include <QWidget>
 #include <QMessageBox>
 
-#include "mve/scene.h"
-#include "mve/view.h"
 #include "mve/mesh.h"
 #include "ogl/context.h"
-#include "ogl/vertex_array.h"
-#include "ogl/texture.h"
-#include "ogl/shader_program.h"
 
+#include "scene_addins/addin_state.h"
 #include "glwidget.h"
 
 /*
@@ -24,27 +20,10 @@ class AddinBase : public QObject, public ogl::Context
     Q_OBJECT
 
 public:
-    struct State
-    {
-        GLWidget* gl_widget;
-        ogl::ShaderProgram::Ptr surface_shader;
-        ogl::ShaderProgram::Ptr wireframe_shader;
-        ogl::ShaderProgram::Ptr texture_shader;
-        mve::Scene::Ptr scene;
-        mve::View::Ptr view;
-
-        /* UI overlay. */
-        mve::ByteImage::Ptr ui_image;
-        ogl::Texture::Ptr gui_texture;
-        ogl::VertexArray::Ptr gui_renderer;
-        bool ui_needs_redraw;
-    };
-
-public:
     AddinBase (void);
     ~AddinBase (void);
 
-    void set_state (State* state);
+    void set_state (AddinState* state);
     virtual QWidget* get_sidebar_widget (void);
 
     /* Empty base class re-implementations. */
@@ -68,7 +47,7 @@ protected slots:
     void request_context (void);
 
 protected:
-    State* state;
+    AddinState* state;
 };
 
 /* ---------------------------------------------------------------- */
@@ -85,7 +64,7 @@ AddinBase::~AddinBase (void)
 }
 
 inline void
-AddinBase::set_state (State* state)
+AddinBase::set_state (AddinState* state)
 {
     this->state = state;
 }
@@ -131,13 +110,13 @@ AddinBase::redraw_gui (void)
 inline void
 AddinBase::repaint (void)
 {
-    this->state->gl_widget->repaint();
+    this->state->repaint();
 }
 
 inline void
 AddinBase::request_context (void)
 {
-    this->state->gl_widget->makeCurrent();
+    this->state->make_current_context();
 }
 
 inline void

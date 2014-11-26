@@ -36,7 +36,9 @@ VertexArray::assign_attrib (BoundVBO const& bound_vbo)
     vbo->bind();
     glVertexAttribPointer(location, vbo->get_values_per_vertex(),
         vbo->get_data_type(), GL_TRUE, 0, NULL);
+    check_gl_error();
     glEnableVertexAttribArray(location);
+    check_gl_error();
 }
 
 /* ---------------------------------------------------------------- */
@@ -52,6 +54,7 @@ VertexArray::draw (void)
 
     /* Make current vertex array active. */
     glBindVertexArray(this->vao_id);
+    check_gl_error();
 
     /* Bind the shader program. */
     this->shader->bind();
@@ -69,14 +72,17 @@ VertexArray::draw (void)
         this->index_vbo->bind();
         glDrawElements(this->primitive, this->index_vbo->get_element_amount(),
             GL_UNSIGNED_INT, NULL);
+        check_gl_error();
     }
     else
     {
         glDrawArrays(this->primitive, 0, this->vert_vbo->get_element_amount());
+        check_gl_error();
     }
 
     this->shader->unbind();
     glBindVertexArray(0);
+    check_gl_error();
 }
 
 OGL_NAMESPACE_END

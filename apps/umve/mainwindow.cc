@@ -11,6 +11,7 @@
 #include "util/file_system.h"
 #include "mve/mesh_io_ply.h"
 
+#include "fshelpers.h"
 #include "guihelpers.h"
 #include "batchoperations.h"
 #include "scenemanager.h"
@@ -26,10 +27,12 @@ MainWindow::MainWindow (void)
     /* Populate notebook. */
     this->tab_viewinspect = new ViewInspect(this);
     this->tab_sceneinspect = new SceneInspect(this);
+    this->tab_sfm_recon = new SfmReconstruct(this);
 
     this->tabs = new QTabWidget(this);
     this->tabs->addTab(this->tab_viewinspect, this->tab_viewinspect->get_title());
     this->tabs->addTab(this->tab_sceneinspect, this->tab_sceneinspect->get_title());
+    this->tabs->addTab(this->tab_sfm_recon, this->tab_sfm_recon->get_title());
     this->load_plugins();
 
     this->memory_label = new QLabel("Memory: <unknown>");
@@ -88,15 +91,9 @@ MainWindow::MainWindow (void)
 void
 MainWindow::load_plugins (void)
 {
-    std::string home_dir = util::fs::get_home_dir();
-    std::string binary_dir = util::fs::dirname(util::fs::get_binary_path());
-
     std::vector<std::string> plugin_paths;
-    plugin_paths.push_back(binary_dir + "/plugin/");
-    plugin_paths.push_back(home_dir + "/.local/share/umve/plugin");
-    plugin_paths.push_back("/usr/local/share/umve/plugin/");
-    plugin_paths.push_back("/usr/share/umve/plugin/");
-    plugin_paths.push_back(":/plugin/");
+    get_search_paths(&plugin_paths, "plugins");
+    plugin_paths.push_back(":/plugins");
 
     for (std::size_t i = 0; i < plugin_paths.size(); ++i)
     {

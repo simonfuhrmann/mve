@@ -9,6 +9,7 @@
 #include "util/ref_ptr.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
+#include "ogl/check_gl_error.h"
 
 OGL_NAMESPACE_BEGIN
 
@@ -26,19 +27,6 @@ class VertexBuffer
 public:
     typedef util::RefPtr<VertexBuffer> Ptr;
     typedef util::RefPtr<VertexBuffer const> ConstPtr;
-
-private:
-    GLuint vbo_id;
-    GLenum vbo_target;
-    GLenum datatype;
-    GLenum usage;
-    GLsizeiptr bytes;
-    GLint vpv;
-    GLsizei elems;
-    GLsizei stride;
-    
-private:
-    VertexBuffer (void);
 
 public:
     ~VertexBuffer (void);
@@ -80,6 +68,19 @@ public:
 
     /** Binds the VBO. */
     void bind (void);
+
+private:
+    VertexBuffer (void);
+
+private:
+    GLuint vbo_id;
+    GLenum vbo_target;
+    GLenum datatype;
+    GLenum usage;
+    GLsizeiptr bytes;
+    GLint vpv;
+    GLsizei elems;
+    GLsizei stride;
 };
 
 /* ---------------------------------------------------------------- */
@@ -88,6 +89,7 @@ inline
 VertexBuffer::~VertexBuffer (void)
 {
     glDeleteBuffers(1, &this->vbo_id);
+    check_gl_error();
 }
 
 inline VertexBuffer::Ptr

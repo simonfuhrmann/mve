@@ -115,3 +115,84 @@ TEST(MatrixToolsTest, MatrixMultiply)
     for (int i = 0; i < 12; ++i)
         EXPECT_EQ(mat_ret[i], ret[i]);
 }
+
+TEST(MatrixToolsTest, MatrixSwapRows)
+{
+    /* Simple 2x2 matrix. */
+    int m1_values[] = { 0, 1,  2, 3 };
+    math::Matrix<int, 2, 2> m1(m1_values);
+    math::matrix_swap_rows(m1.begin(), 2, 2, 0, 1);
+    int m1_gt_values[] = { 2, 3,  0, 1 };
+    for (int i = 0; i < 4; ++i)
+        EXPECT_EQ(m1_gt_values[i], m1[i]) << "for i=" << i;
+
+    /* 2x3 matrix. */
+    int m2_values[] = { 0, 1, 2,  3, 4, 5 };
+    math::Matrix<int, 2, 3> m2(m2_values);
+    math::matrix_swap_rows(m2.begin(), 2, 3, 0, 1);
+    int m2_gt_values[] = { 3, 4, 5,  0, 1, 2 };
+    for (int i = 0; i < 6; ++i)
+        EXPECT_EQ(m2_gt_values[i], m2[i]) << "for i=" << i;
+
+    /* 3x2 matrix. */
+    int m3_values[] = { 0, 1,  2, 3,  4, 5 };
+    math::Matrix<int, 3, 2> m3(m3_values);
+    math::matrix_swap_rows(m3.begin(), 3, 2, 0, 1);
+    int m3_gt_values[] = { 2, 3,  0, 1,  4, 5 };
+    for (int i = 0; i < 6; ++i)
+        EXPECT_EQ(m3_gt_values[i], m3[i]) << "for i=" << i;
+
+    /* Swap same column, expect no change. */
+    int m4_values[] = { 0, 1,  2, 3 };
+    math::Matrix<int, 2, 2> m4(m4_values);
+    math::matrix_swap_rows(m4.begin(), 2, 2, 1, 1);
+    int m4_gt_values[] = { 0, 1,  2, 3 };
+    for (int i = 0; i < 4; ++i)
+        EXPECT_EQ(m4_gt_values[i], m4[i]) << "for i=" << i;
+}
+
+TEST(MatrixToolsTest, MatrixSwapColumns)
+{
+    /* Simple 2x2 matrix. */
+    int m1_values[] = { 0, 1,  2, 3 };
+    math::Matrix<int, 2, 2> m1(m1_values);
+    math::matrix_swap_columns(m1.begin(), 2, 2, 0, 1);
+    int m1_gt_values[] = { 1, 0,  3, 2 };
+    for (int i = 0; i < 4; ++i)
+        EXPECT_EQ(m1_gt_values[i], m1[i]) << "for i=" << i;
+
+    /* 2x3 matrix. */
+    int m2_values[] = { 0, 1, 2,  3, 4, 5 };
+    math::Matrix<int, 2, 3> m2(m2_values);
+    math::matrix_swap_columns(m2.begin(), 2, 3, 0, 2);
+    int m2_gt_values[] = { 2, 1, 0,  5, 4, 3 };
+    for (int i = 0; i < 6; ++i)
+        EXPECT_EQ(m2_gt_values[i], m2[i]) << "for i=" << i;
+
+    /* 3x2 matrix. */
+    int m3_values[] = { 0, 1,  2, 3,  4, 5 };
+    math::Matrix<int, 3, 2> m3(m3_values);
+    math::matrix_swap_columns(m3.begin(), 3, 2, 0, 1);
+    int m3_gt_values[] = { 1, 0,  3, 2,  5, 4 };
+    for (int i = 0; i < 6; ++i)
+        EXPECT_EQ(m3_gt_values[i], m3[i]) << "for i=" << i;
+
+    /* Swap same column, expect no change. */
+    int m4_values[] = { 0, 1,  2, 3 };
+    math::Matrix<int, 2, 2> m4(m4_values);
+    math::matrix_swap_columns(m4.begin(), 2, 2, 1, 1);
+    int m4_gt_values[] = { 0, 1,  2, 3 };
+    for (int i = 0; i < 4; ++i)
+        EXPECT_EQ(m4_gt_values[i], m4[i]) << "for i=" << i;
+}
+
+TEST(MatrixToolsTest, MatrixRotate180)
+{
+    int values[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    int rotated_values[] = { 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+    math::Matrix<int, 3, 3> mat(values);
+    math::Matrix<int, 3, 3> rotated(rotated_values);
+    ASSERT_TRUE(rotated == math::matrix_rotate_180(mat));
+    math::matrix_rotate_180_inplace(&rotated);
+    ASSERT_TRUE(rotated == mat);
+}

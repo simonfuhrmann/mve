@@ -79,6 +79,15 @@ math::Vector<T,2>
 ray_ray_intersect (math::Vector<T,3> const& p1, math::Vector<T,3> const& d1,
     math::Vector<T,3> const& p2, math::Vector<T,3> const& d2);
 
+/**
+ * Returns true if the given point overlaps with the axis-aligned box.
+ * Defined for points and boxes in arbitrary dimension.
+ */
+template <typename T, int N>
+bool
+point_box_overlap (math::Vector<T, N> const& point,
+    math::Vector<T, N> const& aabb_min, math::Vector<T, N> const& aabb_max);
+
 /* ------------------------ Implementation ------------------------ */
 
 #define AXISTEST_X01(a, b, fa, fb) { \
@@ -335,6 +344,19 @@ ray_ray_intersect (math::Vector<T,3> const& p1, math::Vector<T,3> const& d1,
     math::Vector<T,2> ret(matrix_determinant(m1) / dx.square_norm(),
         matrix_determinant(m2) / dx.square_norm());
     return ret;
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T, int N>
+bool
+point_box_overlap (math::Vector<T, N> const& point,
+    math::Vector<T, N> const& aabb_min, math::Vector<T, N> const& aabb_max)
+{
+    for (int i = 0; i < N; ++i)
+        if (point[i] < aabb_min[i] || point[i] > aabb_max[i])
+            return false;
+    return true;
 }
 
 MATH_GEOM_NAMESPACE_END

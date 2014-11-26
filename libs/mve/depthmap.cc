@@ -8,7 +8,6 @@
 #include "mve/mesh_info.h"
 #include "mve/depthmap.h"
 #include "mve/mesh_tools.h"
-#include "mve/bilateral.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
@@ -117,68 +116,6 @@ depthmap_confidence_clean (FloatImage::Ptr dm, FloatImage::ConstPtr cm)
     for (std::size_t i = 0; i < cnt; ++i)
         if (cm->at(i, 0) <= 0.0f)
             dm->at(i, 0) = 0.0f;
-}
-
-/* ---------------------------------------------------------------- */
-
-struct BilateralDepthCloseness
-{
-    float dc_sigma;
-
-    BilateralDepthCloseness (float sigma) : dc_sigma(sigma) {}
-    float operator() (math::Vec1f const& cv, math::Vec1f const& v)
-    {
-        return (v[0] <= 0.0f ? 0.0f
-            : math::gaussian(cv[0] - v[0], dc_sigma));
-    }
-};
-
-FloatImage::Ptr
-depthmap_bilateral_filter (FloatImage::ConstPtr dm,
-    math::Matrix3f const& invproj, float gc_sigma, float pc_factor)
-{
-    if (dm == NULL)
-        throw std::invalid_argument("NULL image given");
-
-    if (gc_sigma <= 0.0f || pc_factor <= 0.0f)
-        throw std::invalid_argument("Invalid parameters given");
-
-    /* Copy original depthmap. */
-    FloatImage::Ptr ret(FloatImage::create(*dm));
-    std::size_t w = dm->width();
-    std::size_t h = dm->height();
-
-    /* Calculate kernel size for geometric gaussian (see bilateral.h). */
-    float ks_f = gc_sigma * 2.884f;
-    std::size_t ks = std::ceil(ks_f);
-
-    //std::cout << "Bilateral filtering depthmap with GC "
-    //    << gc_sigma << " and PC factor " << pc_factor
-    //    << ", kernel " << (ks*2+1) << "^2 pixels." << std::endl;
-
-    /* Use standard geom closeness functors. */
-    typedef BilateralGeomCloseness GCF;
-    typedef BilateralDepthCloseness DCF;
-    GCF gcf(gc_sigma);
-
-    /* Apply kernel to each pixel. */
-    std::size_t i = 0;
-    for (std::size_t y = 0; y < h; ++y)
-        for (std::size_t x = 0; x < w; ++x, ++i)
-        {
-            float depth = dm->at(i, 0);
-            if (depth <= 0.0f)
-                continue;
-
-            float pixel_fp = mve::geom::pixel_footprint(x, y, depth, invproj);
-
-            DCF dcf(pixel_fp * pc_factor);
-            math::Vec1f v = bilateral_kernel<float, 1, GCF, DCF>
-                (*dm, x, y, ks, gcf, dcf);
-            ret->at(i, 0) = v[0];
-        }
-
-    return ret;
 }
 
 MVE_IMAGE_NAMESPACE_END

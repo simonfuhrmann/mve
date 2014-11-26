@@ -94,14 +94,6 @@ public:
     void unbind (void) const;
 
 private:
-    GLuint prog_id;
-    GLuint vert_id;
-    GLuint geom_id;
-    GLuint frag_id;
-
-    bool need_to_link;
-
-private:
     ShaderProgram (void);
 
     void load_shader_file (GLuint& shader_id, GLuint shader_type,
@@ -115,6 +107,14 @@ private:
     GLint get_shader_property (GLuint shader_id, int pname);
 
     void ensure_linked (void);
+
+private:
+    GLuint prog_id;
+    GLuint vert_id;
+    GLuint geom_id;
+    GLuint frag_id;
+
+    bool need_to_link;
 };
 
 /* ---------------------------------------------------------------- */

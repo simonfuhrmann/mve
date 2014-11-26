@@ -11,6 +11,7 @@
 #include <sstream>
 #include <algorithm>
 
+#include "util/string.h"
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
@@ -25,9 +26,10 @@ class Tokenizer : public std::vector<std::string>
 public:
     /**
      * Very simple tokenziation at a given delimiter characater.
-     * Two subsequent delimiter characters lead to an empty token.
+     * If requested, subsequent delimiter characters lead to empty tokens.
      */
-    void split (std::string const& str, char delim = ' ');
+    void split (std::string const& str, char delim = ' ',
+        bool keep_empty = false);
 
     /**
      * A tokenizer that parses shell commands into tokens.
@@ -41,28 +43,34 @@ public:
      * starting from token at position 'pos'. Passing '0' as
      * 'num' argument means to concat all remaining tokens.
      */
-    std::string concat (std::size_t pos, std::size_t num = 0);
+    std::string concat (std::size_t pos, std::size_t num = 0) const;
+
+    /**
+     * Returns the requested token as the specified type.
+     */
+    template <typename T>
+    T get_as (std::size_t pos) const;
 };
 
 /* ---------------------------------------------------------------- */
 
 inline void
-Tokenizer::split (std::string const& str, char delim)
+Tokenizer::split (std::string const& str, char delim, bool keep_empty)
 {
     this->clear();
-    std::size_t last = 0;
-    std::size_t cur = 0;
-    for (; cur < str.size(); ++cur)
-        if (str[cur] == delim)
+    std::size_t new_tok = 0;
+    std::size_t cur_pos = 0;
+    for (; cur_pos < str.size(); ++cur_pos)
+        if (str[cur_pos] == delim)
         {
-            std::string token = str.substr(last, cur - last);
-            if (!token.empty())
+            std::string token = str.substr(new_tok, cur_pos - new_tok);
+            if (keep_empty || !token.empty())
                 this->push_back(token);
-            last = cur + 1;
+            new_tok = cur_pos + 1;
         }
 
-    if (last < str.size())
-        this->push_back(str.substr(last));
+    if (keep_empty || new_tok < str.size())
+        this->push_back(str.substr(new_tok));
 }
 
 /* ---------------------------------------------------------------- */
@@ -93,7 +101,7 @@ Tokenizer::parse_cmd (std::string const& str)
 /* ---------------------------------------------------------------- */
 
 inline std::string
-Tokenizer::concat (std::size_t pos, std::size_t num)
+Tokenizer::concat (std::size_t pos, std::size_t num) const
 {
     std::stringstream ss;
     std::size_t max = (num == 0
@@ -107,6 +115,15 @@ Tokenizer::concat (std::size_t pos, std::size_t num)
     }
 
     return ss.str();
+}
+
+/* ---------------------------------------------------------------- */
+
+template <typename T>
+inline T
+Tokenizer::get_as (std::size_t pos) const
+{
+    return string::convert<T>(this->at(pos));
 }
 
 UTIL_NAMESPACE_END

@@ -11,10 +11,6 @@
 #include "mve/defines.h"
 #include "mve/image.h"
 
-#ifdef _WIN32
-#   define MVE_NO_TIFF_SUPPORT
-#endif
-
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
@@ -46,10 +42,26 @@ load_file (std::string const& filename);
  * May throw util::Exception.
  */
 void
+save_file (ByteImage::ConstPtr image, std::string const& filename);
+
+/**
+ * Saves a byte image to file, detecting file type.
+ * Overloaded for non-const pointers to avoid cast ambiguities.
+ * May throw util::Exception.
+ */
+void
 save_file (ByteImage::Ptr image, std::string const& filename);
 
 /**
  * Saves a float image to file, detecting file type.
+ * May throw util::Exception.
+ */
+void
+save_file (FloatImage::ConstPtr image, std::string const& filename);
+
+/**
+ * Saves a float image to file, detecting file type.
+ * Overloaded for non-const pointers to avoid cast ambiguities.
  * May throw util::Exception.
  */
 void
@@ -73,7 +85,7 @@ load_png_file (std::string const& filename);
  * May throw util::FileException and util::Exception.
  */
 void
-save_png_file (ByteImage::Ptr image, std::string const& filename);
+save_png_file (ByteImage::ConstPtr image, std::string const& filename);
 
 #endif /* MVE_NO_PNG_SUPPORT */
 
@@ -96,7 +108,8 @@ load_jpg_file (std::string const& filename, std::string* exif = NULL);
  * May throw util::FileException and util::Exception.
  */
 void
-save_jpg_file (ByteImage::Ptr image, std::string const& filename, int quality);
+save_jpg_file (ByteImage::ConstPtr image,
+    std::string const& filename, int quality);
 
 #endif /* MVE_NO_JPEG_SUPPORT */
 

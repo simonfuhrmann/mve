@@ -25,19 +25,6 @@ UTIL_NAMESPACE_BEGIN
  */
 class FrameTimer
 {
-private:
-    std::size_t cur_time; // Current time
-    std::size_t last_time; // Last time
-
-    std::size_t max_fps; // Maximum frames per second
-    std::size_t frame_count; // Amount of calls to nextFrame
-
-    WallTimer timer; // High-resolution timer
-
-private:
-    std::size_t now (void) const;
-    std::size_t delay (std::size_t ms) const;
-
 public:
     FrameTimer (void);
 
@@ -64,6 +51,19 @@ public:
 
     /** Called to update the current time and limit FPS. */
     void next_frame (void);
+
+private:
+    std::size_t now (void) const;
+    std::size_t delay (std::size_t ms) const;
+
+private:
+    std::size_t cur_time; // Current time
+    std::size_t last_time; // Last time
+
+    std::size_t max_fps; // Maximum frames per second
+    std::size_t frame_count; // Amount of calls to nextFrame
+
+    WallTimer timer; // High-resolution timer
 };
 
 /* ---------------------------------------------------------------- */
@@ -121,7 +121,7 @@ FrameTimer::next_frame (void)
         if (diff < frame_ms)
             this->cur_time = delay(frame_ms - diff);
     }
-    
+
     this->frame_count += 1;
 }
 

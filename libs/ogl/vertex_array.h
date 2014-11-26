@@ -15,6 +15,7 @@
 #include "util/ref_ptr.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
+#include "ogl/check_gl_error.h"
 #include "ogl/shader_program.h"
 #include "ogl/vertex_buffer.h"
 
@@ -36,20 +37,6 @@ public:
 
     typedef std::pair<VertexBuffer::Ptr, std::string> BoundVBO;
     typedef std::vector<BoundVBO> VBOList;
-
-private:
-    GLuint vao_id;
-    GLuint primitive;
-    ShaderProgram::Ptr shader;
-
-    /* Vertex VBO, Index VBO and generic VBOs. */
-    VertexBuffer::Ptr vert_vbo;
-    VertexBuffer::Ptr index_vbo;
-    VBOList vbo_list;
-
-protected:
-    VertexArray (void);
-    void assign_attrib (BoundVBO const& bound_vbo);
 
 public:
     virtual ~VertexArray (void);
@@ -78,6 +65,20 @@ public:
 
     /** Binds the shader and issues drawing commands. */
     void draw (void);
+
+protected:
+    VertexArray (void);
+    void assign_attrib (BoundVBO const& bound_vbo);
+
+private:
+    GLuint vao_id;
+    GLuint primitive;
+    ShaderProgram::Ptr shader;
+
+    /* Vertex VBO, Index VBO and generic VBOs. */
+    VertexBuffer::Ptr vert_vbo;
+    VertexBuffer::Ptr index_vbo;
+    VBOList vbo_list;
 };
 
 /* ---------------------------------------------------------------- */
@@ -86,6 +87,7 @@ inline
 VertexArray::VertexArray (void)
 {
     glGenVertexArrays(1, &this->vao_id);
+    check_gl_error();
     this->primitive = GL_TRIANGLES;
 }
 
@@ -93,6 +95,7 @@ inline
 VertexArray::~VertexArray (void)
 {
     glDeleteVertexArrays(1, &this->vao_id);
+    check_gl_error();
 }
 
 inline VertexArray::Ptr
@@ -133,7 +136,9 @@ VertexArray::reset_vertex_array(void)
     this->vbo_list.clear();
     //this->shader.reset();
     glDeleteVertexArrays(1, &this->vao_id);
+    check_gl_error();
     glGenVertexArrays(1, &this->vao_id);
+    check_gl_error();
 }
 
 inline void
