@@ -752,9 +752,9 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
 
     if (write_vcolors)
     {
-        out << "property uchar diffuse_red" << std::endl;
-        out << "property uchar diffuse_green" << std::endl;
-        out << "property uchar diffuse_blue" << std::endl;
+        out << "property uchar red" << std::endl;
+        out << "property uchar green" << std::endl;
+        out << "property uchar blue" << std::endl;
     }
 
     if (write_vconfidences)
@@ -943,9 +943,9 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
 
     if (color_image != NULL)
     {
-        out << "property uchar diffuse_red" << std::endl;
-        out << "property uchar diffuse_green" << std::endl;
-        out << "property uchar diffuse_blue" << std::endl;
+        out << "property uchar red" << std::endl;
+        out << "property uchar green" << std::endl;
+        out << "property uchar blue" << std::endl;
     }
 
     if (confidence_map != NULL)
