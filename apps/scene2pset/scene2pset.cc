@@ -30,6 +30,7 @@ struct AppSettings
     bool with_conf;
     bool poisson_normals;
     float min_valid_fraction;
+    float scale_factor;
     std::vector<int> ids;
 };
 
@@ -87,6 +88,7 @@ main (int argc, char** argv)
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
     args.add_option('f', "min-fraction", true, "Minimum fraction of valid depth values [0.0]");
     args.add_option('p', "poisson-normals", false, "Scale normals according to confidence");
+    args.add_option('S', "scale-factor", true, "Factor for computing scale values [2.5]");
     args.add_option('F', "fssr", true, "FSSR output, sets -nsc and -di with scale ARG");
     args.parse(argc, argv);
 
@@ -101,6 +103,7 @@ main (int argc, char** argv)
     conf.with_conf = false;
     conf.poisson_normals = false;
     conf.min_valid_fraction = 0.0f;
+    conf.scale_factor = 2.5f; /* "Radius" of MVS patch (usually 5x5). */
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
@@ -120,6 +123,7 @@ main (int argc, char** argv)
             case 'b': conf.aabb = arg->arg; break;
             case 'f': conf.min_valid_fraction = arg->get_arg<float>(); break;
             case 'p': conf.poisson_normals = true; break;
+            case 'S': conf.scale_factor = arg->get_arg<float>(); break;
             case 'F':
             {
                 conf.with_conf = true;
@@ -258,7 +262,7 @@ main (int argc, char** argv)
                 for (std::size_t k = 0; k < vinf.verts.size(); ++k)
                     mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
                 mvscale[j] /= static_cast<float>(vinf.verts.size());
-                mvscale[j] *= 2.5f;  /* MVS patch size is usually 5x5. */
+                mvscale[j] *= conf.scale_factor;
             }
         }
 
