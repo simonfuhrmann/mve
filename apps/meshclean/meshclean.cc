@@ -19,6 +19,9 @@ struct AppSettings
     std::string in_mesh;
     std::string out_mesh;
     bool clean_degenerated;
+    bool delete_scale;
+    bool delete_conf;
+    bool delete_colors;
     float conf_threshold;
     int component_size;
 };
@@ -50,6 +53,9 @@ main (int argc, char** argv)
     args.add_option('t', "threshold", true, "Threshold on the geometry confidence [1.0]");
     args.add_option('c', "component-size", true, "Minimum number of vertices per component [1000]");
     args.add_option('n', "no-clean", false, "Prevents cleanup of degenerated faces");
+    args.add_option('\0', "delete-scale", false, "Delete scale attribute from mesh");
+    args.add_option('\0', "delete-conf", false, "Delete confidence attribute from mesh");
+    args.add_option('\0', "delete-color", false, "Delete color attribute from mesh");
     args.set_description("The application cleans degenerated faces resulting "
         "from MC-like algorithms. Vertices below a confidence threshold and "
         "vertices in small isolated components are deleted as well.");
@@ -62,21 +68,29 @@ main (int argc, char** argv)
     conf.conf_threshold = 1.0f;
     conf.component_size = 1000;
     conf.clean_degenerated = true;
+    conf.delete_scale = false;
+    conf.delete_conf = false;
+    conf.delete_colors = false;
 
     /* Scan arguments. */
-    while (util::ArgResult const* arg = args.next_result())
+    while (util::ArgResult const* arg = args.next_option())
     {
-        if (arg->opt == NULL)
-            continue;
-
-        switch (arg->opt->sopt)
+        if (arg->opt->lopt == "threshold")
+            conf.conf_threshold = arg->get_arg<float>();
+        else if (arg->opt->lopt == "component-size")
+            conf.component_size = arg->get_arg<int>();
+        else if (arg->opt->lopt == "no-clean")
+            conf.clean_degenerated = false;
+        else if (arg->opt->lopt == "delete-scale")
+            conf.delete_scale = true;
+        else if (arg->opt->lopt == "delete-conf")
+            conf.delete_conf = true;
+        else if (arg->opt->lopt == "delete-color")
+            conf.delete_colors = true;
+        else
         {
-            case 't': conf.conf_threshold = arg->get_arg<float>(); break;
-            case 'c': conf.component_size = arg->get_arg<int>(); break;
-            case 'n': conf.clean_degenerated = false; break;
-            default:
-                std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
-                return 1;
+            std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
+            return 1;
         }
     }
 
@@ -110,9 +124,28 @@ main (int argc, char** argv)
     if (mesh->get_faces().empty()
         && (conf.clean_degenerated || conf.component_size > 0))
     {
-        std::cerr << "Error: Components or degenerated faces cleanup "
+        std::cerr << "Error: Components/faces cleanup "
             "requested, but mesh has no faces." << std::endl;
         return 1;
+    }
+
+    /* Delete requested attributes. */
+    if (conf.delete_scale)
+    {
+        std::cout << "Deleting scale values..." << std::endl;
+        mesh->get_vertex_values().clear();
+    }
+
+    if (conf.delete_conf)
+    {
+        std::cout << "Deleting confidence values..." << std::endl;
+        mesh->get_vertex_confidences().clear();
+    }
+
+    if (conf.delete_colors)
+    {
+        std::cout << "Deleting color values..." << std::endl;
+        mesh->get_vertex_colors().clear();
     }
 
     /* Remove low-confidence geometry. */
