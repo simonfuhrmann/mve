@@ -207,7 +207,7 @@ sfm_reconstruct (AppSettings const& conf)
         sfm::bundler::InitialPair::Options init_pair_opts;
         init_pair_opts.homography_opts.max_iterations = 1000;
         init_pair_opts.homography_opts.already_normalized = false;
-        init_pair_opts.homography_opts.threshold = 1.0f;
+        init_pair_opts.homography_opts.threshold = 5.0f;
         init_pair_opts.homography_opts.verbose_output = false;
         init_pair_opts.max_homography_inliers = 0.6f;
         init_pair_opts.verbose_output = true;
