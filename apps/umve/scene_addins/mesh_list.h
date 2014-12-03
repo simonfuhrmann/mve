@@ -40,6 +40,7 @@ private slots:
     void on_save_mesh (void);
     void on_rename_mesh (void);
     void on_delete_vertex_normals (void);
+    void on_normalize_vertex_normals (void);
     void on_delete_vertex_colors (void);
     void on_delete_vertex_confidences (void);
     void on_colorize_confidences (void);

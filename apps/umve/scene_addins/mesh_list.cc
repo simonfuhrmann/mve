@@ -79,8 +79,11 @@ QMeshContextMenu::build (void)
     {
         QMenu* menu = this->addMenu(tr("Vertex Normals"));
         QAction* delete_vnormals = menu->addAction(tr("Delete normals"));
+        QAction* normalize_vnormals = menu->addAction(tr("Normalize normals"));
         this->connect(delete_vnormals, SIGNAL(triggered()),
             this, SLOT(on_delete_vertex_normals()));
+        this->connect(normalize_vnormals, SIGNAL(triggered()),
+            this, SLOT(on_normalize_vertex_normals()));
     }
 
     if (rep->mesh->has_vertex_colors())
@@ -288,6 +291,18 @@ void
 QMeshContextMenu::on_delete_vertex_normals (void)
 {
     this->rep->mesh->get_vertex_normals().clear();
+    this->rep->renderer.reset();
+    emit this->parent->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_normalize_vertex_normals (void)
+{
+    mve::TriangleMesh::NormalList& nl = this->rep->mesh->get_vertex_normals();
+    for (std::size_t i = 0; i < nl.size(); ++i)
+        nl[i].normalize();
     this->rep->renderer.reset();
     emit this->parent->signal_redraw();
 }
