@@ -41,6 +41,10 @@ Matching::compute (ViewportList const& viewports,
 
         std::size_t view_1_id = (std::size_t)(0.5 + std::sqrt(0.25 + 2.0 * i));
         std::size_t view_2_id = i - view_1_id * (view_1_id - 1) / 2;
+        if (this->opts.match_num_previous_frames != 0
+            && view_2_id + this->opts.match_num_previous_frames < view_1_id)
+            continue;
+
         FeatureSet const& view_1 = viewports[view_1_id].features;
         FeatureSet const& view_2 = viewports[view_2_id].features;
         if (view_1.positions.empty() || view_2.positions.empty())
@@ -117,7 +121,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
 
     /* Build correspondences from feature matching result. */
     sfm::Correspondences unfiltered_matches;
-    CorrespondenceIndices unfiltered_indices;
+    sfm::CorrespondenceIndices unfiltered_indices;
     {
         std::vector<int> const& m12 = matching_result.matches_1_2;
         for (std::size_t i = 0; i < m12.size(); ++i)
