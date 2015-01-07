@@ -17,6 +17,7 @@ GLWidget::GLWidget (QWidget *parent)
     , cx_init(false)
 {
     this->setFocusPolicy(Qt::ClickFocus);
+    this->makeCurrent();
 }
 
 /* ---------------------------------------------------------------- */
