@@ -26,7 +26,7 @@ Octree::NodePath
 Octree::NodePath::ascend (void) const
 {
     NodePath path;
-    path.level = this->level +- 1;
+    path.level = this->level - 1;
     path.path = this->path >> 3;
     return path;
 }
@@ -449,72 +449,5 @@ Octree::print_stats (std::ostream& out)
         index += 1;
     }
 }
-
-#if 0 // Dead code
-void
-Octree::octree_to_mesh (mve::TriangleMesh::Ptr mesh,
-    Node const* node, NodeGeom const& node_geom)
-{
-    mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
-    mve::TriangleMesh::ColorList& colors = mesh->get_vertex_colors();
-
-    /* Descend into child nodes first. */
-    bool is_leaf = true;
-    for (int i = 0; i < 8; ++i)
-    {
-        if (node->children[i] == NULL)
-            continue;
-        is_leaf = false;
-        this->octree_to_mesh(mesh, node->children[i], node_geom.descend(i));
-    }
-
-    if (!is_leaf)
-        return;
-
-    /* Generate the 8 corner coordinates. */
-    math::Vec3d corners[8];
-    {
-        math::Vec3d aabb[2] = { node_geom.aabb_min(), node_geom.aabb_max() };
-        for (int i = 0; i < 8; ++i)
-            for (int j = 0; j < 3; ++j)
-                corners[i][j] = aabb[(i & (1 << j)) >> j][j];
-    }
-
-    /* Draw the edges between the corners. */
-    int edges[12][2] = {
-        {0, 1}, {0, 2}, {1, 3}, {2, 3},
-        {4, 5}, {4, 6}, {5, 7}, {6, 7},
-        {0, 4}, {1, 5}, {2, 6}, {3, 7}
-    };
-    for (int i = 0; i < 12; ++i)
-        for (float j = 0.0f; j <= 1.0f; j += 0.02f)
-        {
-            verts.push_back(corners[edges[i][0]] * j + corners[edges[i][1]] * (1.0f - j));
-            colors.push_back(math::Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
-        }
-}
-
-void
-Octree::octree_to_mesh (std::string const& filename)
-{
-    mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
-    this->octree_to_mesh(mesh, this->root, this->get_node_geom_for_root());
-    mve::geom::save_mesh(mesh, filename);
-}
-
-math::Vec3d
-Octree::child_center_for_octant (math::Vec3d const& old_center,
-    double old_size, int octant)
-{
-    math::Vec3d new_center;
-
-    double const center_offset = old_size / 4.0;
-    for (int j = 0; j < 3; ++j)
-        new_center[j] = old_center[j]
-            + ((octant & (1 << j)) ? center_offset : -center_offset);
-
-    return new_center;
-}
-#endif
 
 FSSR_NAMESPACE_END

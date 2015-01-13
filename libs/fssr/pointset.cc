@@ -15,7 +15,6 @@ PointSet::read_from_file (std::string const& filename)
 {
     /* Load or generate point set. */
     mve::TriangleMesh::Ptr mesh = mve::geom::load_ply_mesh(filename);
-
     mve::TriangleMesh::VertexList const& verts = mesh->get_vertices();
     if (verts.empty())
         throw std::invalid_argument("Point set is empty!");
@@ -37,16 +36,17 @@ PointSet::read_from_file (std::string const& filename)
         vcolors.resize(verts.size(), math::Vec4f(-1.0f));
 
     std::size_t num_skipped_zero_normal = 0;
-    std::size_t num_unnormalized_normals = 0;
     std::size_t num_skipped_invalid_confidence = 0;
     std::size_t num_skipped_invalid_scale = 0;
+    std::size_t num_skipped_large_scale = 0;
+    std::size_t num_unnormalized_normals = 0;
     this->samples.reserve(verts.size());
-    for (std::size_t i = 0; i < verts.size(); i += (1 + this->num_skip))
+    for (std::size_t i = 0; i < verts.size(); i += 1)
     {
         Sample s;
         s.pos = verts[i];
         s.normal = vnormals[i];
-        s.scale = vvalues[i] * this->scale_factor;
+        s.scale = vvalues[i];
         s.confidence = vconfs[i];
         s.color = math::Vec3f(*vcolors[i]);
 
@@ -74,6 +74,17 @@ PointSet::read_from_file (std::string const& filename)
             num_unnormalized_normals += 1;
         }
 
+        if (this->opts.max_scale > 0.0f && s.scale > this->opts.max_scale)
+        {
+            num_skipped_large_scale += 1;
+            continue;
+        }
+
+        /* Process sample scale options. */
+        if (this->opts.min_scale > 0.0f)
+            s.scale = std::max(this->opts.min_scale, s.scale);
+        s.scale *= this->opts.scale_factor;
+
         this->samples.push_back(s);
     }
 
@@ -91,6 +102,11 @@ PointSet::read_from_file (std::string const& filename)
     {
         std::cout << "WARNING: Skipped " << num_skipped_zero_normal
             << " samples with zero-length normal." << std::endl;
+    }
+    if (num_skipped_large_scale > 0)
+    {
+        std::cout << "WARNING: Skipped " << num_skipped_large_scale
+            << " samples with too large scale." << std::endl;
     }
     if (num_unnormalized_normals > 0)
     {

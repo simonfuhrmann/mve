@@ -32,6 +32,8 @@ public:
 
     public:
         Node* children[8];
+        //Node* children;
+        //Node* parent;
         std::vector<Sample> samples;
     };
 
@@ -178,13 +180,6 @@ public:
     /** Prints some octree statitics to the stream. */
     void print_stats (std::ostream& out);
 
-    /** Write an octree visualization to mesh. */
-    //void octree_to_mesh (std::string const& filename);
-
-    /** Computes a new center for a child specified by octant. */
-    //static math::Vec3d child_center_for_octant (math::Vec3d const& old_center,
-    //    double old_size, int octant);
-
 private:
     /* Octree functions. */
     bool is_inside_octree (math::Vec3d const& pos);
@@ -205,10 +200,6 @@ private:
         std::vector<Iterator>* result, Iterator const& iter);
     void make_regular_octree (Node* node);
 
-    /* Debugging functions. */
-    void octree_to_mesh (mve::TriangleMesh::Ptr mesh,
-        Octree::Node const* node, NodeGeom const& node_geom);
-
 private:
     /* The number of samples in the octree. */
     std::size_t num_samples;
@@ -227,6 +218,8 @@ inline
 Octree::Node::Node (void)
 {
     std::fill(this->children, this->children + 8, (Octree::Node*)NULL);
+    //this->children = NULL;
+    //this->parent = NULL;
 }
 
 inline
@@ -234,6 +227,7 @@ Octree::Node::~Node (void)
 {
     for (int i = 0; i < 8; ++i)
         delete this->children[i];
+    //delete [] this->children;
 }
 
 /* ---------------------------------------------------------------- */

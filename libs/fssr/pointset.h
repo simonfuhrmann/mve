@@ -23,10 +23,18 @@ public:
     typedef std::vector<Sample> SampleList;
 
 public:
-    /** Default constructor doing nothing. */
-    PointSet (void);
-    /** Reads the input file with default settings. */
-    PointSet (std::string const& filename);
+    struct Options
+    {
+        Options (void);
+
+        float scale_factor;
+        float min_scale;
+        float max_scale;
+    };
+
+public:
+    /** Default constructor setting options. */
+    PointSet (Options const& opts);
 
     /** Sets the factor multiplied with sample scale. */
     void set_scale_factor (float factor);
@@ -41,40 +49,25 @@ public:
     /* Returns the list of samples. */
     SampleList& get_samples (void);
 
-    /** Reset to defaults and release points. */
-    void clear (void);
-
 private:
-    float scale_factor;
-    int num_skip;
+    Options opts;
     SampleList samples;
 };
 
 /* ---------------------------------------------------------------- */
 
 inline
-PointSet::PointSet (void)
+PointSet::Options::Options (void)
+    : scale_factor(1.0f)
+    , min_scale(-1.0f)
+    , max_scale(-1.0f)
 {
-    this->clear();
 }
 
 inline
-PointSet::PointSet (std::string const& filename)
+PointSet::PointSet (Options const& opts)
+    : opts(opts)
 {
-    this->clear();
-    this->read_from_file(filename);
-}
-
-inline void
-PointSet::set_scale_factor (float factor)
-{
-    this->scale_factor = factor;
-}
-
-inline void
-PointSet::set_skip_samples (int num_skip)
-{
-    this->num_skip = num_skip;
 }
 
 inline PointSet::SampleList const&
@@ -87,14 +80,6 @@ inline PointSet::SampleList&
 PointSet::get_samples (void)
 {
     return this->samples;
-}
-
-inline void
-PointSet::clear (void)
-{
-    this->scale_factor = 1.0f;
-    this->num_skip = 0;
-    this->samples.clear();
 }
 
 FSSR_NAMESPACE_END

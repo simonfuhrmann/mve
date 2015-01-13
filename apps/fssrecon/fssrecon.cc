@@ -22,12 +22,10 @@
 #include "iso/SimonIsoOctree.h"
 #include "iso/MarchingCubes.h"
 
-struct AppSettings
+struct AppOptions
 {
     std::vector<std::string> in_files;
     std::string out_mesh;
-    int skip_samples;
-    float scale_factor;
     int refine_octree;
 };
 
@@ -42,7 +40,8 @@ main (int argc, char** argv)
     args.set_usage(argv[0], "[ OPTS ] IN_PLY [ IN_PLY ... ] OUT_PLY");
     args.add_option('s', "scale-factor", true, "Multiply sample scale with factor [1.0]");
     args.add_option('r', "refine-octree", true, "Refines octree with N levels [0]");
-    args.add_option('k', "skip-samples", true, "Skip input samples [0]");
+    args.add_option('\0', "min-scale", true, "Minimum scale, smaller samples are clamped");
+    args.add_option('\0', "max-scale", true, "Maximum scale, larger samples are ignored");
     args.set_description("Samples the implicit function defined by the input "
         "samples and produces a surface mesh. The input samples must have "
         "normals and the \"values\" PLY attribute (the scale of the samples). "
@@ -52,58 +51,59 @@ main (int argc, char** argv)
     args.parse(argc, argv);
 
     /* Init default settings. */
-    AppSettings conf;
-    conf.skip_samples = 0;
-    conf.scale_factor = 1.0f;
-    conf.refine_octree = 0;
+    fssr::PointSet::Options pset_opts;
+    AppOptions app_opts;
+    app_opts.refine_octree = 0;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
         if (arg->opt == NULL)
         {
-            conf.in_files.push_back(arg->arg);
+            app_opts.in_files.push_back(arg->arg);
             continue;
         }
 
-        switch (arg->opt->sopt)
+        if (arg->opt->lopt == "scale-factor")
+            pset_opts.scale_factor = arg->get_arg<float>();
+        else if (arg->opt->lopt == "refine-octree")
+            app_opts.refine_octree = arg->get_arg<int>();
+        else if (arg->opt->lopt == "min-scale")
+            pset_opts.min_scale = arg->get_arg<float>();
+        else if (arg->opt->lopt == "max-scale")
+            pset_opts.max_scale = arg->get_arg<float>();
+        else
         {
-            case 's': conf.scale_factor = arg->get_arg<float>(); break;
-            case 'k': conf.skip_samples = arg->get_arg<int>(); break;
-            case 'r': conf.refine_octree = arg->get_arg<int>(); break;
-            default:
-                std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
-                return 1;
+            std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
+            return 1;
         }
     }
 
-    if (conf.in_files.size() < 2)
+    if (app_opts.in_files.size() < 2)
     {
         args.generate_helptext(std::cerr);
         return 1;
     }
-    conf.out_mesh = conf.in_files.back();
-    conf.in_files.pop_back();
+    app_opts.out_mesh = app_opts.in_files.back();
+    app_opts.in_files.pop_back();
 
-    if (conf.refine_octree < 0 || conf.refine_octree > 3)
+    if (app_opts.refine_octree < 0 || app_opts.refine_octree > 3)
     {
-        std::cerr << "Unreasonable refine level of " << conf.refine_octree
-            << ", exiting." << std::endl;
+        std::cerr << "Unreasonable refine level of "
+            << app_opts.refine_octree << ", exiting." << std::endl;
         return 1;
     }
 
     /* Load input point set and insert samples in the octree. */
     util::WallTimer timer;
     fssr::IsoOctree octree;
-    for (std::size_t i = 0; i < conf.in_files.size(); ++i)
+    for (std::size_t i = 0; i < app_opts.in_files.size(); ++i)
     {
-        std::cout << "Loading: " << conf.in_files[i] << "..." << std::endl;
-        fssr::PointSet pset;
-        pset.set_scale_factor(conf.scale_factor);
-        pset.set_skip_samples(conf.skip_samples);
+        std::cout << "Loading: " << app_opts.in_files[i] << "..." << std::endl;
+        fssr::PointSet pset(pset_opts);
         try
         {
-            pset.read_from_file(conf.in_files[i]);
+            pset.read_from_file(app_opts.in_files[i]);
         }
         catch (std::exception& e)
         {
@@ -118,11 +118,11 @@ main (int argc, char** argv)
     }
 
     /* Refine octree if requested. Each iteration adds one level voxels. */
-    if (conf.refine_octree > 0)
+    if (app_opts.refine_octree > 0)
     {
         timer.reset();
         std::cout << "Refining octree..." << std::flush;
-        for (int i = 0; i < conf.refine_octree; ++i)
+        for (int i = 0; i < app_opts.refine_octree; ++i)
             octree.refine_octree();
         std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
     }
@@ -186,8 +186,8 @@ main (int argc, char** argv)
     ply_opts.write_vertex_colors = true;
     ply_opts.write_vertex_confidences = true;
     ply_opts.write_vertex_values = true;
-    std::cout << "Mesh output file: " << conf.out_mesh << std::endl;
-    mve::geom::save_ply_mesh(mesh, conf.out_mesh, ply_opts);
+    std::cout << "Mesh output file: " << app_opts.out_mesh << std::endl;
+    mve::geom::save_ply_mesh(mesh, app_opts.out_mesh, ply_opts);
 
     std::cout << std::endl;
     std::cout << "All done. Remember to clean the output mesh." << std::endl;
