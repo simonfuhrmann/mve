@@ -363,13 +363,7 @@ load_ply_mesh (std::string const& filename)
         }
     }
 
-    if (critical || num_vertices == 0)
-    {
-        input.close();
-        throw util::Exception("File headers not recognized as PLY format");
-    }
-
-    if (ply_format == PLY_UNKNOWN)
+    if (critical || ply_format == PLY_UNKNOWN)
     {
         input.close();
         throw util::Exception("PLY file encoding not recognized by parser");
