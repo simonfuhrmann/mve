@@ -15,11 +15,8 @@
 FSSR_NAMESPACE_BEGIN
 
 /**
- * Given an octree with samples, this class generates the actual implicit
- * function by querying function values at the octree primal vertices of
- * the leaf nodes. The voxels are stored in a map, which is convenient and
- * simplifies the data structure (because neighboring octree nodes share
- * common voxels).
+ * Given an octree with samples, this class computes the implicit function by
+ * querying function values at the octree vertices of the leaf nodes.
  */
 class IsoOctree : public Octree
 {
@@ -28,6 +25,9 @@ public:
 
 public:
     IsoOctree (void);
+
+    /** Resets the octree to its initial state. */
+    void clear (void);
 
     /** Evaluate the implicit function for all voxels on all leaf nodes. */
     void compute_voxels (void);
@@ -46,9 +46,6 @@ public:
 
     /** Returns the map of computed voxels. */
     VoxelVector const& get_voxels (void) const;
-
-    /** Cleans the octree and voxels. */
-    void clear (void);
 
 private:
     void compute_all_voxels (void);
@@ -69,21 +66,21 @@ FSSR_NAMESPACE_BEGIN
 inline
 IsoOctree::IsoOctree (void)
 {
-    this->clear();
+    this->max_level = 19;
+}
+
+inline void
+IsoOctree::clear (void)
+{
+    this->max_level = 19;
+    this->voxels.clear();
+    this->Octree::clear();
 }
 
 inline IsoOctree::VoxelVector const&
 IsoOctree::get_voxels (void) const
 {
     return this->voxels;
-}
-
-inline void
-IsoOctree::clear (void)
-{
-    this->Octree::clear();
-    this->voxels.clear();
-    this->max_level = 19;
 }
 
 inline void

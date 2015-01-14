@@ -47,17 +47,13 @@ IsoOctree::compute_all_voxels (void)
             Octree::Iterator iter = queue.front();
             queue.pop_front();
 
-            bool is_leaf = true;
-            for (int i = 0; i < 8; ++i)
-                if (iter.node_path.level < this->max_level
-                    && iter.node->children[i] != NULL)
-                {
+            if (iter.node_path.level < this->max_level
+                && iter.node->children != NULL)
+            {
+                for (int i = 0; i < 8; ++i)
                     queue.push_back(iter.descend(i));
-                    is_leaf = false;
-                }
-
-            if (!is_leaf)
                 continue;
+            }
 
             for (int i = 0; i < 8; ++i)
             {

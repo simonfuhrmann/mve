@@ -81,7 +81,7 @@ Octree::Iterator
 Octree::Iterator::descend (int const octant) const
 {
     Iterator iter;
-    iter.node = this->node->children[octant];
+    iter.node = this->node->children + octant;
     iter.node_geom = this->node_geom.descend(octant);
     iter.node_path = this->node_path.descend(octant);
     return iter;
@@ -90,21 +90,10 @@ Octree::Iterator::descend (int const octant) const
 /* -------------------------------------------------------------------- */
 
 void
-Octree::clear (void)
-{
-    this->num_samples = 0;
-    this->num_nodes = 0;
-    this->root = NULL;
-    this->root_size = 0.0;
-    this->root_center = math::Vec3d(0.0);
-}
-
-void
 Octree::insert_sample (Sample const& s)
 {
     if (this->root == NULL)
     {
-        //std::cout << "INFO: Creating octree root node." << std::endl;
         this->root = new Node();
         this->root_center = s.pos;
         this->root_size = s.scale;
@@ -116,11 +105,7 @@ Octree::insert_sample (Sample const& s)
 
     Node* node = this->find_node_for_sample(s);
     if (node == NULL)
-    {
-        std::cerr << "Error finding node for sample "
-            << this->num_samples << "!" << std::endl;
-        return;
-    }
+        throw std::runtime_error("insert_sample(): No node for sample!");
 
     node->samples.push_back(s);
     this->num_samples += 1;
@@ -132,6 +117,17 @@ Octree::insert_samples (PointSet const& pset)
     PointSet::SampleList const& samples = pset.get_samples();
     for (std::size_t i = 0; i < samples.size(); i++)
         this->insert_sample(samples[i]);
+}
+
+void
+Octree::create_children (Node* node)
+{
+    if (node->children != NULL)
+        throw std::runtime_error("create_children(): Children exist!");
+    node->children = new Node[8];
+    this->num_nodes += 8;
+    for (int i = 0; i < 8; ++i)
+        node->children[i].parent = node;
 }
 
 bool
@@ -148,8 +144,8 @@ Octree::is_inside_octree (math::Vec3d const& pos)
 void
 Octree::expand_root_for_point (math::Vec3d const& pos)
 {
-    //std::cout << "INFO: Expanding root node." << std::endl;
-    int root_octant = 0;
+    /* Compute old root octant and new root center and size. */
+    int octant = 0;
     for (int i = 0; i < 3; ++i)
         if (pos[i] > this->root_center[i])
         {
@@ -157,15 +153,18 @@ Octree::expand_root_for_point (math::Vec3d const& pos)
         }
         else
         {
-            root_octant |= (1 << i);
+            octant |= (1 << i);
             this->root_center[i] -= this->root_size / 2.0;
         }
     this->root_size *= 2.0;
 
+    /* Create new root. */
     Node* new_root = new Node();
-    new_root->children[root_octant] = this->root;
+    this->create_children(new_root);
+    std::swap(new_root->children[octant].children, this->root->children);
+    std::swap(new_root->children[octant].samples, this->root->samples);
+    delete this->root;
     this->root = new_root;
-    this->num_nodes += 1;
 }
 
 Octree::Node*
@@ -190,16 +189,14 @@ Octree::Node*
 Octree::find_node_descend (Sample const& sample, Node* node,
     NodeGeom const& node_geom)
 {
+    if (sample.scale > node_geom.size * 2.0)
+        throw std::runtime_error("find_node_descend(): Sanity check failed!");
+
     /*
      * The current level l is appropriate if sample scale s is
      * scale(l) <= s < scale(l) * 2. As a sanity check, this function
      * must not be called if s >= scale(l) * 2. Otherwise descend.
      */
-    if (sample.scale > node_geom.size * 2.0)
-        std::cerr << "WARNING: Sanity check S0 failed! "
-            << "Root size: " << this->root_size
-            << ", sample scale: " << sample.scale << std::endl;
-
     if (node_geom.size <= sample.scale)
         return node;
 
@@ -209,31 +206,24 @@ Octree::find_node_descend (Sample const& sample, Node* node,
         if (sample.pos[i] > node_geom.center[i])
             octant |= (1 << i);
 
-    if (node->children[octant] == NULL)
-    {
-        node->children[octant] = new Node();
-        this->num_nodes += 1;
-    }
+    if (node->children == NULL)
+        this->create_children(node);
 
-    return this->find_node_descend(sample, node->children[octant],
+    return this->find_node_descend(sample, node->children + octant,
         node_geom.descend(octant));
 }
 
 Octree::Node*
 Octree::find_node_expand (Sample const& sample)
 {
+    if (this->root_size > sample.scale)
+        throw std::runtime_error("find_node_expand(): Sanity check failed!");
+
     /*
      * The current level l is appropriate if sample scale s is
      * scale(l) <= scale < scale(l) * 2. As a sanity check, this function
      * must not be called if scale(l) > s. Otherwise expand.
      */
-
-    //std::cout << "INFO: Find node expanding..." << std::endl;
-    if (this->root_size > sample.scale)
-        std::cerr << "WARNING: Sanity check S1 failed! "
-            << "Root size: " << this->root_size
-            << ", sample scale: " << sample.scale << std::endl;
-
     if (sample.scale < this->root_size * 2.0)
         return this->root;
 
@@ -246,15 +236,16 @@ Octree::get_num_levels (Node const* node) const
 {
     if (node == NULL)
         return 0;
-    int max_level = 0;
+    if (node->children == NULL)
+        return 1;
+    int depth = 0;
     for (int i = 0; i < 8; ++i)
-        max_level = std::max(max_level,
-            this->get_num_levels(node->children[i]));
-    return max_level + 1;
+        depth = std::max(depth, this->get_num_levels(node->children + i));
+    return depth + 1;
 }
 
 void
-Octree::get_points_per_level (std::vector<std::size_t>* stats,
+Octree::get_samples_per_level (std::vector<std::size_t>* stats,
     Node const* node, std::size_t level) const
 {
     if (node == NULL)
@@ -262,8 +253,12 @@ Octree::get_points_per_level (std::vector<std::size_t>* stats,
     if (stats->size() <= level)
         stats->resize(level + 1, 0);
     stats->at(level) += node->samples.size();
+
+    /* Descend into octree. */
+    if (node->children == NULL)
+        return;
     for (int i = 0; i < 8; ++i)
-        this->get_points_per_level(stats, node->children[i], level + 1);
+        this->get_samples_per_level(stats, node->children + i, level + 1);
 }
 
 void
@@ -280,8 +275,7 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
      * an estimate for the closest possible distance of any sample in the
      * node to the query. If 'factor' times the largest scale is less than
      * the closest distance, the node can be skipped and traversal stops.
-     * Otherwise the node has to be tested and all samples in the node
-     * are tested.
+     * Otherwise all samples in the node have to be tested.
      */
 
     /* Estimate for the minimum distance. No sample is closer to pos. */
@@ -301,72 +295,12 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
     }
 
     /* Descend into octree. */
+    if (node->children == NULL)
+        return;
     for (int i = 0; i < 8; ++i)
     {
-        if (node->children[i] == NULL)
-            continue;
-        this->influence_query(pos, factor, result, node->children[i],
+        this->influence_query(pos, factor, result, node->children + i,
             node_geom.descend(i));
-    }
-}
-
-void
-Octree::influenced_query (Sample const& sample, double factor,
-    std::vector<Iterator>* result, Iterator const& iter)
-{
-    if (iter.node == NULL)
-        return;
-
-    /*
-     * Strategy: Try to rule out this octree node. The node can be skipped
-     * if 'factor' times the sample scale is smaller than the minimal
-     * distance estimate to the node.
-     */
-    double const min_distance = (sample.pos - iter.node_geom.center).norm()
-        - MATH_SQRT3 * iter.node_geom.size / 2.0;
-    if (factor * sample.scale < min_distance)
-        return;
-
-    /* Descend into octree. */
-    bool is_leaf = true;
-    for (int i = 0; i < 8; ++i)
-    {
-        if (iter.node->children[i] == NULL)
-            continue;
-        is_leaf = false;
-        this->influenced_query(sample, factor, result, iter.descend(i));
-    }
-
-    /* Only leafs are considered. */
-    if (!is_leaf)
-        return;
-
-    /* Add this node to the result set. */
-    result->push_back(iter);
-}
-
-void
-Octree::make_regular_octree (Node* node)
-{
-    bool is_leaf = true;
-    for (int i = 0; i < 8 && is_leaf; ++i)
-        if (node->children[i] != NULL)
-            is_leaf = false;
-
-    if (is_leaf)
-        return;
-
-    for (int i = 0; i < 8; ++i)
-    {
-        if (node->children[i] == NULL)
-        {
-            node->children[i] = new Node();
-            this->num_nodes += 1;
-        }
-        else
-        {
-            this->make_regular_octree(node->children[i]);
-        }
     }
 }
 
@@ -383,48 +317,12 @@ Octree::refine_octree (void)
         Node* node = queue.front();
         queue.pop_front();
 
-        bool is_leaf = true;
-        for (int i = 0; i < 8 && is_leaf; ++i)
-            if (node->children[i] != NULL)
-                is_leaf = false;
-
-        if (is_leaf)
-            for (int i = 0; i < 8; ++i)
-            {
-                node->children[i] = new Node();
-                this->num_nodes += 1;
-            }
+        if (node->children == NULL)
+            this->create_children(node);
         else
             for (int i = 0; i < 8; ++i)
-                if (node->children[i] != NULL)
-                    queue.push_back(node->children[i]);
+                queue.push_back(node->children + i);
     }
-}
-
-void
-Octree::remove_low_res_samples (int min_level)
-{
-    if (this->root == NULL)
-        return;
-
-    std::size_t removed_samples = 0;
-    std::list<std::pair<Node*, int> > queue;
-    queue.push_back(std::make_pair(this->root, 0));
-    while (!queue.empty())
-    {
-        Node* node = queue.front().first;
-        int const level = queue.front().second;
-        queue.pop_front();
-        if (level > min_level)
-            continue;
-        removed_samples += node->samples.size();
-        node->samples.clear();
-        for (int i = 0; i < 8; ++i)
-            if (node->children[i] != NULL && level < min_level)
-                queue.push_back(std::make_pair(node->children[i], level + 1));
-    }
-
-    std::cout << "Removed " << removed_samples << " samples." << std::endl;
 }
 
 void
@@ -435,18 +333,19 @@ Octree::print_stats (std::ostream& out)
         << this->get_num_levels() << " levels." << std::endl;
 
     std::vector<std::size_t> octree_stats;
-    this->get_points_per_level(&octree_stats);
+    this->get_samples_per_level(&octree_stats);
 
-    std::size_t index = 0;
-    while (index < octree_stats.size() && octree_stats[index] == 0)
-        index += 1;
-
-    out << "Samples per level:" << std::endl;
-    while (index < octree_stats.size())
+    bool printed = false;
+    for (std::size_t i = 0; i < octree_stats.size(); ++i)
     {
-        out << "  Level " << index << ": "
-            << octree_stats[index] << " samples" << std::endl;
-        index += 1;
+        if (!printed && octree_stats[i] == 0)
+            continue;
+        else
+        {
+            out << "  Level " << i << ": "
+                << octree_stats[i] << " samples" << std::endl;
+            printed = true;
+        }
     }
 }
 

@@ -29,7 +29,10 @@ PointSet::read_from_file (std::string const& filename)
 
     mve::TriangleMesh::ConfidenceList& vconfs = mesh->get_vertex_confidences();
     if (!mesh->has_vertex_confidences())
+    {
+        std::cout << "INFO: No confidences given, setting to 1." << std::endl;
         vconfs.resize(verts.size(), 1.0f);
+    }
 
     mve::TriangleMesh::ColorList& vcolors = mesh->get_vertex_colors();
     if (!mesh->has_vertex_colors())

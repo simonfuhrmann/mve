@@ -31,9 +31,8 @@ public:
         virtual ~Node (void);
 
     public:
-        Node* children[8];
-        //Node* children;
-        //Node* parent;
+        Node* children;
+        Node* parent;
         std::vector<Sample> samples;
     };
 
@@ -91,6 +90,8 @@ public:
 public:
     Octree (void);
     virtual ~Octree (void);
+
+    /** Resets the octree to its initial state. */
     void clear (void);
 
     /**
@@ -124,9 +125,9 @@ public:
     /**
      * Returns octree level statistics (WARNING: traverses whole tree).
      * For an empty octree (without any nodes), the result vector is empty.
-     * For an octree with root node only, the vector contains one element.
+     * Otherwise the vector contains the samples per level, root being zero.
      */
-    void get_points_per_level (std::vector<std::size_t>* stats) const;
+    void get_samples_per_level (std::vector<std::size_t>* stats) const;
 
     /** Returns the root node (read-only). */
     Node const* get_root_node (void) const;
@@ -154,34 +155,16 @@ public:
         std::vector<Sample const*>* result) const;
 
     /**
-     * Queries all nodes that are influenced by the given sample.
-     * The result is an approximation, i.e. some nodes may not actually
-     * be in the support range of the sample.
-     */
-    void influenced_query (Sample const& sample, double factor,
-        std::vector<Iterator>* result);
-
-    /**
-     * Makes the octree regular such that that every node has either
-     * exactly eight (inner node) or none (leaf node) children allocated.
-     */
-    void make_regular_octree (void);
-
-    /**
      * Refines the octree by subdividing all leaves.
      */
     void refine_octree (void);
-
-    /**
-     * Removes low-res samples up to a specific level.
-     */
-    void remove_low_res_samples (int min_level);
 
     /** Prints some octree statitics to the stream. */
     void print_stats (std::ostream& out);
 
 private:
     /* Octree functions. */
+    void create_children (Node* node);
     bool is_inside_octree (math::Vec3d const& pos);
     void expand_root_for_point (math::Vec3d const& pos);
     Node* find_node_for_sample (Sample const& sample);
@@ -191,43 +174,35 @@ private:
         NodeGeom const& node_geom);
     Node* find_node_expand (Sample const& sample);
     int get_num_levels (Node const* node) const;
-    void get_points_per_level (std::vector<std::size_t>* stats,
+    void get_samples_per_level (std::vector<std::size_t>* stats,
         Node const* node, std::size_t level) const;
     void influence_query (math::Vec3d const& pos, double factor,
         std::vector<Sample const*>* result,
         Node const* node, NodeGeom const& node_geom) const;
-    void influenced_query (Sample const& sample, double factor,
-        std::vector<Iterator>* result, Iterator const& iter);
-    void make_regular_octree (Node* node);
 
 private:
-    /* The number of samples in the octree. */
-    std::size_t num_samples;
-    /* The number of nodes in the octree (inner nodes plus leafs). */
-    std::size_t num_nodes;
-
     /* The root node with its center and side length. */
     Node* root;
     math::Vec3d root_center;
     double root_size;
+
+    /* The number of samples and nodes in the octree. */
+    std::size_t num_samples;
+    std::size_t num_nodes;
 };
 
 /* ------------------------- Implementation ---------------------------- */
 
 inline
 Octree::Node::Node (void)
+    : children(NULL), parent(NULL)
 {
-    std::fill(this->children, this->children + 8, (Octree::Node*)NULL);
-    //this->children = NULL;
-    //this->parent = NULL;
 }
 
 inline
 Octree::Node::~Node (void)
 {
-    for (int i = 0; i < 8; ++i)
-        delete this->children[i];
-    //delete [] this->children;
+    delete [] this->children;
 }
 
 /* ---------------------------------------------------------------- */
@@ -250,6 +225,7 @@ Octree::NodeGeom::NodeGeom (void)
 
 inline
 Octree::Iterator::Iterator (void)
+    : node(NULL)
 {
 }
 
@@ -263,6 +239,7 @@ Octree::Iterator::Iterator (Octree const* octree)
 
 inline
 Octree::Octree (void)
+    : root(NULL)
 {
     this->clear();
 }
@@ -271,6 +248,17 @@ inline
 Octree::~Octree (void)
 {
     delete this->root;
+}
+
+inline void
+Octree::clear (void)
+{
+    delete this->root;
+    this->root = NULL;
+    this->root_size = 0.0;
+    this->root_center = math::Vec3d(0.0);
+    this->num_samples = 0;
+    this->num_nodes = 0;
 }
 
 inline std::size_t
@@ -292,10 +280,10 @@ Octree::get_num_levels (void) const
 }
 
 inline void
-Octree::get_points_per_level (std::vector<std::size_t>* stats) const
+Octree::get_samples_per_level (std::vector<std::size_t>* stats) const
 {
     stats->clear();
-    this->get_points_per_level(stats, this->root, 0);
+    this->get_samples_per_level(stats, this->root, 0);
 }
 
 inline Octree::Node const*
@@ -323,21 +311,6 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
     result->resize(0);
     this->influence_query(pos, factor, result, this->root,
         this->get_node_geom_for_root());
-}
-
-inline void
-Octree::influenced_query (Sample const& sample, double factor,
-    std::vector<Iterator>* result)
-{
-    result->resize(0);
-    this->influenced_query(sample, factor, result,
-        this->get_iterator_for_root());
-}
-
-inline void
-Octree::make_regular_octree (void)
-{
-    this->make_regular_octree(this->root);
 }
 
 inline Octree::NodeGeom

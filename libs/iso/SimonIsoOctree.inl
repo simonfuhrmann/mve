@@ -120,7 +120,7 @@ SimonIsoOctree::transfer_octree (
         return;
 
     /* Determine whether to descend into octree. */
-    if (in_iter.node->children[0] == NULL)
+    if (in_iter.node->children == NULL)
         return;
 
     out_node->initChildren();

@@ -127,14 +127,6 @@ main (int argc, char** argv)
         std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
     }
 
-    /* Make octree regular such that inner nodes have exactly 8 children. */
-    {
-        timer.reset();
-        std::cout << "Making octree regular..." << std::flush;
-        octree.make_regular_octree();
-        std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
-    }
-
     /* Compute voxels. */
     octree.print_stats(std::cout);
     octree.compute_voxels();
