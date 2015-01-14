@@ -70,9 +70,6 @@ public:  // Variables
     stdext::hash_map<long long, VertexData> cornerValues;
 
 public:  // Methods
-    // A clean-up method to remove un-needed entries in the cornerValues hash-table
-    void resetValues(void);
-
     // Extracts an iso-surface from the octree
     void getIsoSurface(
         const Real& isoValue,
@@ -92,7 +89,7 @@ private:  // Types
     };
 
 private:  // Variables
-    IsoNeighborKey<NodeData,Real> nKey;
+    NeighborKey<NodeData,Real> nKey;
 
 private:  // Methods
     void getRoots(OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const Real& isoValue,stdext::hash_map<long long,int>& roots,std::vector<VertexType>& vertices,std::vector<VertexData>& vertex_data);

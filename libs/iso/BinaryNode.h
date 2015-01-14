@@ -38,42 +38,12 @@ class BinaryNode
 {
 public:
     /* These functions deal with the central points of sub-intervals. */
-    static inline int CenterCount(int depth){return 1<<depth;}
-    static inline int CumulativeCenterCount(int maxDepth){return (1<<(maxDepth+1))-1;}
-    static inline int Index(int depth, int offSet){return (1<<depth)+offSet-1;}
+    static inline int Index(int depth, int offSet)
+    {return (1<<depth)+offSet-1;}
 
     /* These functions deal with the "corners" of sub-intervals. */
     static inline int CornerIndex(int maxDepth,int depth,int offSet,int forwardCorner)
-      {return (offSet+forwardCorner)<<(maxDepth-depth);}
-    static inline Real CornerIndexPosition(int index,int maxDepth)
-      {return Real(index)/(1<<maxDepth);}
-
-    /* These functions deal with the dimensions of sub-intervals. */
-    static inline Real Width(int depth)
-      {return Real(1.0/(1<<depth));}
-    static inline void CenterAndWidth(int depth,int offset,Real& center,Real& width)
-      {
-        width=Real(1.0/(1<<depth));
-        center=Real((0.5+offset)*width);
-      }
-    static inline void CenterAndWidth(int idx,Real& center,Real& width)
-      {
-        int depth,offset;
-        DepthAndOffset(idx,depth,offset);
-        CenterAndWidth(depth,offset,center,width);
-      }
-
-    /* Split the return value of Index(depth, offSet) into the two parameters. */
-    static inline void DepthAndOffset(int idx, int& depth,int& offset)
-      {
-        int i=idx+1;
-        depth=-1;
-        while(i){
-          i>>=1;
-          depth++;
-        }
-        offset=(idx+1)-(1<<depth);
-      }
+    {return (offSet+forwardCorner)<<(maxDepth-depth);}
 };
 
 #endif // BINARY_NODE_INCLUDED

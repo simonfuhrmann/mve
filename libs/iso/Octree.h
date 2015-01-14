@@ -74,35 +74,17 @@ public:  // Methods
 
     static inline void CenterAndWidth(const NodeIndex& nIndex,VertexType& center,Real& width);
 
-    int maxDepth(void) const;
-    int nodes(void) const;
-    int leaves(void) const;
-    int maxDepthLeaves(const int& maxDepth) const;
-
-    const OctNode* root(void) const;
-
-    const OctNode* nextLeaf(const OctNode* currentLeaf) const;
     OctNode* nextLeaf(OctNode* currentLeaf);
-    const OctNode* nextNode(const OctNode* currentNode) const;
     OctNode* nextNode(OctNode* currentNode);
-    const OctNode* nextBranch(const OctNode* current) const;
     OctNode* nextBranch(OctNode* current);
-
-    const OctNode* nextLeaf(const OctNode* currentLeaf,NodeIndex &nIndex) const;
     OctNode* nextLeaf(OctNode* currentLeaf,NodeIndex &nIndex);
-    const OctNode* nextNode(const OctNode* currentNode,NodeIndex &nIndex) const;
     OctNode* nextNode(OctNode* currentNode,NodeIndex &nIndex);
-    const OctNode* nextBranch(const OctNode* current,NodeIndex &nIndex) const;
     OctNode* nextBranch(OctNode* current,NodeIndex &nIndex);
 
     void setFullDepth(const int& maxDepth);
 
-    OctNode* faceNeighbor(const int& faceIndex,const int& forceChildren=0);
     const OctNode* faceNeighbor(const int& faceIndex) const;
-    OctNode* edgeNeighbor(const int& edgeIndex,const int& forceChildren=0);
     const OctNode* edgeNeighbor(const int& edgeIndex) const;
-    OctNode* cornerNeighbor(const int& cornerIndex,const int& forceChildren=0);
-    const OctNode* cornerNeighbor(const int& cornerIndex) const;
 
     static long long CornerIndex(const NodeIndex &nIndex,const int& cIndex,const int& maxDepth);
     static long long CornerIndex(const NodeIndex &nIndex,const int& cIndex,const int& maxDepth,int index[3]);
@@ -110,8 +92,6 @@ public:  // Methods
 private:
     const OctNode* __faceNeighbor(const int& dir,const int& off) const;
     const OctNode* __edgeNeighbor(const int& o,const int i[2],const int idx[2]) const;
-    OctNode* __faceNeighbor(const int& dir,const int& off,const int& forceChildren);
-    OctNode* __edgeNeighbor(const int& o,const int i[2],const int idx[2],const int& forceChildren);
 };
 
 

@@ -38,23 +38,6 @@ DAMAGE.
 // IsoOctree //
 ///////////////
 
-template<class NodeData,class Real,class VertexData>
-void IsoOctree<NodeData,Real,VertexData>::resetValues(void)
-{
-    stdext::hash_map<long long,VertexData> tempValues;
-    nKey.set(maxDepth);
-    typename OctNode<NodeData,Real>::NodeIndex nIdx;
-    for(OctNode<NodeData,Real>* temp=tree.nextLeaf(NULL,nIdx) ; temp ; temp=tree.nextLeaf(temp,nIdx) )
-        for(int i=0;i<Cube::CORNERS;i++)
-        {
-            long long key=OctNode<NodeData,Real>::CornerIndex(nIdx,i,maxDepth);
-            tempValues[key]=cornerValues[key];
-        }
-    cornerValues.clear();
-    for(typename stdext::hash_map<long long,VertexData>::iterator iter=tempValues.begin();iter!=tempValues.end();iter++)
-        cornerValues[iter->first]=iter->second;
-}
-
 template<class NodeData, class Real, class VertexData>
 int
 IsoOctree<NodeData,Real,VertexData>::getRootPosition(
@@ -237,9 +220,12 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
     Cube::EdgeCorners(finestIndex,c1,c2);
     if(finest->children)
     {
-        if		(getRootIndex(&finest->children[c1],finestNIdx.child(c1),finestIndex,ri))	{return 1;}
-        else if	(getRootIndex(&finest->children[c2],finestNIdx.child(c2),finestIndex,ri))	{return 1;}
-        else																				{
+        if (getRootIndex(&finest->children[c1],finestNIdx.child(c1),finestIndex,ri))
+            return 1;
+        else if	(getRootIndex(&finest->children[c2],finestNIdx.child(c2),finestIndex,ri))
+            return 1;
+        else
+        {
             fprintf(stderr,"Failed to find root index in %s:%d\n", __FILE__, __LINE__);
             return 0;
         }
@@ -519,8 +505,10 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
         /* Find all edges that share a point with one of the ends of the polyline (not yet a loop). */
         for(int j=int(edges.size())-1;j>=0;j--){
             if(edges[j].first==frontIdx || edges[j].second==frontIdx){
-                if(edges[j].first==frontIdx)	{temp=edges[j];}
-                else							{temp.first=edges[j].second;temp.second=edges[j].first;}
+                if(edges[j].first==frontIdx)
+                    {temp=edges[j];}
+                else
+                    {temp.first=edges[j].second;temp.second=edges[j].first;}
                 frontIdx=temp.second;
                 front.push_back(temp);
                 edges[j]=edges[edges.size()-1];
@@ -528,8 +516,10 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
                 j=int(edges.size());
             }
             else if(edges[j].first==backIdx || edges[j].second==backIdx){
-                if(edges[j].second==backIdx)	{temp=edges[j];}
-                else							{temp.first=edges[j].second;temp.second=edges[j].first;}
+                if(edges[j].second==backIdx)
+                    {temp=edges[j];}
+                else
+                    {temp.first=edges[j].second;temp.second=edges[j].first;}
                 backIdx=temp.first;
                 back.push_back(temp);
                 edges[j]=edges[edges.size()-1];
@@ -541,9 +531,11 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
         /* Collect iso-vertices to form polygon. */
         polygons[polygonSize].resize(back.size()+front.size()+1);
         int idx=0;
-        for(int j=int(back.size())-1;j>=0;j--)	polygons[polygonSize][idx++]=roots[back[j].first];
+        for(int j=int(back.size())-1;j>=0;j--)
+            polygons[polygonSize][idx++]=roots[back[j].first];
         polygons[polygonSize][idx++]=roots[e.first];
-        for(int j=0;j<int(front.size());j++)	polygons[polygonSize][idx++]=roots[front[j].first];
+        for(int j=0;j<int(front.size());j++)
+            polygons[polygonSize][idx++]=roots[front[j].first];
         polygonSize++;
     }
 }

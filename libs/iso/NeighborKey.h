@@ -56,36 +56,12 @@ public:
     ~NeighborKey(void);
 
     void set(const int& depth);
-    Neighbors<NodeData,Real>& setNeighbors(OctNode<NodeData,Real>* node);
     Neighbors<NodeData,Real>& getNeighbors(OctNode<NodeData,Real>* node);
 
 private:
     int _depth;
-    Neighbors<NodeData,Real>& _setNeighbors(OctNode<NodeData,Real>* node,const int& d);
     Neighbors<NodeData,Real>& _getNeighbors(OctNode<NodeData,Real>* node,const int& d);
 };
-
-/* Uses the above NeighborKey to find all octree nodes surrounding a corner. */
-template<class NodeData, class Real>
-class IsoNeighborKey : public NeighborKey<NodeData,Real>
-{
-public:
-    void GetCornerNeighbors(OctNode<NodeData,Real>* node,const int& c,OctNode<NodeData,Real>* neighbors[Cube::CORNERS]);
-    OctNode<NodeData,Real>* FaceNeighbor(OctNode<NodeData,Real>* node,int dir,int off);
-    OctNode<NodeData,Real>* EdgeNeighbor(OctNode<NodeData,Real>* node,int o,int i1,int i2);
-    OctNode<NodeData,Real>* CornerNeighbor(OctNode<NodeData,Real>* node,int x,int y,int z);
-
-    static void CornerIndex(const int& c,int idx[3]);
-    static void EdgeIndex(const int& c,int idx[3]);
-    static void FaceIndex(const int& c,int idx[3]);
-
-private:
-    void __GetCornerNeighbors(OctNode<NodeData,Real>* node,const int& depth,const int& c,OctNode<NodeData,Real>* neighbors[Cube::CORNERS]);
-    OctNode<NodeData,Real>* __FaceNeighbor(OctNode<NodeData,Real>* node,const int& depth,int dir,int off);
-    OctNode<NodeData,Real>* __EdgeNeighbor(OctNode<NodeData,Real>* node,const int& depth,int o,int i1,int i2);
-    OctNode<NodeData,Real>* __CornerNeighbor(OctNode<NodeData,Real>* node,const int& depth,int x,int y,int z);
-};
-
 
 #include "NeighborKey.inl"
 

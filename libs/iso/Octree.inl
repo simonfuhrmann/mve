@@ -107,13 +107,7 @@ int OctNode<NodeData,Real>::initChildren(void)
     int i,j,k;
 
     if(children){delete[] children;}
-    children=NULL;
-    children=new OctNode[Cube::CORNERS];
-    if(!children){
-        fprintf(stderr,"Failed to initialize children in OctNode::initChildren\n");
-        exit(0);
-        return 0;
-    }
+    children = new OctNode[Cube::CORNERS];
     for(i=0;i<2;i++){
         for(j=0;j<2;j++){
             for(k=0;k<2;k++){
@@ -129,8 +123,7 @@ int OctNode<NodeData,Real>::initChildren(void)
 template <class NodeData,class Real>
 void OctNode<NodeData,Real>::deleteChildren(void)
 {
-    if(children)
-        delete[] children;
+    delete[] children;
     children=NULL;
 }
 
@@ -143,90 +136,11 @@ inline void OctNode<NodeData,Real>::CenterAndWidth(const NodeIndex &nIndex,Verte
 }
 
 template <class NodeData,class Real>
-int OctNode<NodeData,Real>::maxDepth(void) const
-{
-    if(!children){return 0;}
-    else{
-        int c,d;
-        for(int i=0;i<Cube::CORNERS;i++){
-            d=children[i].maxDepth();
-            if(!i || d>c){c=d;}
-        }
-        return c+1;
-    }
-}
-
-template <class NodeData,class Real>
-int OctNode<NodeData,Real>::nodes(void) const
-{
-    if(!children){return 1;}
-    else{
-        int c=0;
-        for(int i=0;i<Cube::CORNERS;i++){c+=children[i].nodes();}
-        return c+1;
-    }
-}
-
-template <class NodeData,class Real>
-int OctNode<NodeData,Real>::leaves(void) const
-{
-    if(!children){return 1;}
-    else{
-        int c=0;
-        for(int i=0;i<Cube::CORNERS;i++){c+=children[i].leaves();}
-        return c;
-    }
-}
-
-template<class NodeData,class Real>
-int OctNode<NodeData,Real>::maxDepthLeaves(const int& maxDepth) const
-{
-    //if(depth>maxDepth){return 0;}  // was: depth()
-    if(!children){return 1;}
-    else{
-        int c=0;
-        for(int i=0;i<Cube::CORNERS;i++){c+=children[i].maxDepthLeaves(maxDepth);}
-        return c;
-    }
-}
-
-template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::root(void) const
-{
-    const OctNode* temp=this;
-    while(temp->parent){temp=temp->parent;}
-    return temp;
-}
-
-template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextBranch(const OctNode* current) const
-{
-    if(!current->parent || current==this){return NULL;}
-    if(current-current->parent->children==Cube::CORNERS-1){return nextBranch(current->parent);}
-    else{return current+1;}
-}
-
-template <class NodeData,class Real>
 OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextBranch(OctNode* current)
 {
     if(!current->parent || current==this){return NULL;}
     if(current-current->parent->children==Cube::CORNERS-1){return nextBranch(current->parent);}
     else{return current+1;}
-}
-
-template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextLeaf(const OctNode* current) const
-{
-    if(!current)
-    {
-        const OctNode<NodeData,Real>* temp=this;
-        while(temp->children){temp=&temp->children[0];}
-        return temp;
-    }
-    if(current->children){return current->nextLeaf(NULL);}
-    const OctNode* temp=nextBranch(current);
-    if(!temp){return NULL;}
-    else{return temp->nextLeaf(NULL);}
 }
 
 template <class NodeData,class Real>
@@ -245,35 +159,11 @@ OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextLeaf(OctNode* current)
 }
 
 template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextNode(const OctNode* current) const
-{
-    if(!current){return this;}
-    else if(current->children){return &current->children[0];}
-    else{return nextBranch(current);}
-}
-
-template <class NodeData,class Real>
 OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextNode(OctNode* current)
 {
     if(!current){return this;}
     else if(current->children){return &current->children[0];}
     else{return nextBranch(current);}
-}
-
-template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextBranch(const OctNode* current,NodeIndex& nIndex) const
-{
-    if(!current->parent || current==this)
-        return NULL;
-    int c=current-current->parent->children;
-    nIndex--;
-    if(c==Cube::CORNERS-1)
-        return nextBranch(current->parent,nIndex);
-    else
-    {
-        nIndex+=c;
-        return current+1;
-    }
 }
 
 template <class NodeData,class Real>
@@ -290,28 +180,6 @@ OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextBranch(OctNode* current,Node
         nIndex+=c+1;
         return current+1;
     }
-}
-
-template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextLeaf(const OctNode* current,NodeIndex& nIndex) const
-{
-    if(!current)
-    {
-        const OctNode<NodeData,Real>* temp=this;
-        while(temp->children)
-        {
-            nIndex+=0;
-            temp=&temp->children[0];
-        }
-        return temp;
-    }
-    if(current->children)
-        return current->nextLeaf(NULL,nIndex);
-    const OctNode* temp=nextBranch(current,nIndex);
-    if(!temp)
-        return NULL;
-    else
-        return temp->nextLeaf(NULL,nIndex);
 }
 
 template <class NodeData,class Real>
@@ -333,20 +201,6 @@ OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextLeaf(OctNode* current,NodeIn
         return NULL;
     else
         return temp->nextLeaf(NULL,nIndex);
-}
-
-template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::nextNode(const OctNode* current,NodeIndex& nIndex) const
-{
-    if(!current)
-        return this;
-    else if(current->children)
-    {
-        nIndex+=0;
-        return &current->children[0];
-    }
-    else
-        return nextBranch(current,nIndex);
 }
 
 template <class NodeData,class Real>
@@ -373,34 +227,9 @@ void OctNode<NodeData,Real>::setFullDepth(const int& maxDepth)
 }
 
 template <class NodeData,class Real>
-OctNode<NodeData,Real>* OctNode<NodeData,Real>::faceNeighbor(const int& faceIndex,const int& forceChildren)
-{
-    return __faceNeighbor(faceIndex>>1,faceIndex&1,forceChildren);
-}
-
-template <class NodeData,class Real>
 const OctNode<NodeData,Real>* OctNode<NodeData,Real>::faceNeighbor(const int& faceIndex) const
 {
     return __faceNeighbor(faceIndex>>1,faceIndex&1);
-}
-
-template <class NodeData,class Real>
-OctNode<NodeData,Real>* OctNode<NodeData,Real>::__faceNeighbor(const int& dir,const int& off,const int& forceChildren)
-{
-    if(!parent){return NULL;}
-    int pIndex=int(this-parent->children);
-    pIndex^=(1<<dir);
-    if((pIndex & (1<<dir))==(off<<dir)){return &parent->children[pIndex];}
-//	if(!(((pIndex>>dir)^off)&1)){return &parent->children[pIndex];}
-    else{
-        OctNode* temp=parent->__faceNeighbor(dir,off,forceChildren);
-        if(!temp){return NULL;}
-        if(!temp->children){
-            if(forceChildren){temp->initChildren();}
-            else{return temp;}
-        }
-        return &temp->children[pIndex];
-    }
 }
 
 template <class NodeData,class Real>
@@ -415,18 +244,6 @@ const OctNode<NodeData,Real>* OctNode<NodeData,Real>::__faceNeighbor(const int& 
         if(!temp || !temp->children){return temp;}
         else{return &temp->children[pIndex];}
     }
-}
-
-template <class NodeData,class Real>
-OctNode<NodeData,Real>* OctNode<NodeData,Real>::edgeNeighbor(const int& edgeIndex,const int& forceChildren){
-    int idx[2],o,i[2];
-    Cube::FactorEdgeIndex(edgeIndex,o,i[0],i[1]);
-    switch(o){
-        case 0:	idx[0]=1;	idx[1]=2;	break;
-        case 1:	idx[0]=0;	idx[1]=2;	break;
-        case 2:	idx[0]=0;	idx[1]=1;	break;
-    };
-    return __edgeNeighbor(o,i,idx,forceChildren);
 }
 
 template <class NodeData,class Real>
@@ -467,142 +284,6 @@ const OctNode<NodeData,Real>* OctNode<NodeData,Real>::__edgeNeighbor(const int& 
         const OctNode* temp=parent->__edgeNeighbor(o,i,idx);
         if(!temp || !temp->children){return temp;}
         else{return &temp->children[pIndex];}
-    }
-    else{return NULL;}
-}
-
-template <class NodeData,class Real>
-OctNode<NodeData,Real>* OctNode<NodeData,Real>::__edgeNeighbor(const int& o,const int i[2],const int idx[2],const int& forceChildren){
-    if(!parent){return NULL;}
-    int pIndex=int(this-parent->children);
-    int aIndex,x[3];
-
-    Cube::FactorCornerIndex(pIndex,x[0],x[1],x[2]);
-    aIndex=(~((i[0] ^ x[idx[0]]) | ((i[1] ^ x[idx[1]])<<1))) & 3;
-    pIndex^=(7 ^ (1<<o));
-    if(aIndex==1)	{	// I can get the neighbor from the parent's face adjacent neighbor
-        OctNode* temp=parent->__faceNeighbor(idx[0],i[0],0);
-        if(!temp || !temp->children){return NULL;}
-        else{return &temp->children[pIndex];}
-    }
-    else if(aIndex==2)	{	// I can get the neighbor from the parent's face adjacent neighbor
-        OctNode* temp=parent->__faceNeighbor(idx[1],i[1],0);
-        if(!temp || !temp->children){return NULL;}
-        else{return &temp->children[pIndex];}
-    }
-    else if(aIndex==0)	{	// I can get the neighbor from the parent
-        return &parent->children[pIndex];
-    }
-    else if(aIndex==3)	{	// I can get the neighbor from the parent's edge adjacent neighbor
-        OctNode* temp=parent->__edgeNeighbor(o,i,idx,forceChildren);
-        if(!temp){return NULL;}
-        if(!temp->children){
-            if(forceChildren){temp->initChildren();}
-            else{return temp;}
-        }
-        return &temp->children[pIndex];
-    }
-    else{return NULL;}
-}
-
-template <class NodeData,class Real>
-const OctNode<NodeData,Real>* OctNode<NodeData,Real>::cornerNeighbor(const int& cornerIndex) const {
-    int pIndex,aIndex=0;
-    if(!parent){return NULL;}
-
-    pIndex=int(this-parent->children);
-    aIndex=(cornerIndex ^ pIndex);	// The disagreement bits
-    pIndex=(~pIndex)&7;				// The antipodal point
-    if(aIndex==7){					// Agree on no bits
-        return &parent->children[pIndex];
-    }
-    else if(aIndex==0){				// Agree on all bits
-        const OctNode* temp=((const OctNode*)parent)->cornerNeighbor(cornerIndex);
-        if(!temp || !temp->children){return temp;}
-        else{return &temp->children[pIndex];}
-    }
-    else if(aIndex==6){				// Agree on face 0
-        const OctNode* temp=((const OctNode*)parent)->__faceNeighbor(0,cornerIndex & 1);
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==5){				// Agree on face 1
-        const OctNode* temp=((const OctNode*)parent)->__faceNeighbor(1,(cornerIndex & 2)>>1);
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==3){				// Agree on face 2
-        const OctNode* temp=((const OctNode*)parent)->__faceNeighbor(2,(cornerIndex & 4)>>2);
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==4){				// Agree on edge 2
-        const OctNode* temp=((const OctNode*)parent)->edgeNeighbor(8 | (cornerIndex & 1) | (cornerIndex & 2) );
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==2){				// Agree on edge 1
-        const OctNode* temp=((const OctNode*)parent)->edgeNeighbor(4 | (cornerIndex & 1) | ((cornerIndex & 4)>>1) );
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==1){				// Agree on edge 0
-        const OctNode* temp=((const OctNode*)parent)->edgeNeighbor(((cornerIndex & 2) | (cornerIndex & 4))>>1 );
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else{return NULL;}
-}
-
-template <class NodeData,class Real>
-OctNode<NodeData,Real>* OctNode<NodeData,Real>::cornerNeighbor(const int& cornerIndex,const int& forceChildren){
-    int pIndex,aIndex=0;
-    if(!parent){return NULL;}
-
-    pIndex=int(this-parent->children);
-    aIndex=(cornerIndex ^ pIndex);	// The disagreement bits
-    pIndex=(~pIndex)&7;				// The antipodal point
-    if(aIndex==7){					// Agree on no bits
-        return &parent->children[pIndex];
-    }
-    else if(aIndex==0){				// Agree on all bits
-        OctNode* temp=((OctNode*)parent)->cornerNeighbor(cornerIndex,forceChildren);
-        if(!temp){return NULL;}
-        if(!temp->children){
-            if(forceChildren){temp->initChildren();}
-            else{return temp;}
-        }
-        return &temp->children[pIndex];
-    }
-    else if(aIndex==6){				// Agree on face 0
-        OctNode* temp=((OctNode*)parent)->__faceNeighbor(0,cornerIndex & 1,0);
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==5){				// Agree on face 1
-        OctNode* temp=((OctNode*)parent)->__faceNeighbor(1,(cornerIndex & 2)>>1,0);
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==3){				// Agree on face 2
-        OctNode* temp=((OctNode*)parent)->__faceNeighbor(2,(cornerIndex & 4)>>2,0);
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==4){				// Agree on edge 2
-        OctNode* temp=((OctNode*)parent)->edgeNeighbor(8 | (cornerIndex & 1) | (cornerIndex & 2) );
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==2){				// Agree on edge 1
-        OctNode* temp=((OctNode*)parent)->edgeNeighbor(4 | (cornerIndex & 1) | ((cornerIndex & 4)>>1) );
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
-    }
-    else if(aIndex==1){				// Agree on edge 0
-        OctNode* temp=((OctNode*)parent)->edgeNeighbor(((cornerIndex & 2) | (cornerIndex & 4))>>1 );
-        if(!temp || !temp->children){return NULL;}
-        else{return & temp->children[pIndex];}
     }
     else{return NULL;}
 }

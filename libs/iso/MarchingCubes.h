@@ -40,11 +40,7 @@ public:
     const static int CORNERS=4,EDGES=4;
     static int  CornerIndex			(const int& x,const int& y);
     static void FactorCornerIndex	(const int& idx,int& x,int& y);
-    static int  EdgeIndex			(const int& orientation,const int& i);
     static void FactorEdgeIndex		(const int& idx,int& orientation,int& i);
-
-    static int  ReflectCornerIndex	(const int& idx,const int& edgeIndex);
-    static int  ReflectEdgeIndex	(const int& idx,const int& edgeIndex);
 
     static void EdgeCorners(const int& idx,int& c1,int &c2);
     static void OrientedEdgeCorners(const int& idx,int& c1,int &c2);
@@ -61,14 +57,9 @@ public:
     static void FactorEdgeIndex		(const int& idx,int& orientation,int& i,int &j);
     static int  FaceIndex			(const int& dir,const int& offSet);
     static int  FaceIndex			(const int& x,const int& y,const int& z);
-    static void FactorFaceIndex		(const int& idx,int& x,int &y,int& z);
     static void FactorFaceIndex		(const int& idx,int& dir,int& offSet);
 
-    static int  AntipodalCornerIndex	(const int& idx);
-    static int  FaceReflectCornerIndex	(const int& idx,const int& faceIndex);
     static int  FaceReflectEdgeIndex	(const int& idx,const int& faceIndex);
-    static int	FaceReflectFaceIndex	(const int& idx,const int& faceIndex);
-    static int	EdgeReflectCornerIndex	(const int& idx,const int& edgeIndex);
     static int	EdgeReflectEdgeIndex	(const int& edgeIndex);
 
     static int  FaceAdjacentToEdges	(const int& eIndex1,const int& eIndex2);
@@ -99,10 +90,6 @@ public:
 
     static const FaceEdges& caseTable(const int& idx);
     static const FaceEdges& fullCaseTable(const int& idx);
-    template<class Real>
-    static int GetFullIndex(const Real values[Square::CORNERS],const Real& iso);
-    template<class Real>
-    static int GetIndex(const Real values[Square::CORNERS],const Real& iso);
 };
 
 class MarchingCubes
@@ -123,8 +110,6 @@ public:
     static const std::vector< std::vector<int> >& fullCaseTable(const int& idx);
     static const std::vector< std::vector<int> >& caseTable(const int& idx,const int& useFull);
 
-    static int IsAmbiguous(const int& idx);
-    static int IsAmbiguous(const int& idx,const int& f);
     static int HasRoots(const int& mcIndex);
     static int HasEdgeRoots(const int& mcIndex,const int& edgeIndex);
 };
