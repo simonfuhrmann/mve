@@ -17,7 +17,10 @@ PointSet::read_from_file (std::string const& filename)
     mve::TriangleMesh::Ptr mesh = mve::geom::load_ply_mesh(filename);
     mve::TriangleMesh::VertexList const& verts = mesh->get_vertices();
     if (verts.empty())
-        throw std::invalid_argument("Point set is empty!");
+    {
+        std::cout << "WARNING: No samples in file, skipping." << std::endl;
+        return;
+    }
 
     mve::TriangleMesh::NormalList const& vnormals = mesh->get_vertex_normals();
     if (!mesh->has_vertex_normals())
