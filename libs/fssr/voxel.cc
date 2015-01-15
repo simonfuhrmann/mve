@@ -66,64 +66,6 @@ VoxelIndex::get_offset_z (void) const
 
 /* ---------------------------------------------------------------- */
 
-void
-VoxelIndexWithLevel::from_voxel_id_and_level (uint64_t voxel_id, uint8_t level)
-{
-    /* 5 bits for the level, the rest for the voxel ID. */
-    this->index = (static_cast<uint64_t>(level) << 59 | voxel_id);
-}
-
-void
-VoxelIndexWithLevel::from_path_and_corner (Octree::NodePath const& path,
-    int corner)
-{
-    /* Compute node index from the node path. */
-    math::Vector<uint64_t, 3> coords(0, 0, 0);
-    for (int l = path.level - 1; l >= 0; --l)
-    {
-        uint64_t index = (path.path >> (3 * l)) & 7;
-        for (int i = 0; i < 3; ++i)
-        {
-            coords[i] = coords[i] << 1;
-            coords[i] += (index & (1 << i)) >> i;
-        }
-    }
-
-    /* Convert node index to voxel index. */
-    for (int i = 0; i < 3; ++i)
-        coords[i] += (corner >> i) & 1;
-
-    /* Compute voxel ID. */
-    uint64_t voxel_id = coords[0] | coords[1] << 19 | coords[2] << 38;
-    this->from_voxel_id_and_level(voxel_id, path.level);
-}
-
-uint8_t
-VoxelIndexWithLevel::get_level (void) const
-{
-    return static_cast<uint8_t>(this->index >> 59);
-}
-
-uint32_t
-VoxelIndexWithLevel::get_offset_x (void) const
-{
-    return static_cast<uint32_t>((this->index >> 0) & 0x7ffff);
-}
-
-uint32_t
-VoxelIndexWithLevel::get_offset_y (void) const
-{
-    return static_cast<uint32_t>((this->index >> 19) & 0x7ffff);
-}
-
-uint32_t
-VoxelIndexWithLevel::get_offset_z (void) const
-{
-    return static_cast<uint32_t>((this->index >> 38) & 0x7ffff);
-}
-
-/* ---------------------------------------------------------------- */
-
 VoxelData
 interpolate (VoxelData const& d1, float w1, VoxelData const& d2, float w2)
 {

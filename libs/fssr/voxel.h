@@ -47,41 +47,6 @@ public:
 /* --------------------------------------------------------------------- */
 
 /**
- * The voxel index links the voxel ID together with the level of the voxel.
- * The index is stored as 64 bit value and the bits are assigned as follows:
- *
- *     00000      00       000...000  000...000  000...000
- *     -----      --       ---------  ---------  ---------
- *     5 bit   2 unused     19 bits    19 bits    19 bits
- *     level     bits       z-coord    y-coord    x-coord
- *
- * Since the maximum voxel index per axis for level L is 2^L, this limits
- * the maximum level to 18 with 19 bits, i.e. 2^18-1 < 2^18 < 2^19-1.
- *
- * Voxels are stored in the corners of octree nodes. Thus an octree has a
- * maximum of 2^L nodes per level per dimension, but 2^L+1 voxels.
- * Neighboring octree nodes share voxels. This is usually implemented using
- * maps or hash tables for efficient access. This class offers support for
- * conversion from octree node index plus corner index to voxel index.
- */
-struct VoxelIndexWithLevel
-{
-public:
-    void from_voxel_id_and_level (uint64_t voxel_id, uint8_t level);
-    void from_path_and_corner (Octree::NodePath const& path, int corner);
-    uint8_t get_level (void) const;
-    uint32_t get_offset_x (void) const;
-    uint32_t get_offset_y (void) const;
-    uint32_t get_offset_z (void) const;
-    bool operator< (VoxelIndexWithLevel const& other) const;
-
-public:
-    uint64_t index;
-};
-
-/* --------------------------------------------------------------------- */
-
-/**
  * Stores per voxel data. The is the actual SDF/implicit function value,
  * a confidence value and the cumulative color.
  */
@@ -115,12 +80,6 @@ FSSR_NAMESPACE_BEGIN
 
 inline bool
 VoxelIndex::operator< (VoxelIndex const& other) const
-{
-    return this->index < other.index;
-}
-
-inline bool
-VoxelIndexWithLevel::operator< (VoxelIndexWithLevel const& other) const
 {
     return this->index < other.index;
 }
