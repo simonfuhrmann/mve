@@ -44,7 +44,10 @@ template<class NodeData,class Real>
 void
 Neighbors<NodeData,Real>::clear(void)
 {
-    for(int i=0;i<3;i++){for(int j=0;j<3;j++){for(int k=0;k<3;k++){neighbors[i][j][k]=NULL;}}}
+    for(int i=0;i<3;i++)
+        for(int j=0;j<3;j++)
+            for(int k=0;k<3;k++)
+                neighbors[i][j][k]=NULL;
 }
 
 template<class NodeData,class Real>

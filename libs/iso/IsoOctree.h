@@ -75,8 +75,7 @@ public:  // Methods
         const Real& isoValue,
         std::vector<VertexType>& vertices,
         std::vector<VertexData>& vertex_data,
-        std::vector<std::vector<int> >& polygons,
-        const int& useFull);
+        std::vector<std::vector<int> >& polygons);
 
 private:  // Types
     class RootInfo
@@ -87,9 +86,6 @@ private:  // Types
         long long key;
         typename OctNode<NodeData,Real>::NodeIndex nIdx;
     };
-
-private:  // Variables
-    NeighborKey<NodeData,Real> nKey;
 
 private:  // Methods
     void getRoots(OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const Real& isoValue,stdext::hash_map<long long,int>& roots,std::vector<VertexType>& vertices,std::vector<VertexData>& vertex_data);
@@ -103,16 +99,15 @@ private:  // Methods
         const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
         const int& faceIndex,
         std::vector<std::pair<RootInfo,RootInfo> >& edges,
-        const int& flip,
-        const int& useFull);
+        const int& flip);
 
-    void getIsoPolygons(OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,stdext::hash_map<long long,int>& roots,std::vector<std::vector<int> >& polygons,const int& useFull);
+    void getIsoPolygons(OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,stdext::hash_map<long long,int>& roots,std::vector<std::vector<int> >& polygons,NeighborKey<NodeData,Real>& nKey);
 
     template<class C>
     void getEdgeLoops(std::vector<std::pair<C,C> >& edges,stdext::hash_map<C,int>& roots,std::vector<std::vector<int> >& polygons);
 
     // Assumes NodeData::mcIndex
-    void setMCIndex(const Real& isoValue,const int& useFull);
+    void setMCIndex(const Real& isoValue);
 };
 
 #include "IsoOctree.inl"

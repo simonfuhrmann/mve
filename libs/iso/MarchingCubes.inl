@@ -294,7 +294,6 @@ int Cube::SquareToCubeEdge(const int& fIndex,const int& eIndex)
 /////////////////////
 
 MarchingSquares::FaceEdges MarchingSquares::__caseTable[1<<(Square::CORNERS)];
-MarchingSquares::FaceEdges MarchingSquares::__fullCaseTable[1<<(Square::CORNERS+1)];
 
 void MarchingSquares::SetCaseTable(void)
 {
@@ -318,45 +317,9 @@ void MarchingSquares::SetCaseTable(void)
     }
 }
 
-void MarchingSquares::SetFullCaseTable(void)
-{
-    int off=1<<Square::CORNERS;
-    SetCaseTable();
-    for(int idx=0;idx<(1<<Square::CORNERS);idx++)
-    {
-        __fullCaseTable[idx]=__fullCaseTable[idx|off]=__caseTable[idx];
-        if(__caseTable[idx].count==2)
-        {
-            int c;	// A corner that's clipped off
-            int centerValue;
-            int c1,c2,d1,d2;
-            Square::EdgeCorners(__caseTable[idx].edge[0].first,c1,c2);
-            Square::EdgeCorners(__caseTable[idx].edge[0].second,d1,d2);
-            if(c1==d1 || c1==d2)
-                c=c1;
-            else
-                c=c2;
-            if(idx & (1<<c) )
-                centerValue=1;
-            else
-                centerValue=0;
-            centerValue<<=Square::CORNERS;
-            __fullCaseTable[idx|centerValue].edge[0].first=__caseTable[idx].edge[0].first;
-            __fullCaseTable[idx|centerValue].edge[1].first=__caseTable[idx].edge[1].first;
-            __fullCaseTable[idx|centerValue].edge[1].second=__caseTable[idx].edge[0].second;
-            __fullCaseTable[idx|centerValue].edge[0].second=__caseTable[idx].edge[1].second;
-        }
-    }
-}
-
 const MarchingSquares::FaceEdges& MarchingSquares::caseTable(const int& idx)
 {
     return __caseTable[idx];
-}
-
-const MarchingSquares::FaceEdges& MarchingSquares::fullCaseTable(const int& idx)
-{
-    return __fullCaseTable[idx];
 }
 
 ///////////////////
@@ -369,29 +332,6 @@ int MarchingCubes::GetIndex(const Real v[Cube::CORNERS],const Real& iso)
     for(int i=0;i<Cube::CORNERS;i++)
         if(v[i]<iso)
             idx|=1<<i;
-    return idx;
-}
-
-template<class Real>
-int MarchingCubes::GetFullIndex(const Real values[Cube::CORNERS],const Real& iso)
-{
-    int idx=0;
-    int c1,c2,c3,c4;
-    for(int i=0;i<Cube::CORNERS;i++)
-        if(values[i]<iso)
-            idx|=1<<i;
-    if(!idx)
-        return idx;
-    if(idx==255)
-        return idx|(63<<Cube::CORNERS);
-
-    for(int i=0;i<Cube::FACES;i++)
-    {
-        Cube::FaceCorners(i,c1,c2,c3,c4);
-        Real temp=values[c1]+values[c2]+values[c3]+values[c4];
-        if(temp<iso*4)
-            idx|=1<<(Cube::CORNERS+i);
-    }
     return idx;
 }
 
@@ -470,111 +410,5 @@ void MarchingCubes::SetCaseTable(void)
         }
         __caseTable[idx].clear();
         GetEdgeLoops(edges,__caseTable[idx]);
-    }
-}
-
-int MarchingCubes::__fullCaseMap[1<<(Cube::CORNERS+Cube::FACES)];
-std::vector< std::vector< std::vector<int> > > MarchingCubes::__fullCaseTable;
-
-const std::vector< std::vector <int> >& MarchingCubes::caseTable(const int& idx,const int& useFull)
-{
-    if(useFull)
-        return __fullCaseTable[__fullCaseMap[idx] ];
-    else
-        return __caseTable[idx];
-}
-
-const std::vector< std::vector<int> >& MarchingCubes::fullCaseTable(const int& idx)
-{
-    return __fullCaseTable[__fullCaseMap[idx] ];
-}
-
-void MarchingCubes::SetFullCaseTable(void)
-{
-    MarchingSquares::SetFullCaseTable();
-    int dir,off,tSize=0;
-
-    memset(__fullCaseMap,-1,sizeof(int)*(1<<(Cube::CORNERS+Cube::FACES)));
-    for(int idx=0;idx<(1<<Cube::CORNERS);idx++)
-    {
-        int tCount=1;
-        for(int f=0;f<Cube::FACES;f++)
-        {
-            int fIdx=0;
-            Cube::FactorFaceIndex(f,dir,off);
-            for(int fc=0;fc<Square::CORNERS;fc++)
-                if(idx&(1<<Cube::SquareToCubeCorner(f,fc)))
-                    fIdx|=1<<fc;
-
-            if(MarchingSquares::fullCaseTable(fIdx).count==2)
-                tCount<<=1;
-        }
-        tSize+=tCount;
-    }
-    __fullCaseTable.resize(tSize);
-
-    tSize=0;
-    for(int idx=0;idx<(1<<Cube::CORNERS);idx++)
-    {
-        int aCount=0,uaCount=0;
-        int aFaces[Cube::FACES],uaFaces[Cube::FACES];
-
-        for(int f=0;f<Cube::FACES;f++)
-        {
-            int fIdx=0;
-            Cube::FactorFaceIndex(f,dir,off);
-            for(int fc=0;fc<Square::CORNERS;fc++)
-                if(idx&(1<<Cube::SquareToCubeCorner(f,fc)))
-                    fIdx|=1<<fc;
-
-            if(MarchingSquares::fullCaseTable(fIdx).count==2)
-            {
-                aFaces[aCount]=f;
-                aCount++;
-            }
-            else
-            {
-                uaFaces[uaCount]=f;
-                uaCount++;
-            }
-        }
-
-        for(int aIndex=0;aIndex<(1<<aCount);aIndex++)
-        {
-            std::vector<std::pair<int,int> > edges;
-            int aFlag=0;
-            for(int i=0;i<aCount;i++)
-                if(aIndex&(1<<i))
-                    aFlag|=1<<aFaces[i];
-
-            for(int f=0;f<Cube::FACES;f++)
-            {
-                int fIdx=0;
-                if(aFlag & (1<<f))
-                    fIdx|=1<<Square::CORNERS;
-
-                Cube::FactorFaceIndex(f,dir,off);
-                for(int fc=0;fc<Square::CORNERS;fc++)
-                    if(idx&(1<<Cube::SquareToCubeCorner(f,fc)))
-                        fIdx|=1<<fc;
-                for(int i=0;i<MarchingSquares::fullCaseTable(fIdx).count;i++)
-                    if(off)
-                        edges.push_back(std::pair<int,int>(Cube::SquareToCubeEdge(f,MarchingSquares::fullCaseTable(fIdx).edge[i].first),Cube::SquareToCubeEdge(f,MarchingSquares::fullCaseTable(fIdx).edge[i].second)));
-                    else
-                        edges.push_back(std::pair<int,int>(Cube::SquareToCubeEdge(f,MarchingSquares::fullCaseTable(fIdx).edge[i].second),Cube::SquareToCubeEdge(f,MarchingSquares::fullCaseTable(fIdx).edge[i].first)));
-            }
-            for(int uaIndex=0;uaIndex<(1<<uaCount);uaIndex++)
-            {
-                int uaFlag=0;
-                for(int i=0;i<uaCount;i++)
-                    if(uaIndex&(1<<i))
-                        uaFlag|=1<<uaFaces[i];
-
-                __fullCaseMap[idx|((aFlag|uaFlag)<<Cube::CORNERS)]=tSize;
-            }
-            __fullCaseTable[tSize].clear();
-            GetEdgeLoops(edges,__fullCaseTable[tSize]);
-            tSize++;
-        }
     }
 }

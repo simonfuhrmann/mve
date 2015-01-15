@@ -34,7 +34,6 @@ private:
         SimonOctNode::NodeIndex out_node_index,
         int max_level);
 
-    void copy_voxel_data (fssr::IsoOctree const& octree);
     long long index_convert (fssr::VoxelIndex const& index) const;
 
 private:

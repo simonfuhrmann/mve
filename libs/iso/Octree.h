@@ -57,11 +57,10 @@ public:  // Types
 
 public:  // Variables
     /*
-     * Children are stored as an array of eight OctNodes. This allows each node to find its own
-     * position relative to the parent node in constant time with
+     * Children are stored as an array of eight OctNodes. This allows each
+     * node to find its own index in the parent node with
      *   index = (this - this->parent->children);
      */
-
     OctNode* parent;
     OctNode* children;
     NodeData nodeData;
@@ -74,18 +73,18 @@ public:  // Methods
 
     static inline void CenterAndWidth(const NodeIndex& nIndex,VertexType& center,Real& width);
 
-    OctNode* nextLeaf(OctNode* currentLeaf);
+    /* Returns the next node of current node in depth-first order. */
     OctNode* nextNode(OctNode* currentNode);
-    OctNode* nextBranch(OctNode* current);
-    OctNode* nextLeaf(OctNode* currentLeaf,NodeIndex &nIndex);
     OctNode* nextNode(OctNode* currentNode,NodeIndex &nIndex);
+    OctNode* nextLeaf(OctNode* currentLeaf);
+    OctNode* nextLeaf(OctNode* currentLeaf,NodeIndex &nIndex);
+    OctNode* nextBranch(OctNode* current);
     OctNode* nextBranch(OctNode* current,NodeIndex &nIndex);
-
-    void setFullDepth(const int& maxDepth);
 
     const OctNode* faceNeighbor(const int& faceIndex) const;
     const OctNode* edgeNeighbor(const int& edgeIndex) const;
 
+    /* Returns the index for a voxel (octree node corner). */
     static long long CornerIndex(const NodeIndex &nIndex,const int& cIndex,const int& maxDepth);
     static long long CornerIndex(const NodeIndex &nIndex,const int& cIndex,const int& maxDepth,int index[3]);
 

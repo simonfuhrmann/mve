@@ -60,14 +60,14 @@ SimonIsoOctree::set_octree (fssr::IsoOctree const& octree)
         &this->tree, out_index, octree.get_max_level());
 
     // Copy the voxel data to the Kazhdan octree.
-    this->copy_voxel_data(octree);
+    fssr::IsoOctree::VoxelVector const& voxels = octree.get_voxels();
+    for (std::size_t i = 0; i < voxels.size(); i++)
+        this->cornerValues[voxels[i].first.index] = voxels[i].second;
 }
 
 inline mve::TriangleMesh::Ptr
 SimonIsoOctree::extract_mesh (void)
 {
-    int const fullCaseTable = 0;
-
     mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
     mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
     mve::TriangleMesh::FaceList& faces = mesh->get_faces();
@@ -79,7 +79,7 @@ SimonIsoOctree::extract_mesh (void)
     util::WallTimer timer;
     std::vector<std::vector<int> > polygons;
     std::vector<SimonVertexData> vertex_data;
-    this->getIsoSurface(0.0f, verts, vertex_data, polygons, fullCaseTable);
+    this->getIsoSurface(0.0f, verts, vertex_data, polygons);
     std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 
     /* De-Normalize the output vertices. */
@@ -127,14 +127,4 @@ SimonIsoOctree::transfer_octree (
     for (int i = 0; i < 8; ++i)
         this->transfer_octree(in_iter.descend(i),
             &out_node->children[i], out_node_index.child(i), max_level);
-}
-
-inline void
-SimonIsoOctree::copy_voxel_data (fssr::IsoOctree const& isooctree)
-{
-    fssr::IsoOctree::VoxelVector const& voxels = isooctree.get_voxels();
-    for (std::size_t i = 0; i < voxels.size(); i++)
-    {
-        this->cornerValues[voxels[i].first.index] = voxels[i].second;
-    }
 }

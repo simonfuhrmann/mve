@@ -141,7 +141,6 @@ main (int argc, char** argv)
 
     /* Extract mesh from octree. */
     MarchingCubes::SetCaseTable();
-    MarchingCubes::SetFullCaseTable();
     mve::TriangleMesh::Ptr mesh = iso_tree.extract_mesh();
     iso_tree.clear();
 

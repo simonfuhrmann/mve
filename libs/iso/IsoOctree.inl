@@ -115,7 +115,8 @@ long long IsoOctree<NodeData,Real,VertexData>::getRootKey(const typename OctNode
 template<class NodeData,class Real,class VertexData>
 int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* node,
                                                       const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
-                                                      const int& edgeIndex,RootInfo& ri){
+                                                      const int& edgeIndex,RootInfo& ri)
+{
     /*
      * Find the finest edge coincident with the given one, that contains the given root
      * (see "Defining Consistent Isovertices" in the paper).
@@ -149,7 +150,6 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
     finestIndex=edgeIndex;
 
     /* Check for finer edges in adjacent nodes. */
-
     Cube::FacesAdjacentToEdge(edgeIndex,f1,f2);
     if(nIdx.depth<maxDepth)
     {
@@ -318,7 +318,7 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoFaceEdges(
     const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
     const int& faceIndex,
     std::vector<std::pair<RootInfo,RootInfo> >& edges,
-    const int& flip,const int& useFull)
+    const int& flip)
 {
     /* Get all iso-edges that lie fully within a cube (octree node) face. */
 
@@ -326,17 +326,17 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoFaceEdges(
     if(node->children)
     {
         Cube::FaceCorners(faceIndex,c1,c2,c3,c4);
-        getIsoFaceEdges(&node->children[c1],nIdx.child(c1),faceIndex,edges,flip,useFull);
-        getIsoFaceEdges(&node->children[c2],nIdx.child(c2),faceIndex,edges,flip,useFull);
-        getIsoFaceEdges(&node->children[c3],nIdx.child(c3),faceIndex,edges,flip,useFull);
-        getIsoFaceEdges(&node->children[c4],nIdx.child(c4),faceIndex,edges,flip,useFull);
+        getIsoFaceEdges(&node->children[c1],nIdx.child(c1),faceIndex,edges,flip);
+        getIsoFaceEdges(&node->children[c2],nIdx.child(c2),faceIndex,edges,flip);
+        getIsoFaceEdges(&node->children[c3],nIdx.child(c3),faceIndex,edges,flip);
+        getIsoFaceEdges(&node->children[c4],nIdx.child(c4),faceIndex,edges,flip);
     }
     else
     {
         int idx=node->nodeData.mcIndex;
 
         RootInfo ri1,ri2;
-        const std::vector<std::vector<int> >& table=MarchingCubes::caseTable(idx,useFull);
+        const std::vector<std::vector<int> >& table = MarchingCubes::caseTable(idx);
         for(size_t i=0;i<table.size();i++)
         {
             size_t pSize=table[i].size();
@@ -367,7 +367,7 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
     const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
     stdext::hash_map<long long,int>& roots,
     std::vector<std::vector<int> >& polygons,
-    const int& useFull)
+    NeighborKey<NodeData,Real>& nKey)
 {
     std::vector<std::pair<long long,long long> > edges;
     typename stdext::hash_map<long long,std::pair<RootInfo,int> >::iterator iter;
@@ -378,8 +378,9 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
      * If neighbors are finer, get their ISO face edges, otherwise use own.
      */
 
-    int x[3];
     nKey.getNeighbors(node);
+
+    int x[3];
     x[0]=x[1]=x[2]=1;
     for(int i=0;i<3;i++)
     {
@@ -387,7 +388,7 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
         {
             x[i]=j<<1;
             if(!nKey.neighbors[nIdx.depth].neighbors[x[0]][x[1]][x[2]] || !nKey.neighbors[nIdx.depth].neighbors[x[0]][x[1]][x[2]]->children)
-                getIsoFaceEdges(node,nIdx,Cube::FaceIndex(i,j),riEdges,0,useFull);
+                getIsoFaceEdges(node,nIdx,Cube::FaceIndex(i,j),riEdges,0);
             else
             {
                 /* If the coincident face in the neighboring node provides a finer subdivision, use it. */
@@ -395,7 +396,7 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
                 if(j)	idx.offset[i]++;
                 else	idx.offset[i]--;
                 getIsoFaceEdges(nKey.neighbors[idx.depth].neighbors[x[0]][x[1]][x[2]],
-                    idx,Cube::FaceIndex(i,j^1),riEdges,1,useFull);
+                    idx,Cube::FaceIndex(i,j^1),riEdges,1);
             }
         }
         x[i]=1;
@@ -541,19 +542,19 @@ void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
 }
 
 template<class NodeData,class Real,class VertexData>
-void IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue,const int& useFull)
+void
+IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue)
 {
+    /* Reset all MC indices to 0. */
     OctNode<NodeData,Real>* temp;
-
-    for(temp=tree.nextNode(NULL) ; temp ; temp=tree.nextNode(temp) )
+    for(temp = tree.nextNode(NULL) ; temp ; temp=tree.nextNode(temp) )
         temp->nodeData.mcIndex=0;
 
+    /* Iterate all leafs, look up corner values and set MC index. */
     typename OctNode<NodeData,Real>::NodeIndex nIdx;
     for(temp=tree.nextLeaf(NULL,nIdx) ; temp ; temp=tree.nextLeaf(temp,nIdx) )
     {
         Real cValues[Cube::CORNERS]; // Implicit function values
-        bool skip_cube = false;
-
         for(int i=0;i<Cube::CORNERS;i++)
         {
             if(cornerValues.find(OctNode<NodeData,Real>::CornerIndex(nIdx,i,maxDepth))==cornerValues.end())
@@ -562,23 +563,15 @@ void IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue,const 
             // SIMON change
             VertexData data = cornerValues[OctNode<NodeData,Real>::CornerIndex(nIdx,i,maxDepth)];
             cValues[i] = data.value;
-            //if (data.conf == Real(0))
-            //    skip_cube = true;
         }
 
         /* Assign marching cubes indices according to sign pattern of node corners. */
+        temp->nodeData.mcIndex = MarchingCubes::GetIndex(cValues,isoValue);
 
-        if (skip_cube)
-            temp->nodeData.mcIndex = 0;
-        else if (useFull)
-            temp->nodeData.mcIndex = MarchingCubes::GetFullIndex(cValues,isoValue);
-        else
-            temp->nodeData.mcIndex = MarchingCubes::GetIndex(cValues,isoValue);
-
-        /* Set marching cubes values of parents from child values. */
+        /* Set MC indices of inner nodes from child values. */
         if(temp->parent)
         {
-            int cIndex=int(temp-temp->parent->children);
+            int cIndex = int(temp - temp->parent->children);
             int bitFlag = temp->nodeData.mcIndex & (1<<cIndex);
             if(bitFlag)
             {
@@ -602,23 +595,27 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoSurface(
     const Real& isoValue,
     std::vector<VertexType>& vertices,
     std::vector<VertexData>& vertex_data,
-    std::vector<std::vector<int> >& polygons,
-    const int& useFull)
+    std::vector<std::vector<int> >& polygons)
 {
-    OctNode<NodeData,Real>* temp;
-    stdext::hash_map<long long,int> roots;
-    nKey.set(maxDepth);
-
     /* (1) Set marching cubes values. */
-    setMCIndex(isoValue,useFull);
+    setMCIndex(isoValue);
 
     /* (2) "Defining Consistent Isovertices" */
-    typename OctNode<NodeData,Real>::NodeIndex nIdx;
-    for(temp=tree.nextLeaf(NULL,nIdx) ; temp ; temp=tree.nextLeaf(temp,nIdx) )
-        getRoots(temp,nIdx,isoValue,roots,vertices,vertex_data);
+    stdext::hash_map<long long,int> roots;
+    {
+        OctNode<NodeData,Real>* node;
+        typename OctNode<NodeData,Real>::NodeIndex nIdx;
+        for(node=tree.nextLeaf(NULL,nIdx); node; node=tree.nextLeaf(node,nIdx))
+            getRoots(node,nIdx,isoValue,roots,vertices,vertex_data);
+    }
 
     /* (3) "Closing the Isopolylines" */
-    nIdx=typename OctNode<NodeData,Real>::NodeIndex();
-    for(temp=tree.nextLeaf(NULL,nIdx) ; temp ; temp=tree.nextLeaf(temp,nIdx) )
-        getIsoPolygons(temp,nIdx,roots,polygons,useFull);
+    {
+        NeighborKey<NodeData,Real> nKey;
+        nKey.set(maxDepth);
+        OctNode<NodeData,Real>* node;
+        typename OctNode<NodeData,Real>::NodeIndex nIdx;
+        for(node=tree.nextLeaf(NULL,nIdx); node; node=tree.nextLeaf(node,nIdx))
+            getIsoPolygons(node,nIdx,roots,polygons,nKey);
+    }
 }

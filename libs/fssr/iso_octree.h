@@ -15,8 +15,8 @@
 FSSR_NAMESPACE_BEGIN
 
 /**
- * Given an octree with samples, this class computes the implicit function by
- * querying function values at the octree vertices of the leaf nodes.
+ * This class computes the implicit function by querying function values
+ * at the octree primal vertices of the leaf nodes, called voxels.
  */
 class IsoOctree : public Octree
 {

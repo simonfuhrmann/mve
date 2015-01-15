@@ -18,11 +18,18 @@
 
 FSSR_NAMESPACE_BEGIN
 
+/**
+ * A reguar octree data structure.
+ * Each node has either zero or eight child nodes.
+ */
 class Octree
 {
 public:
     /**
      * Simple recursive octree node that stores samples in a vector.
+     * The node is a leaf if children is NULL, otherwise eight children exist.
+     * The node is the root node if parent is NULL. In FSSR, samples are
+     * inserted according to scale, thus inner nodes may contain samples.
      */
     struct Node
     {
@@ -149,7 +156,8 @@ public:
 
     /**
      * Queries all samples that influence the given point. The actual
-     * influence distance is given as factor of the sample's scale value.
+     * influence distance is given as factor of the sample's scale value,
+     * which depends on the basis functions used.
      */
     void influence_query (math::Vec3d const& pos, double factor,
         std::vector<Sample const*>* result) const;

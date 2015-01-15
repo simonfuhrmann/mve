@@ -75,43 +75,34 @@ public:
 class MarchingSquares
 {
 public:
-    class FaceEdges
+    struct FaceEdges
     {
-    public:
         int count;
         std::pair<int,int> edge[2];
     };
+
 private:
-    static FaceEdges __caseTable	[1<<(Square::CORNERS  )];
-    static FaceEdges __fullCaseTable[1<<(Square::CORNERS+1)];
+    static FaceEdges __caseTable[1<<(Square::CORNERS)];
+
 public:
     static void SetCaseTable(void);
-    static void SetFullCaseTable(void);
-
     static const FaceEdges& caseTable(const int& idx);
-    static const FaceEdges& fullCaseTable(const int& idx);
 };
 
 class MarchingCubes
 {
     static void GetEdgeLoops(std::vector<std::pair<int,int> >& edges,std::vector<std::vector<int> >& loops);
     static std::vector< std::vector<int> > __caseTable[1<<Cube::CORNERS];
-    static int __fullCaseMap[1<<(Cube::CORNERS+Cube::FACES)];
-    static std::vector< std::vector< std::vector<int> > > __fullCaseTable;
+
 public:
     static void SetCaseTable(void);
-    static void SetFullCaseTable(void);
-
-    template<class Real>
-    static int GetFullIndex(const Real values[Cube::CORNERS],const Real& iso);
     template<class Real>
     static int GetIndex(const Real values[Cube::CORNERS],const Real& iso);
     static const std::vector< std::vector<int> >& caseTable(const int& idx);
-    static const std::vector< std::vector<int> >& fullCaseTable(const int& idx);
-    static const std::vector< std::vector<int> >& caseTable(const int& idx,const int& useFull);
-
     static int HasRoots(const int& mcIndex);
     static int HasEdgeRoots(const int& mcIndex,const int& edgeIndex);
 };
+
 #include "MarchingCubes.inl"
+
 #endif //MARCHING_CUBES_INCLUDED
