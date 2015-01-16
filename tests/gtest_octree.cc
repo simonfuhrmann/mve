@@ -15,7 +15,7 @@ TEST(OctreeTest, TestEmptyOctreeOperations)
     EXPECT_EQ(0, octree.get_num_nodes());
 
     std::vector<std::size_t> stats;
-    octree.get_points_per_level(&stats);
+    octree.get_samples_per_level(&stats);
     EXPECT_TRUE(stats.empty());
 }
 
@@ -32,7 +32,7 @@ TEST(OctreeTest, TestOneSampleOctreeOperations)
     EXPECT_EQ(1, octree.get_num_nodes());
 
     std::vector<std::size_t> stats;
-    octree.get_points_per_level(&stats);
+    octree.get_samples_per_level(&stats);
     ASSERT_EQ(1, stats.size());
     EXPECT_EQ(1, stats[0]);
 }
@@ -51,7 +51,7 @@ TEST(OctreeTest, TestTwoSamplesDescend)
 
     EXPECT_EQ(2, octree.get_num_levels());
     EXPECT_EQ(2, octree.get_num_samples());
-    EXPECT_EQ(2, octree.get_num_nodes());
+    EXPECT_EQ(9, octree.get_num_nodes());
 }
 
 TEST(OctreeTest, TestTwoSamplesExpand)
@@ -68,7 +68,7 @@ TEST(OctreeTest, TestTwoSamplesExpand)
 
     EXPECT_EQ(2, octree.get_num_levels());
     EXPECT_EQ(2, octree.get_num_samples());
-    EXPECT_EQ(2, octree.get_num_nodes());
+    EXPECT_EQ(9, octree.get_num_nodes());
 }
 
 TEST(OctreeTest, TestTwoSamplesSameScale)
@@ -112,43 +112,4 @@ TEST(OctreeTest, TestInsertIntoOctants)
     EXPECT_EQ(2, octree.get_num_levels());
     EXPECT_EQ(9, octree.get_num_samples());
     EXPECT_EQ(9, octree.get_num_nodes());
-}
-
-TEST(OctreeTest, OctreeReadWriteEmpty)
-{
-    // Just an empty octree.
-    std::stringstream ss_in("0");
-    std::stringstream ss_out;
-
-    fssr::Octree octree;
-    octree.read_hierarchy(ss_in, false);
-    octree.write_hierarchy(ss_out, false);
-    EXPECT_EQ(ss_out.str(), ss_in.str());
-}
-
-TEST(OctreeTest, OctreeReadWriteRootOnly)
-{
-    // Root node with no children.
-    std::stringstream ss_in("100000000");
-    std::stringstream ss_out;
-
-    fssr::Octree octree;
-    octree.read_hierarchy(ss_in, false);
-    octree.write_hierarchy(ss_out, false);
-    EXPECT_EQ(ss_out.str(), ss_in.str());
-}
-
-TEST(OctreeTest, OctreeReadWriteHierarcy1)
-{
-    // More complicated hierarchy. Root node with two children.
-    // Each child has another child.
-    std::stringstream ss_in(
-    //       root       child 1    child 2    child 1.1  child 2.1
-        "1" "00100100" "00010000" "00000010" "00000000" "00000000");
-    std::stringstream ss_out;
-
-    fssr::Octree octree;
-    octree.read_hierarchy(ss_in, false);
-    octree.write_hierarchy(ss_out, false);
-    EXPECT_EQ(ss_out.str(), ss_in.str());
 }
