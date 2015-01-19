@@ -58,7 +58,7 @@ IsoOctree::compute_all_voxels (void)
             for (int i = 0; i < 8; ++i)
             {
                 VoxelIndex index;
-                index.from_path_and_corner(iter.node_path, i);
+                index.from_path_and_corner(iter.node_path.level, iter.node_path.path, i);
                 voxel_set.insert(index);
             }
         }

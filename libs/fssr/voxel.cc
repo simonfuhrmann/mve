@@ -11,13 +11,13 @@
 FSSR_NAMESPACE_BEGIN
 
 void
-VoxelIndex::from_path_and_corner (Octree::NodePath const& path, int corner)
+VoxelIndex::from_path_and_corner (uint8_t level, uint64_t path, int corner)
 {
     /* Compute node index from the node path. */
     math::Vector<uint64_t, 3> coords(0, 0, 0);
-    for (int l = path.level - 1; l >= 0; --l)
+    for (int l = level - 1; l >= 0; --l)
     {
-        uint64_t index = (path.path >> (3 * l)) & 7;
+        uint64_t index = (path >> (3 * l)) & 7;
         for (int i = 0; i < 3; ++i)
         {
             coords[i] = coords[i] << 1;
@@ -29,7 +29,7 @@ VoxelIndex::from_path_and_corner (Octree::NodePath const& path, int corner)
     for (int i = 0; i < 3; ++i)
     {
         coords[i] += (corner >> i) & 1;
-        coords[i] = coords[i] << (20 - path.level);
+        coords[i] = coords[i] << (20 - level);
     }
 
     /* Compute voxel ID. */

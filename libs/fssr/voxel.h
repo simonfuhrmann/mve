@@ -15,9 +15,9 @@ FSSR_NAMESPACE_BEGIN
 
 /**
  * The voxel index is a unique 64 bit ID for each voxel in the octree.
- * The index is designed in such a way that the voxel ID is independent
- * of the level, i.e. neighboring nodes on different levels share voxels
- * with the same ID. The bits are assigned as follows:
+ * The index is designed in such a way that it is independent of the
+ * level, i.e., neighboring nodes on different levels share voxels with
+ * the same ID. The bits are assigned as follows:
  *
  *      0      000...000  000...000  000...000
  *   --------  ---------  ---------  ---------
@@ -33,7 +33,7 @@ FSSR_NAMESPACE_BEGIN
 struct VoxelIndex
 {
 public:
-    void from_path_and_corner (Octree::NodePath const& path, int corner);
+    void from_path_and_corner (uint8_t level, uint64_t path, int corner);
     math::Vec3d compute_position (math::Vec3d const& center, double size);
     uint32_t get_offset_x (void) const;
     uint32_t get_offset_y (void) const;
