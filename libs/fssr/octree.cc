@@ -165,6 +165,14 @@ Octree::expand_root_for_point (math::Vec3d const& pos)
     std::swap(new_root->children[octant].samples, this->root->samples);
     delete this->root;
     this->root = new_root;
+
+    /* Fix parent pointers of old child nodes. */
+    if (this->root->children[octant].children != NULL)
+    {
+        Node* children = this->root->children[octant].children;
+        for (int i = 0; i < 8; ++i)
+            children[i].parent = this->root->children + octant;
+    }
 }
 
 Octree::Node*
