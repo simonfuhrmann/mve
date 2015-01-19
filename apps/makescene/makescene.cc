@@ -1006,8 +1006,8 @@ main (int argc, char** argv)
     conf.skip_invalid = true;
     conf.images_only = false;
     conf.append_images = false;
-    conf.input_path = args.get_nth_nonopt(0);
-    conf.output_path = args.get_nth_nonopt(1);
+    conf.input_path = util::fs::sanitize_path(args.get_nth_nonopt(0));
+    conf.output_path = util::fs::sanitize_path(args.get_nth_nonopt(1));
     conf.bundle_id = 0;
     conf.max_pixels = std::numeric_limits<int>::max();
 

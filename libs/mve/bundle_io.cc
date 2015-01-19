@@ -121,7 +121,7 @@ load_nvm_bundle (std::string const& filename,
         bundle_cam.dist[1] = 0.0f;
 
         /* If the filename is not absolute, make relative to NVM. */
-        if (!nvm_cam.filename.empty() && nvm_cam.filename[0] != '/')
+        if (!util::fs::is_absolute(nvm_cam.filename))
             nvm_cam.filename = util::fs::join_path(nvm_path, nvm_cam.filename);
 
         /* Jettison trailing zero. */

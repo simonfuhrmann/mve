@@ -316,7 +316,7 @@ sanitize_path (std::string const& path)
 
     std::string result = path;
 
-    /* Replace backslashes. */
+    /* Replace backslashes with slashes. */
     std::replace(result.begin(), result.end(), '\\', '/');
 
     /* Remove double slashes. */
@@ -339,7 +339,6 @@ std::string
 join_path (std::string const& path1, std::string const& path2)
 {
     std::string p2 = sanitize_path(path2);
-
     if (is_absolute(p2))
         return p2;
 
