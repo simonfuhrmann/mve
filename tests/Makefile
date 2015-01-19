@@ -12,5 +12,4 @@ test: ${SOURCES:.cc=.o} gtest_main.a libmve.a libmve_util.a libfssr.a
 	${LINK.cc} -o $@ $^ ${LDLIBS} -pthread
 
 clean:
-	${MAKE} -C ../libs clean
 	${RM} ${TARGET} *.o Makefile.dep
