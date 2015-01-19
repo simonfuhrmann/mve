@@ -48,11 +48,9 @@ SimonIsoOctree::set_octree (fssr::IsoOctree const& octree)
     //   p' = (translate + p) * scale
     // To transfrom it back
     //   p = p' / scale - translate
-    math::Vec3f aabb_min = octree.get_node_geom_for_root().aabb_min();
-    math::Vec3f aabb_max = octree.get_node_geom_for_root().aabb_max();
-    this->scale = 1.0f / (aabb_max - aabb_min).maximum();
+    this->scale = 1.0 / octree.get_root_node_size();
     this->translate = math::Vec3f(0.5f) / this->scale
-        - (aabb_min + aabb_max) / 2.0f;
+        - octree.get_root_node_center();
 
     // Transfer the octree structure to the Kazhdan octree.
     SimonOctNode::NodeIndex out_index;
@@ -116,11 +114,11 @@ SimonIsoOctree::transfer_octree (
      * Have to build octree at one level less (?!?) for whatever reasons.
      * Otherwise code tries to locate samples at one level too deep.
      */
-    if (in_iter.node_path.level >= max_level)
+    if (in_iter.level >= max_level)
         return;
 
     /* Determine whether to descend into octree. */
-    if (in_iter.node->children == NULL)
+    if (in_iter.current->children == NULL)
         return;
 
     out_node->initChildren();

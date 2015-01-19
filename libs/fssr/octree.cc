@@ -13,77 +13,95 @@
 
 FSSR_NAMESPACE_BEGIN
 
-Octree::NodePath
-Octree::NodePath::descend (int const octant) const
+Octree::Node*
+Octree::Iterator::first_node (void)
 {
-    NodePath path;
-    path.level = this->level + 1;
-    path.path = (this->path << 3) | octant;
-    return path;
+    this->current = this->root;
+    this->level = 0;
+    this->path = 0;
+    return this->current;
 }
 
-Octree::NodePath
-Octree::NodePath::ascend (void) const
+Octree::Node*
+Octree::Iterator::first_leaf (void)
 {
-    NodePath path;
-    path.level = this->level - 1;
-    path.path = this->path >> 3;
-    return path;
+    this->first_node();
+    while (this->current->children != NULL)
+    {
+        this->current = this->current->children;
+        this->level = this->level + 1;
+        this->path = this->path << 3;
+    }
+    return this->current;
 }
 
-/* -------------------------------------------------------------------- */
-
-Octree::NodeGeom
-Octree::NodeGeom::descend (int const octant) const
+Octree::Node*
+Octree::Iterator::next_node (void)
 {
-    NodeGeom node;
-    double const offset = this->size / 4.0;
-    for (int i = 0; i < 3; ++i)
-        node.center[i] = this->center[i]
-            + ((octant & (1 << i)) ? offset : -offset);
-    node.size = this->size / 2.0;
-    return node;
+    if (this->current->children == NULL)
+        return this->next_branch();
+
+    this->current = this->current->children;
+    this->level = this->level + 1;
+    this->path = this->path << 3;
+    return this->current;
 }
 
-math::Vec3d
-Octree::NodeGeom::aabb_min (void) const
+Octree::Node*
+Octree::Iterator::next_branch (void)
 {
-    return this->center - this->size / 2.0;
+    if (this->current->parent == NULL)
+    {
+        this->current = NULL;
+        return NULL;
+    }
+
+    if (this->current - this->current->parent->children == 7)
+    {
+        this->current = this->current->parent;
+        this->level = this->level - 1;
+        this->path = this->path >> 3;
+        return this->next_branch();
+    }
+
+    this->current += 1;
+    this->path += 1;
+    return this->current;
 }
 
-math::Vec3d
-Octree::NodeGeom::aabb_max (void) const
+Octree::Node*
+Octree::Iterator::next_leaf (void)
 {
-    return this->center + this->size / 2.0;
-}
+    if (this->current->children != NULL)
+    {
+        while (this->current->children != NULL)
+        {
+            this->current = this->current->children;
+            this->level = this->level + 1;
+            this->path = this->path << 3;
+        }
+        return this->current;
+    }
 
-math::Vec3d
-Octree::NodeGeom::corner_pos (int const corner) const
-{
-    math::Vec3d pos;
-    double const hs = this->size / 2.0;
-    for (int i = 0; i < 3; ++i)
-        pos[i] = this->center[i] + ((corner & (1 << i)) ? hs : -hs);
-    return pos;
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-Octree::Iterator::init (Octree const* octree)
-{
-    this->node = octree->get_root_node();
-    this->node_geom = octree->get_node_geom_for_root();
-    this->node_path = octree->get_node_path_for_root();
+    this->next_branch();
+    if (this->current == NULL)
+        return NULL;
+    while (this->current->children != NULL)
+    {
+        this->current = this->current->children;
+        this->level = this->level + 1;
+        this->path = this->path << 3;
+    }
+    return this->current;
 }
 
 Octree::Iterator
-Octree::Iterator::descend (int const octant) const
+Octree::Iterator::descend (int octant) const
 {
-    Iterator iter;
-    iter.node = this->node->children + octant;
-    iter.node_geom = this->node_geom.descend(octant);
-    iter.node_path = this->node_path.descend(octant);
+    Iterator iter(*this);
+    iter.current = iter.current->children + octant;
+    iter.level = iter.level + 1;
+    iter.path = (iter.path << 3) + octant;
     return iter;
 }
 
@@ -189,15 +207,17 @@ Octree::find_node_for_sample (Sample const& sample)
     if (sample.scale >= this->root_size * 2.0)
         return find_node_expand(sample);
 
-    return this->find_node_descend(sample, this->root,
-        this->get_node_geom_for_root());
+    return this->find_node_descend(sample, this->get_iterator_for_root());
 }
 
 Octree::Node*
-Octree::find_node_descend (Sample const& sample, Node* node,
-    NodeGeom const& node_geom)
+Octree::find_node_descend (Sample const& sample, Iterator const& iter)
 {
-    if (sample.scale > node_geom.size * 2.0)
+    math::Vec3d node_center;
+    double node_size;
+    this->node_center_and_size(iter, &node_center, &node_size);
+
+    if (sample.scale > node_size * 2.0)
         throw std::runtime_error("find_node_descend(): Sanity check failed!");
 
     /*
@@ -205,20 +225,19 @@ Octree::find_node_descend (Sample const& sample, Node* node,
      * scale(l) <= s < scale(l) * 2. As a sanity check, this function
      * must not be called if s >= scale(l) * 2. Otherwise descend.
      */
-    if (node_geom.size <= sample.scale)
-        return node;
+    if (node_size <= sample.scale)
+        return iter.current;
 
     /* Find octant to descend. */
     int octant = 0;
     for (int i = 0; i < 3; ++i)
-        if (sample.pos[i] > node_geom.center[i])
+        if (sample.pos[i] > node_center[i])
             octant |= (1 << i);
 
-    if (node->children == NULL)
-        this->create_children(node);
+    if (iter.current->children == NULL)
+        this->create_children(iter.current);
 
-    return this->find_node_descend(sample, node->children + octant,
-        node_geom.descend(octant));
+    return this->find_node_descend(sample, iter.descend(octant));
 }
 
 Octree::Node*
@@ -270,11 +289,26 @@ Octree::get_samples_per_level (std::vector<std::size_t>* stats,
 }
 
 void
-Octree::influence_query (math::Vec3d const& pos, double factor,
-    std::vector<Sample const*>* result,
-    Node const* node, NodeGeom const& node_geom) const
+Octree::node_center_and_size (Iterator const& iter,
+    math::Vec3d* center, double *size) const
 {
-    if (node == NULL)
+    *center = this->root_center;
+    *size = this->root_size;
+    for (int i = 0; i < iter.level; ++i)
+    {
+        int const octant = iter.path >> ((iter.level - i - 1) * 3);
+        double const offset = *size / 4.0;
+        for (int j = 0; j < 3; ++j)
+            (*center)[j] += ((octant & (1 << j)) ? offset : -offset);
+        *size /= 2.0;
+    }
+}
+
+void
+Octree::influence_query (math::Vec3d const& pos, double factor,
+    std::vector<Sample const*>* result, Iterator const& iter) const
+{
+    if (iter.current == NULL)
         return;
 
     /*
@@ -286,30 +320,31 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
      * Otherwise all samples in the node have to be tested.
      */
 
+    math::Vec3d node_center;
+    double node_size;
+    this->node_center_and_size(iter, &node_center, &node_size);
+
     /* Estimate for the minimum distance. No sample is closer to pos. */
-    double const min_distance = (pos - node_geom.center).norm()
-        - MATH_SQRT3 * node_geom.size / 2.0;
-    double const max_scale = node_geom.size * 2.0;
+    double const min_distance = (pos - node_center).norm()
+        - MATH_SQRT3 * node_size / 2.0;
+    double const max_scale = node_size * 2.0;
     if (min_distance > max_scale * factor)
         return;
 
     /* Node could not be ruled out. Test all samples. */
-    for (std::size_t i = 0; i < node->samples.size(); ++i)
+    for (std::size_t i = 0; i < iter.current->samples.size(); ++i)
     {
-        Sample const& s = node->samples[i];
+        Sample const& s = iter.current->samples[i];
         if ((pos - s.pos).square_norm() > MATH_POW2(factor * s.scale))
             continue;
         result->push_back(&s);
     }
 
     /* Descend into octree. */
-    if (node->children == NULL)
+    if (iter.current->children == NULL)
         return;
     for (int i = 0; i < 8; ++i)
-    {
-        this->influence_query(pos, factor, result, node->children + i,
-            node_geom.descend(i));
-    }
+        this->influence_query(pos, factor, result, iter.descend(i));
 }
 
 void

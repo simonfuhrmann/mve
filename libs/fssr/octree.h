@@ -19,8 +19,9 @@
 FSSR_NAMESPACE_BEGIN
 
 /**
- * A reguar octree data structure.
- * Each node has either zero or eight child nodes.
+ * A regular octree data structure (each node has zero or eight child nodes).
+ * The maximum level of this octree is limited to 20 because of the way
+ * the iterator works and the voxel indexing scheme (see voxel.h).
  */
 class Octree
 {
@@ -40,58 +41,31 @@ public:
     public:
         Node* children;
         Node* parent;
+        int mc_index; // NEW
         std::vector<Sample> samples;
     };
 
     /**
-     * Keeps track of the current node path during descend and ascend.
+     * Octree iterator that keeps track of level and path through the octree.
      * The complete path is a series of 3 bits each indicating the octant
      * from the root towards the target node.
      */
-    struct NodePath
-    {
-    public:
-        NodePath (void);
-        NodePath descend (int const octant) const;
-        NodePath ascend (void) const;
-
-    public:
-        uint64_t path;
-        uint8_t level;
-    };
-
-    /**
-     * Keeps track of the node geometry, i.e. the node's center and size,
-     * during octree descend. Support for computing the AABB of the node.
-     */
-    struct NodeGeom
-    {
-    public:
-        NodeGeom (void);
-        NodeGeom descend (int const octant) const;
-
-        math::Vec3d aabb_min (void) const;
-        math::Vec3d aabb_max (void) const;
-        math::Vec3d corner_pos (int const corner) const;
-
-    public:
-        math::Vec3d center;
-        double size;
-    };
-
-    /**
-     * Comfortable iterator for the octree.
-     */
     struct Iterator
     {
-        Octree::Node const* node;
-        Octree::NodeGeom node_geom;
-        Octree::NodePath node_path;
-
+    public:
         Iterator (void);
-        Iterator (Octree const* octree);
-        void init (Octree const* octree);
-        Iterator descend (int const octant) const;
+        Node* first_node (void);
+        Node* first_leaf (void);
+        Node* next_node (void);
+        Node* next_branch (void);
+        Node* next_leaf (void);
+        Iterator descend (int octant) const;
+
+    public:
+        Node* current;
+        Node* root;
+        uint64_t path;
+        uint8_t level;
     };
 
 public:
@@ -136,6 +110,10 @@ public:
      */
     void get_samples_per_level (std::vector<std::size_t>* stats) const;
 
+    /** Retuns center and size for the iterator node. */
+    void node_center_and_size (Iterator const& iter,
+        math::Vec3d* center, double* size) const;
+
     /** Returns the root node (read-only). */
     Node const* get_root_node (void) const;
 
@@ -144,12 +122,6 @@ public:
 
     /** Returns the size of the root node. */
     double get_root_node_size (void) const;
-
-    /** Returns a NodeGeom object for the root. */
-    NodeGeom get_node_geom_for_root (void) const;
-
-    /** Returns a NodePath object for the root. */
-    NodePath get_node_path_for_root (void) const;
 
     /** Returns an octree iterator for the root. */
     Iterator get_iterator_for_root (void) const;
@@ -178,15 +150,13 @@ private:
     Node* find_node_for_sample (Sample const& sample);
 
     /* Octree recursive functions. */
-    Node* find_node_descend (Sample const& sample, Node* node,
-        NodeGeom const& node_geom);
+    Node* find_node_descend (Sample const& sample, Iterator const& iter);
     Node* find_node_expand (Sample const& sample);
     int get_num_levels (Node const* node) const;
     void get_samples_per_level (std::vector<std::size_t>* stats,
         Node const* node, std::size_t level) const;
     void influence_query (math::Vec3d const& pos, double factor,
-        std::vector<Sample const*>* result,
-        Node const* node, NodeGeom const& node_geom) const;
+        std::vector<Sample const*>* result, Iterator const& iter) const;
 
 private:
     /* The root node with its center and side length. */
@@ -213,34 +183,15 @@ Octree::Node::~Node (void)
     delete [] this->children;
 }
 
-/* ---------------------------------------------------------------- */
-
-inline
-Octree::NodePath::NodePath (void)
-    : path(0), level(0)
-{
-}
-
-/* ---------------------------------------------------------------- */
-
-inline
-Octree::NodeGeom::NodeGeom (void)
-    : center(0.0), size(0.0)
-{
-}
-
-/* ---------------------------------------------------------------- */
+/* -------------------------------------------------------------------- */
 
 inline
 Octree::Iterator::Iterator (void)
-    : node(NULL)
+    : current(NULL)
+    , root(NULL)
+    , path(0)
+    , level(0)
 {
-}
-
-inline
-Octree::Iterator::Iterator (Octree const* octree)
-{
-    this->init(octree);
 }
 
 /* ---------------------------------------------------------------- */
@@ -317,29 +268,16 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
     std::vector<Sample const*>* result) const
 {
     result->resize(0);
-    this->influence_query(pos, factor, result, this->root,
-        this->get_node_geom_for_root());
-}
-
-inline Octree::NodeGeom
-Octree::get_node_geom_for_root (void) const
-{
-    NodeGeom geom;
-    geom.size = this->get_root_node_size();
-    geom.center = this->get_root_node_center();
-    return geom;
-}
-
-inline Octree::NodePath
-Octree::get_node_path_for_root (void) const
-{
-    return NodePath();
+    this->influence_query(pos, factor, result, this->get_iterator_for_root());
 }
 
 inline Octree::Iterator
 Octree::get_iterator_for_root (void) const
 {
-    return Iterator(this);
+    Iterator iter;
+    iter.root = this->root;
+    iter.first_node();
+    return iter;
 }
 
 FSSR_NAMESPACE_END

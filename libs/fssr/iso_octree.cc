@@ -40,25 +40,19 @@ IsoOctree::compute_all_voxels (void)
         /* Make voxels unique by storing them in a set first. */
         typedef std::set<VoxelIndex> VoxelIndexSet;
         VoxelIndexSet voxel_set;
-        std::list<Octree::Iterator> queue;
-        queue.push_back(this->get_iterator_for_root());
-        while (!queue.empty())
+
+        /* Add voxels for leaf nodes and nodes at max level. */
+        Octree::Iterator iter = this->get_iterator_for_root();
+        for (iter.first_node(); iter.current != NULL; iter.next_node())
         {
-            Octree::Iterator iter = queue.front();
-            queue.pop_front();
-
-            if (iter.node_path.level < this->max_level
-                && iter.node->children != NULL)
-            {
-                for (int i = 0; i < 8; ++i)
-                    queue.push_back(iter.descend(i));
+            if (iter.level > this->max_level)
                 continue;
-            }
-
+            if (iter.level < this->max_level && iter.current->children != NULL)
+                continue;
             for (int i = 0; i < 8; ++i)
             {
                 VoxelIndex index;
-                index.from_path_and_corner(iter.node_path.level, iter.node_path.path, i);
+                index.from_path_and_corner(iter.level, iter.path, i);
                 voxel_set.insert(index);
             }
         }
