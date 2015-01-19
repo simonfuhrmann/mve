@@ -72,6 +72,12 @@ load_nvm_bundle (std::string const& filename,
         throw util::Exception("Invalid NVM signature");
     }
 
+    /* Discard the rest of the line (e.g. fixed camera parameter info). */
+    {
+        std::string temp;
+        std::getline(in, temp);
+    }
+
     // TODO: Handle multiple models.
 
     /* Read number of views. */
