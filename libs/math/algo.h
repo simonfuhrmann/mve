@@ -70,6 +70,30 @@ max_element_id (FwdIter first, FwdIter last)
     return largest_id;
 }
 
+/**
+ * Algorithm that finds the value corresponding to a key in sorted vector
+ * of key-value pairs. If the key does not exist, NULL is returned.
+ */
+template <typename Key, typename Value>
+Value const*
+binary_search (std::vector<std::pair<Key, Value> > const& vec, Key const& key)
+{
+    std::size_t range1 = 0;
+    std::size_t range2 = vec.size();
+    while (range1 != range2)
+    {
+        std::size_t pos = (range1 + range2) / 2;
+        if (vec[pos].first > key)
+            range2 = pos;
+        else if (key > vec[pos].first)
+            range1 = pos + 1;
+        else
+            return &vec[pos].second;
+    }
+
+    return NULL;
+}
+
 /* ---------------------- Generator functors ---------------------- */
 
 template <typename T>
