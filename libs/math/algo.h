@@ -83,9 +83,9 @@ binary_search (std::vector<std::pair<Key, Value> > const& vec, Key const& key)
     while (range1 != range2)
     {
         std::size_t pos = (range1 + range2) / 2;
-        if (vec[pos].first > key)
+        if (key < vec[pos].first)
             range2 = pos;
-        else if (key > vec[pos].first)
+        else if (vec[pos].first < key)
             range1 = pos + 1;
         else
             return &vec[pos].second;
