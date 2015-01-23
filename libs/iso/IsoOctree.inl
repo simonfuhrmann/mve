@@ -82,14 +82,25 @@ IsoOctree<NodeData,Real,VertexData>::getRootPosition(
     return 1;
 }
 
+/*
+ * Assign a unique key to a root along an edge given an octree node and an
+ * edge index within that node. The key is an edge index which is unique
+ * for every edge on an octree level. The edge index is:
+ *
+ *     offset  index1  index0  orientation
+ *     19 bit  20 bit  20 bit    5 bit
+ */
 template<class NodeData,class Real,class VertexData>
-long long IsoOctree<NodeData,Real,VertexData>::getRootKey(const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const int& edgeIndex)
+long long
+IsoOctree<NodeData,Real,VertexData>::getRootKey(
+    const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
+    const int& edgeIndex)
 {
-    /* Assign a unique key to a root along an edge, corresponding to the 3d position of the edge. */
-
-    int offset,eIndex[2],o,i1,i2;
+    int o,i1,i2;
     Cube::FactorEdgeIndex(edgeIndex,o,i1,i2);
-    offset=BinaryNode<Real>::Index(nIdx.depth,nIdx.offset[o]);
+    int offset = BinaryNode<Real>::Index(nIdx.depth, nIdx.offset[o]);
+
+    int eIndex[2];
     switch(o)
     {
     case 0:
@@ -113,30 +124,29 @@ long long IsoOctree<NodeData,Real,VertexData>::getRootKey(const typename OctNode
 }
 
 template<class NodeData,class Real,class VertexData>
-int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* node,
-                                                      const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
-                                                      const int& edgeIndex,RootInfo& ri)
+int
+IsoOctree<NodeData,Real,VertexData>::getRootIndex(
+    const OctNode<NodeData,Real>* node,
+    const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
+    const int& edgeIndex,
+    RootInfo& ri)
 {
     /*
-     * Find the finest edge coincident with the given one, that contains the given root
-     * (see "Defining Consistent Isovertices" in the paper).
-     *
-     * If there is an uneven number of zero-crossings along an edge, this algorithm finds
-     * the "lone" root that has no twin vertex (cf. getRootPair).
-     *
-     * This is needed to assign a unique index to each iso-vertex so that neighboring nodes
-     * share iso-vertices on coincident edges.
+     * Find the finest edge coincident with the given one, that contains the
+     * given root (see "Defining Consistent Isovertices" in the paper). If
+     * there is an uneven number of zero-crossings along an edge, this
+     * algorithm finds the "lone" root that has no twin vertex
+     * (cf. getRootPair). This is needed to assign a unique index to each
+     * iso-vertex so that neighboring nodes share iso-vertices on coincident
+     * edges.
      */
 
-    int c1,c2,f1,f2;
-    const OctNode<NodeData,Real> *temp,*finest;
-    int finestIndex;
-    typename OctNode<NodeData,Real>::NodeIndex finestNIdx=nIdx;
 
-    // The assumption is that the super-edge has a root along it.
-    if(!(MarchingCubes::HasEdgeRoots(node->nodeData.mcIndex,edgeIndex)))
+    // The assumption is that the super-edge has one root along it.
+    if(!(MarchingCubes::HasEdgeRoots(node->nodeData.mcIndex, edgeIndex)))
         return 0;
 
+    // Special treatment if at max level.
     if(nIdx.depth==maxDepth)
     {
         ri.node=node;
@@ -146,20 +156,26 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
         return 1;
     }
 
-    finest=node;
-    finestIndex=edgeIndex;
+    /* Initialize finest node and finest edge with current values. */
+    const OctNode<NodeData,Real>* finest = node;
+    typename OctNode<NodeData,Real>::NodeIndex finestNIdx = nIdx;
+    int finestIndex = edgeIndex;
+
+    /* Query faces 1 and 2 of this node adjacent to the edge. */
+    int f1, f2;
+    Cube::FacesAdjacentToEdge(edgeIndex,f1,f2);
 
     /* Check for finer edges in adjacent nodes. */
-    Cube::FacesAdjacentToEdge(edgeIndex,f1,f2);
-    if(nIdx.depth<maxDepth)
+    if(nIdx.depth < maxDepth)
     {
         if(!node->children)
         {
-            temp=node->faceNeighbor(f1);
+            /* Check node neighboring to face 1. */
+            const OctNode<NodeData,Real>* temp = node->faceNeighbor(f1);
             if(temp && temp->children)
             {
-                finest=temp;
-                finestIndex=Cube::FaceReflectEdgeIndex(edgeIndex,f1);
+                finest = temp;
+                finestIndex = Cube::FaceReflectEdgeIndex(edgeIndex,f1);
                 int dir,off;
                 Cube::FactorFaceIndex(f1,dir,off);
                 if(off)
@@ -169,7 +185,8 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
             }
             else
             {
-                temp=node->faceNeighbor(f2);
+                /* Check node neighboring to face 2. */
+                const OctNode<NodeData,Real>* temp = node->faceNeighbor(f2);
                 if(temp && temp->children)
                 {
                     finest=temp;
@@ -183,7 +200,8 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
                 }
                 else
                 {
-                    temp=node->edgeNeighbor(edgeIndex);
+                    /* Check node opposite to this node across the edge. */
+                    const OctNode<NodeData,Real>* temp = node->edgeNeighbor(edgeIndex);
                     if(temp && temp->children)
                     {
                         finest=temp;
@@ -217,6 +235,7 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
         }
     }
 
+    int c1,c2;
     Cube::EdgeCorners(finestIndex,c1,c2);
     if(finest->children)
     {
@@ -240,36 +259,44 @@ int IsoOctree<NodeData,Real,VertexData>::getRootIndex(OctNode<NodeData,Real>* no
     }
 }
 
+/*
+ * This method computes for every leaf with corresponding index the "roots",
+ * i.e. isovertices on edges of the cube, and generates a vertex position
+ * and vertex data for every root.
+ */
 template<class NodeData,class Real,class VertexData>
 void IsoOctree<NodeData,Real,VertexData>::getRoots(
-    OctNode<NodeData,Real>* node,
+    const OctNode<NodeData,Real>* node,
     const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
     const Real& isoValue,
     stdext::hash_map<long long,int>& roots,
     std::vector<VertexType>& vertices,
     std::vector<VertexData>& vdata)
 {
-    /* Compute all root positions along (leaf) edges. */
-
-    int eIndex;
-    RootInfo ri;
-
+    /* Exit if the leaf does not have a root (mcIndex == 0 or 255). */
     if(!MarchingCubes::HasRoots(node->nodeData.mcIndex))
         return;
 
-    for(eIndex=0;eIndex<Cube::EDGES;eIndex++)
+    /* Iterate over all edges of the cube. */
+    for(int eIndex=0; eIndex<Cube::EDGES; eIndex++)
     {
-        if(!(MarchingCubes::HasEdgeRoots(node->nodeData.mcIndex,eIndex)))
+        /* Skip edge if both endpoints are on the same side of isovalue. */
+        if(!(MarchingCubes::HasEdgeRoots(node->nodeData.mcIndex, eIndex)))
             continue;
 
-        if(getRootIndex(node,nIdx,eIndex,ri))
+        /* Compute root index (finest edge with isovertex on it). */
+        RootInfo ri; // Node, node index, edge index and edge key
+        if(getRootIndex(node, nIdx, eIndex, ri))
         {
+            /* Check if root index is already registered. */
             if(roots.find(ri.key)==roots.end()){
                 VertexType position;
                 VertexData vertex_data;
+                /* Get position by interpolation and obtain vertex data. */
                 getRootPosition(ri.node,ri.nIdx,ri.edgeIndex,isoValue,position, vertex_data);
                 vertices.push_back(position);
                 vdata.push_back(vertex_data);
+                /* Register root index and map to vertex ID. */
                 roots[ri.key]=int(vertices.size())-1;
             }
         }
@@ -279,7 +306,8 @@ void IsoOctree<NodeData,Real,VertexData>::getRoots(
 }
 
 template<class NodeData,class Real,class VertexData>
-int IsoOctree<NodeData,Real,VertexData>::getRootPair(const RootInfo& ri,const int& /*maxDepth*/,RootInfo& pair)
+int
+IsoOctree<NodeData,Real,VertexData>::getRootPair(const RootInfo& ri,const int& /*maxDepth*/,RootInfo& pair)
 {
     /*
      * Get the twin isovertex to a given one, i.e., find another root
@@ -313,7 +341,8 @@ int IsoOctree<NodeData,Real,VertexData>::getRootPair(const RootInfo& ri,const in
 }
 
 template<class NodeData,class Real,class VertexData>
-void IsoOctree<NodeData,Real,VertexData>::getIsoFaceEdges(
+void
+IsoOctree<NodeData,Real,VertexData>::getIsoFaceEdges(
     OctNode<NodeData,Real>* node,
     const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
     const int& faceIndex,
@@ -362,7 +391,8 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoFaceEdges(
 }
 
 template<class NodeData,class Real,class VertexData>
-void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
+void
+IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
     OctNode<NodeData,Real>* node,
     const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
     stdext::hash_map<long long,int>& roots,
@@ -479,7 +509,8 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
 
 template<class NodeData,class Real,class VertexData>
 template<class C>
-void IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
+void
+IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
     std::vector<std::pair<C,C> >& edges,
     stdext::hash_map<C,int>& roots,
     std::vector<std::vector<int> >& polygons)
@@ -591,7 +622,8 @@ IsoOctree<NodeData,Real,VertexData>::setMCIndex(const Real& isoValue)
 
 
 template<class NodeData,class Real,class VertexData>
-void IsoOctree<NodeData,Real,VertexData>::getIsoSurface(
+void
+IsoOctree<NodeData,Real,VertexData>::getIsoSurface(
     const Real& isoValue,
     std::vector<VertexType>& vertices,
     std::vector<VertexData>& vertex_data,
@@ -600,7 +632,12 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoSurface(
     /* (1) Set marching cubes values. */
     setMCIndex(isoValue);
 
-    /* (2) "Defining Consistent Isovertices" */
+    /*
+     * (2) Defining Consistent Isovertices (see paper)
+     * - iterate leaf nodes, compute all node roots for every leaf
+     * - roots are isovertices on octree edges
+     * - vertices and data are added to vectors
+     */
     stdext::hash_map<long long,int> roots;
     {
         OctNode<NodeData,Real>* node;
@@ -609,7 +646,9 @@ void IsoOctree<NodeData,Real,VertexData>::getIsoSurface(
             getRoots(node,nIdx,isoValue,roots,vertices,vertex_data);
     }
 
-    /* (3) "Closing the Isopolylines" */
+    /*
+     * (3) Closing the Isopolylines (see paper)
+     */
     {
         NeighborKey<NodeData,Real> nKey;
         nKey.set(maxDepth);

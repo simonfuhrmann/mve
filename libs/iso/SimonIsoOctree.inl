@@ -73,7 +73,7 @@ SimonIsoOctree::extract_mesh (void)
     mve::TriangleMesh::ColorList& colors = mesh->get_vertex_colors();
     mve::TriangleMesh::ValueList& scales = mesh->get_vertex_values();
 
-    std::cout << "Getting ISO surface..." << std::flush;
+    std::cout << "Extracting isosurface..." << std::flush;
     util::WallTimer timer;
     std::vector<std::vector<int> > polygons;
     std::vector<SimonVertexData> vertex_data;

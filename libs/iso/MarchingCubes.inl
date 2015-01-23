@@ -38,7 +38,7 @@ void Square::FactorCornerIndex(const int& idx,int& x,int& y)
     y=(idx>>1)%2;
 }
 
-void Square::FactorEdgeIndex(const int& idx,int& orientation,int& i)
+void Square::FactorEdgeIndex(const int& idx, int& orientation, int& i)
 {
     switch(idx){
         case 0: case 2:

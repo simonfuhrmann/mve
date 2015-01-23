@@ -88,8 +88,8 @@ private:  // Types
     };
 
 private:  // Methods
-    void getRoots(OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const Real& isoValue,stdext::hash_map<long long,int>& roots,std::vector<VertexType>& vertices,std::vector<VertexData>& vertex_data);
-    int getRootIndex(OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const int& edgeIndex,RootInfo& ri);
+    void getRoots(const OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const Real& isoValue,stdext::hash_map<long long,int>& roots,std::vector<VertexType>& vertices,std::vector<VertexData>& vertex_data);
+    int getRootIndex(const OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const int& edgeIndex,RootInfo& ri);
     int getRootPosition(const OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const int& eIndex,const Real& isoValue, VertexType& position, VertexData& vertex_data);
     long long getRootKey(const typename OctNode<NodeData,Real>::NodeIndex& nIdx,const int& edgeIndex);
 
