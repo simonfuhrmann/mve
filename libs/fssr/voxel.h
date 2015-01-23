@@ -33,7 +33,9 @@ FSSR_NAMESPACE_BEGIN
 struct VoxelIndex
 {
 public:
+    /** Computes the octree corner index given octree node path and level. */
     void from_path_and_corner (uint8_t level, uint64_t path, int corner);
+    /** Computes the position of a voxel given octree root size and center. */
     math::Vec3d compute_position (math::Vec3d const& center, double size);
     uint32_t get_offset_x (void) const;
     uint32_t get_offset_y (void) const;

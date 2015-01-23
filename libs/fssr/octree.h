@@ -41,7 +41,7 @@ public:
     public:
         Node* children;
         Node* parent;
-        int mc_index; // NEW
+        int mc_index;
         std::vector<Sample> samples;
     };
 
@@ -60,6 +60,7 @@ public:
         Node* next_branch (void);
         Node* next_leaf (void);
         Iterator descend (int octant) const;
+        Iterator descend (uint64_t path, uint8_t level) const;
 
     public:
         Node* current;
@@ -74,6 +75,9 @@ public:
 
     /** Resets the octree to its initial state. */
     void clear (void);
+
+    /** Clears all samples in all nodes. */
+    void clear_samples (void);
 
     /**
      * Inserts a single sample into the Octree.
@@ -218,6 +222,15 @@ Octree::clear (void)
     this->root_center = math::Vec3d(0.0);
     this->num_samples = 0;
     this->num_nodes = 0;
+}
+
+inline void
+Octree::clear_samples (void)
+{
+    Iterator iter = this->get_iterator_for_root();
+    for (iter.first_node(); iter.current != NULL; iter.next_node())
+        iter.current->samples.clear();
+    this->num_samples = 0;
 }
 
 inline std::size_t
