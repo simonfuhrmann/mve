@@ -16,6 +16,7 @@
  * R1 R2 R3 T1
  * R4 R5 R6 T2
  * R7 R8 R9 T3
+ * 0  0  0  1
  *
  * MESH_FILE_NAME
  * ...
