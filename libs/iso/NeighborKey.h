@@ -49,8 +49,8 @@ template<class NodeData, class Real>
 class NeighborKey
 {
 public:
-    Neighbors<NodeData,Real>* neighbors;
-    int depth;
+    Neighbors<NodeData,Real>* neighbors; // Array of size depth+1
+    int depth; // Depth of the current node
 
     NeighborKey(void);
     ~NeighborKey(void);

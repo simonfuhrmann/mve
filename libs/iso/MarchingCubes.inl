@@ -297,7 +297,7 @@ MarchingSquares::FaceEdges MarchingSquares::__caseTable[1<<(Square::CORNERS)];
 
 void MarchingSquares::SetCaseTable(void)
 {
-    for(int idx=0;idx<(1<<Square::CORNERS);idx++)
+    for(int idx=0; idx < (1<<Square::CORNERS); idx++)
     {
         int c1,c2;
         __caseTable[idx].count=0;
@@ -390,23 +390,31 @@ const std::vector< std::vector<int> >& MarchingCubes::caseTable(const int& idx)
 void MarchingCubes::SetCaseTable(void)
 {
     MarchingSquares::SetCaseTable();
-    int dir,off;
-    for(int idx=0;idx<(1<<Cube::CORNERS);idx++)
+
+    /* Iterate the 256 MC cases. */
+    for (int idx=0; idx < (1<<Cube::CORNERS); idx++)
     {
         std::vector<std::pair<int,int> > edges;
-        for(int f=0;f<Cube::FACES;f++)
+        /* Iterate all 8 faces of the cube. */
+        for (int f=0; f<Cube::FACES; f++)
         {
-            int fIdx=0;
+            /* Compute case index for a face in the MS case table. */
+            int dir, off;
             Cube::FactorFaceIndex(f,dir,off);
-            for(int fc=0;fc<Square::CORNERS;fc++)
-                if(idx&(1<<Cube::SquareToCubeCorner(f,fc)))
-                    fIdx|=1<<fc;
+            int fIdx = 0;
+            for (int fc=0; fc < Square::CORNERS; fc++)
+                if (idx & (1<<Cube::SquareToCubeCorner(f,fc)))
+                    fIdx |= 1<<fc;
 
             for(int i=0;i<MarchingSquares::caseTable(fIdx).count;i++)
                 if(off)
-                    edges.push_back(std::pair<int,int>(Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].first),Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].second)));
+                    edges.push_back(std::pair<int,int>(
+                        Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].first),
+                        Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].second)));
                 else
-                    edges.push_back(std::pair<int,int>(Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].second),Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].first)));
+                    edges.push_back(std::pair<int,int>(
+                        Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].second),
+                        Cube::SquareToCubeEdge(f,MarchingSquares::caseTable(fIdx).edge[i].first)));
         }
         __caseTable[idx].clear();
         GetEdgeLoops(edges,__caseTable[idx]);

@@ -95,7 +95,8 @@ private:  // Methods
 
     int getRootPair(const RootInfo& root,const int& maxDepth,RootInfo& pair);
 
-    void getIsoFaceEdges(OctNode<NodeData,Real>* node,
+    void getIsoFaceEdges(
+        const OctNode<NodeData,Real>* node,
         const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
         const int& faceIndex,
         std::vector<std::pair<RootInfo,RootInfo> >& edges,
