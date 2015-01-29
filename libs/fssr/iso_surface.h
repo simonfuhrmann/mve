@@ -30,13 +30,21 @@ FSSR_NAMESPACE_BEGIN
 class IsoSurface
 {
 public:
+    /** The isovertex contains interpolated position and voxel data. */
     struct IsoVertex
     {
         math::Vec3f pos;
         VoxelData data;
+        bool orientation;
     };
+    /** The edge index is a pair of voxel indices. */
     typedef std::pair<uint64_t, uint64_t> EdgeIndex;
-    typedef std::map<EdgeIndex, IsoVertex> EdgeVertexMap;
+    /** Vector of IsoVertex elements. */
+    typedef std::vector<IsoVertex> IsoVertexVector;
+    /** Maps and edge to an isovertex ID. */
+    typedef std::map<EdgeIndex, std::size_t> EdgeVertexMap;
+    /** List of polygons, each indexing vertices. */
+    typedef std::vector<std::vector<int> > PolygonList;
 
 public:
     IsoSurface (Octree* octree, IsoOctree::VoxelVector const& voxels);
@@ -46,12 +54,17 @@ private:
     void sanity_checks (void);
     void compute_mc_index (Octree::Iterator const& iter);
     void compute_isovertices (Octree::Iterator const& iter,
-        EdgeVertexMap* isovertices);
+        EdgeVertexMap* edgemap, IsoVertexVector* isovertices);
     bool is_isovertex_on_edge (int mc_index, int edge_id);
     void get_finest_isoedge (Octree::Iterator const& iter,
-        int edge_id, EdgeIndex* index);
+        int edge_id, EdgeIndex* edge_index);
     void get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex);
-
+    void compute_isopolygons(Octree::Iterator const& iter,
+        EdgeVertexMap const& edgemap,
+        std::vector<std::vector<int> >* polygons);
+    void compute_triangulation(IsoVertexVector const& isovertices,
+        PolygonList const& polygons,
+        mve::TriangleMesh::Ptr mesh);
     VoxelData const* get_voxel_data (VoxelIndex const& index);
 
 private:

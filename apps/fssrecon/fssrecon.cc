@@ -13,6 +13,8 @@
 #include <iostream>
 #include <string>
 
+#define USE_LEGACY_CONTOURING 0
+
 #include "mve/mesh.h"
 #include "mve/mesh_io_ply.h"
 #include "util/timer.h"
@@ -20,8 +22,10 @@
 #include "fssr/pointset.h"
 #include "fssr/iso_octree.h"
 #include "fssr/iso_surface.h"
-#include "iso/SimonIsoOctree.h"
-#include "iso/MarchingCubes.h"
+#if USE_LEGACY_CONTOURING
+#   include "iso/SimonIsoOctree.h"
+#   include "iso/MarchingCubes.h"
+#endif
 
 struct AppOptions
 {
@@ -133,7 +137,7 @@ main (int argc, char** argv)
     octree.compute_voxels();
     octree.clear_samples();
 
-#if 1 // Old isosurfacing code
+#if USE_LEGACY_CONTOURING
     /* Transfer octree. */
     std::cout << "Transfering octree and voxel data..." << std::flush;
     timer.reset();
@@ -146,11 +150,10 @@ main (int argc, char** argv)
     MarchingCubes::SetCaseTable();
     mve::TriangleMesh::Ptr mesh = iso_tree.extract_mesh();
     iso_tree.clear();
-#else // New isosurfacing code
+#else
     /* Extract isosurface. */
     mve::TriangleMesh::Ptr mesh;
     {
-        /* Transfer octree data. */
         std::cout << "Extracting isosurface..." << std::endl;
         timer.reset();
         fssr::IsoSurface iso_surface(&octree, octree.get_voxels());
@@ -175,8 +178,8 @@ main (int argc, char** argv)
         std::size_t num_vertices = mesh->get_vertices().size();
         mve::TriangleMesh::DeleteList delete_verts(num_vertices, false);
         for (std::size_t i = 0; i < num_vertices; ++i)
-        if (mesh->get_vertex_confidences()[i] == 0.0f)
-            delete_verts[i] = true;
+            if (mesh->get_vertex_confidences()[i] == 0.0f)
+                delete_verts[i] = true;
         mesh->delete_vertices_fix_faces(delete_verts);
     }
     std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;

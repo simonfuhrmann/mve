@@ -46,22 +46,22 @@ VoxelIndex::compute_position (math::Vec3d const& center, double size)
     return center - size / 2.0 + math::Vec3d(fx, fy, fz) * size;
 }
 
-uint32_t
+int32_t
 VoxelIndex::get_offset_x (void) const
 {
-    return static_cast<uint32_t>((this->index >> 0) & 0x1fffff);
+    return static_cast<int32_t>((this->index >> 0) & 0x1fffff);
 }
 
-uint32_t
+int32_t
 VoxelIndex::get_offset_y (void) const
 {
-    return static_cast<uint32_t>((this->index >> 21) & 0x1fffff);
+    return static_cast<int32_t>((this->index >> 21) & 0x1fffff);
 }
 
-uint32_t
+int32_t
 VoxelIndex::get_offset_z (void) const
 {
-    return static_cast<uint32_t>((this->index >> 42) & 0x1fffff);
+    return static_cast<int32_t>((this->index >> 42) & 0x1fffff);
 }
 
 /* ---------------------------------------------------------------- */

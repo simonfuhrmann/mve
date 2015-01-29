@@ -101,20 +101,34 @@ Octree::Iterator::descend (int octant) const
     Iterator iter(*this);
     iter.current = iter.current->children + octant;
     iter.level = iter.level + 1;
-    iter.path = (iter.path << 3) + octant;
+    iter.path = (iter.path << 3) | octant;
     return iter;
 }
 
 Octree::Iterator
-Octree::Iterator::descend (uint64_t path, uint8_t level) const
+Octree::Iterator::descend (uint8_t level, uint64_t path) const
 {
     Iterator iter;
     iter.root = this->root;
     iter.current = this->root;
+    iter.path = 0;
+    iter.level = 0;
     for (int i = 0; i < level; ++i)
     {
-        // TODO
+        if (iter.current->children == NULL)
+        {
+            iter.current = NULL;
+            return iter;
+        }
+
+        int const octant = (path >> ((level - i - 1) * 3)) & 7;
+        iter = iter.descend(octant);
     }
+
+    if (iter.path != path || iter.level != level)
+        throw std::runtime_error("descend(): failed");
+
+    return iter;
 }
 
 /* -------------------------------------------------------------------- */

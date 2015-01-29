@@ -20,8 +20,8 @@ FSSR_NAMESPACE_BEGIN
 
 /**
  * A regular octree data structure (each node has zero or eight child nodes).
- * The maximum level of this octree is limited to 20 because of the way
- * the iterator works and the voxel indexing scheme (see voxel.h).
+ * The octree is limited to 20 levels because of the way the iterator works
+ * and the voxel indexing scheme (see voxel.h).
  */
 class Octree
 {
@@ -60,7 +60,7 @@ public:
         Node* next_branch (void);
         Node* next_leaf (void);
         Iterator descend (int octant) const;
-        Iterator descend (uint64_t path, uint8_t level) const;
+        Iterator descend (uint8_t level, uint64_t path) const;
 
     public:
         Node* current;
