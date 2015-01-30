@@ -102,10 +102,17 @@ private:  // Methods
         std::vector<std::pair<RootInfo,RootInfo> >& edges,
         const int& flip);
 
-    void getIsoPolygons(OctNode<NodeData,Real>* node,const typename OctNode<NodeData,Real>::NodeIndex& nIdx,stdext::hash_map<long long,int>& roots,std::vector<std::vector<int> >& polygons,NeighborKey<NodeData,Real>& nKey);
+    void getIsoPolygons(
+        OctNode<NodeData,Real>* node,
+        const typename OctNode<NodeData,Real>::NodeIndex& nIdx,
+        stdext::hash_map<long long,int>& roots,
+        std::vector<std::vector<int> >& polygons,
+        NeighborKey<NodeData,Real>& nKey);
 
-    template<class C>
-    void getEdgeLoops(std::vector<std::pair<C,C> >& edges,stdext::hash_map<C,int>& roots,std::vector<std::vector<int> >& polygons);
+    void getEdgeLoops(
+        std::vector<std::pair<long long,long long> >& edges,
+        stdext::hash_map<long long,int>& roots,
+        std::vector<std::vector<int> >& polygons);
 
     // Assumes NodeData::mcIndex
     void setMCIndex(const Real& isoValue);

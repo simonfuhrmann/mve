@@ -307,11 +307,15 @@ void IsoOctree<NodeData,Real,VertexData>::getRoots(
 
 template<class NodeData,class Real,class VertexData>
 int
-IsoOctree<NodeData,Real,VertexData>::getRootPair(const RootInfo& ri,const int& /*maxDepth*/,RootInfo& pair)
+IsoOctree<NodeData,Real,VertexData>::getRootPair(
+    const RootInfo& ri,
+    const int& /*maxDepth*/,
+    RootInfo& pair)
 {
     /*
      * Get the twin isovertex to a given one, i.e., find another root
-     * in neighboring leafs of the edge tree without crossing the iso-surface. (see figure 3)
+     * in neighboring leafs of the edge tree without crossing the iso-surface.
+     * (see figure 3)
      */
 
     const OctNode<NodeData,Real>* node=ri.node;
@@ -399,21 +403,12 @@ IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
     std::vector<std::vector<int> >& polygons,
     NeighborKey<NodeData,Real>& nKey)
 {
-    typedef stdext::hash_map<long long,std::pair<RootInfo,int> > EdgeRootMap;
-    EdgeRootMap vertexCount;
-    typename EdgeRootMap::iterator iter;
-    std::vector<std::pair<long long,long long> > edges;
-    std::vector<std::pair<RootInfo,RootInfo> > riEdges;
-
-    /* SIMON: If this is not max level, iterate over faces and get neighbors.
-     * If neighbors are finer, get their ISO face edges, otherwise use own.
-     */
-
     /* Prepare neighborhood cache data structure. */
     nKey.getNeighbors(node);
 
     /* Iterate over node faces, find finest face and getIsoFaceEdges. */
     int x[3] = { 1, 1, 1 };
+    std::vector<std::pair<RootInfo,RootInfo> > riEdges;
     for(int i=0;i<3;i++) // iterate over axis directions
     {
         for(int j=0;j<2;j++) // iterate over axis orientations
@@ -439,11 +434,15 @@ IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
 
     /*
      * establish invariant: vertexCount == outgoingEdges - incomingEdges
-     * so that vertexCount can be used to check for "open isovertices" (cf. figure 3).
+     * check vertexCount to find "open isovertices" (cf. figure 3).
      */
-
+    typedef stdext::hash_map<long long,std::pair<RootInfo,int> > EdgeRootMap; // EdgeKey -> (RootInfo,Counter)
+    EdgeRootMap vertexCount;
+    std::vector<std::pair<long long,long long> > edges; // EdgeKey -> EdgeKey
     for(size_t i=0;i<riEdges.size();i++)
     {
+        typename EdgeRootMap::iterator iter;
+
         edges.push_back(std::pair<long long,long long>(riEdges[i].first.key,riEdges[i].second.key));
         iter=vertexCount.find(riEdges[i].first.key);
         if(iter==vertexCount.end())
@@ -468,6 +467,8 @@ IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
 
     for(int i=0;i<int(edges.size());i++)
     {
+        typename EdgeRootMap::iterator iter;
+
         iter=vertexCount.find(edges[i].first);
         if(iter==vertexCount.end())
             printf("Could not find vertex: %lld\n",edges[i].first);
@@ -502,7 +503,8 @@ IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
             iter=vertexCount.find(ri.key);
             if(iter==vertexCount.end())
                 printf("Vertex pair not in list\n");
-            else{
+            else
+            {
                 edges.push_back(std::pair<long long,long long>(edges[i].second,ri.key));
                 vertexCount[edges[i].second].second++;
                 vertexCount[ri.key].second--;
@@ -513,33 +515,29 @@ IsoOctree<NodeData,Real,VertexData>::getIsoPolygons(
 }
 
 template<class NodeData,class Real,class VertexData>
-template<class C>
 void
 IsoOctree<NodeData,Real,VertexData>::getEdgeLoops(
-    std::vector<std::pair<C,C> >& edges,
-    stdext::hash_map<C,int>& roots,
+    std::vector<std::pair<long long,long long> >& edges, // EdgeKey -> EdgeKey
+    stdext::hash_map<long long,int>& roots, // EdgeKey -> Vertex ID
     std::vector<std::vector<int> >& polygons)
 {
     /* Join all edges to form polygons, see section "Closing the Isopolylines". */
-
-    size_t polygonSize=polygons.size();
-    C frontIdx,backIdx;
-    std::pair<C,C> e,temp;
-
+    size_t polygonSize = polygons.size();
     while(edges.size())
     {
-        std::vector<std::pair<C,C> > front,back;
+        std::vector<std::pair<long long,long long> > front, back;
 
         /* Grab an edge and start a new polygon. */
-        e=edges[0];
+        std::pair<long long,long long> e = edges[0];
         polygons.resize(polygonSize+1);
         edges[0]=edges[edges.size()-1];
         edges.pop_back();
 
-        frontIdx=e.second;
-        backIdx=e.first;
+        long long frontIdx = e.second;
+        long long backIdx = e.first;
 
         /* Find all edges that share a point with one of the ends of the polyline (not yet a loop). */
+        std::pair<long long,long long> temp;
         for(int j=int(edges.size())-1;j>=0;j--){
             if(edges[j].first==frontIdx || edges[j].second==frontIdx){
                 if(edges[j].first==frontIdx)
