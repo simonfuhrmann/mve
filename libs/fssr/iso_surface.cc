@@ -25,13 +25,14 @@
 #define ISO_VALUE 0.0f
 #define CUBE_CORNERS 8
 #define CUBE_EDGES 12
+#define CUBE_FACES 6
 
 FSSR_NAMESPACE_BEGIN
 
 /** Helper types and functions. */
 namespace
 {
-    /* Cube face directions. */
+    /** Cube face directions. */
     enum FaceDirection
     {
         POSITIVE_X = 0,
@@ -42,7 +43,25 @@ namespace
         NEGATIVE_Z = 5
     };
 
-    /* The directions of neighboring nodes around an edge. */
+    FaceDirection const face_opposite[6] =
+    {
+        NEGATIVE_X, POSITIVE_X,
+        NEGATIVE_Y, POSITIVE_Y,
+        NEGATIVE_Z, POSITIVE_Z
+    };
+
+    /** The four corner IDs around a cube face. */
+    int const face_corners[6][4] =
+    {
+        { 1, 3, 5, 7 }, /* Positive X. */
+        { 0, 2, 4, 6 }, /* Negative X. */
+        { 2, 3, 6, 7 }, /* Positive Y. */
+        { 0, 1, 4, 5 }, /* Negative Y. */
+        { 4, 5, 6, 7 }, /* Positive Z. */
+        { 0, 1, 2, 3 }, /* Negative Z. */
+    };
+
+    /** The directions of neighboring nodes around an edge. */
     FaceDirection const edge_neighbors[12][2] =
     {
         { NEGATIVE_Y, NEGATIVE_Z }, /* Edge 0. */
@@ -59,7 +78,7 @@ namespace
         { POSITIVE_X, POSITIVE_Y }  /* Edge 11. */
     };
 
-    /* Voxel corners and children IDs of an edge. */
+    /** Voxel corners and children IDs of an edge. */
     int const edge_corners[12][2] =
     {
         { 0, 1 }, /* Edge 0. */
@@ -76,7 +95,7 @@ namespace
         { 3, 7 }, /* Edge 11. */
     };
 
-    /* Same edge ID but seen from adjacent nodes. */
+    /** Same edge ID but seen from adjacent nodes. */
     int const edge_reflections[12][3] =
     {
         {  3,  6,  9 }, /* Edge 0. */
@@ -93,7 +112,7 @@ namespace
         {  5,  2,  8 }, /* Edge 11. */
     };
 
-    /* Specifies for each MC case which edges to connect to a polygon. */
+    /** Specifies for each MC case which edges to connect to a polygon. */
     int const mc_polygons[256][17] =
     {
         { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -354,13 +373,12 @@ namespace
         { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
     };
 
-    /* Modifies an octree path by walking in one of the face directions. */
+    /** Modifies an octree path by walking in one face direction. */
     bool
     modify_path (FaceDirection const& dir, uint8_t level, uint64_t* path)
     {
-        bool subtract = static_cast<bool>((int)dir % 2);
-        int bit_offset = (int)dir / 2;
-
+        bool const subtract = static_cast<int>(dir) % 2;
+        int const bit_offset = static_cast<int>(dir) / 2;
         bool overflow = true;
         for (int i = 0; overflow && i < level; ++i)
         {
@@ -469,7 +487,7 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
     if (iter.current->mc_index == 0x00 || iter.current->mc_index == 0xff)
         return;
 
-#if 1 // Hack: Create polygons within each cube
+#if 0 // Hack: Create polygons within each cube
     for (int i = 0; i < CUBE_EDGES; ++i)
     {
         /* Check if edge contains an isovertex. */
@@ -504,7 +522,7 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
 
         /* Get the finest edge that contains an isovertex. */
         EdgeIndex edge_index;
-        this->get_finest_isoedge(iter, i, &edge_index);
+        this->get_finest_cube_edge(iter, i, &edge_index);
         if (edgemap->find(edge_index) != edgemap->end())
             continue;
 
@@ -517,14 +535,14 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
 }
 
 void
-IsoSurface::get_finest_isoedge (Octree::Iterator const& iter,
+IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
     int edge_id, EdgeIndex* edge_index)
 {
     if (edge_id < 0 || edge_id > 11)
-        throw std::runtime_error("get_finest_isoedge(): Invalid edge ID");
+        throw std::runtime_error("get_finest_cube_edge(): Invalid edge ID");
 
     if (!this->is_isovertex_on_edge(iter.current->mc_index, edge_id))
-        throw std::runtime_error("get_finest_isoedge(): Invalid isoedge");
+        throw std::runtime_error("get_finest_cube_edge(): Invalid isoedge");
 
     /* Remember the finest node found so far. */
     Octree::Iterator finest_iter = iter;
@@ -579,7 +597,7 @@ IsoSurface::get_finest_isoedge (Octree::Iterator const& iter,
     }
 
     if (finest_iter.current == NULL)
-        throw std::runtime_error("get_finest_isoedge(): Error finding isoedge");
+        throw std::runtime_error("get_finest_cube_edge(): Error finding edge");
 
     /* If the finest node has no children, it is the finest node. */
     if (finest_iter.current->children == NULL)
@@ -602,13 +620,13 @@ IsoSurface::get_finest_isoedge (Octree::Iterator const& iter,
     bool c1_iso = this->is_isovertex_on_edge(child1.mc_index, finest_edge_id);
     bool c2_iso = this->is_isovertex_on_edge(child2.mc_index, finest_edge_id);
     if (c1_iso && !c2_iso)
-        this->get_finest_isoedge(finest_iter.descend(child_1_id),
+        this->get_finest_cube_edge(finest_iter.descend(child_1_id),
             finest_edge_id, edge_index);
     else if (c2_iso && !c1_iso)
-        this->get_finest_isoedge(finest_iter.descend(child_2_id),
+        this->get_finest_cube_edge(finest_iter.descend(child_2_id),
             finest_edge_id, edge_index);
     else
-        throw std::runtime_error("get_finest_isoedge(): Invalid parent edge");
+        throw std::runtime_error("get_finest_cube_edge(): Invalid parent edge");
 }
 
 void
@@ -646,7 +664,29 @@ IsoSurface::compute_isopolygons(Octree::Iterator const& iter,
     EdgeVertexMap const& edgemap,
     std::vector<std::vector<int> >* polygons)
 {
-#if 1 // Hack: Create polygons within each cube
+    /*
+     *  Step 1: Collect iso edges for this node
+     *   Iterate over all 6 faces of the current node
+     *   If face neighboring nodes have finer levels
+     *   - Use iso edges from finer levels
+     *   - Else use iso edges from this node face
+     *
+     * Step 2: Find open vertices with valence one
+     *   Create map for each iso edge endpoint and count incoming - outgoing
+     *   Fix vertices with valence one by connecting with twin vertex
+     *
+     * Step 3: Join edges to form closed polygons
+     *   Start with an edge and chain edges while available
+     *   Check for remaining edges and start over
+     */
+
+    /* Step 1: Collect iso edges. */
+    IsoEdgeList isoedges;
+    for (int i = 0; i < CUBE_FACES; ++i)
+        this->get_finest_isoedges (iter, i, &isoedges);
+
+
+#if 0 // Hack: Create polygons within each cube
     /* Check if cube contains an isosurface. */
     if (iter.current->mc_index == 0x00 || iter.current->mc_index == 0xff)
         return;
@@ -686,6 +726,28 @@ IsoSurface::compute_isopolygons(Octree::Iterator const& iter,
     }
 #endif
 }
+
+void
+IsoSurface::get_finest_isoedges (Octree::Iterator const& iter,
+    int face_id, IsoEdgeList* isoedges)
+{
+    uint64_t new_path = iter.path;
+    modify_path((FaceDirection)face_id, iter.level, &new_path);
+    Octree::Iterator niter = iter.descend(iter.level, new_path);
+
+    if (niter.current != NULL && niter.current->children != NULL)
+    {
+        /* Neighboring node has finer subdivision. Use those eges. */
+        /* Flip those edges afterwards. */
+    }
+    else
+    {
+        /* Use the isoedges from this node face. */
+    }
+}
+
+
+
 
 void
 IsoSurface::compute_triangulation(IsoVertexVector const& isovertices,

@@ -37,7 +37,7 @@ public:
         VoxelData data;
         bool orientation;
     };
-    /** The edge index is a pair of voxel indices. */
+    /** The edge index identifies an octree edge with two voxel indices. */
     typedef std::pair<uint64_t, uint64_t> EdgeIndex;
     /** Vector of IsoVertex elements. */
     typedef std::vector<IsoVertex> IsoVertexVector;
@@ -45,6 +45,8 @@ public:
     typedef std::map<EdgeIndex, std::size_t> EdgeVertexMap;
     /** List of polygons, each indexing vertices. */
     typedef std::vector<std::vector<int> > PolygonList;
+    /** List of iso edges connecting vertices on cube edges. */
+    typedef std::vector<std::pair<EdgeIndex, EdgeIndex> > IsoEdgeList;
 
 public:
     IsoSurface (Octree* octree, IsoOctree::VoxelVector const& voxels);
@@ -56,8 +58,10 @@ private:
     void compute_isovertices (Octree::Iterator const& iter,
         EdgeVertexMap* edgemap, IsoVertexVector* isovertices);
     bool is_isovertex_on_edge (int mc_index, int edge_id);
-    void get_finest_isoedge (Octree::Iterator const& iter,
+    void get_finest_cube_edge (Octree::Iterator const& iter,
         int edge_id, EdgeIndex* edge_index);
+    void get_finest_isoedges (Octree::Iterator const& iter,
+        int face_id, IsoEdgeList* isoedges);
     void get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex);
     void compute_isopolygons(Octree::Iterator const& iter,
         EdgeVertexMap const& edgemap,
