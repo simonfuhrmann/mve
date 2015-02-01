@@ -320,11 +320,11 @@ IsoOctree<NodeData,Real,VertexData>::getRootPair(
 
     const OctNode<NodeData,Real>* node=ri.node;
     typename OctNode<NodeData,Real>::NodeIndex nIdx=ri.nIdx;
-    int c1,c2,c;
+    int c1,c2;
     Cube::EdgeCorners(ri.edgeIndex,c1,c2);
     while(node->parent)
     {
-        c=int(node-node->parent->children);
+        int c = int(node - node->parent->children);
         if(c!=c1 && c!=c2)
             return 0;
 
@@ -332,9 +332,15 @@ IsoOctree<NodeData,Real,VertexData>::getRootPair(
         if(!MarchingCubes::HasEdgeRoots(node->parent->nodeData.mcIndex,ri.edgeIndex))
         {
             if(c==c1)
-                return getRootIndex(&node->parent->children[c2],nIdx.parent().child(c2),ri.edgeIndex,pair);
+                return getRootIndex(
+                    &node->parent->children[c2],
+                    nIdx.parent().child(c2),
+                    ri.edgeIndex,pair);
             else
-                return getRootIndex(&node->parent->children[c1],nIdx.parent().child(c2),ri.edgeIndex,pair);
+                return getRootIndex(
+                    &node->parent->children[c1],
+                    nIdx.parent().child(c2),
+                    ri.edgeIndex,pair);
         }
 
         /* Go to parent edge. */

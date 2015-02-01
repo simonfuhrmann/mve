@@ -131,6 +131,17 @@ Octree::Iterator::descend (uint8_t level, uint64_t path) const
     return iter;
 }
 
+Octree::Iterator
+Octree::Iterator::ascend (void) const
+{
+    Iterator iter;
+    iter.root = this->root;
+    iter.current = this->current->parent;
+    iter.path = this->path >> 3;
+    iter.level = this->level - 1;
+    return iter;
+}
+
 /* -------------------------------------------------------------------- */
 
 void

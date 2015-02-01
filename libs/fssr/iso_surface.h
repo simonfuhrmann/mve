@@ -1,5 +1,10 @@
 /*
- * Isosurface extraction algorithm for octrees.
+ * Isosurface extraction for octrees. The algorithm is based on the paper:
+ *
+ *   Unconstrained Isosurface Extraction on Arbitrary Octrees
+ *   Michael Kazhdan, Allison Klein, Ketan Dalal, Hugues Hoppe
+ *   Symposium on Geometry Processing, 2007
+ *
  * Written by Simon Fuhrmann.
  */
 
@@ -19,26 +24,43 @@
 FSSR_NAMESPACE_BEGIN
 
 /**
- * Isosurface extraction algorithm based on Michael Kazhdan's paper:
- *
- *     Unconstrained Isosurface Extraction on Arbitrary Octrees
- *     Michael Kazhdan, Allison Klein, Ketan Dalal, Hugues Hoppe
- *     Symposium on Geometry Processing, 2007
- *
- * The octree hierarchy and the voxel vector are required as input.
+ * The surfacing algorithm requires the octree hierarchy and the vector
+ * of voxels. The octree is modified in that every octree node gets the
+ * Marching Cubes index assigned. Otherwise the octree is unchanged.
  */
 class IsoSurface
 {
 public:
+    IsoSurface (Octree* octree, IsoOctree::VoxelVector const& voxels);
+    mve::TriangleMesh::Ptr extract_mesh (void);
+
+private:
     /** The isovertex contains interpolated position and voxel data. */
     struct IsoVertex
     {
         math::Vec3f pos;
         VoxelData data;
-        bool orientation;
     };
+
     /** The edge index identifies an octree edge with two voxel indices. */
     typedef std::pair<uint64_t, uint64_t> EdgeIndex;
+
+    /** Additional informtiaon for an edge. */
+    struct EdgeInfo
+    {
+        Octree::Iterator iter;
+        int edge_id;
+    };
+
+    /** An IsoEdge is a connection between two cube edges. */
+    struct IsoEdge
+    {
+        EdgeIndex first;
+        EdgeIndex second;
+        EdgeInfo first_info;
+        EdgeInfo second_info;
+    };
+
     /** Vector of IsoVertex elements. */
     typedef std::vector<IsoVertex> IsoVertexVector;
     /** Maps and edge to an isovertex ID. */
@@ -46,11 +68,7 @@ public:
     /** List of polygons, each indexing vertices. */
     typedef std::vector<std::vector<int> > PolygonList;
     /** List of iso edges connecting vertices on cube edges. */
-    typedef std::vector<std::pair<EdgeIndex, EdgeIndex> > IsoEdgeList;
-
-public:
-    IsoSurface (Octree* octree, IsoOctree::VoxelVector const& voxels);
-    mve::TriangleMesh::Ptr extract_mesh (void);
+    typedef std::vector<IsoEdge> IsoEdgeList;
 
 private:
     void sanity_checks (void);
@@ -59,9 +77,9 @@ private:
         EdgeVertexMap* edgemap, IsoVertexVector* isovertices);
     bool is_isovertex_on_edge (int mc_index, int edge_id);
     void get_finest_cube_edge (Octree::Iterator const& iter,
-        int edge_id, EdgeIndex* edge_index);
+        int edge_id, EdgeIndex* edge_index, EdgeInfo* edge_info);
     void get_finest_isoedges (Octree::Iterator const& iter,
-        int face_id, IsoEdgeList* isoedges);
+        int face_id, IsoEdgeList* isoedges, bool descend_only);
     void get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex);
     void compute_isopolygons(Octree::Iterator const& iter,
         EdgeVertexMap const& edgemap,
@@ -70,6 +88,10 @@ private:
         PolygonList const& polygons,
         mve::TriangleMesh::Ptr mesh);
     VoxelData const* get_voxel_data (VoxelIndex const& index);
+    std::size_t lookup_edge_vertex (EdgeVertexMap const& edgemap,
+        EdgeIndex const& edge);
+    void find_twin_vertex(EdgeInfo const& edge_info,
+        EdgeIndex* twin, EdgeInfo* twin_info);
 
 private:
     Octree* octree;

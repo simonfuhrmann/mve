@@ -61,6 +61,7 @@ public:
         Node* next_leaf (void);
         Iterator descend (int octant) const;
         Iterator descend (uint8_t level, uint64_t path) const;
+        Iterator ascend (void) const;
 
     public:
         Node* current;

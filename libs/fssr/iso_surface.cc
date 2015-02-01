@@ -33,7 +33,7 @@ FSSR_NAMESPACE_BEGIN
 namespace
 {
     /** Cube face directions. */
-    enum FaceDirection
+    enum CubeFace
     {
         POSITIVE_X = 0,
         NEGATIVE_X = 1,
@@ -43,7 +43,7 @@ namespace
         NEGATIVE_Z = 5
     };
 
-    FaceDirection const face_opposite[6] =
+    CubeFace const face_opposite[6] =
     {
         NEGATIVE_X, POSITIVE_X,
         NEGATIVE_Y, POSITIVE_Y,
@@ -61,8 +61,25 @@ namespace
         { 0, 1, 2, 3 }, /* Negative Z. */
     };
 
+    bool const is_edge_on_face[12][6] =
+    {
+        /* PosX  NegX   PosY   NegY   PosZ   NegZ */
+        { false, false, false, true , false, true  }, /* Edge 0. */
+        { true , false, false, false, false, true  }, /* Edge 1. */
+        { true , false, false, true , false, false }, /* Edge 2. */
+        { false, false, true , false, false, true  }, /* Edge 3. */
+        { false, true , false, false, false, true  }, /* Edge 4. */
+        { false, true , true , false, false, false }, /* Edge 5. */
+        { false, false, false, true , true , false }, /* Edge 6. */
+        { false, true , false, false, true , false }, /* Edge 7. */
+        { false, true , false, true , false, false }, /* Edge 8. */
+        { false, false, true , false, true , false }, /* Edge 9. */
+        { true , false, false, false, true , false }, /* Edge 10. */
+        { true , false, true , false, false, false }, /* Edge 11. */
+    };
+
     /** The directions of neighboring nodes around an edge. */
-    FaceDirection const edge_neighbors[12][2] =
+    CubeFace const edge_neighbors[12][2] =
     {
         { NEGATIVE_Y, NEGATIVE_Z }, /* Edge 0. */
         { POSITIVE_X, NEGATIVE_Z }, /* Edge 1. */
@@ -375,7 +392,7 @@ namespace
 
     /** Modifies an octree path by walking in one face direction. */
     bool
-    modify_path (FaceDirection const& dir, uint8_t level, uint64_t* path)
+    modify_path (CubeFace const& dir, uint8_t level, uint64_t* path)
     {
         bool const subtract = static_cast<int>(dir) % 2;
         int const bit_offset = static_cast<int>(dir) / 2;
@@ -487,33 +504,6 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
     if (iter.current->mc_index == 0x00 || iter.current->mc_index == 0xff)
         return;
 
-#if 0 // Hack: Create polygons within each cube
-    for (int i = 0; i < CUBE_EDGES; ++i)
-    {
-        /* Check if edge contains an isovertex. */
-        if (!this->is_isovertex_on_edge(iter.current->mc_index, i))
-            continue;
-
-        VoxelIndex vi1, vi2;
-        vi1.from_path_and_corner(iter.level, iter.path, edge_corners[i][0]);
-        vi2.from_path_and_corner(iter.level, iter.path, edge_corners[i][1]);
-        EdgeIndex edge_index;
-        edge_index.first = std::min(vi1.index, vi2.index);
-        edge_index.second = std::max(vi1.index, vi2.index);
-
-        if (edgemap->find(edge_index) == edgemap->end())
-        {
-            /* Interpolate isovertex and add index to map. */
-            IsoVertex isovertex;
-            this->get_isovertex(edge_index, &isovertex);
-            edgemap->insert(std::make_pair(edge_index, isovertices->size()));
-            isovertices->push_back(isovertex);
-        }
-    }
-
-    return;
-#endif
-
     for (int i = 0; i < CUBE_EDGES; ++i)
     {
         /* Check if edge contains an isovertex. */
@@ -522,7 +512,7 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
 
         /* Get the finest edge that contains an isovertex. */
         EdgeIndex edge_index;
-        this->get_finest_cube_edge(iter, i, &edge_index);
+        this->get_finest_cube_edge(iter, i, &edge_index, NULL);
         if (edgemap->find(edge_index) != edgemap->end())
             continue;
 
@@ -536,7 +526,7 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
 
 void
 IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
-    int edge_id, EdgeIndex* edge_index)
+    int edge_id, EdgeIndex* edge_index, EdgeInfo* edge_info)
 {
     if (edge_id < 0 || edge_id > 11)
         throw std::runtime_error("get_finest_cube_edge(): Invalid edge ID");
@@ -599,16 +589,25 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
     if (finest_iter.current == NULL)
         throw std::runtime_error("get_finest_cube_edge(): Error finding edge");
 
-    /* If the finest node has no children, it is the finest node. */
+    /* If the node has no children, we found the finest node. */
     if (finest_iter.current->children == NULL)
     {
-        VoxelIndex vi1, vi2;
-        vi1.from_path_and_corner(finest_iter.level, finest_iter.path,
-            edge_corners[finest_edge_id][0]);
-        vi2.from_path_and_corner(finest_iter.level, finest_iter.path,
-            edge_corners[finest_edge_id][1]);
-        edge_index->first = std::min(vi1.index, vi2.index);
-        edge_index->second = std::max(vi1.index, vi2.index);
+        if (edge_index != NULL)
+        {
+            VoxelIndex vi1, vi2;
+            vi1.from_path_and_corner(finest_iter.level, finest_iter.path,
+                edge_corners[finest_edge_id][0]);
+            vi2.from_path_and_corner(finest_iter.level, finest_iter.path,
+                edge_corners[finest_edge_id][1]);
+            edge_index->first = std::min(vi1.index, vi2.index);
+            edge_index->second = std::max(vi1.index, vi2.index);
+        }
+        if (edge_info != NULL)
+        {
+            edge_info->iter = finest_iter;
+            edge_info->edge_id = finest_edge_id;
+        }
+
         return;
     }
 
@@ -621,10 +620,10 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
     bool c2_iso = this->is_isovertex_on_edge(child2.mc_index, finest_edge_id);
     if (c1_iso && !c2_iso)
         this->get_finest_cube_edge(finest_iter.descend(child_1_id),
-            finest_edge_id, edge_index);
+            finest_edge_id, edge_index, edge_info);
     else if (c2_iso && !c1_iso)
         this->get_finest_cube_edge(finest_iter.descend(child_2_id),
-            finest_edge_id, edge_index);
+            finest_edge_id, edge_index, edge_info);
     else
         throw std::runtime_error("get_finest_cube_edge(): Invalid parent edge");
 }
@@ -649,7 +648,6 @@ IsoSurface::get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex)
     double const w = (vd1->value - ISO_VALUE) / (vd1->value - vd2->value);
     iso_vertex->data = fssr::interpolate(*vd1, (1.0 - w), *vd2,  w);
     iso_vertex->pos = pos1 * (1.0 - w) + pos2 * w;
-    iso_vertex->orientation = (vd1->value < ISO_VALUE);
 }
 
 bool
@@ -665,89 +663,241 @@ IsoSurface::compute_isopolygons(Octree::Iterator const& iter,
     std::vector<std::vector<int> >* polygons)
 {
     /*
-     *  Step 1: Collect iso edges for this node
-     *   Iterate over all 6 faces of the current node
-     *   If face neighboring nodes have finer levels
-     *   - Use iso edges from finer levels
-     *   - Else use iso edges from this node face
-     *
-     * Step 2: Find open vertices with valence one
-     *   Create map for each iso edge endpoint and count incoming - outgoing
-     *   Fix vertices with valence one by connecting with twin vertex
-     *
-     * Step 3: Join edges to form closed polygons
-     *   Start with an edge and chain edges while available
-     *   Check for remaining edges and start over
+     * Step 1: Collect iso edges for all faces of this node.
      */
-
-    /* Step 1: Collect iso edges. */
     IsoEdgeList isoedges;
     for (int i = 0; i < CUBE_FACES; ++i)
-        this->get_finest_isoedges (iter, i, &isoedges);
+        this->get_finest_isoedges(iter, i, &isoedges, false);
 
-
-#if 0 // Hack: Create polygons within each cube
-    /* Check if cube contains an isosurface. */
-    if (iter.current->mc_index == 0x00 || iter.current->mc_index == 0xff)
+    /* Even cubes with MC index 0x0 or 0xff can have isoedges on the faces. */
+    if (isoedges.empty())
         return;
 
-    int const* polygon_spec = mc_polygons[iter.current->mc_index];
-    int first_id = -1;
-    for (int i = 0; polygon_spec[i] != -1; ++i)
+    /*
+     * Step 2: Find open vertices by computing vertex valences.
+     */
+    std::map<EdgeIndex, int> vertex_valence;
+    for (std::size_t i = 0; i < isoedges.size(); ++i)
     {
-        int const edge_id = polygon_spec[i];
+        std::map<EdgeIndex, int>::iterator iter;
+        iter = vertex_valence.find(isoedges[i].first);
+        if (iter == vertex_valence.end())
+            vertex_valence[isoedges[i].first] = 1;
+        else
+            iter->second += 1;
+        iter = vertex_valence.find(isoedges[i].second);
+        if (iter == vertex_valence.end())
+            vertex_valence[isoedges[i].second] = -1;
+        else
+            iter->second -= 1;
+    }
 
-        if (edge_id == first_id)
+    /*
+     * Step 3: Close open polygons by connecting open twin vertices.
+     */
+    for (std::size_t i = 0; i < isoedges.size(); ++i)
+    {
+        IsoEdge const& isoedge = isoedges[i];
+        if (vertex_valence[isoedge.first] != 0)
         {
-            first_id = -1;
+            EdgeIndex twin;
+            EdgeInfo twin_info;
+            this->find_twin_vertex(isoedge.first_info, &twin, &twin_info);
+
+            IsoEdge new_edge;
+            new_edge.first = twin;
+            new_edge.first_info = twin_info;
+            new_edge.second = isoedge.first;
+            new_edge.second_info = isoedge.first_info;
+            isoedges.push_back(new_edge);
+
+            vertex_valence[new_edge.first] += 1;
+            vertex_valence[new_edge.second] -= 1;
+        }
+
+        if (vertex_valence[isoedge.second] != 0)
+        {
+            EdgeIndex twin;
+            EdgeInfo twin_info;
+            this->find_twin_vertex(isoedge.second_info, &twin, &twin_info);
+
+            IsoEdge new_edge;
+            new_edge.first = isoedges[i].second;
+            new_edge.first_info = isoedges[i].second_info;
+            new_edge.second = twin;
+            new_edge.second_info = twin_info;
+            isoedges.push_back(new_edge);
+
+            vertex_valence[new_edge.first] += 1;
+            vertex_valence[new_edge.second] -= 1;
+        }
+    }
+
+    /*
+     * Step 4: Join edges to form closed polygons.
+     */
+    std::size_t poly_start = 0;
+    for (std::size_t i = 0; i < isoedges.size(); ++i)
+    {
+        /* Once joined edges close, issue a new polygon. */
+        if (isoedges[i].second == isoedges[poly_start].first)
+        {
+            polygons->push_back(std::vector<int>());
+            std::vector<int>& poly = polygons->back();
+            for (std::size_t j = poly_start; j <= i; ++j)
+            {
+                poly.push_back(this->lookup_edge_vertex(edgemap,
+                    isoedges[j].first));
+            }
+            poly_start = i + 1;
             continue;
         }
 
-        if (first_id == -1)
+        /* Fix successive edge. */
+        bool found_edge = false;
+        for (std::size_t j = i + 1; !found_edge && j < isoedges.size(); ++j)
         {
-            first_id = edge_id;
-            polygons->push_back(std::vector<int>());
+            if (isoedges[i].second == isoedges[j].first)
+            {
+                std::swap(isoedges[i + 1], isoedges[j]);
+                found_edge = true;
+            }
         }
 
-        VoxelIndex vi1, vi2;
-        vi1.from_path_and_corner(iter.level, iter.path, edge_corners[edge_id][0]);
-        vi2.from_path_and_corner(iter.level, iter.path, edge_corners[edge_id][1]);
-
-        EdgeIndex edge_index;
-        edge_index.first = std::min(vi1.index, vi2.index);
-        edge_index.second = std::max(vi1.index, vi2.index);
-
-        EdgeVertexMap::const_iterator iter = edgemap.find(edge_index);
-        if (iter == edgemap.end())
-            throw std::runtime_error("No such edge");
-        //std::size_t const index = edgemap[edge_index];
-        std::size_t const index = iter->second;
-        polygons->back().push_back(index);
+        if (!found_edge)
+        {
+            //throw std::runtime_error("Cannot find next edge");
+            std::cout << "Error: Cannot find next edge, skipping" << std::endl;
+            break;
+        }
     }
-#endif
+}
+
+std::size_t
+IsoSurface::lookup_edge_vertex (EdgeVertexMap const& edgemap,
+    EdgeIndex const& edge)
+{
+    EdgeVertexMap::const_iterator iter = edgemap.find(edge);
+    if (iter == edgemap.end())
+        throw std::runtime_error("lookup_edge_vertex(): No such edge vertex");
+    return iter->second;
+}
+
+void
+IsoSurface::find_twin_vertex (EdgeInfo const& edge_info,
+    EdgeIndex* twin, EdgeInfo* twin_info)
+{
+    /*
+     * Find the twin isovertex for the given edge. Go upwards in the tree
+     * through the parent edges until an edge with no iso crossing is found.
+     * Get the twin isovertex on the second child adjacent to the edge.
+     */
+    Octree::Iterator iter = edge_info.iter;
+    int const edge_id = edge_info.edge_id;
+    while (iter.current->parent != NULL)
+    {
+        int const node_octant = iter.current - iter.current->parent->children;
+        iter = iter.ascend();
+
+        /* The octant of this node in the parent must be on the same edge. */
+        int descend_octant;
+        if (edge_corners[edge_id][0] == node_octant)
+            descend_octant = edge_corners[edge_id][1];
+        else if (edge_corners[edge_id][1] == node_octant)
+            descend_octant = edge_corners[edge_id][0];
+        else
+            throw std::runtime_error("find_twin_vertex(): Invalid parent edge");
+
+        /* If the parent edge has no isocrossing, descend to find twin. */
+        if (!this->is_isovertex_on_edge(iter.current->mc_index, edge_id))
+        {
+            iter = iter.descend(descend_octant);
+            this->get_finest_cube_edge(iter, edge_id, twin, twin_info);
+            return;
+        }
+    }
+
+    throw std::runtime_error("find_twin_vertex(): Reached octree root");
+
 }
 
 void
 IsoSurface::get_finest_isoedges (Octree::Iterator const& iter,
-    int face_id, IsoEdgeList* isoedges)
+    int face_id, IsoEdgeList* isoedges, bool descend_only)
 {
+    /* If descend only is set, face-neighboring nodes are not considered. */
+    if (descend_only)
+    {
+        if (iter.current->children != NULL)
+        {
+            /* Recursively descend to obtain iso edges for this face. */
+            this->get_finest_isoedges(iter.descend(face_corners[face_id][0]),
+                face_id, isoedges, true);
+            this->get_finest_isoedges(iter.descend(face_corners[face_id][1]),
+                face_id, isoedges, true);
+            this->get_finest_isoedges(iter.descend(face_corners[face_id][2]),
+                face_id, isoedges, true);
+            this->get_finest_isoedges(iter.descend(face_corners[face_id][3]),
+                face_id, isoedges, true);
+        }
+        else
+        {
+            /* Create list of isoedges for this face. */
+            int const mc_index = iter.current->mc_index;
+            int const* edge_table = mc_polygons[mc_index];
+
+            int first_id = -1;
+            for (int i = 0; edge_table[i] != -1; ++i)
+            {
+                if (first_id == -1)
+                {
+                    first_id = edge_table[i];
+                    continue;
+                }
+                if (edge_table[i] == first_id)
+                    first_id = -1;
+
+                if (!is_edge_on_face[edge_table[i - 1]][face_id]
+                    || !is_edge_on_face[edge_table[i]][face_id])
+                    continue;
+
+                IsoEdge isoedge;
+                this->get_finest_cube_edge(iter, edge_table[i - 1],
+                    &isoedge.first, &isoedge.first_info);
+                this->get_finest_cube_edge(iter, edge_table[i],
+                    &isoedge.second, &isoedge.second_info);
+                isoedges->push_back(isoedge);
+            }
+        }
+
+        return;
+    }
+
+    /* Check if face-neighboring node has finer subdivision. */
     uint64_t new_path = iter.path;
-    modify_path((FaceDirection)face_id, iter.level, &new_path);
-    Octree::Iterator niter = iter.descend(iter.level, new_path);
+    modify_path((CubeFace)face_id, iter.level, &new_path);
+    Octree::Iterator const niter = iter.descend(iter.level, new_path);
 
     if (niter.current != NULL && niter.current->children != NULL)
     {
-        /* Neighboring node has finer subdivision. Use those eges. */
-        /* Flip those edges afterwards. */
+        /* Face-neighboring node has finer subdivision. */
+        CubeFace const opposite_face_id = face_opposite[face_id];
+        std::size_t const last_isoedge_index = isoedges->size();
+        this->get_finest_isoedges(niter, opposite_face_id, isoedges, true);
+
+        /* Flip orientation for face-neighboring iso-edges. */
+        for (std::size_t i = last_isoedge_index; i < isoedges->size(); ++i)
+        {
+            std::swap(isoedges->at(i).first, isoedges->at(i).second);
+            std::swap(isoedges->at(i).first_info, isoedges->at(i).second_info);
+        }
     }
     else
     {
-        /* Use the isoedges from this node face. */
+        /* Find the isoedges for this node face. */
+        this->get_finest_isoedges(iter, face_id, isoedges, true);
     }
 }
-
-
-
 
 void
 IsoSurface::compute_triangulation(IsoVertexVector const& isovertices,
