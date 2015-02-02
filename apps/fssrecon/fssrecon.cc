@@ -13,8 +13,6 @@
 #include <iostream>
 #include <string>
 
-#define USE_LEGACY_CONTOURING 0
-
 #include "mve/mesh.h"
 #include "mve/mesh_io_ply.h"
 #include "util/timer.h"
@@ -22,10 +20,6 @@
 #include "fssr/pointset.h"
 #include "fssr/iso_octree.h"
 #include "fssr/iso_surface.h"
-#if USE_LEGACY_CONTOURING
-#   include "iso/SimonIsoOctree.h"
-#   include "iso/MarchingCubes.h"
-#endif
 
 struct AppOptions
 {
@@ -137,20 +131,6 @@ main (int argc, char** argv)
     octree.compute_voxels();
     octree.clear_samples();
 
-#if USE_LEGACY_CONTOURING
-    /* Transfer octree. */
-    std::cout << "Transfering octree and voxel data..." << std::flush;
-    timer.reset();
-    SimonIsoOctree iso_tree;
-    iso_tree.set_octree(octree);
-    octree.clear();
-    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
-
-    /* Extract mesh from octree. */
-    MarchingCubes::SetCaseTable();
-    mve::TriangleMesh::Ptr mesh = iso_tree.extract_mesh();
-    iso_tree.clear();
-#else
     /* Extract isosurface. */
     mve::TriangleMesh::Ptr mesh;
     {
@@ -162,7 +142,6 @@ main (int argc, char** argv)
             << timer.get_elapsed() << "ms." << std::endl;
     }
     octree.clear();
-#endif
 
     /* Check if anything has been extracted. */
     if (mesh->get_vertices().empty())
