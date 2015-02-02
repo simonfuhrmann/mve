@@ -37,7 +37,7 @@ VoxelIndex::from_path_and_corner (uint8_t level, uint64_t path, int corner)
 }
 
 math::Vec3d
-VoxelIndex::compute_position (math::Vec3d const& center, double size)
+VoxelIndex::compute_position (math::Vec3d const& center, double size) const
 {
     double const dim_max = static_cast<double>(1 << 20);
     double const fx = static_cast<double>(this->get_offset_x()) / dim_max;

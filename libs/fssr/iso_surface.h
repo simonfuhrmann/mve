@@ -45,7 +45,7 @@ private:
     /** The edge index identifies an octree edge with two voxel indices. */
     typedef std::pair<uint64_t, uint64_t> EdgeIndex;
 
-    /** Additional informtiaon for an edge. */
+    /** Additional information for an edge. */
     struct EdgeInfo
     {
         Octree::Iterator iter;

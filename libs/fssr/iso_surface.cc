@@ -437,6 +437,9 @@ IsoSurface::extract_mesh (void)
 
     /*
      * Compute isovertices on the octree edges for every leaf node.
+     * This locates for every leaf edge the finest unique edge which
+     * contains an isovertex. The vertex is stored in the vertex vector,
+     * while the edge is stored in the map, mapping edge to vertex ID.
      */
     std::cout << "  Computing isovertices..." << std::flush;
     timer.reset();
@@ -447,7 +450,10 @@ IsoSurface::extract_mesh (void)
     std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
 
     /*
-     * Compute polygons for every leaf node.
+     * Compute polygons for every leaf node. For every leaf face the
+     * list of isoedges is retrieved. The isoedges are linked to form
+     * one or more closed polygons per node. In some cases open polygons
+     * are created, which need to be linked by retrieving twin vertices.
      */
     std::cout << "  Computing isopolygons..." << std::flush;
     timer.reset();
@@ -457,7 +463,8 @@ IsoSurface::extract_mesh (void)
     std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
 
     /*
-     * Init the mesh with positions, colors, confidences, and scale values.
+     * The vertices are transferred to a mesh and the polygons are
+     * triangulated using the minimum area triangulation.
      */
     std::cout << "  Computing triangulation..." << std::flush;
     timer.reset();
