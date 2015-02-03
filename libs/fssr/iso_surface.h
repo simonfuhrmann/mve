@@ -42,7 +42,7 @@ private:
         VoxelData data;
     };
 
-    /** The edge index identifies an octree edge with two voxel indices. */
+    /** The edge index identifies an octree edge using two voxel indices. */
     typedef std::pair<uint64_t, uint64_t> EdgeIndex;
 
     /** Additional information for an edge. */

@@ -399,7 +399,7 @@ namespace
         bool overflow = true;
         for (int i = 0; overflow && i < level; ++i)
         {
-            int const mask = 1 << (i * 3 + bit_offset);
+            uint64_t const mask = uint64_t(1) << (i * 3 + bit_offset);
             if (*path & mask)
             {
                 *path ^= mask;
@@ -419,9 +419,10 @@ namespace
 mve::TriangleMesh::Ptr
 IsoSurface::extract_mesh (void)
 {
-    std::cout << "  Sanity-checking input data..." << std::endl;
-    this->sanity_checks();
+    std::cout << "  Sanity-checking input data..." << std::flush;
     util::WallTimer timer;
+    this->sanity_checks();
+    std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
 
     /*
      * Assign MC index to every octree node. This can be done in two ways:
@@ -479,10 +480,23 @@ void
 IsoSurface::sanity_checks (void)
 {
     if (this->voxels == NULL || this->octree == NULL)
-        throw std::runtime_error("extract_isosurface(): NULL octree/voxels");
+        throw std::runtime_error("sanity_checks(): NULL octree/voxels");
     for (std::size_t i = 1; i < this->voxels->size(); ++i)
         if (this->voxels->at(i).first < this->voxels->at(i - 1).first)
-            throw std::runtime_error("extract_isosurface(): Voxels unsorted");
+            throw std::runtime_error("sanity_checks(): Voxels unsorted");
+
+    Octree::Iterator iter = this->octree->get_iterator_for_root();
+    for (iter.first_node(); iter.current != NULL; iter.next_node())
+    {
+        /* Check if parent pointer of children is correct. */
+        if (iter.current->children == NULL)
+            continue;
+        for (int i = 0; i < CUBE_CORNERS; ++i)
+        {
+            if (iter.current->children[i].parent != iter.current)
+                throw std::runtime_error("sanity_checks(): Wrong parent");
+        }
+    }
 }
 
 void
@@ -686,17 +700,17 @@ IsoSurface::compute_isopolygons(Octree::Iterator const& iter,
     std::map<EdgeIndex, int> vertex_valence;
     for (std::size_t i = 0; i < isoedges.size(); ++i)
     {
-        std::map<EdgeIndex, int>::iterator iter;
-        iter = vertex_valence.find(isoedges[i].first);
-        if (iter == vertex_valence.end())
+        std::map<EdgeIndex, int>::iterator valence_iter;
+        valence_iter = vertex_valence.find(isoedges[i].first);
+        if (valence_iter == vertex_valence.end())
             vertex_valence[isoedges[i].first] = 1;
         else
-            iter->second += 1;
-        iter = vertex_valence.find(isoedges[i].second);
-        if (iter == vertex_valence.end())
+            valence_iter->second += 1;
+        valence_iter = vertex_valence.find(isoedges[i].second);
+        if (valence_iter == vertex_valence.end())
             vertex_valence[isoedges[i].second] = -1;
         else
-            iter->second -= 1;
+            valence_iter->second -= 1;
     }
 
     /*
@@ -772,11 +786,7 @@ IsoSurface::compute_isopolygons(Octree::Iterator const& iter,
         }
 
         if (!found_edge)
-        {
-            //throw std::runtime_error("Cannot find next edge");
-            std::cout << "Error: Cannot find next edge, skipping" << std::endl;
-            break;
-        }
+            throw std::runtime_error("Cannot find next edge");
     }
 }
 
@@ -804,7 +814,6 @@ IsoSurface::find_twin_vertex (EdgeInfo const& edge_info,
     while (iter.current->parent != NULL)
     {
         int const node_octant = iter.current - iter.current->parent->children;
-        iter = iter.ascend();
 
         /* The octant of this node in the parent must be on the same edge. */
         int descend_octant;
@@ -816,6 +825,7 @@ IsoSurface::find_twin_vertex (EdgeInfo const& edge_info,
             throw std::runtime_error("find_twin_vertex(): Invalid parent edge");
 
         /* If the parent edge has no isocrossing, descend to find twin. */
+        iter = iter.ascend();
         if (!this->is_isovertex_on_edge(iter.current->mc_index, edge_id))
         {
             iter = iter.descend(descend_octant);
@@ -881,25 +891,30 @@ IsoSurface::get_finest_isoedges (Octree::Iterator const& iter,
     }
 
     /* Check if face-neighboring node has finer subdivision. */
+    bool has_face_neighbor = false;
     uint64_t new_path = iter.path;
-    modify_path((CubeFace)face_id, iter.level, &new_path);
-    Octree::Iterator const niter = iter.descend(iter.level, new_path);
-
-    if (niter.current != NULL && niter.current->children != NULL)
+    if (modify_path((CubeFace)face_id, iter.level, &new_path))
     {
-        /* Face-neighboring node has finer subdivision. */
-        CubeFace const opposite_face_id = face_opposite[face_id];
-        std::size_t const last_isoedge_index = isoedges->size();
-        this->get_finest_isoedges(niter, opposite_face_id, isoedges, true);
-
-        /* Flip orientation for face-neighboring iso-edges. */
-        for (std::size_t i = last_isoedge_index; i < isoedges->size(); ++i)
+        Octree::Iterator const niter = iter.descend(iter.level, new_path);
+        if (niter.current != NULL && niter.current->children != NULL)
         {
-            std::swap(isoedges->at(i).first, isoedges->at(i).second);
-            std::swap(isoedges->at(i).first_info, isoedges->at(i).second_info);
+            /* Face-neighboring node has finer subdivision. */
+            has_face_neighbor = true;
+            CubeFace const opposite_face_id = face_opposite[face_id];
+            std::size_t const last_isoedge_index = isoedges->size();
+            this->get_finest_isoedges(niter, opposite_face_id, isoedges, true);
+
+            /* Flip orientation for face-neighboring iso-edges. */
+            for (std::size_t i = last_isoedge_index; i < isoedges->size(); ++i)
+            {
+                IsoEdge& isoedge = isoedges->at(i);
+                std::swap(isoedge.first, isoedge.second);
+                std::swap(isoedge.first_info, isoedge.second_info);
+            }
         }
     }
-    else
+
+    if (!has_face_neighbor)
     {
         /* Find the isoedges for this node face. */
         this->get_finest_isoedges(iter, face_id, isoedges, true);
