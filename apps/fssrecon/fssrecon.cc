@@ -19,8 +19,7 @@
 #include "util/arguments.h"
 #include "fssr/pointset.h"
 #include "fssr/iso_octree.h"
-#include "iso/SimonIsoOctree.h"
-#include "iso/MarchingCubes.h"
+#include "fssr/iso_surface.h"
 
 struct AppOptions
 {
@@ -130,19 +129,19 @@ main (int argc, char** argv)
     /* Compute voxels. */
     octree.print_stats(std::cout);
     octree.compute_voxels();
+    octree.clear_samples();
 
-    /* Transfer octree. */
-    std::cout << "Transfering octree and voxel data..." << std::flush;
-    timer.reset();
-    SimonIsoOctree iso_tree;
-    iso_tree.set_octree(octree);
+    /* Extract isosurface. */
+    mve::TriangleMesh::Ptr mesh;
+    {
+        std::cout << "Extracting isosurface..." << std::endl;
+        timer.reset();
+        fssr::IsoSurface iso_surface(&octree, octree.get_voxels());
+        mesh = iso_surface.extract_mesh();
+        std::cout << "  Done. Surface extraction took "
+            << timer.get_elapsed() << "ms." << std::endl;
+    }
     octree.clear();
-    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
-
-    /* Extract mesh from octree. */
-    MarchingCubes::SetCaseTable();
-    mve::TriangleMesh::Ptr mesh = iso_tree.extract_mesh();
-    iso_tree.clear();
 
     /* Check if anything has been extracted. */
     if (mesh->get_vertices().empty())
@@ -158,8 +157,8 @@ main (int argc, char** argv)
         std::size_t num_vertices = mesh->get_vertices().size();
         mve::TriangleMesh::DeleteList delete_verts(num_vertices, false);
         for (std::size_t i = 0; i < num_vertices; ++i)
-        if (mesh->get_vertex_confidences()[i] == 0.0f)
-            delete_verts[i] = true;
+            if (mesh->get_vertex_confidences()[i] == 0.0f)
+                delete_verts[i] = true;
         mesh->delete_vertices_fix_faces(delete_verts);
     }
     std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
@@ -180,7 +179,6 @@ main (int argc, char** argv)
     std::cout << "Mesh output file: " << app_opts.out_mesh << std::endl;
     mve::geom::save_ply_mesh(mesh, app_opts.out_mesh, ply_opts);
 
-    std::cout << std::endl;
     std::cout << "All done. Remember to clean the output mesh." << std::endl;
 
     return 0;

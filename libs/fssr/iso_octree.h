@@ -29,6 +29,9 @@ public:
     /** Resets the octree to its initial state. */
     void clear (void);
 
+    /** Clears the voxel data, keeps samples and hierarchy. */
+    void clear_voxel_data (void);
+
     /** Evaluate the implicit function for all voxels on all leaf nodes. */
     void compute_voxels (void);
 
@@ -73,8 +76,14 @@ inline void
 IsoOctree::clear (void)
 {
     this->max_level = 19;
-    this->voxels.clear();
+    this->clear_voxel_data();
     this->Octree::clear();
+}
+
+inline void
+IsoOctree::clear_voxel_data (void)
+{
+    this->voxels.clear();
 }
 
 inline IsoOctree::VoxelVector const&
