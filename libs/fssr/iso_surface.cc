@@ -414,6 +414,27 @@ namespace
 
         return !overflow;
     }
+
+    Octree::Iterator
+    modify_iterator (CubeFace const& dir, Octree::Iterator const& iter)
+    {
+        uint64_t path = iter.path;
+        if (!modify_path(dir, iter.level, &path))
+            return Octree::Iterator();
+        return iter.descend(iter.level, path);
+    }
+
+    Octree::Iterator
+    modify_iterator (CubeFace const& dir1, CubeFace const& dir2,
+        Octree::Iterator const& iter)
+    {
+        uint64_t path = iter.path;
+        if (!modify_path(dir1, iter.level, &path))
+            return Octree::Iterator();
+        if (!modify_path(dir2, iter.level, &path))
+            return Octree::Iterator();
+        return iter.descend(iter.level, path);
+    }
 }
 
 mve::TriangleMesh::Ptr
@@ -564,41 +585,24 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
     if (iter.current->children != NULL)
         found_node = true;
 
-    /* Check if first face-adjacent node has children. */
-    uint64_t temp_path = iter.path;
-    if (found_node == false
-        && modify_path(edge_neighbors[edge_id][0], iter.level, &temp_path))
+    /* Check if the two face-adjacent nodes have children. */
+    for (int i = 0; !found_node && i < 2; ++i)
     {
-        Octree::Iterator temp_iter = iter.descend(iter.level, temp_path);
+        Octree::Iterator temp_iter;
+        temp_iter = modify_iterator(edge_neighbors[edge_id][i], iter);
         if (temp_iter.current != NULL && temp_iter.current->children != NULL)
         {
             found_node = true;
             finest_iter = temp_iter;
-            finest_edge_id = edge_reflections[edge_id][0];
-        }
-    }
-
-    /* Check if second face-adjacent node has children. */
-    temp_path = iter.path;
-    if (found_node == false
-        && modify_path(edge_neighbors[edge_id][1], iter.level, &temp_path))
-    {
-        Octree::Iterator temp_iter = iter.descend(iter.level, temp_path);
-        if (temp_iter.current != NULL && temp_iter.current->children != NULL)
-        {
-            found_node = true;
-            finest_iter = temp_iter;
-            finest_edge_id = edge_reflections[edge_id][1];
+            finest_edge_id = edge_reflections[edge_id][i];
         }
     }
 
     /* Check if edge-adjacent node has children. */
-    temp_path = iter.path;
-    if (found_node == false
-        && modify_path(edge_neighbors[edge_id][0], iter.level, &temp_path)
-        && modify_path(edge_neighbors[edge_id][1], iter.level, &temp_path))
+    if (found_node == false)
     {
-        Octree::Iterator temp_iter = iter.descend(iter.level, temp_path);
+        Octree::Iterator temp_iter = modify_iterator(
+            edge_neighbors[edge_id][0], edge_neighbors[edge_id][1], iter);
         if (temp_iter.current != NULL && temp_iter.current->children != NULL)
         {
             found_node = true;
@@ -891,30 +895,23 @@ IsoSurface::get_finest_isoedges (Octree::Iterator const& iter,
     }
 
     /* Check if face-neighboring node has finer subdivision. */
-    bool has_face_neighbor = false;
-    uint64_t new_path = iter.path;
-    if (modify_path((CubeFace)face_id, iter.level, &new_path))
+    Octree::Iterator niter = modify_iterator((CubeFace)face_id, iter);
+    if (niter.current != NULL && niter.current->children != NULL)
     {
-        Octree::Iterator const niter = iter.descend(iter.level, new_path);
-        if (niter.current != NULL && niter.current->children != NULL)
-        {
-            /* Face-neighboring node has finer subdivision. */
-            has_face_neighbor = true;
-            CubeFace const opposite_face_id = face_opposite[face_id];
-            std::size_t const last_isoedge_index = isoedges->size();
-            this->get_finest_isoedges(niter, opposite_face_id, isoedges, true);
+        /* Face-neighboring node has finer subdivision. */
+        CubeFace const opposite_face_id = face_opposite[face_id];
+        std::size_t const last_isoedge_index = isoedges->size();
+        this->get_finest_isoedges(niter, opposite_face_id, isoedges, true);
 
-            /* Flip orientation for face-neighboring iso-edges. */
-            for (std::size_t i = last_isoedge_index; i < isoedges->size(); ++i)
-            {
-                IsoEdge& isoedge = isoedges->at(i);
-                std::swap(isoedge.first, isoedge.second);
-                std::swap(isoedge.first_info, isoedge.second_info);
-            }
+        /* Flip orientation for face-neighboring iso-edges. */
+        for (std::size_t i = last_isoedge_index; i < isoedges->size(); ++i)
+        {
+            IsoEdge& isoedge = isoedges->at(i);
+            std::swap(isoedge.first, isoedge.second);
+            std::swap(isoedge.first_info, isoedge.second_info);
         }
     }
-
-    if (!has_face_neighbor)
+    else
     {
         /* Find the isoedges for this node face. */
         this->get_finest_isoedges(iter, face_id, isoedges, true);
