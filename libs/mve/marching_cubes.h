@@ -51,16 +51,6 @@ template <typename T>
 TriangleMesh::Ptr
 marching_cubes (T& accessor);
 
-/**
- * This function creates an image visualizing the SDF on a single slice
- * in the volume. The method requires the same accessor as for the
- * marching cubes algorithm. The maximum distance (absolute value) has
- * to be provided, after this distance the colors stay black.
- */
-//template <typename T>
-//ByteImage::Ptr
-//mc_volume_slicer (T& accessor, int axis, std::size_t slice);
-
 MVE_GEOM_NAMESPACE_END
 MVE_NAMESPACE_END
 
