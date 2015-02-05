@@ -182,7 +182,7 @@ template <typename T>
 inline T
 gaussian_derivative (T const& sigma, math::Vector<T, 3> const& pos)
 {
-    return pos[0] * gaussian(sigma, pos) / (MATH_POW4(sigma) * MATH_2_PI);
+    return pos[0] * gaussian(sigma, pos) / (MATH_POW4(sigma) * 2.0 * MATH_PI);
 }
 
 template <typename T>
