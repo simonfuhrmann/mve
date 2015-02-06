@@ -577,9 +577,10 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     pba.SetProjection(pba_2d_points.size(),
         &pba_2d_points[0], &pba_track_ids[0], &pba_cam_ids[0]);
 
+    std::vector<int> focal_mask;
     if (this->opts.ba_shared_intrinsics && single_camera_ba < 0)
     {
-        std::vector<int> focal_mask(pba_cams.size(), 0);
+        focal_mask.resize(pba_cams.size(), 0);
         pba.SetFocalMask(&focal_mask[0], 1.0f);
     }
 
