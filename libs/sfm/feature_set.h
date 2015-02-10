@@ -45,6 +45,7 @@ public:
         Surf::Options surf_opts;
         Matching::Options sift_matching_opts;
         Matching::Options surf_matching_opts;
+        bool keep_descriptors;
     };
 
 public:
@@ -75,6 +76,10 @@ public:
     std::vector<math::Vec2f> positions;
     /** Per-feature image color. */
     std::vector<math::Vec3uc> colors;
+    /** The SIFT descriptors. */
+    Sift::Descriptors sift_descriptors;
+    /** The SURF descriptors. */
+    Surf::Descriptors surf_descriptors;
 
 private:
     void compute_sift (mve::ByteImage::ConstPtr image);
@@ -98,6 +103,7 @@ private:
 inline
 FeatureSet::Options::Options (void)
     : feature_types(FEATURE_SIFT)
+    , keep_descriptors(false)
 {
     this->sift_matching_opts.lowe_ratio_threshold = 0.8f;
     this->sift_matching_opts.descriptor_length = 128;

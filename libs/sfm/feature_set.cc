@@ -100,6 +100,9 @@ FeatureSet::compute_sift (mve::ByteImage::ConstPtr image)
         this->positions[offset + i] = math::Vec2f(d.x, d.y);
         image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
+
+    if (this->opts.keep_descriptors)
+        std::swap(descr, this->sift_descriptors);
 }
 
 void
@@ -136,6 +139,9 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
         this->positions[offset + i] = math::Vec2f(d.x, d.y);
         image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
+
+    if (this->opts.keep_descriptors)
+        std::swap(descr, this->surf_descriptors);
 }
 
 int
@@ -234,8 +240,10 @@ FeatureSet::clear_descriptors (void)
 {
     this->num_sift_descriptors = 0;
     this->sift_descr.deallocate();
+    this->sift_descriptors.clear();
     this->num_surf_descriptors = 0;
     this->surf_descr.deallocate();
+    this->surf_descriptors.clear();
 }
 
 SFM_NAMESPACE_END
