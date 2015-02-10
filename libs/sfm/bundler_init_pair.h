@@ -53,11 +53,14 @@ public:
 
 public:
     explicit InitialPair (Options const& options);
-    void compute (ViewportList const& viewports,
-        PairwiseMatching const& matching, Result* result);
+    void initialize (ViewportList const& viewports,
+        PairwiseMatching const& matching);
+    void compute_pair (Result* result);
 
 private:
     Options opts;
+    ViewportList const* viewports;
+    PairwiseMatching const* matching;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -72,6 +75,8 @@ InitialPair::Options::Options (void)
 inline
 InitialPair::InitialPair (Options const& options)
     : opts(options)
+    , viewports(NULL)
+    , matching(NULL)
 {
 }
 

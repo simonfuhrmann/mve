@@ -21,36 +21,48 @@ namespace
 }  /* namespace */
 
 void
-InitialPair::compute (ViewportList const& viewports,
-    PairwiseMatching const& matching, Result* result)
+InitialPair::initialize (ViewportList const& viewports,
+    PairwiseMatching const& matching)
 {
-    result->view_1_id = -1;
-    result->view_2_id = -1;
+    this->viewports = &viewports;
+    this->matching = &matching;
+}
+
+void
+InitialPair::compute_pair (Result* result)
+{
+    if (this->viewports == NULL || this->matching == NULL)
+        throw std::invalid_argument("NULL viewports or matching");
 
     /* Sort pairwise matching indices according to number of matches. */
     if (this->opts.verbose_output)
         std::cout << "Sorting pairwise matches..." << std::endl;
 
-    std::vector<int> pairs(matching.size(), -1);
-    for (std::size_t i = 0; i < pairs.size(); ++i)
-        pairs[i] = i;
-    PairsComparator cmp(matching);
-    std::sort(pairs.begin(), pairs.end(), cmp);
+    std::vector<int> pair_ids(this->matching->size(), -1);
+    for (std::size_t i = 0; i < pair_ids.size(); ++i)
+        pair_ids[i] = i;
+    PairsComparator cmp(*this->matching);
+    std::sort(pair_ids.begin(), pair_ids.end(), cmp);
 
     /* Prepare homography RANSAC. */
     if (this->opts.verbose_output)
         std::cout << "Searching for initial pair..." << std::endl;
 
-    RansacHomography homography_ransac(this->opts.homography_opts);
-    Correspondences correspondences;
-    for (std::size_t i = 0; i < pairs.size(); ++i)
+    bool found_pair = false;
+    std::size_t found_pair_id = std::numeric_limits<std::size_t>::max();
+
+#pragma omp parallel for schedule(dynamic)
+    for (std::size_t i = 0; i < pair_ids.size(); ++i)
     {
-        TwoViewMatching const& tvm = matching[pairs[i]];
-        FeatureSet const& view1 = viewports[tvm.view_1_id].features;
-        FeatureSet const& view2 = viewports[tvm.view_2_id].features;
+        if (found_pair)
+            continue;
+
+        TwoViewMatching const& tvm = this->matching->at(pair_ids[i]);
+        FeatureSet const& view1 = this->viewports->at(tvm.view_1_id).features;
+        FeatureSet const& view2 = this->viewports->at(tvm.view_2_id).features;
 
         /* Prepare correspondences for RANSAC. */
-        correspondences.resize(tvm.matches.size());
+        Correspondences correspondences(tvm.matches.size());
         for (std::size_t j = 0; j < tvm.matches.size(); ++j)
         {
             Correspondence& c = correspondences[j];
@@ -62,6 +74,7 @@ InitialPair::compute (ViewportList const& viewports,
 
         /* Run RANSAC. */
         RansacHomography::Result ransac_result;
+        RansacHomography homography_ransac(this->opts.homography_opts);
         homography_ransac.estimate(correspondences, &ransac_result);
 
         /* Compute homography inliers percentage. */
@@ -69,6 +82,7 @@ InitialPair::compute (ViewportList const& viewports,
         float const num_inliers = ransac_result.inliers.size();
         float const percentage = num_inliers / num_matches;
 
+#pragma omp critical
         if (this->opts.verbose_output)
         {
             std::cout << "  Pair "
@@ -81,15 +95,19 @@ InitialPair::compute (ViewportList const& viewports,
 
         if (percentage < this->opts.max_homography_inliers)
         {
-            result->view_1_id = tvm.view_1_id;
-            result->view_2_id = tvm.view_2_id;
-            break;
+#pragma omp critical
+            if (i < found_pair_id)
+            {
+                result->view_1_id = tvm.view_1_id;
+                result->view_2_id = tvm.view_2_id;
+                found_pair_id = i;
+                found_pair = true;
+            }
         }
     }
 
-    /* Check if initial pair is valid. */
-    if (result->view_1_id == -1 || result->view_2_id == -1)
-        throw std::runtime_error("Initial pair failure");
+    if (!found_pair)
+        throw std::invalid_argument("No more available pairs");
 }
 
 SFM_BUNDLER_NAMESPACE_END
