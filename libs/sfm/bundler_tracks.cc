@@ -23,10 +23,8 @@ Tracks::compute (PairwiseMatching const& matching,
     if (this->opts.verbose_output)
         std::cout << "Propagating track IDs..." << std::endl;
 
-    std::size_t track_counter = 0;
-    std::size_t num_conflicts = 0;
-
-    /* Iterate over all pairwise matchings. */
+    /* Iterate over all pairwise matchings and create tracks. */
+    tracks->clear();
     for (std::size_t i = 0; i < matching.size(); ++i)
     {
         TwoViewMatching const& tvm = matching[i];
@@ -37,30 +35,34 @@ Tracks::compute (PairwiseMatching const& matching,
         for (std::size_t j = 0; j < tvm.matches.size(); ++j)
         {
             CorrespondenceIndex idx = tvm.matches[j];
-            if (viewport1.track_ids[idx.first] == -1
-                && viewport2.track_ids[idx.second] == -1)
+            int const view1_tid = viewport1.track_ids[idx.first];
+            int const view2_tid = viewport2.track_ids[idx.second];
+            if (view1_tid == -1 && view2_tid == -1)
             {
                 /* No track ID associated with the match. Create track. */
-                viewport1.track_ids[idx.first] = track_counter;
-                viewport2.track_ids[idx.second] = track_counter;
-                track_counter += 1;
+                viewport1.track_ids[idx.first] = tracks->size();
+                viewport2.track_ids[idx.second] = tracks->size();
+                tracks->push_back(Track());
+                tracks->back().features.push_back(
+                    FeatureReference(tvm.view_1_id, idx.first));
+                tracks->back().features.push_back(
+                    FeatureReference(tvm.view_2_id, idx.second));
             }
-            else if (viewport1.track_ids[idx.first] == -1
-                && viewport2.track_ids[idx.second] != -1)
+            else if (view1_tid == -1 && view2_tid != -1)
             {
                 /* Propagate track ID from first to second view. */
-                viewport1.track_ids[idx.first]
-                    = viewport2.track_ids[idx.second];
+                viewport1.track_ids[idx.first] = view2_tid;
+                tracks->at(view2_tid).features.push_back(
+                    FeatureReference(tvm.view_1_id, idx.first));
             }
-            else if (viewport1.track_ids[idx.first] != -1
-                && viewport2.track_ids[idx.second] == -1)
+            else if (view1_tid != -1 && view2_tid == -1)
             {
                 /* Propagate track ID from second to first view. */
-                viewport2.track_ids[idx.second]
-                    = viewport1.track_ids[idx.first];
+                viewport2.track_ids[idx.second] = view1_tid;
+                tracks->at(view1_tid).features.push_back(
+                    FeatureReference(tvm.view_2_id, idx.second));
             }
-            else if (viewport1.track_ids[idx.first]
-                == viewport2.track_ids[idx.second])
+            else if (view1_tid == view2_tid)
             {
                 /* Track ID already propagated. */
             }
@@ -68,40 +70,30 @@ Tracks::compute (PairwiseMatching const& matching,
             {
                 /*
                  * A track ID is already associated with both ends of a match,
-                 * however, is not consistent.
+                 * however, is not consistent. Unify tracks.
                  */
-                num_conflicts += 1;
+                Track& track1 = tracks->at(view1_tid);
+                Track& track2 = tracks->at(view2_tid);
+                for (std::size_t k = 0; k < track2.features.size(); ++k)
+                {
+                    int const view_id = track2.features[k].view_id;
+                    int const feat_id = track2.features[k].feature_id;
+                    viewports->at(view_id).track_ids[feat_id] = view1_tid;
+                    track1.features.push_back(track2.features[k]);
+                }
+                track2.features.clear();
             }
         }
     }
 
-    std::cerr << "Warning: " << num_conflicts
-        << " conflicts while propagating track IDs." << std::endl;
-
-    /* Create tracks. */
-    tracks->clear();
-    tracks->resize(track_counter);
-    for (std::size_t i = 0; i < viewports->size(); ++i)
-    {
-        Viewport const& viewport = viewports->at(i);
-        for (std::size_t j = 0; j < viewport.track_ids.size(); ++j)
-        {
-            int const track_id = viewport.track_ids[j];
-            if (track_id < 0)
-                continue;
-            tracks->at(track_id).features.push_back(FeatureReference(i, j));
-        }
-    }
-
-    /* Find and remove tracks with conflicts. */
+    /* Find and remove invalid tracks or tracks with conflicts. */
     if (this->opts.verbose_output)
         std::cout << "Removing tracks with conflicts..." << std::flush;
-    std::size_t const num_total_tracks = tracks->size();
     std::size_t const num_invalid_tracks
         = this->remove_invalid_tracks(viewports, tracks);
     if (this->opts.verbose_output)
-        std::cout << " deleted " << num_invalid_tracks << " of "
-            << num_total_tracks << " tracks." << std::endl;
+        std::cout << " deleted " << num_invalid_tracks
+            << " tracks." << std::endl;
 
     /* Compute color for every track. */
     if (this->opts.verbose_output)
@@ -138,7 +130,6 @@ Tracks::remove_invalid_tracks (ViewportList* viewports, TrackList* tracks)
     {
         if (tracks->at(i).features.empty())
         {
-            num_invalid_tracks += 1;
             delete_tracks[i] = true;
             continue;
         }

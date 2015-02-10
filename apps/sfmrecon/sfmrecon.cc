@@ -182,9 +182,6 @@ sfm_reconstruct (AppSettings const& conf)
     /* Start timer for incremental SfM. */
     util::WallTimer timer;
 
-    /* Sorting the pairs willlead to less conflicts while building tracks. */
-    std::sort(pairwise_matching.begin(), pairwise_matching.end());
-
     /* Compute connected feature components, i.e. feature tracks. */
     util::system::rand_seed(RAND_SEED_SFM);
     sfm::bundler::Tracks::Options tracks_options;
