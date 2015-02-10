@@ -930,6 +930,9 @@ import_images (AppSettings const& conf)
         if (image == NULL)
             continue;
 
+        /* Rescale images. */
+        image = limit_image_size<uint8_t>(image, conf.max_pixels);
+
         /* Create view, set headers, add image. */
         mve::View::Ptr view = mve::View::create();
         view->set_id(id_cnt);
