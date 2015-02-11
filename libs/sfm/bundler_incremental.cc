@@ -347,7 +347,7 @@ Incremental::triangulate_new_tracks (void)
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         /* Skip tracks that have already been reconstructed. */
-        Track& track = this->tracks->at(i);
+        Track const& track = this->tracks->at(i);
         if (track.is_valid())
             continue;
 
@@ -423,7 +423,6 @@ Incremental::triangulate_new_tracks (void)
         if (track_behind_camera)
         {
             num_behind_camera_tracks += 1;
-            this->tracks->at(i).invalidate();
             continue;
         }
 
@@ -434,7 +433,8 @@ Incremental::triangulate_new_tracks (void)
             continue;
         }
 
-        track.pos = track_pos;
+        /* Assign the track position (this validates the track). */
+        this->tracks->at(i).pos = track_pos;
         num_new_tracks += 1;
     }
 
