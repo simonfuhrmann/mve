@@ -53,14 +53,13 @@ public:
 
 public:
     explicit InitialPair (Options const& options);
-    void initialize (ViewportList const& viewports,
-        PairwiseMatching const& matching);
+    void initialize (ViewportList const& viewports, TrackList const& tracks);
     void compute_pair (Result* result);
 
 private:
     Options opts;
     ViewportList const* viewports;
-    PairwiseMatching const* matching;
+    TrackList const* tracks;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -76,8 +75,15 @@ inline
 InitialPair::InitialPair (Options const& options)
     : opts(options)
     , viewports(NULL)
-    , matching(NULL)
+    , tracks(NULL)
 {
+}
+
+inline void
+InitialPair::initialize (ViewportList const& viewports, TrackList const& tracks)
+{
+    this->viewports = &viewports;
+    this->tracks = &tracks;
 }
 
 SFM_BUNDLER_NAMESPACE_END

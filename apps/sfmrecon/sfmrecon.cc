@@ -194,9 +194,10 @@ sfm_reconstruct (AppSettings const& conf)
     std::cout << "Created a total of " << tracks.size()
         << " tracks." << std::endl;
 
-    /* Remove unused color data to save memory. */
+    /* Remove color data and pairwise matching to save memory. */
     for (std::size_t i = 0; i < viewports.size(); ++i)
         viewports[i].features.colors.clear();
+    pairwise_matching.clear();
 
     /* Search for a good initial pair, or use the user-specified one. */
     sfm::bundler::InitialPair::Result init_pair_result;
@@ -211,7 +212,7 @@ sfm_reconstruct (AppSettings const& conf)
         init_pair_opts.verbose_output = true;
 
         sfm::bundler::InitialPair init_pair(init_pair_opts);
-        init_pair.initialize(viewports, pairwise_matching);
+        init_pair.initialize(viewports, tracks);
         init_pair.compute_pair(&init_pair_result);
     }
     else
@@ -231,9 +232,6 @@ sfm_reconstruct (AppSettings const& conf)
     std::cout << "Using views " << init_pair_result.view_1_id
         << " and " << init_pair_result.view_2_id
         << " as initial pair." << std::endl;
-
-    /* Clear pairwise matching to save memeory. */
-    pairwise_matching.clear();
 
     /* Incrementally compute full bundle. */
     sfm::bundler::Incremental::Options incremental_opts;
