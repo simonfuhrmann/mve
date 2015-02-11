@@ -334,15 +334,12 @@ Incremental::reconstruct_next_view (int view_id)
 void
 Incremental::triangulate_new_tracks (void)
 {
-    /* Thresholds. */
-    double const square_thres = MATH_POW2(this->opts.new_track_error_threshold);
-    double const cos_angle_thres = std::cos(this->opts.min_triangulation_angle);
+    Triangulate::Options triangulate_opts;
+    triangulate_opts.error_threshold = this->opts.new_track_error_threshold;
+    triangulate_opts.angle_threshold = this->opts.min_triangulation_angle;
 
-    /* Statistics. */
-    int num_new_tracks = 0;
-    int num_large_error_tracks = 0;
-    int num_behind_camera_tracks = 0;
-    int num_too_small_angle = 0;
+    Triangulate::Statistics stats;
+    Triangulate triangulator(triangulate_opts);
 
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
@@ -373,88 +370,14 @@ Incremental::triangulate_new_tracks (void)
         if (poses.size() < 2)
             continue;
 
-        /* Triangulate track. */
-        math::Vec3d track_pos = triangulate_track(pos, poses);
-
-        /* Skip tracks with too small triangulation angle. */
-        double smallest_cos_angle = 1.0;
-        if (this->opts.min_triangulation_angle > 0.0)
-        {
-            std::vector<math::Vec3d> rays(poses.size());
-            for (std::size_t j = 0; j < poses.size(); ++j)
-            {
-                math::Vec3d camera_pos;
-                poses[j]->fill_camera_pos(&camera_pos);
-                rays[j] = (track_pos - camera_pos).normalized();
-            }
-
-            for (std::size_t j = 0; j < rays.size(); ++j)
-                for (std::size_t k = 0; k < j; ++k)
-                {
-                    double const cos_a = rays[j].dot(rays[k]);
-                    smallest_cos_angle = std::min(smallest_cos_angle, cos_a);
-                }
-            if (smallest_cos_angle > cos_angle_thres)
-            {
-                num_too_small_angle += 1;
-                continue;
-            }
-        }
-
-        /* Compute reprojection error of the track. */
-        double square_error = 0.0;
-        bool track_behind_camera = false;
-        for (std::size_t j = 0; j < poses.size(); ++j)
-        {
-            math::Vec3d x = poses[j]->R * track_pos + poses[j]->t;
-            if (x[2] < 0.0)
-            {
-                track_behind_camera = true;
-                break;
-            }
-
-            x = poses[j]->K * x;
-            math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
-            square_error += (pos[j] - x2d).square_norm();
-        }
-        square_error /= static_cast<double>(poses.size());
-
-        /* Reject track if it appears behind the camera. */
-        if (track_behind_camera)
-        {
-            num_behind_camera_tracks += 1;
-            continue;
-        }
-
-        /* Reject track if the reprojection error is too large. */
-        if (square_error > square_thres)
-        {
-            num_large_error_tracks += 1;
-            continue;
-        }
-
-        /* Assign the track position (this validates the track). */
-        this->tracks->at(i).pos = track_pos;
-        num_new_tracks += 1;
+        /* Accept track if triangulation was successful. */
+        math::Vec3d track_pos;
+        if (triangulator.triangulate(poses, pos, &track_pos, &stats))
+            this->tracks->at(i).pos = track_pos;
     }
 
     if (this->opts.verbose_output)
-    {
-        int num_rejected = num_large_error_tracks
-            + num_behind_camera_tracks + num_too_small_angle;
-        std::cout << "Triangulated " << num_new_tracks
-            << " new tracks, rejected " << num_rejected
-            << " bad tracks." << std::endl;
-        if (num_large_error_tracks > 0)
-            std::cout << "  Rejected " << num_large_error_tracks
-                << " tracks with large error." << std::endl;
-        if (num_behind_camera_tracks > 0)
-            std::cout << "  Rejected " << num_behind_camera_tracks
-                << " tracks behind cameras." << std::endl;
-        if (num_too_small_angle > 0)
-            std::cout << "  Rejected " << num_too_small_angle
-                << " tracks with unstable angle." << std::endl;
-    }
+        triangulator.print_statistics(stats, std::cout);
 }
 
 /* ---------------------------------------------------------------- */

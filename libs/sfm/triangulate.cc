@@ -1,7 +1,11 @@
+#include <stdexcept>
+
 #include "math/matrix_svd.h"
 #include "sfm/triangulate.h"
 
 SFM_NAMESPACE_BEGIN
+
+/* ---------------- Low-level triangulation solver ---------------- */
 
 math::Vector<double, 3>
 triangulate_match (Correspondence const& match,
@@ -67,6 +71,104 @@ is_consistent_pose (Correspondence const& match,
     math::Vector<double, 3> x1 = pose1.R * x + pose1.t;
     math::Vector<double, 3> x2 = pose2.R * x + pose2.t;
     return x1[2] > 0.0f && x2[2] > 0.0f;
+}
+
+/* --------------- Higher-level triangulation class --------------- */
+
+bool
+Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
+    std::vector<math::Vec2f> const& positions,
+    math::Vec3d* track_pos,
+    Statistics* stats) const
+{
+    if (poses.size() < 2)
+        throw std::invalid_argument("At least two poses required");
+    if (poses.size() != positions.size())
+        throw std::invalid_argument("Poses and positions size mismatch");
+
+    /* Triangulate track. */
+    *track_pos = triangulate_track(positions, poses);
+
+    /* Check if track has small triangulation angle. */
+    double smallest_cos_angle = 1.0;
+    if (this->opts.angle_threshold > 0.0)
+    {
+        std::vector<math::Vec3d> rays(poses.size());
+        for (std::size_t i = 0; i < poses.size(); ++i)
+        {
+            math::Vec3d camera_pos;
+            poses[i]->fill_camera_pos(&camera_pos);
+            rays[i] = (*track_pos - camera_pos).normalized();
+        }
+
+        for (std::size_t i = 0; i < rays.size(); ++i)
+            for (std::size_t j = 0; j < i; ++j)
+            {
+                double const cos_angle = rays[i].dot(rays[j]);
+                smallest_cos_angle = std::min(smallest_cos_angle, cos_angle);
+            }
+
+        if (smallest_cos_angle > this->cos_angle_thres)
+        {
+            if (stats != NULL)
+                stats->num_too_small_angle += 1;
+            return false;
+        }
+    }
+
+    /* Compute reprojection error of the track. */
+    double average_error = 0.0;
+    for (std::size_t i = 0; i < poses.size(); ++i)
+    {
+        math::Vec3d x = poses[i]->R * *track_pos + poses[i]->t;
+
+        /* Reject track if it appears behind the camera. */
+        if (x[2] < 0.0)
+        {
+            if (stats != NULL)
+                stats->num_behind_camera += 1;
+            return false;
+        }
+
+        x = poses[i]->K * x;
+        math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
+        average_error += (positions[i] - x2d).norm();
+    }
+    average_error /= static_cast<double>(poses.size());
+
+    /* Reject track if the reprojection error is too large. */
+    if (average_error > this->opts.error_threshold)
+    {
+        if (stats != NULL)
+            stats->num_large_error += 1;
+        return false;
+    }
+
+    if (stats != NULL)
+        stats->num_new_tracks += 1;
+
+    return true;
+}
+
+void
+Triangulate::print_statistics (Statistics const& stats, std::ostream& out) const
+{
+    int const num_rejected = stats.num_large_error
+        + stats.num_behind_camera
+        + stats.num_too_small_angle;
+
+    out << "Triangulated " << stats.num_new_tracks
+        << " new tracks, rejected " << num_rejected
+        << " bad tracks." << std::endl;
+    if (stats.num_large_error > 0)
+        out << "  Rejected " << stats.num_large_error
+            << " tracks with large error." << std::endl;
+    if (stats.num_behind_camera > 0)
+        out << "  Rejected " << stats.num_behind_camera
+            << " tracks behind cameras." << std::endl;
+    if (stats.num_too_small_angle > 0)
+        out << "  Rejected " << stats.num_too_small_angle
+            << " tracks with unstable angle." << std::endl;
 }
 
 SFM_NAMESPACE_END
