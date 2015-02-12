@@ -10,6 +10,7 @@
 #include "sfm/ransac_fundamental.h"
 #include "sfm/fundamental.h"
 #include "sfm/bundler_common.h"
+#include "sfm/pose.h"
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
@@ -49,12 +50,28 @@ public:
     {
         int view_1_id;
         int view_2_id;
+        CameraPose view_1_pose;
+        CameraPose view_2_pose;
     };
 
 public:
     explicit InitialPair (Options const& options);
     void initialize (ViewportList const& viewports, TrackList const& tracks);
     void compute_pair (Result* result);
+
+private:
+    struct CandidatePair
+    {
+        int view_1_id;
+        int view_2_id;
+        Correspondences matches;
+        bool operator< (CandidatePair const& other) const;
+    };
+
+private:
+    float compute_homography_ratio (CandidatePair const& candidate);
+    bool compute_pose (CandidatePair const& candidate,
+        CameraPose* pose1, CameraPose* pose2);
 
 private:
     Options opts;
@@ -84,6 +101,12 @@ InitialPair::initialize (ViewportList const& viewports, TrackList const& tracks)
 {
     this->viewports = &viewports;
     this->tracks = &tracks;
+}
+
+inline bool
+InitialPair::CandidatePair::operator< (CandidatePair const& other) const
+{
+    return this->matches.size() < other.matches.size();
 }
 
 SFM_BUNDLER_NAMESPACE_END

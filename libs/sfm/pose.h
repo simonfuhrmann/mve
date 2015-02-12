@@ -5,6 +5,9 @@
 #ifndef SFM_POSE_HEADER
 #define SFM_POSE_HEADER
 
+#include <vector>
+
+#include "math/vector.h"
 #include "math/matrix.h"
 #include "sfm/defines.h"
 #include "sfm/correspondence.h"
@@ -47,6 +50,9 @@ struct CameraPose
     /** Returns true if K matrix is valid (non-zero focal length). */
     bool is_valid (void) const;
 };
+
+/** List of camera poses. */
+typedef std::vector<CameraPose> CameraPoseList;
 
 /**
  * Estimates the camera pose from 2D-3D correspondences, i.e. correspondences

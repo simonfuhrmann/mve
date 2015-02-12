@@ -50,20 +50,17 @@ public:
 
     /**
      * Initializes the incremental bundler and sets required data.
-     *
-     * This componenent requires per-viewport colors, positions, track IDs,
-     * the focal length as well as image width and height. During
-     * reconstruction the positions of the tracks are modified.
+     * - viewports: per-viewport colors, positions, track IDs, an initial
+     *   focal length as well as image width and height is required.
+     * - tracks: The positions of the tracks are reconstructed.
+     * - cameras: At least a good initial camera pair is expected so that
+     *   initial tracks can be triangulated for incremental reconstruction.
      */
-    void initialize (ViewportList* viewports, TrackList* tracks);
-
+    void initialize (ViewportList* viewports, TrackList* tracks,
+        CameraPoseList* cameras);
     /** Returns whether the incremental SfM has been initialized. */
     bool is_initialized (void) const;
 
-    /** Reconstructs the initial pose between the two given views. */
-    void reconstruct_initial_pair (int view_1_id, int view_2_id);
-    /** Returns a suitable next view ID or -1 on failure. */
-    int find_next_view (void) const;
     /** Returns a list of suitable view ID or emtpy list on failure. */
     void find_next_views (std::vector<int>* next_views);
     /** Incrementally adds the given view to the bundle. */
@@ -76,11 +73,9 @@ public:
     void bundle_adjustment_full (void);
     /** Runs bundle adjustment on a single camera without structure. */
     void bundle_adjustment_single_cam (int view_id);
+
     /** Transforms the bundle for numerical stability. */
     void normalize_scene (void);
-
-    /** Returns the list of computed camera poses. */
-    std::vector<CameraPose> const& get_cameras (void) const;
     /** Computes a bundle from all viewports and reconstructed tracks. */
     mve::Bundle::Ptr create_bundle (void) const;
 
@@ -91,7 +86,7 @@ private:
     Options opts;
     ViewportList* viewports;
     TrackList* tracks;
-    std::vector<CameraPose> cameras;
+    CameraPoseList* cameras;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -112,7 +107,16 @@ Incremental::Incremental (Options const& options)
     : opts(options)
     , viewports(NULL)
     , tracks(NULL)
+    , cameras(NULL)
 {
+}
+
+inline bool
+Incremental::is_initialized (void) const
+{
+    return this->viewports != NULL
+        && this->tracks != NULL
+        && this->cameras != NULL;
 }
 
 SFM_BUNDLER_NAMESPACE_END

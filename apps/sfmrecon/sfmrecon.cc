@@ -249,18 +249,17 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.ba_shared_intrinsics = conf.shared_intrinsics;
     incremental_opts.verbose_output = true;
 
+    /* Initialize cameras. */
+    sfm::CameraPoseList cameras;
+    cameras.resize(viewports.size());
+    cameras[init_pair_result.view_1_id] = init_pair_result.view_1_pose;
+    cameras[init_pair_result.view_2_id] = init_pair_result.view_2_pose;
+
     sfm::bundler::Incremental incremental(incremental_opts);
-    incremental.initialize(&viewports, &tracks);
+    incremental.initialize(&viewports, &tracks, &cameras);
 
-    /* Reconstruct pose for the initial pair. */
-    std::cout << "Computing pose for initial pair..." << std::endl;
-    incremental.reconstruct_initial_pair(init_pair_result.view_1_id,
-        init_pair_result.view_2_id);
-
-    /* Reconstruct track positions with the intial pair. */
+    /* Reconstruct track positions for the intial pair. */
     incremental.triangulate_new_tracks();
-
-    /* Remove tracks with large errors. */
     incremental.invalidate_large_error_tracks();
 
     /* Run bundle adjustment. */
