@@ -91,6 +91,7 @@ private:
     sfm::bundler::InitialPair::Result init_pair_result;
     sfm::bundler::TrackList tracks;
     sfm::bundler::Incremental incremental_sfm;
+    sfm::CameraPoseList cameras;
 
     /* UI elements. */
     QTabWidget* tab_widget;

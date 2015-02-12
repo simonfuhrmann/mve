@@ -1,6 +1,14 @@
 #include <sstream>
 #include <iostream>
 #include <limits>
+#include <unistd.h>
+
+#if defined(_OPENMP)
+#   include <omp.h>
+#else
+inline int omp_get_thread_num() { return 0;}
+inline int omp_get_num_procs (void) { return 1; }
+#endif
 
 #include <QBoxLayout>
 #include <QFuture>
@@ -201,7 +209,6 @@ SfmControls::set_scene (mve::Scene::Ptr scene)
     this->pairwise_matching.clear();
     this->viewports.clear();
     this->tracks.clear();
-
     this->state.repaint();
 }
 
@@ -347,15 +354,14 @@ SfmControls::create_sfm_points_renderer (void)
 void
 SfmControls::update_frusta_renderer (void)
 {
-    std::vector<sfm::CameraPose> const& poses = this->incremental_sfm.get_cameras();
-    if (this->viewports.size() != poses.size())
+    if (this->viewports.size() != this->cameras.size())
         return;
 
-    std::vector<mve::CameraInfo> cameras(poses.size());
-    for (std::size_t i = 0; i < cameras.size(); ++i)
+    std::vector<mve::CameraInfo> mvecams(this->cameras.size());
+    for (std::size_t i = 0; i < mvecams.size(); ++i)
     {
-        sfm::CameraPose const& pose = poses[i];
-        mve::CameraInfo& cam = cameras[i];
+        sfm::CameraPose const& pose = this->cameras[i];
+        mve::CameraInfo& cam = mvecams[i];
         sfm::bundler::Viewport const& viewport = this->viewports[i];
         if (!pose.is_valid())
         {
@@ -374,7 +380,7 @@ SfmControls::update_frusta_renderer (void)
         std::copy(pose.t.begin(), pose.t.end(), cam.trans);
     }
 
-    this->frusta_renderer->set_cameras(cameras);
+    this->frusta_renderer->set_cameras(mvecams);
 }
 
 /* ---------------------------------------------------------------- */
@@ -390,12 +396,12 @@ SfmControls::initialize_options (void)
     //this->matching_opts.min_matching_inliers = 12;
 
     /* Initial pair options. */
-    this->init_pair_opts.verbose_output = true;
-    this->init_pair_opts.max_homography_inliers = 0.5f;
     this->init_pair_opts.homography_opts.max_iterations = 1000;
     this->init_pair_opts.homography_opts.already_normalized = false;
-    this->init_pair_opts.homography_opts.threshold = 3.0f;
+    this->init_pair_opts.homography_opts.threshold = 10.0f;
     this->init_pair_opts.homography_opts.verbose_output = false;
+    this->init_pair_opts.max_homography_inliers = 0.6f;
+    this->init_pair_opts.verbose_output = true;
 
     /* Tracks options. */
     this->tracks_options.verbose_output = true;
@@ -407,9 +413,12 @@ SfmControls::initialize_options (void)
     this->incremental_opts.fundamental_opts.verbose_output = true;
     this->incremental_opts.pose_p3p_opts.threshold = 10.0f;
     //this->incremental_opts.pose_p3p_opts.max_iterations = 1000;
-    this->incremental_opts.pose_p3p_opts.verbose_output = true;
+    this->incremental_opts.pose_p3p_opts.verbose_output = false;
     //this->incremental_opts.track_error_threshold_factor = 50.0;
     //this->incremental_opts.new_track_error_threshold = 10.0;
+    this->incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
+    this->incremental_opts.ba_fixed_intrinsics = false;
+    this->incremental_opts.ba_shared_intrinsics = false;
     this->incremental_opts.verbose_output = true;
 }
 
@@ -595,11 +604,22 @@ SfmControls::on_recon_init_pair (void)
 
     this->initialize_options();
 
+    /* Compute connected feature components, i.e. feature tracks. */
+    std::cout << "Computing feature tracks..." << std::endl;
+    sfm::bundler::Tracks bundler_tracks(this->tracks_options);
+    bundler_tracks.compute(this->pairwise_matching,
+        &this->viewports, &this->tracks);
+    std::cout << "Created a total of " << this->tracks.size()
+        << " tracks." << std::endl;
+
+    /* Clear pairwise matching to save memeory. */
+    pairwise_matching.clear();
+
     /* Find initial pair. */
     std::cout << "Searching for initial pair..." << std::endl;
     sfm::bundler::InitialPair init_pair(this->init_pair_opts);
-    init_pair.compute(this->viewports, this->pairwise_matching,
-        &this->init_pair_result);
+    init_pair.initialize(this->viewports, this->tracks);
+    init_pair.compute_pair(&this->init_pair_result);
 
     if (this->init_pair_result.view_1_id < 0
         || this->init_pair_result.view_2_id < 0)
@@ -613,30 +633,20 @@ SfmControls::on_recon_init_pair (void)
         << " and " << init_pair_result.view_2_id
         << " as initial pair." << std::endl;
 
-    /* Compute connected feature components, i.e. feature tracks. */
-    std::cout << "Computing feature tracks..." << std::endl;
-    sfm::bundler::Tracks bundler_tracks(this->tracks_options);
-    bundler_tracks.compute(this->pairwise_matching,
-        &this->viewports, &this->tracks);
-    std::cout << "Created a total of " << this->tracks.size()
-        << " tracks." << std::endl;
-
-    /* Clear pairwise matching to save memeory. */
-    pairwise_matching.clear();
+    this->cameras.clear();
+    this->cameras.resize(this->viewports.size());
+    this->cameras[this->init_pair_result.view_1_id]
+        = this->init_pair_result.view_1_pose;
+    this->cameras[this->init_pair_result.view_2_id]
+        = this->init_pair_result.view_2_pose;
 
     /* Initialize incremental SfM. */
     this->incremental_sfm = sfm::bundler::Incremental(this->incremental_opts);
-    this->incremental_sfm.initialize(&viewports, &tracks);
-
-    /* Reconstruct pose for the initial pair. */
-    std::cout << "Computing pose for initial pair..." << std::endl;
-    this->incremental_sfm.reconstruct_initial_pair
-        (this->init_pair_result.view_1_id, this->init_pair_result.view_2_id);
+    this->incremental_sfm.initialize(&this->viewports,
+        &this->tracks, &this->cameras);
 
     /* Reconstruct track positions with the intial pair. */
     this->incremental_sfm.triangulate_new_tracks();
-
-    /* Remove tracks with large errors. */
     this->incremental_sfm.invalidate_large_error_tracks();
 
     /* Run bundle adjustment. */
@@ -758,59 +768,94 @@ SfmControls::on_apply_to_scene (void)
     std::string undistorted_image_name = "undistorted";
 
     /* Progress information: Create dialog. */
-    // FIXME: Progress not working.
-    std::size_t progress_value = 0;
-    QProgressDialog win("Exporting PLY files...",
+    QProgressDialog win("Applying SfM result...",
         "Cancel", 0, views.size(), this->tab_widget);
     win.setAutoClose(true);
     win.setMinimumDuration(0);
-    win.setValue(progress_value);
+    win.setValue(0);
+    win.setLabelText("Undistorting and saving views...");
 
-    while (QCoreApplication::hasPendingEvents())
-        QCoreApplication::processEvents();
-
-#pragma omp parallel for
-    for (std::size_t i = 0; i < bundle_cams.size(); ++i)
+    std::size_t num_views_saved = 0;
+#pragma omp parallel
     {
-        if (win.wasCanceled())
-            continue;
-
-#pragma omp critical
+#   pragma omp master
         {
-            /* Progress information: Update dialog. */
-            win.setLabelText("Undistorting and saving views...");
-            win.setValue(progress_value);
-            while (QCoreApplication::hasPendingEvents())
-                QCoreApplication::processEvents();
-            win.update();
+            /* Spawn threads to execute work. */
+            for (std::size_t i = 0; i < bundle_cams.size(); ++i)
+            {
+                if (win.wasCanceled())
+                {
+                    num_views_saved += 1;
+                    continue;
+                }
+
+                /* Update view camera. */
+                mve::View::Ptr view = views[i];
+                mve::CameraInfo cam = bundle_cams[i];
+                if (view == NULL)
+                {
+                    num_views_saved += 1;
+                    continue;
+                }
+
+                if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
+                {
+                    num_views_saved += 1;
+                    continue; // No need to change view.
+                }
+                view->set_camera(cam);
+
+                /* Check original image. */
+                mve::MVEFileProxy const* proxy
+                    = view->get_proxy(original_image_name);
+                if (!proxy->is_image
+                    || proxy->get_type() != mve::IMAGE_TYPE_UINT8)
+                {
+                    num_views_saved += 1;
+                    continue;
+                }
+
+#       pragma omp task
+                {
+                    /* Undistort original image. */
+                    mve::ByteImage::Ptr original
+                        = view->get_byte_image(original_image_name);
+                    mve::ByteImage::Ptr undist
+                        = mve::image::image_undistort_vsfm<uint8_t>
+                        (original, cam.flen, cam.dist[0]);
+                    view->set_image(undistorted_image_name, undist);
+
+                    if (omp_get_thread_num() == 0)
+                    {
+                        /* Progress information: Update dialog. */
+                        win.setValue(num_views_saved);
+                        while (QCoreApplication::hasPendingEvents())
+                            QCoreApplication::processEvents();
+                    }
+
+#           pragma omp critical
+                    std::cout << "Saving MVE view "
+                        << view->get_filename() << std::endl;
+                    view->save_mve_file();
+                    view->cache_cleanup();
+
+#           pragma omp atomic
+                    num_views_saved += 1;
+                }
+            }
+
+            /* Update progress in master thread. */
+            while (num_views_saved < bundle_cams.size())
+            {
+                /* Progress information: Update dialog. */
+                win.setValue(num_views_saved);
+                while (QCoreApplication::hasPendingEvents())
+                    QCoreApplication::processEvents();
+                ::sleep(1);
+            }
+
+#   pragma omp taskwait
         }
-
-        /* Update view camera. */
-        mve::View::Ptr view = views[i];
-        mve::CameraInfo const& cam = bundle_cams[i];
-        if (view == NULL)
-            continue;
-        if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
-            continue; // No need to change view.
-        view->set_camera(cam);
-
-        /* Undistort image. */
-        if (true)
-        {
-            mve::ByteImage::Ptr original
-                = view->get_byte_image(original_image_name);
-            if (original == NULL)
-                continue;
-            mve::ByteImage::Ptr undist
-                = mve::image::image_undistort_vsfm<uint8_t>
-                (original, cam.flen, cam.dist[0]);
-            view->set_image(undistorted_image_name, undist);
-        }
-
-#pragma omp critical
-        std::cout << "Saving MVE view " << view->get_filename() << std::endl;
-        view->save_mve_file();
-        view->cache_cleanup();
     }
 
     win.setValue(views.size());

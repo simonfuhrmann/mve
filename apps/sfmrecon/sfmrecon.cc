@@ -183,16 +183,18 @@ sfm_reconstruct (AppSettings const& conf)
     util::WallTimer timer;
 
     /* Compute connected feature components, i.e. feature tracks. */
-    util::system::rand_seed(RAND_SEED_SFM);
-    sfm::bundler::Tracks::Options tracks_options;
-    tracks_options.verbose_output = true;
-
-    sfm::bundler::Tracks bundler_tracks(tracks_options);
     sfm::bundler::TrackList tracks;
-    std::cout << "Computing feature tracks..." << std::endl;
-    bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
-    std::cout << "Created a total of " << tracks.size()
-        << " tracks." << std::endl;
+    {
+        util::system::rand_seed(RAND_SEED_SFM);
+        sfm::bundler::Tracks::Options tracks_options;
+        tracks_options.verbose_output = true;
+
+        sfm::bundler::Tracks bundler_tracks(tracks_options);
+        std::cout << "Computing feature tracks..." << std::endl;
+        bundler_tracks.compute(pairwise_matching, &viewports, &tracks);
+        std::cout << "Created a total of " << tracks.size()
+            << " tracks." << std::endl;
+    }
 
     /* Remove color data and pairwise matching to save memory. */
     for (std::size_t i = 0; i < viewports.size(); ++i)
