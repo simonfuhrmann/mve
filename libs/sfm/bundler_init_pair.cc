@@ -16,55 +16,9 @@ InitialPair::compute_pair (Result* result)
 
     std::cout << "Searching for initial pair..." << std::endl;
 
-    /*
-     * Convert the tracks to pairwise information. This is similar to using
-     * the pairwise matching result directly, however, the tracks have been
-     * further filtered during track generation.
-     */
-    int const num_viewports = static_cast<int>(this->viewports->size());
-    std::vector<int> candidate_lookup(MATH_POW2(num_viewports), -1);
+    /* Convert tracks to pairwise information. */
     std::vector<CandidatePair> candidates;
-    candidates.reserve(1000);
-    for (std::size_t i = 0; i < this->tracks->size(); ++i)
-    {
-        Track const& track = this->tracks->at(i);
-        for (std::size_t j = 1; j < track.features.size(); ++j)
-            for (std::size_t k = 0; k < j; ++k)
-            {
-                int v1id = track.features[j].view_id;
-                int v2id = track.features[k].view_id;
-                int f1id = track.features[j].feature_id;
-                int f2id = track.features[k].feature_id;
-                if (v1id > v2id)
-                {
-                    std::swap(v1id, v2id);
-                    std::swap(f1id, f2id);
-                }
-
-                /* Lookup pair. */
-                int const lookup_id = v1id * num_viewports + v2id;
-                int pair_id = candidate_lookup[lookup_id];
-                if (pair_id == -1)
-                {
-                    pair_id = static_cast<int>(candidates.size());
-                    candidate_lookup[lookup_id] = pair_id;
-                    candidates.push_back(CandidatePair());
-                    candidates.back().view_1_id = v1id;
-                    candidates.back().view_2_id = v2id;
-                }
-
-                /* Fill candidate with additional info. */
-                Viewport const& view1 = this->viewports->at(v1id);
-                Viewport const& view2 = this->viewports->at(v2id);
-                math::Vec2f const v1pos = view1.features.positions[f1id];
-                math::Vec2f const v2pos = view2.features.positions[f2id];
-                Correspondence match;
-                std::copy(v1pos.begin(), v1pos.end(), match.p1);
-                std::copy(v2pos.begin(), v2pos.end(), match.p2);
-                candidates[pair_id].matches.push_back(match);
-            }
-    }
-    candidate_lookup.clear();
+    this->compute_candidate_pairs(&candidates);
 
     /* Sort the candidate pairs by number of matches. */
     std::sort(candidates.rbegin(), candidates.rend());
@@ -107,6 +61,88 @@ InitialPair::compute_pair (Result* result)
 
     if (!found_pair)
         throw std::invalid_argument("No more available pairs");
+}
+
+void
+InitialPair::compute_pair (int view_1_id, int view_2_id, Result* result)
+{
+    if (view_1_id > view_2_id)
+        std::swap(view_1_id, view_2_id);
+
+    /* Convert tracks to pairwise information. */
+    std::vector<CandidatePair> candidates;
+    this->compute_candidate_pairs(&candidates);
+
+    /* Find candidate pair. */
+    CandidatePair* candidate = NULL;
+    for (std::size_t i = 0; candidate == NULL && i < candidates.size(); ++i)
+    {
+        if (view_1_id == candidates[i].view_1_id
+            && view_2_id == candidates[i].view_2_id)
+            candidate = &candidates[i];
+    }
+    if (candidate == NULL)
+        throw std::runtime_error("No matches for initial pair");
+
+    /* Compute initial pair pose. */
+    result->view_1_id = view_1_id;
+    result->view_2_id = view_2_id;
+    bool const found_pose = this->compute_pose(*candidate,
+        &result->view_1_pose, &result->view_2_pose);
+    if (!found_pose)
+        throw std::runtime_error("Cannot compute pose for initial pair");
+}
+
+void
+InitialPair::compute_candidate_pairs (CandidatePairs* candidates)
+{
+    /*
+     * Convert the tracks to pairwise information. This is similar to using
+     * the pairwise matching result directly, however, the tracks have been
+     * further filtered during track generation.
+     */
+    int const num_viewports = static_cast<int>(this->viewports->size());
+    std::vector<int> candidate_lookup(MATH_POW2(num_viewports), -1);
+    candidates->reserve(1000);
+    for (std::size_t i = 0; i < this->tracks->size(); ++i)
+    {
+        Track const& track = this->tracks->at(i);
+        for (std::size_t j = 1; j < track.features.size(); ++j)
+            for (std::size_t k = 0; k < j; ++k)
+            {
+                int v1id = track.features[j].view_id;
+                int v2id = track.features[k].view_id;
+                int f1id = track.features[j].feature_id;
+                int f2id = track.features[k].feature_id;
+                if (v1id > v2id)
+                {
+                    std::swap(v1id, v2id);
+                    std::swap(f1id, f2id);
+                }
+
+                /* Lookup pair. */
+                int const lookup_id = v1id * num_viewports + v2id;
+                int pair_id = candidate_lookup[lookup_id];
+                if (pair_id == -1)
+                {
+                    pair_id = static_cast<int>(candidates->size());
+                    candidate_lookup[lookup_id] = pair_id;
+                    candidates->push_back(CandidatePair());
+                    candidates->back().view_1_id = v1id;
+                    candidates->back().view_2_id = v2id;
+                }
+
+                /* Fill candidate with additional info. */
+                Viewport const& view1 = this->viewports->at(v1id);
+                Viewport const& view2 = this->viewports->at(v2id);
+                math::Vec2f const v1pos = view1.features.positions[f1id];
+                math::Vec2f const v2pos = view2.features.positions[f2id];
+                Correspondence match;
+                std::copy(v1pos.begin(), v1pos.end(), match.p1);
+                std::copy(v2pos.begin(), v2pos.end(), match.p2);
+                candidates->at(pair_id).matches.push_back(match);
+            }
+    }
 }
 
 float

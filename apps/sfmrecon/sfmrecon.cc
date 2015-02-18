@@ -203,9 +203,9 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* Search for a good initial pair, or use the user-specified one. */
     sfm::bundler::InitialPair::Result init_pair_result;
+    sfm::bundler::InitialPair::Options init_pair_opts;
     if (conf.initial_pair_1 < 0 || conf.initial_pair_2 < 0)
     {
-        sfm::bundler::InitialPair::Options init_pair_opts;
         init_pair_opts.homography_opts.max_iterations = 1000;
         init_pair_opts.homography_opts.already_normalized = false;
         init_pair_opts.homography_opts.threshold = 10.0f;
@@ -219,8 +219,10 @@ sfm_reconstruct (AppSettings const& conf)
     }
     else
     {
-        init_pair_result.view_1_id = conf.initial_pair_1;
-        init_pair_result.view_2_id = conf.initial_pair_2;
+        sfm::bundler::InitialPair init_pair(init_pair_opts);
+        init_pair.initialize(viewports, tracks);
+        init_pair.compute_pair(conf.initial_pair_1, conf.initial_pair_2,
+            &init_pair_result);
     }
 
     if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0
