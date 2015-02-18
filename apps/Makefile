@@ -7,17 +7,17 @@ apps:
 	$(MAKE) -C dmrecon
 	$(MAKE) -C makescene
 	$(MAKE) -C meshconvert
-	$(MAKE) -C mveshell
 	$(MAKE) -C scene2pset
 	$(MAKE) -C sfmrecon
+	$(MAKE) -C mveshell
 
 clean:
 	$(MAKE) -C bundle2ply $@
 	$(MAKE) -C dmrecon $@
 	$(MAKE) -C makescene $@
 	$(MAKE) -C meshconvert $@
-	$(MAKE) -C mveshell $@
 	$(MAKE) -C scene2pset $@
 	$(MAKE) -C sfmrecon $@
+	$(MAKE) -C mveshell $@
 
 .PHONY: all clean
