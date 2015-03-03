@@ -52,7 +52,7 @@ input and output format. The attributes are listed below:
     confidence     confidence         single float value   optional
     color          red, green, blue   uchar 3-vector       optional
 
-A typical PLY header (without color) then looks like this:
+A typical PLY file header looks like this:
 
     ply
     format binary_little_endian 1.0
@@ -63,6 +63,9 @@ A typical PLY header (without color) then looks like this:
     property float nx
     property float ny
     property float nz
+    property uchar red
+    property uchar green
+    property uchar blue
     property float confidence
     property float value
     end_header
