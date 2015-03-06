@@ -18,6 +18,12 @@ GLWidget::GLWidget (QWidget *parent)
 {
     this->setFocusPolicy(Qt::ClickFocus);
     this->makeCurrent();
+
+    /* This timer triggers a repaint after all events in the window system's
+     * event queue have been processed. Thus a snappy 3D view is provided. */
+    this->repaint_timer = new QTimer(this);
+    this->repaint_timer->setSingleShot(true);
+    connect (this->repaint_timer, SIGNAL (timeout()), this, SLOT (repaint()));
 }
 
 /* ---------------------------------------------------------------- */
@@ -102,7 +108,7 @@ GLWidget::mousePressEvent (QMouseEvent *event)
     e.y = event->y();
 #endif
     this->context->mouse_event(e);
-    this->repaint();
+    this->repaint_async();
 }
 
 /* ---------------------------------------------------------------- */
@@ -123,7 +129,7 @@ GLWidget::mouseReleaseEvent (QMouseEvent *event)
     e.y = event->y();
 #endif
     this->context->mouse_event(e);
-    this->repaint();
+    this->repaint_async();
 }
 
 /* ---------------------------------------------------------------- */
@@ -144,7 +150,7 @@ GLWidget::mouseMoveEvent (QMouseEvent *event)
     e.y = event->y();
 #endif
     this->context->mouse_event(e);
-    this->repaint();
+    this->repaint_async();
 }
 
 /* ---------------------------------------------------------------- */
@@ -168,7 +174,7 @@ GLWidget::wheelEvent (QWheelEvent* event)
     e.y = event->y();
 #endif
     this->context->mouse_event(e);
-    this->repaint();
+    this->repaint_async();
 }
 
 /* ---------------------------------------------------------------- */
@@ -186,7 +192,7 @@ GLWidget::keyPressEvent (QKeyEvent* event)
     e.type = ogl::KEYBOARD_EVENT_PRESS;
     e.keycode = event->key();
     this->context->keyboard_event(e);
-    this->repaint();
+    this->repaint_async();
 }
 
 /* ---------------------------------------------------------------- */
@@ -204,5 +210,5 @@ GLWidget::keyReleaseEvent (QKeyEvent* event)
     e.type = ogl::KEYBOARD_EVENT_RELEASE;
     e.keycode = event->key();
     this->context->keyboard_event(e);
-    this->repaint();
+    this->repaint_async();
 }
