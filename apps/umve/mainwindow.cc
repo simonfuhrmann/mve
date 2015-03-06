@@ -60,6 +60,7 @@ MainWindow::MainWindow (void)
     central_layout->addWidget(this->tabs);
 
     this->setWindowTitle(tr("UMVE - Ultimate Multi-View Environment"));
+    this->setWindowIcon(QIcon(":/images/icon_window.png"));
     this->setCentralWidget(central_widget);
     this->addDockWidget(Qt::LeftDockWidgetArea, this->dock_scene);
     this->addDockWidget(Qt::LeftDockWidgetArea, this->dock_jobs);

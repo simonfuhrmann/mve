@@ -40,6 +40,7 @@
         <file>images/icon_video.svg</file>
         <file>images/icon_refresh.svg</file>
         <file>images/icon_new_file.svg</file>
+        <file>images/icon_window.png</file>
         <file>shaders/surface_330.frag</file>
         <file>shaders/surface_330.vert</file>
         <file>shaders/texture_330.frag</file>
