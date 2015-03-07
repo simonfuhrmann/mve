@@ -4,6 +4,7 @@
 #include <set>
 #include <QGLWidget>
 #include <QMouseEvent>
+#include <QTimer>
 
 #include "ogl/context.h"
 
@@ -22,6 +23,7 @@ public:
 
 public slots:
     void repaint_gl (void);
+    void repaint_async (void);
     void gl_context (void);
 
 public:
@@ -46,6 +48,7 @@ private:
     int gl_height;
     bool cx_init;
     std::set<ogl::Context*> init_set;
+    QTimer* repaint_timer;
 };
 
 /* ---------------------------------------------------------------- */
@@ -67,6 +70,18 @@ GLWidget::repaint_gl (void)
 {
     this->updateGL();
     //this->repaint();
+}
+
+inline void
+GLWidget::repaint_async (void)
+{
+    /* Don't issue an immediate repaint but let the timer trigger
+     * a repaint after all events have been processed. */
+
+    if (this->repaint_timer->isActive())
+        return;
+
+    this->repaint_timer->start();
 }
 
 inline void
