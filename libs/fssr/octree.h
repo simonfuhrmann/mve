@@ -48,7 +48,8 @@ public:
     /**
      * Octree iterator that keeps track of level and path through the octree.
      * The complete path is a series of 3 bits each indicating the octant
-     * from the root towards the target node.
+     * from the root towards the target node. The iterator works on octrees
+     * with a maximum depth of 21.
      */
     struct Iterator
     {
@@ -81,17 +82,19 @@ public:
     void clear_samples (void);
 
     /**
-     * Inserts a single sample into the Octree.
-     * The scale information is used to determine the level based on the
-     * size of the root node. If the sample is outside the octree root node,
-     * the octree is expanded.
-     */
-    void insert_sample (Sample const& s);
-
-    /**
      * Inserts all samples from the point set into the octree.
      */
     void insert_samples (PointSet const& pset);
+
+    /**
+     * Inserts a single sample into the octree. The sample scale is used to
+     * determine the approriate octree level. If the sample is outside the
+     * octree root, the octree is expanded. Although new samples are not
+     * inserted in levels finer than the maximum level, samples can still end
+     * up in finer levels due to octree expansion. Thus limit_octree_level()
+     * method must be called once after all samples have been inserted.
+     */
+    void insert_sample (Sample const& s);
 
     /** Returns the number of samples in the octree. */
     std::size_t get_num_samples (void) const;
@@ -144,7 +147,25 @@ public:
      */
     void refine_octree (void);
 
-    /** Prints some octree statitics to the stream. */
+    /**
+     * Limits the octree to the max level. This must be called before
+     * computing the implicit function or isosurface extraction.
+     */
+    void limit_octree_level (void);
+
+    /**
+     * Sets the maximum level on which voxels are generated.
+     * The default is 20, which is the maximum allowed level (see voxel.h).
+     */
+    void set_max_level (int max_level);
+
+    /**
+     * Returns the maximum level on which voxels are generated.
+     * The root level is 0, children are at level 1, and so on.
+     */
+    int get_max_level (void) const;
+
+    /** Prints some octree statistics to the stream. */
     void print_stats (std::ostream& out);
 
 private:
@@ -152,7 +173,6 @@ private:
     void create_children (Node* node);
     bool is_inside_octree (math::Vec3d const& pos);
     void expand_root_for_point (math::Vec3d const& pos);
-    Node* find_node_for_sample (Sample const& sample);
 
     /* Octree recursive functions. */
     Node* find_node_descend (Sample const& sample, Iterator const& iter);
@@ -162,6 +182,7 @@ private:
         Node const* node, std::size_t level) const;
     void influence_query (math::Vec3d const& pos, double factor,
         std::vector<Sample const*>* result, Iterator const& iter) const;
+    void limit_octree_level (Node* node, Node* parent, int level);
 
 private:
     /* The root node with its center and side length. */
@@ -172,6 +193,9 @@ private:
     /* The number of samples and nodes in the octree. */
     std::size_t num_samples;
     std::size_t num_nodes;
+
+    /* Limit the octree depth. Maximum level is 20 (see voxel.h). */
+    int max_level;
 };
 
 /* ------------------------- Implementation ---------------------------- */
@@ -223,6 +247,7 @@ Octree::clear (void)
     this->root_center = math::Vec3d(0.0);
     this->num_samples = 0;
     this->num_nodes = 0;
+    this->max_level = 20;
 }
 
 inline void
@@ -292,6 +317,18 @@ Octree::get_iterator_for_root (void) const
     iter.root = this->root;
     iter.first_node();
     return iter;
+}
+
+inline void
+Octree::set_max_level (int max_level)
+{
+    this->max_level = std::max(0, std::min(20, max_level));
+}
+
+inline int
+Octree::get_max_level (void) const
+{
+    return this->max_level;
 }
 
 FSSR_NAMESPACE_END

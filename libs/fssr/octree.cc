@@ -145,33 +145,37 @@ Octree::Iterator::ascend (void) const
 /* -------------------------------------------------------------------- */
 
 void
-Octree::insert_sample (Sample const& s)
-{
-    if (this->root == NULL)
-    {
-        this->root = new Node();
-        this->root_center = s.pos;
-        this->root_size = s.scale;
-        this->num_nodes = 1;
-    }
-
-    while (!this->is_inside_octree(s.pos))
-        this->expand_root_for_point(s.pos);
-
-    Node* node = this->find_node_for_sample(s);
-    if (node == NULL)
-        throw std::runtime_error("insert_sample(): No node for sample!");
-
-    node->samples.push_back(s);
-    this->num_samples += 1;
-}
-
-void
 Octree::insert_samples (PointSet const& pset)
 {
     PointSet::SampleList const& samples = pset.get_samples();
     for (std::size_t i = 0; i < samples.size(); i++)
         this->insert_sample(samples[i]);
+}
+
+void
+Octree::insert_sample (Sample const& sample)
+{
+    if (this->root == NULL)
+    {
+        this->root = new Node();
+        this->root_center = sample.pos;
+        this->root_size = sample.scale;
+        this->num_nodes = 1;
+    }
+
+    /* Expand octree root if sample is outside the octree. */
+    while (!this->is_inside_octree(sample.pos))
+        this->expand_root_for_point(sample.pos);
+
+    /* Find node by expanding the root or descending the tree. */
+    Node* node = NULL;
+    if (sample.scale >= this->root_size * 2.0)
+        node = this->find_node_expand(sample);
+    else
+        node = this->find_node_descend(sample, this->get_iterator_for_root());
+
+    node->samples.push_back(sample);
+    this->num_samples += 1;
 }
 
 void
@@ -231,23 +235,6 @@ Octree::expand_root_for_point (math::Vec3d const& pos)
 }
 
 Octree::Node*
-Octree::find_node_for_sample (Sample const& sample)
-{
-    /*
-     * Determine whether to expand the root or descend the tree.
-     * A fitting level for the sample with scale s is level l with
-     *
-     *     scale(l) <= s < scale(l - 1)  <==>  scale(l) <= s < scale(l) * 2
-     *
-     * Thus, the root needs to be expanded if s >= scale(l) * 2.
-     */
-    if (sample.scale >= this->root_size * 2.0)
-        return find_node_expand(sample);
-
-    return this->find_node_descend(sample, this->get_iterator_for_root());
-}
-
-Octree::Node*
 Octree::find_node_descend (Sample const& sample, Iterator const& iter)
 {
     math::Vec3d node_center;
@@ -260,20 +247,19 @@ Octree::find_node_descend (Sample const& sample, Iterator const& iter)
     /*
      * The current level l is appropriate if sample scale s is
      * scale(l) <= s < scale(l) * 2. As a sanity check, this function
-     * must not be called if s >= scale(l) * 2. Otherwise descend.
+     * must not be called if s >= scale(l) * 2. If the current level is
+     * the maximum allowed level, return this node also. Descend otherwise.
      */
-    if (node_size <= sample.scale)
+    if (node_size <= sample.scale || iter.level >= this->max_level)
         return iter.current;
 
-    /* Find octant to descend. */
+    /* Descend octree. Find octant and create children if required. */
     int octant = 0;
     for (int i = 0; i < 3; ++i)
         if (sample.pos[i] > node_center[i])
             octant |= (1 << i);
-
     if (iter.current->children == NULL)
         this->create_children(iter.current);
-
     return this->find_node_descend(sample, iter.descend(octant));
 }
 
@@ -355,6 +341,11 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
      * node to the query. If 'factor' times the largest scale is less than
      * the closest distance, the node can be skipped and traversal stops.
      * Otherwise all samples in the node have to be tested.
+     *
+     * - Note: The 'factor' depends on the basis/weighting function. In this
+     *   implementation, factor is always 3.0.
+     * - Note: Nodes can contain samples with scale values much smaller than
+     *   node_size. This is because the octree depth is limited.
      */
 
     math::Vec3d node_center;
@@ -402,6 +393,44 @@ Octree::refine_octree (void)
         else
             for (int i = 0; i < 8; ++i)
                 queue.push_back(node->children + i);
+    }
+}
+
+void
+Octree::limit_octree_level (void)
+{
+    std::cout << "Limiting octree to "
+        << this->max_level << " levels..." << std::endl;
+
+    if (this->root == NULL)
+        return;
+    this->limit_octree_level(this->root, NULL, 0);
+}
+
+void
+Octree::limit_octree_level (Node* node, Node* parent, int level)
+{
+    if (level == this->max_level)
+        parent = node;
+
+    if (level > this->max_level)
+    {
+        parent->samples.insert(parent->samples.end(),
+            node->samples.begin(), node->samples.end());
+        node->samples.clear();
+    }
+
+    if (node->children != NULL)
+        for (int i = 0; i < 8; ++i)
+            this->limit_octree_level(node->children + i, parent, level + 1);
+
+    if (level > this->max_level)
+        this->num_nodes -= 1;
+
+    if (level == this->max_level)
+    {
+        delete [] node->children;
+        node->children = NULL;
     }
 }
 

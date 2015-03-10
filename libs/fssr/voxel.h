@@ -50,7 +50,8 @@ public:
 
 /**
  * Stores per voxel data. The is the actual SDF/implicit function value,
- * a confidence value and the cumulative color.
+ * a confidence value and the cumulative color. The scale value is mainly
+ * interesting to store scale information in the output mesh.
  */
 struct VoxelData
 {

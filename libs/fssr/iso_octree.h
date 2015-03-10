@@ -35,18 +35,6 @@ public:
     /** Evaluate the implicit function for all voxels on all leaf nodes. */
     void compute_voxels (void);
 
-    /**
-     * Sets the maximum level on which voxels are generated. See voxel.h.
-     * The default is 19, deeper levels are not supported by Kazhdans code.
-     */
-    void set_max_level (int max_level);
-
-    /**
-     * Returns the maximum level on which voxels are generated.
-     * The root level is 0, children are at level 1, and so on.
-     */
-    int get_max_level (void) const;
-
     /** Returns the map of computed voxels. */
     VoxelVector const& get_voxels (void) const;
 
@@ -56,7 +44,6 @@ private:
     void print_progress (std::size_t voxels_done, std::size_t voxels_total);
 
 private:
-    int max_level;
     VoxelVector voxels;
 };
 
@@ -69,13 +56,11 @@ FSSR_NAMESPACE_BEGIN
 inline
 IsoOctree::IsoOctree (void)
 {
-    this->max_level = 19;
 }
 
 inline void
 IsoOctree::clear (void)
 {
-    this->max_level = 19;
     this->clear_voxel_data();
     this->Octree::clear();
 }
@@ -90,18 +75,6 @@ inline IsoOctree::VoxelVector const&
 IsoOctree::get_voxels (void) const
 {
     return this->voxels;
-}
-
-inline void
-IsoOctree::set_max_level (int max_level)
-{
-    this->max_level = max_level;
-}
-
-inline int
-IsoOctree::get_max_level (void) const
-{
-    return this->max_level;
 }
 
 FSSR_NAMESPACE_END

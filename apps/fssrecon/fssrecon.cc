@@ -127,6 +127,7 @@ main (int argc, char** argv)
     }
 
     /* Compute voxels. */
+    octree.limit_octree_level();
     octree.print_stats(std::cout);
     octree.compute_voxels();
     octree.clear_samples();

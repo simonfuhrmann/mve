@@ -41,14 +41,10 @@ IsoOctree::compute_all_voxels (void)
         typedef std::set<VoxelIndex> VoxelIndexSet;
         VoxelIndexSet voxel_set;
 
-        /* Add voxels for leaf nodes and nodes at max level. */
+        /* Add voxels for all leaf nodes. */
         Octree::Iterator iter = this->get_iterator_for_root();
-        for (iter.first_node(); iter.current != NULL; iter.next_node())
+        for (iter.first_leaf(); iter.current != NULL; iter.next_leaf())
         {
-            if (iter.level > this->max_level)
-                continue;
-            if (iter.level < this->max_level && iter.current->children != NULL)
-                continue;
             for (int i = 0; i < 8; ++i)
             {
                 VoxelIndex index;
