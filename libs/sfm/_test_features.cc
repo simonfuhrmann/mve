@@ -10,6 +10,18 @@
 #include "sfm/sift.h"
 #include "sfm/visualizer.h"
 
+bool
+sift_compare (sfm::Sift::Descriptor const& d1, sfm::Sift::Descriptor const& d2)
+{
+    return d1.scale > d2.scale;
+}
+
+bool
+surf_compare (sfm::Surf::Descriptor const& d1, sfm::Surf::Descriptor const& d2)
+{
+    return d1.scale > d2.scale;
+}
+
 int
 main (int argc, char** argv)
 {
@@ -70,6 +82,13 @@ main (int argc, char** argv)
         sift_descr = sift.get_descriptors();
         sift_keypoints = sift.get_keypoints();
     }
+
+    //std::sort(sift_descr.begin(), sift_descr.end(), sift_compare);
+    //std::sort(surf_descr.begin(), surf_descr.end(), surf_compare);
+    //std::random_shuffle(sift_descr.begin(), sift_descr.end());
+    //std::random_shuffle(surf_descr.begin(), surf_descr.end());
+    //sift_descr.resize(500);
+    //surf_descr.resize(500);
 
     /* Draw features. */
     std::vector<sfm::Visualizer::Keypoint> surf_drawing;
