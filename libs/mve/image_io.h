@@ -82,10 +82,12 @@ load_png_file (std::string const& filename);
 
 /**
  * Saves image data to a PNG file. Supports 1, 2, 3 and 4 channel images.
+ * Valid compression levels are in [0, 9], 0 is fastest.
  * May throw util::FileException and util::Exception.
  */
 void
-save_png_file (ByteImage::ConstPtr image, std::string const& filename);
+save_png_file (ByteImage::ConstPtr image,
+    std::string const& filename, int compression_level = 1);
 
 #endif /* MVE_NO_PNG_SUPPORT */
 

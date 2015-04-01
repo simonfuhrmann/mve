@@ -248,7 +248,8 @@ load_png_file (std::string const& filename)
 /* ---------------------------------------------------------------- */
 
 void
-save_png_file (ByteImage::ConstPtr image, std::string const& filename)
+save_png_file (ByteImage::ConstPtr image,
+    std::string const& filename, int compression_level)
 {
     if (image == NULL)
         throw std::invalid_argument("NULL image given");
@@ -297,6 +298,10 @@ save_png_file (ByteImage::ConstPtr image, std::string const& filename)
         }
     }
 
+    /* Set compression level (6 seems to be the default). */
+    png_set_compression_level(png_ptr, compression_level);
+
+    /* Write image. */
     png_set_IHDR(png_ptr, info_ptr, image->width(), image->height(),
         8 /* Bit depth */, color_type, PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
