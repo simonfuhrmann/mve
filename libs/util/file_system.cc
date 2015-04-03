@@ -534,7 +534,6 @@ Directory::scan (std::string const& path)
         this->push_back(File());
         this->back().path = path;
         this->back().name = ep->d_name;
-
         this->back().is_dir = (ep->d_type == DT_DIR);
     }
     ::closedir(dp);
