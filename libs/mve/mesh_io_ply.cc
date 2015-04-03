@@ -1035,9 +1035,9 @@ save_ply_view (View::Ptr view, std::string const& filename,
         throw std::invalid_argument("NULL view given");
 
     CameraInfo const& cam(view->get_camera());
-    FloatImage::Ptr dm(view->get_float_image(depthmap));
-    FloatImage::Ptr cm(view->get_float_image(confidence));
-    ByteImage::Ptr ci(view->get_byte_image(color_image));
+    FloatImage::Ptr dm = view->get_image(depthmap, IMAGE_TYPE_FLOAT);
+    FloatImage::Ptr cm = view->get_image(confidence, IMAGE_TYPE_FLOAT);
+    ByteImage::Ptr ci = view->get_image(color_image, IMAGE_TYPE_UINT8);
     save_ply_view(filename, cam, dm, cm, ci);
 }
 

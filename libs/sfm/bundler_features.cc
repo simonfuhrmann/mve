@@ -46,8 +46,8 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
             continue;
 
         mve::View::Ptr view = views[i];
-        mve::ByteImage::Ptr image
-            = view->get_byte_image(this->opts.image_embedding);
+        mve::ByteImage::Ptr image = view->get_image
+            (this->opts.image_embedding, mve::IMAGE_TYPE_UINT8);
         if (image == NULL)
             continue;
 
@@ -101,7 +101,7 @@ Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
         this->fallback_focal_length(view, viewport);
         return;
     }
-    mve::ByteImage::Ptr exif_data = view->get_data(this->opts.exif_embedding);
+    mve::ByteImage::Ptr exif_data = view->get_blob(this->opts.exif_embedding);
     if (exif_data == NULL)
     {
 #pragma omp critical

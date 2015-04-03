@@ -1,961 +1,1026 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <cstring>
 #include <cerrno>
 
-#include "util/tokenizer.h"
 #include "util/exception.h"
 #include "util/file_system.h"
-#include "util/string.h"
-#include "mve/image.h"
+#include "util/tokenizer.h"
 #include "mve/view.h"
+#include "mve/image_io.h"
 
-/* The signature to identify MVE files. */
-#define MVE_FILE_SIGNATURE "\211MVE\n"
-#define MVE_FILE_SIGNATURE_LEN 5
+#define VIEW_IO_META_FILE "meta.ini" // TODO
+#define VIEW_IO_BLOB_SIGNATURE "\211MVE_BLOB\n"
+#define VIEW_IO_BLOB_SIGNATURE_LEN 10
+
+/* The signature to identify deprecated MVE files. */
+#define VIEW_MVE_FILE_SIGNATURE "\211MVE\n"
+#define VIEW_MVE_FILE_SIGNATURE_LEN 5
 
 MVE_NAMESPACE_BEGIN
 
-bool
-MVEFileProxy::check_direct_write (void) const
+void
+View::load_view (std::string const& path)
 {
-    /* Image needs to be cached. */
-    if (this->image == NULL)
-        return false;
+    std::cout << "View: Loading view: " << path << std::endl;
 
-    /* Proxy needs to be bound to a file. */
-    if (this->file_pos == 0 || this->byte_size == 0)
-        return false;
-
-    /* Image (or data) dimensions must be the same. */
-    if (this->width != this->image->width()
-        || this->height != this->image->height()
-        || this->channels != this->image->channels())
-        return false;
-
-    /* Image (or data) datatype must be the same. */
-    if (this->datatype != this->image->get_type_string())
-        return false;
-
-    return true;
+    /* Open meta.ini and populate images and blobs. */
+    this->clear();
+    try
+    {
+        this->load_meta_data(path);
+        this->populate_images_and_blobs(path);
+        this->path = path;
+    }
+    catch (...)
+    {
+        this->clear();
+        throw;
+    }
 }
-
-/* ---------------------------------------------------------------- */
-
-ImageType
-MVEFileProxy::get_type (void) const
-{
-    if (this->image != NULL)
-        return this->image->get_type();
-    return ImageBase::get_type_for_string(this->datatype);
-}
-
-/* ---------------------------------------------------------------- */
-
-bool
-MVEFileProxy::is_type (std::string const& typestr) const
-{
-    return (image != NULL && image->get_type_string() == typestr)
-        || this->datatype == typestr;
-}
-
-/* ---------------------------------------------------------------- */
-/* ---------------------------------------------------------------- */
 
 void
-View::load_mve_file (std::string const& filename, bool merge)
+View::load_view_from_mve_file  (std::string const& filename)
 {
-    if (filename.empty())
-        throw std::invalid_argument("No filename given");
-    this->filename = filename;
-
-    /* Check if write locks are set. Wait for release. */
-    util::fs::FileLock lock;
-    if (!lock.wait_lock(this->filename))
-        throw util::Exception("File is locked: ", lock.get_reason());
-
     /* Open file. */
     std::ifstream infile(filename.c_str(), std::ios::binary);
     if (!infile.good())
         throw util::FileException(filename, std::strerror(errno));
 
     /* Signature checks. */
-    {
-        /* Read file signature. */
-        char buf[MVE_FILE_SIGNATURE_LEN];
-        infile.read(buf, MVE_FILE_SIGNATURE_LEN);
-        if (infile.eof())
-        {
-            infile.close();
-            throw util::Exception("Premature end of file");
-        }
+    char signature[VIEW_MVE_FILE_SIGNATURE_LEN];
+    infile.read(signature, VIEW_MVE_FILE_SIGNATURE_LEN);
+    if (!std::equal(signature, signature + VIEW_MVE_FILE_SIGNATURE_LEN,
+        VIEW_MVE_FILE_SIGNATURE))
+        throw util::Exception("Invalid file signature");
 
-        /* Check file signature. */
-        bool valid = true;
-        for (std::size_t i = 0; i < MVE_FILE_SIGNATURE_LEN; ++i)
-            if (buf[i] != MVE_FILE_SIGNATURE[i])
-                valid = false;
+    this->clear();
 
-        if (!valid)
-        {
-            infile.close();
-            throw util::Exception("Invalid file signature");
-        }
-    }
-
-    /* Remember old proxies and start with empty list. */
-    Proxies old_proxies;
-    MVEFileMeta old_meta;
-    CameraInfo old_camera;
-    std::swap(this->proxies, old_proxies);
-    std::swap(this->meta, old_meta);
-    std::swap(this->camera, old_camera);
-
-    /* Read headers. */
+    /* Read headers and create a schedule to read embeddings. */
+    typedef std::pair<std::size_t, char*> ReadBuffer;
+    std::vector<ReadBuffer> embedding_buffers;
     while (true)
     {
-        std::string buf;
-        std::getline(infile, buf);
-        if (buf == "end_headers")
+        std::string line;
+        std::getline(infile, line);
+        if (infile.eof())
+            throw util::Exception("Premature EOF while reading headers");
+
+        util::string::clip_newlines(&line);
+        util::string::clip_whitespaces(&line);
+        if (line == "end_headers")
             break;
 
-        try
+        /* Tokenize header. */
+        util::Tokenizer tokens;
+        tokens.split(line);
+        if (tokens.empty())
+            throw util::Exception("Invalid header line: ", line);
+
+        /* Populate meta data from headers. */
+        if (tokens[0] == "image" && tokens.size() == 6)
         {
-            if (infile.eof())
-                throw util::Exception("Premature end of file during headers");
-
-            this->parse_header_line(buf);
-
-            if (this->proxies.size() > 128)
-                throw util::Exception("Spurious amount of embeddings!");
+            ImageProxy proxy;
+            proxy.is_dirty = true;
+            proxy.name = tokens[1];
+            proxy.width = util::string::convert<int>(tokens[2]);
+            proxy.height = util::string::convert<int>(tokens[3]);
+            proxy.channels = util::string::convert<int>(tokens[4]);
+            proxy.type = mve::ImageBase::get_type_for_string(tokens[5]);
+            proxy.is_initialized = true;
+            proxy.image = mve::image::create_for_type
+                (proxy.type, proxy.width, proxy.height, proxy.channels);
+            this->images.push_back(proxy);
+            embedding_buffers.push_back(ReadBuffer(
+                proxy.image->get_byte_size(),
+                proxy.image->get_byte_pointer()));
         }
-        catch (util::Exception& e)
+        else if (tokens[0] == "data" && tokens.size() == 3)
         {
-            infile.close();
-            std::swap(this->proxies, old_proxies);
-            std::swap(this->meta, old_meta);
-            std::swap(this->camera, old_camera);
-            throw e;
+            BlobProxy proxy;
+            proxy.is_dirty = true;
+            proxy.name = tokens[1];
+            proxy.size = util::string::convert<int>(tokens[2]);
+            proxy.is_initialized = true;
+            proxy.blob = mve::ByteImage::create(proxy.size, 1, 1);
+            this->blobs.push_back(proxy);
+            embedding_buffers.push_back(ReadBuffer(
+                proxy.blob->get_byte_size(),
+                proxy.blob->get_byte_pointer()));
         }
-    }
-
-    /* Done reading input file. */
-    std::size_t current_pos = infile.tellg();
-    infile.close();
-
-    /* Update the camera information. */
-    this->update_camera();
-
-    /* Compute file_pos and byte_size for all embeddings. */
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-    {
-        MVEFileProxy& p(this->proxies[i]);
-
-        /*
-         * Compute file_pos and advance current pos. The intro in front
-         * of each embedding contains the letters "embedding", the name
-         * and byte size of the embedding, two blanks and a newline.
-         */
-        std::size_t intro_len = 12 + p.name.size()
-            + util::string::get(p.byte_size).size();
-        p.file_pos = current_pos + intro_len;
-        current_pos = p.file_pos + p.byte_size + 1; // +1 for trailing newline
-
-        //std::cout << "Guessed parameters for " << p.name << ": size "
-        //    << p.byte_size << ", pos " << p.file_pos << std::endl;
-    }
-
-    if (!merge)
-        return;
-
-    /*
-     * Merge the old represenation with the new one. The merge should
-     *
-     * - keep old meta info (only if needs_rebuild is set?),
-     * - keep old camera info (only if needs_rebuild is set?),
-     * - keep old embeddings that are dirty,
-     * - keep old embeddings that are in use (cached and references around).
-     *
-     * Direct writing must be disabled (i.e. force_rewrite) if the meta
-     * information changed, the amount of embeddings changed,
-     * or size of cached embeddings changed.
-     *
-     * Problem case: Embedding content changed in background, embedding is
-     *   currently cached but not dirty. Detect & write back? Ignore?
-     *   -> Easy solution: ignore
-     *
-     * The flag 'needs_rebuild' becomes true if
-     *
-     * - view ID or view name changes,
-     * - embeddings are removed or added,
-     * - type of embedding (data/image) is changed,
-     * - the camera is set.
-     *
-     * Current issues: Althogh merging may work, the issue is that merging
-     * creates completely new proxies. This is problematic as pointers
-     * to proxies may be around (passed to ensure_embedding). Also, images
-     * that are cached but not used are uncached. This may impact speed.
-     */
-    std::cout << "Merging file with memory..." << std::endl;
-    this->meta = old_meta;
-    this->camera = old_camera;
-    for (std::size_t i = 0; i < old_proxies.size(); ++i)
-    {
-        MVEFileProxy const& p = old_proxies[i];
-        if (p.is_dirty || p.image.use_count() > 1)
+        else if (tokens[0] == "id" && tokens.size() == 2)
         {
-            MVEFileProxy* p2 = this->get_proxy_intern(p.name);
-            if (p2)
-            {
-                std::cout << "  Reverting embedding" << std::endl;
-                *p2 = p;
-            }
-            else
-            {
-                std::cout << "  Keeping embedding" << std::endl;
-                this->proxies.push_back(p);
-            }
+            this->set_value("view.id", tokens[1]);
+        }
+        else if (tokens[0] == "name" && tokens.size() > 1)
+        {
+            this->set_value("view.name", tokens.concat(1));
+        }
+        else if (tokens[0] == "camera-ext" && tokens.size() == 13)
+        {
+            this->set_value("camera.translation", tokens.concat(1, 3));
+            this->set_value("camera.rotation", tokens.concat(4, 9));
+        }
+        else if (tokens[0] == "camera-int" && tokens.size() > 2 && tokens.size() <= 8)
+        {
+            this->set_value("camera.focal_length", tokens[1]);
+            if (tokens.size() > 4)
+                this->set_value("camera.pixel_aspect", tokens[4]);
+            if (tokens.size() > 6)
+                this->set_value("camera.principal_point", tokens.concat(5, 2));
+        }
+        else
+        {
+            std::cerr << "Unrecognized header: " << line << std::endl;
         }
     }
-}
 
-/* ---------------------------------------------------------------- */
-
-void
-View::parse_header_line (std::string const& header_line)
-{
-    /* Clean header line. */
-    std::string str(header_line);
-    util::string::clip_newlines(&str);
-    util::string::clip_whitespaces(&str);
-    util::string::normalize(&str);
-
-    /* Tokenize header. */
-    util::Tokenizer tokens;
-    tokens.split(str);
-
-    if (tokens.empty())
-        throw util::Exception("Error: Invalid header line");
-
-    if (tokens[0] == "image")
+    /* Read embeddings and populate view. */
+    std::cout << "Embedding buffers: " << embedding_buffers.size() << std::endl;
+    for (std::size_t i = 0; i < embedding_buffers.size(); ++i)
     {
-        if (tokens.size() != 6)
-            throw util::Exception("Invalid image header: ", str);
+        std::string line;
+        std::getline(infile, line);
+        if (infile.eof())
+            throw util::Exception("Premature EOF while reading payload");
+        std::cout << "Processing: " << line << std::endl;
 
-        MVEFileProxy p;
-        p.is_image = true;
-        p.name = tokens[1];
-        p.width = util::string::convert<int>(tokens[2]);
-        p.height = util::string::convert<int>(tokens[3]);
-        p.channels = util::string::convert<int>(tokens[4]);
-        p.datatype = tokens[5];
-        int type_size = util::string::size_for_type_string(p.datatype);
-        if (!type_size)
-            throw util::Exception("Invalid image type: ", p.datatype);
-        p.byte_size = p.width * p.height * p.channels * type_size;
-        this->proxies.push_back(p);
-    }
-    else if (tokens[0] == "data")
-    {
+        util::Tokenizer tokens;
+        tokens.split(line);
         if (tokens.size() != 3)
-            throw util::Exception("Invalid data header: ", str);
+            throw util::Exception("Invalid embedding: ", line);
 
-        MVEFileProxy p;
-        p.is_image = false;
-        p.name = tokens[1];
-        p.width = util::string::convert<int>(tokens[2]);
-        p.height = 1;
-        p.channels = 1;
-        p.datatype = "uint8";
-        p.byte_size = p.width;
-        this->proxies.push_back(p);
+        ReadBuffer& buffer = embedding_buffers[i];
+        std::size_t byte_size = util::string::convert<std::size_t>(tokens[2]);
+        if (byte_size != buffer.first)
+            throw util::Exception("Unexpected embedding size");
+
+        infile.read(buffer.second, buffer.first);
+        infile.ignore();
     }
-    else if (tokens[0] == "id")
-    {
-        if (tokens.size() != 2)
-            throw util::Exception("Invalid ID header: ", str);
-        this->meta.view_id = util::string::convert<std::size_t>(tokens[1]);
-    }
-    else if (tokens[0] == "name")
-    {
-        if (tokens.size() <= 1)
-            throw util::Exception("Invalid view name header: ", str);
-        this->meta.view_name = tokens.concat(1);
-    }
-    else if (tokens[0] == "camera") // + 15 tokens (t,R,fl,rd1,rd2)
-    {
-        // This is DEPRECATED. Remove it at some time...
-        if (tokens.size() != 16)
-            throw util::Exception("Invalid camera spec: ", str);
-        this->meta.camera_ext_str = tokens.concat(1, 12);
-        this->meta.camera_int_str = tokens.concat(13);
-    }
-    else if (tokens[0] == "camera-ext") // + 12 tokens (t,R)
-    {
-        if (tokens.size() != 13)
-            throw util::Exception("Invalid camera spec: ", str);
-        this->meta.camera_ext_str = tokens.concat(1, 12);
-    }
-    else if (tokens[0] == "camera-int") // + 1 to 7 tokens
-    {
-        if (tokens.size() < 2 || tokens.size() > 8)
-            throw util::Exception("Invalid camera spec: ", str);
-        this->meta.camera_int_str = tokens.concat(1);
-    }
-    else
-        throw util::Exception("Unrecognized header: ", tokens[0]);
+
+    if (infile.eof())
+        throw util::Exception("Premature EOF while reading payload");
+    infile.close();
 }
 
-/* ---------------------------------------------------------------- */
-
 void
-View::update_camera (void)
+View::reload_view (void)
 {
-    if (!this->meta.camera_ext_str.empty())
-        this->camera.from_ext_string(this->meta.camera_ext_str);
-    if (!this->meta.camera_int_str.empty())
-        this->camera.from_int_string(this->meta.camera_int_str);
+    if (this->path.empty())
+        throw std::runtime_error("View not initialized");
+    this->load_view(this->path);
 }
 
-/* ---------------------------------------------------------------- */
-
 void
-View::save_mve_file_as (std::string const& filename)
+View::save_view_as (std::string const& path)
 {
-    if (filename.empty())
-        throw std::invalid_argument("No filename given");
+    std::cout << "View: Saving view: " << path << std::endl;
 
-    // TODO: Re-read and merge with file on disc?
-    //this->reload_mve_file(true);
+    /* Create view directory if needed. */
+    if (util::fs::file_exists(path.c_str()))
+        throw util::FileException(path, "Is not a directory");
+    if (!util::fs::dir_exists(path.c_str()))
+        if (!util::fs::mkdir(path.c_str()))
+            throw util::FileException(path, std::strerror(errno));
 
-    //std::string basename = util::fs::basename(filename);
-    //std::cout << "Saving MVE file as '"
-    //    << basename << "'..." << std::endl;
+    /* Load all images and BLOBS. */
+    for (std::size_t i = 0; i < this->images.size(); ++i)
+        this->load_image(&this->images[i], false);
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+        this->load_blob(&this->blobs[i], false);
 
-    /* Acquire file lock for the view. */
-    util::fs::FileLock lock;
-    util::fs::FileLock::Status lock_status = lock.acquire_retry(filename);
-    if (lock_status != util::fs::FileLock::LOCK_CREATED)
-        throw util::Exception("Cannot acquire lock: ", lock.get_reason());
-
-    /* Keep references to image data to prevent cleanup while saving. */
-    std::vector<ImageBase::Ptr> data_refs(this->proxies.size());
-
-    /*
-     * Cache all embeddings before opening output file. This is important
-     * to prevent troubles when the new, given filename refers to the same
-     * file than the source file, from which embeddings need to be read.
-     */
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-    {
-        MVEFileProxy& p(this->proxies[i]);
-        // TODO: Use function that does not merge
-        data_refs[i] = this->get_image_for_proxy(p);
-        p.width = p.image->width();
-        p.height = p.image->height();
-        p.channels = p.image->channels();
-        p.byte_size = p.image->get_byte_size();
-        p.datatype = p.image->get_type_string();
-    }
-
-    /* Open output file. */
-    std::ofstream out(filename.c_str(), std::ios::binary);
-    if (!out.good())
-        throw util::Exception("Cannot open file: ", filename);
-
-    /* Write file signature. */
-    out.write(MVE_FILE_SIGNATURE, MVE_FILE_SIGNATURE_LEN);
-
-    /* Write meta headers. */
-    std::stringstream header_ss;
-    if (meta.view_id != (std::size_t)-1)
-        header_ss << "id " << this->meta.view_id << "\n";
-    if (!meta.view_name.empty())
-        header_ss << "name " << this->meta.view_name << "\n";
-    if (!meta.camera_ext_str.empty())
-        header_ss << "camera-ext " << this->meta.camera_ext_str << "\n";
-    if (!meta.camera_int_str.empty())
-        header_ss << "camera-int " << this->meta.camera_int_str << "\n";
-
-    std::string header_str(header_ss.str());
-    if (!header_str.empty())
-        out.write(header_str.c_str(), header_str.size());
-
-    /* Write embedding headers. */
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-    {
-        /* Update proxy information. */
-        MVEFileProxy const& p(this->proxies[i]);
-        if (p.is_image)
-        {
-            out << "image " << p.name << " " << p.width << " " << p.height
-                << " " << p.channels << " " << p.datatype << "\n";
-        }
-        else
-        {
-            out << "data " << p.name << " " << p.byte_size << "\n";
-        }
-    }
-
-    /* Finalize headers. */
-    out << "end_headers" << "\n";
-
-    /* Write images and data. */
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-    {
-        /* Write embedding (and update file_pos proxy information). */
-        MVEFileProxy& p(this->proxies[i]);
-        out << "embedding " << p.name << " " << p.byte_size << "\n";
-        p.file_pos = out.tellp();
-        p.is_dirty = false;
-        out.write(p.image->get_byte_pointer(), p.byte_size);
-        out.write("\n", 1);
-    }
-
-    /* Finalize file and update members. */
-    out.write("EOF\n", 4);
-    out.close();
-    this->filename = filename;
-    this->needs_rebuild = false;
-
-    /* Because all embeddings are now cached, we release some memory. */
-    data_refs.clear();
+    /* Save meta data, images and BLOBS, and free memory. */
+    this->save_meta_data(path);
+    this->path = path;
+    this->save_view();
     this->cache_cleanup();
-
-    //std::cout << "Done saving file as '"
-    //    << basename << "'." << std::endl;
 }
 
-/* ---------------------------------------------------------------- */
+int
+View::save_view (void)
+{
+    if (this->path.empty())
+        throw std::runtime_error("View not initialized");
+
+    int saved = 0;
+    if (this->meta_data.is_dirty)
+    {
+        this->save_meta_data(this->path);
+        saved += 1;
+    }
+    for (std::size_t i = 0; i < this->images.size(); ++i)
+        if (this->images[i].is_dirty)
+        {
+            this->save_image_intern(&this->images[i]);
+            saved += 1;
+        }
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+        if (this->blobs[i].is_dirty)
+        {
+            this->save_blob_intern(&this->blobs[i]);
+            saved += 1;
+        }
+    return saved;
+}
 
 void
-View::save_mve_file (bool force_rebuild)
+View::clear (void)
 {
-    if (this->filename.empty())
-        throw std::invalid_argument("No filename set");
-
-    // TODO: Re-read and merge with file on disc?
-    //this->reload_mve_file(true);
-
-    /* For debugging... */
-    std::string basename = util::fs::basename(this->filename);
-
-    /*
-     * Check if we can write embeddings directly to file instead of creating
-     * a new file from scratch. Only dirty embeddings are of interest.
-     */
-    bool direct = false;
-    if (!force_rebuild && !this->needs_rebuild)
-    {
-        direct = true;
-        std::size_t num_dirty = 0;
-        for (std::size_t i = 0; i < this->proxies.size(); ++i)
-        {
-            if (!this->proxies[i].is_dirty)
-                continue;
-
-            num_dirty += 1;
-            if (!this->proxies[i].check_direct_write())
-                direct = false;
-        }
-
-        if (num_dirty == 0)
-        {
-            //std::cout << "Nothing changed for '" << basename
-            //    << "', skipping." << std::endl;
-            return;
-        }
-    }
-
-    /* Acquire file lock for the view. */
-    util::fs::FileLock lock;
-    util::fs::FileLock::Status lock_status = lock.acquire_retry(this->filename);
-    if (lock_status != util::fs::FileLock::LOCK_CREATED)
-        throw util::Exception("Cannot acquire lock: ", lock.get_reason());
-
-    /* Write embeddings directly to view file. */
-    bool success = false;
-    if (direct)
-    {
-        //std::cout << "Direct-writing modified data to "
-        //    << basename << std::endl;
-        try
-        {
-            for (std::size_t i = 0; i < this->proxies.size(); ++i)
-                if (this->proxies[i].is_dirty)
-                    this->direct_write(this->proxies[i]);
-            success = true;
-        }
-        catch (util::Exception& e)
-        {
-            //std::cout << "Error direct-writing to " << basename
-            //    << ": " << e << std::endl;
-        }
-    }
-
-    /* Store the view by rebuilding the file from scratch. */
-    if (!success)
-    {
-        std::string orig_filename = this->filename;
-        this->save_mve_file_as(this->filename + ".new");
-        util::fs::unlink(orig_filename.c_str());
-        this->rename_file(orig_filename);
-    }
-
-    //std::cout << "Done saving '" << basename << "'." << std::endl;
+    this->meta_data.data.clear();
+    this->images.clear();
+    this->blobs.clear();
+    this->path.clear();
 }
-
-/* ---------------------------------------------------------------- */
-
-void
-View::direct_write (MVEFileProxy& p)
-{
-    if (this->filename.empty())
-        throw std::invalid_argument("No filename given");
-
-    if (p.byte_size == 0 || p.file_pos == 0)
-        throw util::Exception("Proxy not properly initialized");
-
-    if (p.image == NULL || p.image->get_byte_size() != p.byte_size)
-        throw util::Exception("Cannot directly write to view");
-
-    std::fstream out(this->filename.c_str(),
-        std::ios::in | std::ios::out | std::ios::binary);
-    if (!out.good())
-        throw util::Exception("Error opening MVE file: ",
-            std::strerror(errno));
-
-    out.seekp(p.file_pos);
-    if (!out.good())
-    {
-        out.close();
-        throw util::Exception("Error seeking in MVE file: ",
-            std::strerror(errno));
-    }
-    out.write(p.image->get_byte_pointer(), p.image->get_byte_size());
-    out.close();
-
-    if (out.bad())
-        throw util::Exception("Error writing to MVE file: ",
-            std::strerror(errno));
-
-    p.is_dirty = false;
-}
-
-/* ---------------------------------------------------------------- */
-
-bool
-View::rename_file (std::string const& new_name)
-
-{
-    bool good = util::fs::rename(this->filename.c_str(), new_name.c_str());
-    this->filename = new_name;
-    return good;
-}
-
-/* ---------------------------------------------------------------- */
-
-ImageBase::Ptr
-View::get_image_for_proxy (MVEFileProxy& p)
-{
-    util::AtomicMutex<int> lock(this->loading_mutex);
-
-    //if (sync_file)
-    //    this->reload_mve_file(true);
-
-    if (p.image != NULL)
-        return p.image;
-
-    if (this->filename.empty() || p.byte_size == 0 || p.file_pos == 0)
-        throw util::Exception("Proxy not properly initialized");
-
-    if (p.is_image && (!p.width || !p.height || !p.channels))
-        throw util::Exception("Image with invalid image dimensions");
-
-    /* Open MVE input file. */
-    std::ifstream mvefile(this->filename.c_str(), std::ios::binary);
-    if (!mvefile.good())
-        throw util::FileException(filename, std::strerror(errno));
-
-    /* Allocate memory for image or data embedding. */
-    if (p.is_image)
-    {
-        if (p.datatype == "uint8")
-            p.image = ByteImage::create(p.width, p.height, p.channels);
-        else if (p.datatype == "uint16")
-            p.image = RawImage::create(p.width, p.height, p.channels);
-        else if (p.datatype == "float")
-            p.image = FloatImage::create(p.width, p.height, p.channels);
-        else if (p.datatype == "double")
-            p.image = DoubleImage::create(p.width, p.height, p.channels);
-        else if (p.datatype == "sint32")
-            p.image = IntImage::create(p.width, p.height, p.channels);
-        else
-        {
-            mvefile.close();
-            throw util::Exception("Unrecognized image data type");
-        }
-    }
-    else
-    {
-        ByteImage::Ptr img(ByteImage::create());
-        img->allocate(p.byte_size, 1, 1);
-        p.image = img;
-    }
-
-    /* Seek and read embedding. */
-    mvefile.seekg(p.file_pos);
-    mvefile.read(p.image->get_byte_pointer(), p.image->get_byte_size());
-    if (mvefile.eof())
-    {
-        mvefile.close();
-        throw util::Exception("Unexpected EOF");
-    }
-    //mvefile.get(); // Discard final newline
-    mvefile.close();
-
-    return p.image;
-}
-
-/* ---------------------------------------------------------------- */
-
-MVEFileProxy const*
-View::get_proxy (std::string const& name) const
-{
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-        if (this->proxies[i].name == name)
-            return &this->proxies[i];
-    return NULL;
-}
-
-/* ---------------------------------------------------------------- */
-
-MVEFileProxy*
-View::get_proxy_intern (std::string const& name)
-{
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-        if (this->proxies[i].name == name)
-            return &this->proxies[i];
-    return NULL;
-}
-
-/* ---------------------------------------------------------------- */
-
-ImageBase::Ptr
-View::get_embedding (std::string const& name)
-{
-    MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == NULL)
-        return ImageBase::Ptr();
-    return this->get_image_for_proxy(*p);
-}
-
-/* ---------------------------------------------------------------- */
-
-bool
-View::remove_embedding (std::string const& name)
-{
-    int num_erased = 0;
-    for (Proxies::iterator iter = this->proxies.begin();
-        iter != this->proxies.end();)
-    {
-        if (iter->name == name)
-        {
-            iter = this->proxies.erase(iter);
-            num_erased += 1;
-        }
-        else
-            iter++;
-    }
-
-    if (num_erased)
-        this->needs_rebuild = true;
-
-    return num_erased > 0;
-}
-
-/* ---------------------------------------------------------------- */
-
-std::size_t
-View::count_image_embeddings (void) const
-{
-    std::size_t amount = 0;
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-        amount += this->proxies[i].is_image;
-    return amount;
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-View::set_image (std::string const& name, ImageBase::Ptr image)
-{
-    if (image == NULL)
-        throw std::invalid_argument("NULL image passed");
-
-    /* If there is no such proxy, add a new one. */
-    MVEFileProxy* p = this->get_proxy_intern(name);
-    if (p == NULL)
-    {
-        this->add_image(name, image);
-        return;
-    }
-
-    /* A change from type 'data' to type 'image' requires a rebuild. */
-    if (p->is_image == false)
-        this->needs_rebuild = true;
-
-    /* Update the current embedding by that name. */
-    p->image = image;
-    p->is_image = true;
-    p->is_dirty = true;
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-View::add_image (std::string const& name, ImageBase::Ptr image)
-{
-    if (image == NULL)
-        throw std::invalid_argument("NULL image passed");
-
-    if (this->has_embedding(name))
-        throw util::Exception("Embedding already exists: ", name);
-
-    MVEFileProxy p;
-    p.name = name;
-    p.image = image;
-    p.is_image = true;
-    p.is_dirty = true;
-    this->proxies.push_back(p);
-    this->needs_rebuild = true;
-}
-
-/* ---------------------------------------------------------------- */
-
-ImageBase::Ptr
-View::get_image (std::string const& name)
-{
-    MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == NULL || !p->is_image)
-        return ImageBase::Ptr();
-    return this->get_image_for_proxy(*p);
-}
-
-/* ---------------------------------------------------------------- */
-
-FloatImage::Ptr
-View::get_float_image (std::string const& name)
-{
-    MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<float>()))
-        return FloatImage::Ptr();
-    return this->get_image_for_proxy(*p);
-}
-
-/* ---------------------------------------------------------------- */
-
-DoubleImage::Ptr
-View::get_double_image (std::string const& name)
-{
-    MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<double>()))
-        return DoubleImage::Ptr();
-    return this->get_image_for_proxy(*p);
-}
-
-/* ---------------------------------------------------------------- */
-
-ByteImage::Ptr
-View::get_byte_image (std::string const& name)
-{
-    MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<uint8_t>()))
-        return ByteImage::Ptr();
-    return this->get_image_for_proxy(*p);
-}
-
-/* ---------------------------------------------------------------- */
-
-IntImage::Ptr
-View::get_int_image (std::string const& name)
-{
-    MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == NULL || !p->is_image || !p->is_type(util::string::for_type<int>()))
-        return IntImage::Ptr();
-    return this->get_image_for_proxy(*p);
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-View::set_data (std::string const& name, ByteImage::Ptr data)
-{
-    // Heads up: Almost duplicated code in this::set_image
-
-    if (data == NULL)
-        throw std::invalid_argument("NULL image passed");
-
-    if (data->height() != 1 || data->channels() != 1)
-        throw std::invalid_argument("Plain data with invalid dimensions");
-
-    /* If there is no such proxy, add a new one. */
-    MVEFileProxy* p = this->get_proxy_intern(name);
-    if (p == NULL)
-    {
-        this->add_data(name, data);
-        return;
-    }
-
-    /* A change from type 'data' to type 'image' requires a rebuild. */
-    if (p->is_image == true)
-        this->needs_rebuild = true;
-
-    /* Update the current embedding by that name. */
-    p->image = data;
-    p->is_image = false;
-    p->is_dirty = true;
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-View::add_data (std::string const& name, ByteImage::Ptr data)
-{
-    // Heads up: Almost duplicated code in this::add_image
-
-    if (data == NULL)
-        throw std::invalid_argument("NULL image passed");
-
-    if (data->height() != 1 || data->channels() != 1)
-        throw std::invalid_argument("Plain data has more dimensions");
-
-    if (this->has_embedding(name))
-        throw util::Exception("Embedding already exists: ", name);
-
-    MVEFileProxy p;
-    p.name = name;
-    p.image = data;
-    p.is_image = false;
-    p.is_dirty = true;
-    this->proxies.push_back(p);
-    this->needs_rebuild = true;
-}
-
-/* ---------------------------------------------------------------- */
-
-ByteImage::Ptr
-View::get_data (std::string const& name)
-{
-    // Heads up: Almost duplicated code in this::get_image
-
-    MVEFileProxy* p(this->get_proxy_intern(name));
-    if (p == NULL || p->is_image)
-        return ByteImage::Ptr();
-    return this->get_image_for_proxy(*p);
-}
-
-/* ---------------------------------------------------------------- */
 
 bool
 View::is_dirty (void) const
 {
-    if (this->needs_rebuild)
+    if (this->meta_data.is_dirty)
         return true;
-
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-        if (this->proxies[i].is_dirty)
+    for (std::size_t i = 0; i < this->images.size(); ++i)
+        if (this->images[i].is_dirty)
             return true;
-
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+        if (this->blobs[i].is_dirty)
+            return true;
     return false;
 }
 
-/* ---------------------------------------------------------------- */
-
-std::size_t
+int
 View::cache_cleanup (void)
 {
-    std::size_t released = 0;
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
+    int released = 0;
+    for (std::size_t i = 0; i < this->images.size(); ++i)
     {
-        MVEFileProxy& p(this->proxies[i]);
-        if (p.is_dirty || p.image.use_count() != 1)
+        ImageProxy& proxy = this->images[i];
+        if (proxy.is_dirty || proxy.image.use_count() != 1)
             continue;
-        p.image.reset();
+        proxy.image.reset();
+        released += 1;
+    }
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+    {
+        BlobProxy& proxy = this->blobs[i];
+        if (proxy.is_dirty || proxy.blob.use_count() != 1)
+            continue;
+        proxy.blob.reset();
         released += 1;
     }
     return released;
 }
 
-/* ---------------------------------------------------------------- */
-
 std::size_t
 View::get_byte_size (void) const
 {
     std::size_t ret = 0;
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
-    {
-        MVEFileProxy const& p(this->proxies[i]);
-        if (p.image != NULL)
-            ret += p.image->get_byte_size();
-    }
+    for (std::size_t i = 0; i < this->images.size(); ++i)
+        if (this->images[i].image != NULL)
+            ret += this->images[i].image->get_byte_size();
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+        if (this->blobs[i].blob != NULL)
+            ret += this->blobs[i].blob->get_byte_size();
     return ret;
 }
 
 /* ---------------------------------------------------------------- */
 
+std::string
+View::get_value (std::string const& key) const
+{
+    if (key.empty())
+        throw std::invalid_argument("Empty key");
+    if (key.find_first_of('.') == std::string::npos)
+        throw std::invalid_argument("Missing section identifier");
+    typedef MetaData::KeyValueMap::const_iterator KeyValueIter;
+    KeyValueIter iter = this->meta_data.data.find(key);
+    if (iter == this->meta_data.data.end())
+        return std::string();
+    return iter->second;
+}
+
+void
+View::set_value (std::string const& key, std::string const& value)
+{
+    if (key.empty())
+        throw std::invalid_argument("Empty key");
+    if (key.find_first_of('.') == std::string::npos)
+        throw std::invalid_argument("Missing section identifier");
+    this->meta_data.data[key] = value;
+    this->meta_data.is_dirty = true;
+}
+
 void
 View::set_camera (CameraInfo const& camera)
 {
-    std::string ext_str = camera.to_ext_string();
-    std::string int_str = camera.to_int_string();
-    if (this->meta.camera_ext_str != ext_str
-        || this->meta.camera_int_str != int_str)
+    this->meta_data.camera = camera;
+    this->meta_data.is_dirty = true;
+
+    /* Re-generate the "camera" section. */
+    this->set_value("camera.focal_length", util::string::get(camera.flen));
+    this->set_value("camera.pixel_aspect", util::string::get(camera.paspect));
+    this->set_value("camera.principal_point",
+        util::string::get(camera.ppoint[0]) + " "
+        + util::string::get(camera.ppoint[1]));
+    this->set_value("camera.rotation", camera.get_rotation_string());
+    this->set_value("camera.translation", camera.get_translation_string());
+}
+
+/* ---------------------------------------------------------------- */
+
+ImageBase::Ptr
+View::get_image (std::string const& name, ImageType type)
+{
+    View::ImageProxy* proxy = this->find_image_intern(name);
+    if (proxy != NULL)
     {
-        this->meta.camera_ext_str = ext_str;
-        this->meta.camera_int_str = int_str;
-        this->needs_rebuild = true;
+        if (type == IMAGE_TYPE_UNKNOWN)
+            return this->load_image(proxy, false);
+        this->initialize_image(proxy, false);
+        if (proxy->type == type)
+            return this->load_image(proxy, false);
     }
-    this->camera = camera;
+    return ImageBase::Ptr();
+}
+
+View::ImageProxy const*
+View::get_image_proxy (std::string const& name, ImageType type)
+{
+    View::ImageProxy* proxy = this->find_image_intern(name);
+    if (proxy != NULL)
+    {
+        this->initialize_image(proxy, false);
+        if (type == IMAGE_TYPE_UNKNOWN || proxy->type == type)
+            return proxy;
+    }
+    return NULL;
+}
+
+bool
+View::has_image (std::string const& name, ImageType type)
+{
+    View::ImageProxy* proxy = this->find_image_intern(name);
+    if (proxy == NULL)
+        return false;
+    if (type == IMAGE_TYPE_UNKNOWN)
+        return true;
+    this->initialize_image(proxy, false);
+    return proxy->type == type;
+}
+
+void
+View::add_image (ImageBase::Ptr image, std::string const& name)
+{
+    if (image == NULL)
+        throw std::invalid_argument("NULL image");
+
+    ImageProxy const* tmp = this->get_image_proxy(name);
+    if (tmp != NULL)
+        throw util::Exception("Image already exists: ", name);
+
+    this->set_image(image, name);
+}
+
+void
+View::set_image (ImageBase::Ptr image, std::string const& name)
+{
+    if (image == NULL)
+        throw std::invalid_argument("NULL image");
+
+    ImageProxy* old = NULL;
+    for (std::size_t i = 0; old == NULL && i < this->images.size(); ++i)
+        if (this->images[i].name == name)
+            old = &this->images[i];
+
+    ImageProxy proxy;
+    proxy.is_dirty = true;
+    proxy.name = name;
+    proxy.is_initialized = true;
+    proxy.width = image->width();
+    proxy.height = image->height();
+    proxy.channels = image->channels();
+    proxy.type = image->get_type();
+    proxy.image = image;
+
+    if (old == NULL)
+        this->images.push_back(proxy);
+    else
+        *old = proxy;
+}
+
+bool
+View::remove_image (std::string const& name)
+{
+    View::ImageProxy* proxy = this->find_image_intern(name);
+    if (proxy == NULL)
+        return false;
+
+    /* Clear the name to indicate file deletion on save. */
+    proxy->name.clear();
+    proxy->image.reset();
+    proxy->is_dirty = true;
+    return true;
+}
+
+/* ---------------------------------------------------------------- */
+
+ByteImage::Ptr
+View::get_blob (std::string const& name)
+{
+    BlobProxy* proxy = this->find_blob_intern(name);
+    if (proxy != NULL)
+        return this->load_blob(proxy, false);
+    return ByteImage::Ptr();
+}
+
+View::BlobProxy const*
+View::get_blob_proxy (std::string const& name)
+{
+    BlobProxy* proxy = this->find_blob_intern(name);
+    if (proxy != NULL)
+        this->initialize_blob(proxy, false);
+    return proxy;
+}
+
+bool
+View::has_blob (std::string const& name)
+{
+    return this->find_blob_intern(name) != NULL;
+}
+
+void
+View::add_blob (ByteImage::Ptr blob, std::string const& name)
+{
+    if (blob == NULL)
+        throw std::invalid_argument("NULL blob");
+
+    BlobProxy const* tmp = this->get_blob_proxy(name);
+    if (tmp != NULL)
+        throw util::Exception("Blob already exists: ", name);
+
+    this->set_blob(blob, name);
+}
+
+void
+View::set_blob (ByteImage::Ptr blob, std::string const& name)
+{
+    if (blob == NULL)
+        throw std::invalid_argument("NULL blob");
+
+    BlobProxy* old = NULL;
+    for (std::size_t i = 0; old == NULL && i < this->blobs.size(); ++i)
+        if (this->blobs[i].name == name)
+            old = &this->blobs[i];
+
+    BlobProxy proxy;
+    proxy.is_dirty = true;
+    proxy.name = name;
+    proxy.is_initialized = true;
+    proxy.size = blob->get_byte_size();
+    proxy.blob = blob;
+
+    if (old == NULL)
+        this->blobs.push_back(proxy);
+    else
+        *old = proxy;
+}
+
+bool
+View::remove_blob (std::string const& name)
+{
+    View::BlobProxy* proxy = this->find_blob_intern(name);
+    if (proxy == NULL)
+        return false;
+
+    /* Clear the name to indicate file deletion on save. */
+    proxy->name.clear();
+    proxy->blob.reset();
+    proxy->is_dirty = true;
+    return true;
+}
+
+/* ------------------------ Private Members ----------------------- */
+
+void
+View::load_meta_data (std::string const& path)
+{
+    this->parse_meta_data_file(path);
+
+    /* Get camera data from key/value pairs. */
+    std::string cam_fl = this->get_value("camera.focal_length");
+    std::string cam_pa = this->get_value("camera.pixel_aspect");
+    std::string cam_pp = this->get_value("camera.principal_point");
+    std::string cam_rot = this->get_value("camera.rotation");
+    std::string cam_trans = this->get_value("camera.translation");
+
+    this->meta_data.camera = CameraInfo();
+    if (!cam_fl.empty())
+        this->meta_data.camera.flen = util::string::convert<float>(cam_fl);
+    if (!cam_pa.empty())
+        this->meta_data.camera.paspect = util::string::convert<float>(cam_pa);
+    if (!cam_pp.empty())
+    {
+        std::stringstream ss(cam_pp);
+        ss >> this->meta_data.camera.ppoint[0];
+        ss >> this->meta_data.camera.ppoint[1];
+    }
+    if (!cam_rot.empty())
+        this->meta_data.camera.set_rotation_from_string(cam_rot);
+    if (!cam_trans.empty())
+        this->meta_data.camera.set_translation_from_string(cam_trans);
+}
+
+void
+View::parse_meta_data_file (std::string const& path)
+{
+    std::string const fname = util::fs::join_path(path, VIEW_IO_META_FILE);
+    this->meta_data.is_dirty = false;
+
+    /* Open meta file and read key/value pairs. */
+    std::ifstream in(fname.c_str());
+    if (!in.good())
+        throw util::FileException(fname, "Error opening");
+
+    /* Parse INI file. */
+    std::string line;
+    std::string section_name;
+    std::size_t line_number = 0;
+    std::stringstream failure_message;
+    while (true)
+    {
+        std::getline(in, line);
+        if (in.eof())
+            break;
+
+        line_number += 1;
+        util::string::clip_newlines(&line);
+        util::string::clip_whitespaces(&line);
+        if (line.empty())
+            continue;
+        if (line[0] == '#')
+            continue;
+
+        if (line[0] == '[' && line[line.size() - 1] == ']')
+        {
+            section_name = line.substr(1, line.size() - 2);
+            continue;
+        }
+
+        std::size_t sep_pos = line.find_first_of('=');
+        if (sep_pos != std::string::npos)
+        {
+            std::string key = line.substr(0, sep_pos);
+            util::string::clip_newlines(&key);
+            util::string::clip_whitespaces(&key);
+
+            std::string value = line.substr(sep_pos + 1);
+            util::string::clip_newlines(&value);
+            util::string::clip_whitespaces(&value);
+
+            if (key.empty())
+            {
+                failure_message << "Line " << line_number << ": Empty key";
+                break;
+            }
+
+            if (section_name.empty())
+            {
+                failure_message << "Line " << line_number << ": No section";
+                break;
+            }
+
+            key = section_name + "." + key;
+            this->meta_data.data[key] = value;
+            continue;
+        }
+
+        failure_message << "Line " << line_number << ": Invalid line";
+        break;
+    }
+
+    /* Close input file. */
+    in.close();
+
+    /* Check for errors to report... */
+    std::string failure_string = failure_message.str();
+    if (!failure_string.empty())
+        throw util::Exception(failure_string);
+}
+
+void
+View::save_meta_data (std::string const& path)
+{
+    std::cout << "View: Saving meta data to " VIEW_IO_META_FILE << std::endl;
+    std::string const fname = util::fs::join_path(path, VIEW_IO_META_FILE);
+    std::string const fname_new = fname + ".new";
+
+    /* Write meta data to file. */
+    std::ofstream out(fname_new.c_str());
+    if (!out.good())
+        throw util::FileException(fname_new, std::strerror(errno));
+
+    out << "# MVE view meta data is stored in INI-file syntax.\n";
+    out << "# This file is generated, formatting will get lost.\n";
+
+    std::string last_section;
+    MetaData::KeyValueMap::const_iterator iter;
+    for (iter = this->meta_data.data.begin();
+        iter != this->meta_data.data.end(); iter++)
+        {
+            std::string key = iter->first;
+            std::string value = iter->second;
+            util::string::clip_newlines(&key);
+            util::string::clip_whitespaces(&key);
+            util::string::clip_newlines(&value);
+            util::string::clip_whitespaces(&value);
+
+            std::size_t section_pos = key.find_first_of('.');
+            if (section_pos == std::string::npos)
+                throw std::runtime_error("Key/value pair without section");
+            std::string section = key.substr(0, section_pos);
+            key = key.substr(section_pos + 1);
+
+            if (section != last_section)
+            {
+                out << "\n[" << section << "]\n";
+                last_section = section;
+            }
+
+            out << key << " = " << value << std::endl;
+        }
+
+    out.close();
+
+    /* On succesfull write, move the new file in place. */
+    this->replace_file(fname, fname_new);
+    this->meta_data.is_dirty = false;
+}
+
+void
+View::populate_images_and_blobs (std::string const& path)
+{
+    util::fs::Directory dir(path);
+    for (std::size_t i = 0; i < dir.size(); ++i)
+    {
+        util::fs::File const& file = dir[i];
+        if (file.name == VIEW_IO_META_FILE)
+            continue;
+
+        std::string ext4 = util::string::right(file.name, 4);
+        std::string ext5 = util::string::right(file.name, 5);
+        ext4 = util::string::lowercase(ext4);
+        ext5 = util::string::lowercase(ext5);
+
+        if (ext4 == ".png" || ext4 == ".jpg" ||
+            ext5 == ".jpeg" || ext5 == ".mvei")
+        {
+            std::cout << "View: Adding image proxy: "
+                << file.name << std::endl;
+
+            ImageProxy proxy;
+            proxy.is_dirty = false;
+            proxy.filename = file.name;
+            proxy.name = file.name.substr(0, file.name.find_last_of('.'));
+            this->images.push_back(proxy);
+        }
+        else if (ext5 == ".blob")
+        {
+            std::cout << "View: Adding BLOB proxy "
+                << file.name << std::endl;
+
+            BlobProxy proxy;
+            proxy.is_dirty = false;
+            proxy.filename = file.name;
+            proxy.name = file.name.substr(0, file.name.find_last_of('.'));
+            this->blobs.push_back(proxy);
+        }
+        else
+        {
+            std::cerr << "View: Unrecognized file "
+                << file.name << ", skipping." << std::endl;
+        }
+    }
+}
+
+void
+View::replace_file (std::string const& old_fn, std::string const& new_fn)
+{
+    /* Delete old file. */
+    if (util::fs::file_exists(old_fn.c_str()))
+        if (!util::fs::unlink(old_fn.c_str()))
+            throw util::FileException(old_fn, std::strerror(errno));
+
+    /* Rename new file. */
+    if (!util::fs::rename(new_fn.c_str(), old_fn.c_str()))
+        throw util::FileException(new_fn, std::strerror(errno));
+}
+
+/* ---------------------------------------------------------------- */
+
+View::ImageProxy*
+View::find_image_intern (std::string const& name)
+{
+    if (name.empty())
+        return NULL;
+    for (std::size_t i = 0; i < this->images.size(); ++i)
+        if (this->images[i].name == name)
+            return &this->images[i];
+    return NULL;
+}
+
+void
+View::initialize_image (ImageProxy* proxy, bool update)
+{
+    if (proxy->is_initialized && !update)
+        return;
+    this->load_image_intern(proxy, true);
+}
+
+ImageBase::Ptr
+View::load_image (ImageProxy* proxy, bool update)
+{
+    if (proxy->image != NULL && !update)
+        return proxy->image;
+    this->load_image_intern(proxy, false);
+    return proxy->image;
+}
+
+void
+View::load_image_intern (ImageProxy* proxy, bool init_only)
+{
+    if (this->path.empty())
+        throw std::runtime_error("View not initialized");
+    if (proxy->name.empty())
+        return;
+
+    /* Load image and update meta data. */
+    std::string filename = util::fs::join_path(this->path, proxy->filename);
+    std::cout << "View: Loading image " << filename << std::endl;
+
+    if (init_only)
+    {
+        image::ImageHeaders headers = image::load_file_headers(filename);
+        proxy->is_dirty = false;
+        proxy->width = headers.width;
+        proxy->height = headers.height;
+        proxy->channels = headers.channels;
+        proxy->type = headers.type;
+        proxy->is_initialized = true;
+        return;
+    }
+
+    std::string ext4 = util::string::right(proxy->filename, 4);
+    std::string ext5 = util::string::right(proxy->filename, 5);
+    ext4 = util::string::lowercase(ext4);
+    ext5 = util::string::lowercase(ext5);
+
+    if (ext4 == ".png" || ext4 == ".jpg" || ext5 == ".jpeg")
+    {
+        //std::cout << "View: Loading 8-bit image...";
+        proxy->image = image::load_file(filename);
+    }
+    else if (ext5 == ".mvei")
+    {
+        //std::cout << "View: Loading MVE image...";
+        proxy->image = image::load_mvei_file(filename);
+    }
+    else
+    {
+        throw std::runtime_error("Unexpected image type");
+    }
+
+    proxy->is_dirty = false;
+    proxy->width = proxy->image->width();
+    proxy->height = proxy->image->height();
+    proxy->channels = proxy->image->channels();
+    proxy->type = proxy->image->get_type();
+    proxy->is_initialized = true;
+}
+
+void
+View::save_image_intern (ImageProxy* proxy)
+{
+    /* An empty name indicates a delete request. */
+    if (proxy->name.empty() && !proxy->filename.empty())
+    {
+        std::string fname = util::fs::join_path(this->path, proxy->filename);
+        if (util::fs::file_exists(fname.c_str())
+            && !util::fs::unlink(fname.c_str()))
+            throw util::FileException(fname, std::strerror(errno));
+        proxy->is_dirty = false;
+        return;
+    }
+
+    if (this->path.empty())
+        throw std::runtime_error("View not initialized");
+    if (proxy == NULL || proxy->image == NULL)
+        throw std::runtime_error("NULL image");
+    if (proxy->width != proxy->image->width()
+        || proxy->height != proxy->image->height()
+        || proxy->channels != proxy->image->channels()
+        || proxy->type != proxy->image->get_type())
+        throw std::runtime_error("Image specification mismatch");
+
+    /* Generate a new filename for the image. */
+    bool use_png_format = false;
+    if (proxy->image->get_type() == IMAGE_TYPE_UINT8
+        && proxy->image->channels() <= 4)
+        use_png_format = true;
+
+    std::string filename = proxy->name + (use_png_format ? ".png" : ".mvei");
+    std::string fname_orig = util::fs::join_path(this->path, proxy->filename);
+    std::string fname_save = util::fs::join_path(this->path, filename);
+    std::string fname_new = fname_save + ".new";
+
+    /* Save the new image. */
+    std::cout << "View: Saving image " << filename << std::endl;
+    if (use_png_format)
+        image::save_png_file(proxy->image, fname_new);
+    else
+        image::save_mvei_file(proxy->image, fname_new);
+
+    /* On succesfull write, move the new file in place. */
+    this->replace_file(fname_save, fname_new);
+
+    /* If the original file was different (e.g. JPG), remove it. */
+    if (fname_save != fname_orig
+        && util::fs::file_exists(fname_orig.c_str())
+        && !util::fs::unlink(fname_orig.c_str()))
+        throw util::FileException(fname_orig, std::strerror(errno));
+
+    /* Fully update the proxy. */
+    proxy->is_dirty = false;
+    proxy->filename = filename;
+    proxy->width = proxy->image->width();
+    proxy->height = proxy->image->height();
+    proxy->channels = proxy->image->channels();
+    proxy->type = proxy->image->get_type();
+    proxy->is_initialized = true;
+}
+
+/* ---------------------------------------------------------------- */
+
+View::BlobProxy*
+View::find_blob_intern (std::string const& name)
+{
+    if (name.empty())
+        return NULL;
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+        if (this->blobs[i].name == name)
+            return &this->blobs[i];
+    return NULL;
+}
+
+void
+View::initialize_blob (BlobProxy* proxy, bool update)
+{
+    if (proxy->is_initialized && !update)
+        return;
+    this->load_blob_intern(proxy, true);
+}
+
+ByteImage::Ptr
+View::load_blob (BlobProxy* proxy, bool update)
+{
+    if (proxy->blob != NULL && !update)
+        return proxy->blob;
+    this->load_blob_intern(proxy, false);
+    return proxy->blob;
+}
+
+void
+View::load_blob_intern (BlobProxy* proxy, bool init_only)
+{
+    if (this->path.empty())
+        throw std::runtime_error("View not initialized");
+    if (proxy->name.empty())
+        return;
+
+    /* Load blob and update meta data. */
+    std::string filename = util::fs::join_path(this->path, proxy->filename);
+    std::cout << "View: Loading BLOB " << filename << std::endl;
+
+    std::ifstream in(filename.c_str(), std::ios::binary);
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    /* Read file signature. */
+    char signature[VIEW_IO_BLOB_SIGNATURE_LEN];
+    in.read(signature, VIEW_IO_BLOB_SIGNATURE_LEN);
+    if (!std::equal(signature, signature + VIEW_IO_BLOB_SIGNATURE_LEN,
+        VIEW_IO_BLOB_SIGNATURE))
+        throw util::Exception("Invalid BLOB file signature");
+
+    /* Read blob size. */
+    uint64_t size;
+    in.read(reinterpret_cast<char*>(&size), sizeof(uint64_t));
+    if (!in.good())
+        throw util::FileException(filename, "EOF while reading BLOB headers");
+
+    if (init_only)
+    {
+        proxy->size = size;
+        proxy->is_initialized = true;
+        return;
+    }
+
+    /* Read blob payload. */
+    ByteImage::Ptr blob = ByteImage::create(size, 1, 1);
+    in.read(blob->get_byte_pointer(), blob->get_byte_size());
+    if (!in.good())
+        throw util::FileException(filename, "EOF while reading BLOB payload");
+
+    proxy->blob = blob;
+    proxy->size = size;
+    proxy->is_initialized = true;
+}
+
+void
+View::save_blob_intern (BlobProxy* proxy)
+{
+    /* An empty name indicates a delete request. */
+    if (proxy->name.empty() && !proxy->filename.empty())
+    {
+        std::string fname = util::fs::join_path(this->path, proxy->filename);
+        if (util::fs::file_exists(fname.c_str())
+            && !util::fs::unlink(fname.c_str()))
+            throw util::FileException(fname, std::strerror(errno));
+        proxy->is_dirty = false;
+        return;
+    }
+
+    if (this->path.empty())
+        throw std::runtime_error("View not initialized");
+    if (proxy == NULL || proxy->blob == NULL)
+        throw std::runtime_error("NULL BLOB");
+    if (proxy->blob->get_byte_size() != proxy->size)
+        throw std::runtime_error("BLOB size mismatch");
+
+    /* If the object has never been saved, the filename is empty. */
+    if (proxy->filename.empty())
+        proxy->filename = proxy->name + ".blob";
+
+    /* Create a .new file and save blob. */
+    std::string fname_orig = util::fs::join_path(this->path, proxy->filename);
+    std::string fname_new = fname_orig + ".new";
+
+    // Check if file exists? Create unique temp name?
+    std::cout << "View: Saving BLOB " << proxy->filename << std::endl;
+    std::ofstream out(fname_new.c_str());
+    if (!out.good())
+        throw util::FileException(fname_new, std::strerror(errno));
+
+    out.write(VIEW_IO_BLOB_SIGNATURE, VIEW_IO_BLOB_SIGNATURE_LEN);
+    out.write(reinterpret_cast<char const*>(&proxy->size), sizeof(uint64_t));
+    out.write(proxy->blob->get_byte_pointer(), proxy->blob->get_byte_size());
+    if (!out.good())
+        throw util::FileException(fname_new, std::strerror(errno));
+    out.close();
+
+    /* On succesfull write, move the new file in place. */
+    this->replace_file(fname_orig, fname_new);
+
+    /* Fully update the proxy. */
+    proxy->is_dirty = false;
+    proxy->size = proxy->blob->get_byte_size();
+    proxy->is_initialized = true;
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-View::print_debug (void) const
+View::debug_print (void)
 {
-    std::cout << "---- View debug information ----" << std::endl;
-    std::cout << "View name: " << this->meta.view_name << ", "
-        << this->proxies.size() << " embeddings" << std::endl;
+    for (std::size_t i = 0; i < this->images.size(); ++i)
+        this->initialize_image(&this->images[i], false);
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+        this->initialize_blob(&this->blobs[i], false);
 
-    for (std::size_t i = 0; i < this->proxies.size(); ++i)
+    std::cout << std::endl;
+    std::cout << "Path: " << this->path << std::endl;
+    std::cout << "View Name: " << this->get_value("view.name") << std::endl;
+    std::cout << "View key/value pairs:" << std::endl;
+
+    typedef MetaData::KeyValueMap::const_iterator KeyValueIter;
+    for (KeyValueIter iter = this->meta_data.data.begin();
+        iter != this->meta_data.data.end(); iter++)
+        std::cout << "  " << iter->first << " = " << iter->second << std::endl;
+
+    std::cout << "View images:" << std::endl;
+    for (std::size_t i = 0; i < this->images.size(); ++i)
     {
-        MVEFileProxy const* p = &this->proxies[i];
+        ImageProxy const& proxy = this->images[i];
+        std::cout << "  " << proxy.name << " (" << proxy.filename << ")"
+            << ", size " << proxy.width << "x" << proxy.height << "x" << proxy.channels
+            << ", type " << proxy.type << std::endl;
+    }
 
-        std::cout << "Proxy " << i << ": " << p->name << std::endl;
-        std::cout << "  is image: " << p->is_image
-            << ", is dirty: " << p->is_dirty
-            << ", is cached: " << (p->image != NULL)
-            << std::endl;;
-
-        if (p->is_image)
-            std::cout << "  image dimensions: " << p->width << "x"
-                << p->height << "x" << p->channels
-                << " (" << p->datatype << ")" << std::endl;
-        else
-            std::cout << "  data dimensions: " << p->width << std::endl;
-
-        if (p->image != NULL)
-        {
-            ImageBase::Ptr img = p->image;
-            std::cout << "  CACHED DATA: Type "
-                << img->get_type_string() << ", "
-                << img->width() << "x"
-                << img->height() << "x"
-                << img->channels()
-                << (p->is_dirty ? " (IS DIRTY)" : "")
-                << std::endl;
-        }
+    std::cout << "View BLOBs:" << std::endl;
+    for (std::size_t i = 0; i < this->blobs.size(); ++i)
+    {
+        BlobProxy const& proxy = this->blobs[i];
+        std::cout << "  " << proxy.name << " (" << proxy.filename << ")"
+            << ", size " << proxy.size << std::endl;
     }
 }
 

@@ -117,29 +117,17 @@ public:
         float src_width, float src_height, float dst_width, float dst_height,
         float* mat, float* vec) const;
 
-    /**
-     * Generates space separated list of floats for extrinsic parameters.
-     * The list is in format: t1 t2 t3 r1 ... r9.
-     */
-    std::string to_ext_string (void) const;
+    /** Retuns the rotation in string format. */
+    std::string get_rotation_string (void) const;
 
-    /**
-     * Initializes extrinsic camera parameters from string.
-     * The string must be in the format 'to_ext_string' produces.
-     */
-    void from_ext_string (std::string const& str);
+    /** Retuns the translation in string format. */
+    std::string get_translation_string (void) const;
 
-    /**
-     * Generates space separated list of floats for intrinsic parameters.
-     * The list is in format: fl rd1 rd2 pa ppx ppy (see Wiki for details).
-     */
-    std::string to_int_string (void) const;
+    /** Sets the rotation from string. */
+    void set_rotation_from_string (std::string const& rot_string);
 
-    /**
-     * Initializes intrinsic camera parameters from string.
-     * The string must be in the format 'to_int_string' produces.
-     */
-    void from_int_string (std::string const& str);
+    /** Sets the translation from string. */
+    void set_translation_from_string (std::string const& trans_string);
 
     /**
      * Prints debug information to stdout.
