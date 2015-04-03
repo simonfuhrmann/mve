@@ -16,7 +16,7 @@ main (int argc, char** argv)
 {
     std::signal(SIGSEGV, util::system::signal_segfault_handler);
 
-#if 1
+#if 0
     /* Test EXIF parser. */
     std::string data;
     util::fs::read_file_to_string(argv[1], &data);
@@ -136,15 +136,23 @@ main (int argc, char** argv)
 
 #endif
 
-#if 0
-    /* Test broken image loading. */
+#if 1
+    /* Test image loading. */
     if (argc < 2)
     {
         std::cout << "Pass image as parameter" << std::endl;
         return 1;
     }
-    mve::ByteImage::Ptr img = mve::image::load_jpg_file(argv[1]);
+
+    util::WallTimer timer;
+    std::cout << "Loading..." << std::flush;
+    mve::ByteImage::Ptr img = mve::image::load_file(argv[1]);
+    std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
+
+    std::cout << "Saving..." << std::flush;
+    timer.reset();
     mve::image::save_file(img, "/tmp/test-out.png");
+    std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
 
 #endif
 

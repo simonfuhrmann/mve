@@ -15,7 +15,7 @@ namespace
         ImagePyramid::Ptr pyramid(new ImagePyramid());
         ImagePyramid& levels = *pyramid;
 
-        mve::MVEFileProxy const* proxy = view->get_proxy(embeddingName);
+        mve::View::ImageProxy const* proxy = view->get_image_proxy(embeddingName);
         mve::CameraInfo cam = view->get_camera();
 
         assert(proxy != NULL);

@@ -236,7 +236,8 @@ visualize_track (Track const& track, ViewportList const& viewports,
 
         Viewport const& viewport = viewports[view_id];
         mve::View::Ptr view = scene->get_view_by_id(view_id);
-        mve::ByteImage::Ptr image = view->get_byte_image(image_embedding);
+        mve::ByteImage::Ptr image = view->get_image(image_embedding,
+            mve::IMAGE_TYPE_UINT8);
         if (image == NULL)
             throw std::runtime_error("Cannot find image");
         if (image->channels() != 3)

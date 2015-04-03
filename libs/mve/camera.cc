@@ -172,67 +172,37 @@ CameraInfo::fill_reprojection (CameraInfo const& destination,
 /* ---------------------------------------------------------------- */
 
 std::string
-CameraInfo::to_ext_string (void) const
+CameraInfo::get_rotation_string (void) const
 {
     std::stringstream ss;
-    for (int i = 0; i < 3; ++i)
-        ss << this->trans[i] << " ";
     for (int i = 0; i < 9; ++i)
         ss << this->rot[i] << (i < 8 ? " " : "");
     return ss.str();
 }
 
-/* ---------------------------------------------------------------- */
-
-void
-CameraInfo::from_ext_string (std::string const& str)
-{
-    std::stringstream ss(str);
-    for (int i = 0; i < 3; ++i)
-        ss >> this->trans[i];
-    for (int i = 0; i < 9; ++i)
-        ss >> this->rot[i];
-}
-
-/* ---------------------------------------------------------------- */
-
 std::string
-CameraInfo::to_int_string (void) const
+CameraInfo::get_translation_string (void) const
 {
-    bool default_rd = (this->dist[0] == 0.0f && this->dist[1] == 0.0f);
-    bool default_pa = (this->paspect == 1.0f);
-    bool default_pp = (this->ppoint[0] == 0.5f && this->ppoint[1] == 0.5f);
-
     std::stringstream ss;
-    ss << this->flen;
-
-    if (!default_rd || !default_pa || !default_pp)
-        ss << " " << this->dist[0] << " " << this->dist[1];
-    if (!default_pa || !default_pp)
-        ss << " " << this->paspect;
-    if (!default_pp)
-        ss << " " << this->ppoint[0] << " " << this->ppoint[1];
-
+    for (int i = 0; i < 3; ++i)
+        ss << this->trans[i] << (i < 2 ? " " : "");
     return ss.str();
 }
 
-/* ---------------------------------------------------------------- */
+void
+CameraInfo::set_translation_from_string (std::string const& trans_string)
+{
+    std::stringstream ss(trans_string);
+    for (int i = 0; i < 3; ++i)
+        ss >> this->trans[i];
+}
 
 void
-CameraInfo::from_int_string (std::string const& str)
+CameraInfo::set_rotation_from_string (std::string const& rot_string)
 {
-    std::stringstream ss(str);
-    ss >> this->flen;
-    if (ss.peek() && !ss.eof())
-        ss >> this->dist[0];
-    if (ss.peek() && !ss.eof())
-        ss >> this->dist[1];
-    if (ss.peek() && !ss.eof())
-        ss >> this->paspect;
-    if (ss.peek() && !ss.eof())
-        ss >> this->ppoint[0];
-    if (ss.peek() && !ss.eof())
-        ss >> this->ppoint[1];
+    std::stringstream ss(rot_string);
+    for (int i = 0; i < 9; ++i)
+        ss >> this->rot[i];
 }
 
 /* ---------------------------------------------------------------- */

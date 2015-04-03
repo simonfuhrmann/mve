@@ -47,19 +47,7 @@ Scene::save_views (void)
     std::cout << "Saving views to MVE files..." << std::flush;
     for (std::size_t i = 0; i < this->views.size(); ++i)
         if (this->views[i] != NULL && this->views[i]->is_dirty())
-            this->views[i]->save_mve_file();
-    std::cout << " done." << std::endl;
-}
-
-/* ---------------------------------------------------------------- */
-
-void
-Scene::rewrite_all_views (void)
-{
-    std::cout << "Rewriting views to MVE files..." << std::flush;
-    for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i] != NULL)
-            this->views[i]->save_mve_file(true);
+            this->views[i]->save_view();
     std::cout << " done." << std::endl;
 }
 
@@ -165,7 +153,7 @@ Scene::init_views (void)
 
     /* Load views in a temp list. */
     ViewList temp_list;
-    std::size_t max_id = 0;
+    int max_id = 0;
     for (std::size_t i = 0; i < views_dir.size(); ++i)
     {
         if (views_dir[i].name.size() < 4)
@@ -173,12 +161,12 @@ Scene::init_views (void)
         if (util::string::right(views_dir[i].name, 4) != ".mve")
             continue;
         View::Ptr view = View::create();
-        view->load_mve_file(views_dir[i].get_absolute_name());
+        view->load_view(views_dir[i].get_absolute_name());
         temp_list.push_back(view);
         max_id = std::max(max_id, view->get_id());
     }
 
-    if (max_id > 5000 && max_id > 2 * temp_list.size())
+    if (max_id > 5000 && max_id > 2 * (int)temp_list.size())
         throw util::Exception("Spurious view IDs");
 
     /* Transfer temp list to real list. */
@@ -192,7 +180,7 @@ Scene::init_views (void)
         if (this->views[id] != NULL)
         {
             std::cout << "Warning loading MVE file "
-                << this->views[id]->get_filename() << std::endl
+                << this->views[id]->get_directory() << std::endl
                 << "  View with ID " << id << " already present"
                 << ", skipping file."
                 << std::endl;

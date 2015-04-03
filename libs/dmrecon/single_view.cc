@@ -34,7 +34,7 @@ SingleView::SingleView(mve::Scene::Ptr _scene,
     cam.fill_world_to_cam(*this->worldToCam);
 
     /* Initialize view source level (original image size). */
-    mve::MVEFileProxy const* proxy = view->get_proxy(_embedding);
+    mve::View::ImageProxy const* proxy = view->get_image_proxy(_embedding);
     if (proxy == NULL)
         throw std::invalid_argument("No color image found");
     this->source_level = ImagePyramidLevel(cam, proxy->width, proxy->height);
