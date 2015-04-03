@@ -166,7 +166,7 @@ load_pfm_file (std::string const& filename);
 void
 save_pfm_file (FloatImage::ConstPtr image, std::string const& filename);
 
-/* ------------------------- PPM16 support ------------------------- */
+/* ------------------------- PPM16 support ------------------------ */
 
 /**
  * Loads a 16 bit PPM file.
@@ -182,7 +182,7 @@ load_ppm_16_file (std::string const& filename);
 void
 save_ppm_16_file (RawImage::ConstPtr image, std::string const& filename);
 
-/* ------------------------- PPM support ------------------------- */
+/* -------------------------- PPM support ------------------------- */
 
 /**
  * Loads a 8 bit PPM file.
@@ -197,6 +197,22 @@ load_ppm_file (std::string const& filename);
  */
 void
 save_ppm_file (ByteImage::ConstPtr image, std::string const& filename);
+
+/* ------------------- Native MVE image support ------------------- */
+
+/**
+ * Loads a native MVE image. Supports arbitrary type, size and depth.
+ * May throw util::FileException.
+ */
+ImageBase::Ptr
+load_mvei_file (std::string const& filename);
+
+/**
+ * Writes a native MVE image. Supports arbitrary type, size and depth.
+ * May throw util::FileException.
+ */
+void
+save_mvei_file (ImageBase::ConstPtr image, std::string const& filename);
 
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END

@@ -255,3 +255,25 @@ TEST(ImageFileTest, TIFF16SaveLoad)
     EXPECT_TRUE(compare_exact<uint16_t>(img1, img2));
 }
 #endif
+
+TEST(ImageFileTest, MVEISaveLoadByteImage)
+{
+    TempFile filename("mveitestbyte");
+    mve::ByteImage::Ptr img1, img2;
+
+    img1 = make_byte_image(100, 200, 5);
+    mve::image::save_mvei_file(img1, filename);
+    img2 = mve::image::load_mvei_file(filename);
+    EXPECT_TRUE(compare_exact<uint8_t>(img1, img2));
+}
+
+TEST(ImageFileTest, MVEISaveLoadFloatImage)
+{
+    TempFile filename("mveitestfloat");
+    mve::FloatImage::Ptr img1, img2;
+
+    img1 = make_float_image(199, 99, 4);
+    mve::image::save_mvei_file(img1, filename);
+    img2 = mve::image::load_mvei_file(filename);
+    EXPECT_TRUE(compare_exact<float>(img1, img2));
+}

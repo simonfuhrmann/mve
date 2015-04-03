@@ -348,8 +348,8 @@ TEST(PoseTest, SyntheticPoseTest2)
     int num_equal_cameras = 0;
     for (std::size_t i = 0; i < poses.size(); ++i)
     {
-        bool equal = poses[i].R.is_similar(pose2.R, 1e-14)
-            && poses[i].t.is_similar(pose2.t, 1e-14);
+        bool equal = poses[i].R.is_similar(pose2.R, 1e-13)
+            && poses[i].t.is_similar(pose2.t, 1e-13);
         num_equal_cameras += equal;
     }
     EXPECT_EQ(num_equal_cameras, 1);

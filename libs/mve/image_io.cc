@@ -25,7 +25,13 @@
 #include "util/string.h"
 #include "mve/image_io.h"
 
-#define PPM_MAX_PIXEL_AMOUNT (16384 * 16384)
+/* Loader limits for reading PPM files. */
+#define PPM_MAX_PIXEL_AMOUNT (16384 * 16384) /* 2^28 */
+
+/* The signature to identify MVEI image files and loader limits. */
+#define MVEI_FILE_SIGNATURE "\211MVEI\n"
+#define MVEI_FILE_SIGNATURE_LEN 6
+#define MVEI_MAX_PIXEL_AMOUNT (16384 * 16384) /* 2^28 */
 
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
@@ -956,6 +962,85 @@ void
 save_ppm_file (ByteImage::ConstPtr image, std::string const& filename)
 {
     save_ppm_file_intern(image, filename);
+}
+
+/* ---------------------------------------------------------------- */
+
+ImageBase::Ptr
+load_mvei_file (std::string const& filename)
+{
+    std::ifstream in(filename.c_str());
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    char signature[MVEI_FILE_SIGNATURE_LEN];
+    in.read(signature, MVEI_FILE_SIGNATURE_LEN);
+
+    if (!std::equal(signature, signature + MVEI_FILE_SIGNATURE_LEN,
+        MVEI_FILE_SIGNATURE))
+    {
+        in.close();
+        throw util::Exception("Invalid file signature");
+    }
+
+    /* Read image meta data, */
+    int32_t width, height, channels, raw_type;
+    in.read(reinterpret_cast<char*>(&width), sizeof(int32_t));
+    in.read(reinterpret_cast<char*>(&height), sizeof(int32_t));
+    in.read(reinterpret_cast<char*>(&channels), sizeof(int32_t));
+    in.read(reinterpret_cast<char*>(&raw_type), sizeof(int32_t));
+
+    if (width * height > MVEI_MAX_PIXEL_AMOUNT)
+    {
+        in.close();
+        throw util::Exception("Ridiculously large image");
+    }
+
+    ImageType type = static_cast<ImageType>(raw_type);
+    ImageBase::Ptr image = create_for_type(type, width, height, channels);
+    in.read(image->get_byte_pointer(), image->get_byte_size());
+
+    if (!in.good())
+    {
+        in.close();
+        throw util::FileException(filename, std::strerror(errno));
+    }
+
+    in.close();
+    return image;
+}
+
+void
+save_mvei_file (ImageBase::ConstPtr image, std::string const& filename)
+{
+    if (image == NULL)
+        throw std::invalid_argument("NULL image given");
+
+    int32_t width = image->width();
+    int32_t height = image->height();
+    int32_t channels = image->channels();
+    int32_t type = image->get_type();
+    char const* data = image->get_byte_pointer();
+    std::size_t size = image->get_byte_size();
+
+    std::ofstream out(filename.c_str());
+    if (!out.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    out.write(MVEI_FILE_SIGNATURE, MVEI_FILE_SIGNATURE_LEN);
+    out.write(reinterpret_cast<char const*>(&width), sizeof(int32_t));
+    out.write(reinterpret_cast<char const*>(&height), sizeof(int32_t));
+    out.write(reinterpret_cast<char const*>(&channels), sizeof(int32_t));
+    out.write(reinterpret_cast<char const*>(&type), sizeof(int32_t));
+    out.write(data, size);
+
+    if (!out.good())
+    {
+        out.close();
+        throw util::FileException(filename, std::strerror(errno));
+    }
+
+    out.close();
 }
 
 MVE_IMAGE_NAMESPACE_END

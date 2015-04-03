@@ -26,6 +26,12 @@ typedef Image<int> IntImage;
 //typedef Image<bool> BoolImage;
 
 /**
+ * Creates an image instance for a given type.
+ */
+ImageBase::Ptr
+create_for_type (ImageType type, int width, int height, int channels);
+
+/**
  * Multi-channel image class of arbitrary but homogenous data type.
  * Image data is interleaved, i.e. "RGBRGB...", not planar "RR..GG..BB..".
  */
@@ -108,9 +114,48 @@ MVE_NAMESPACE_END
 
 /* ------------------------- Implementation ----------------------- */
 
+MVE_NAMESPACE_BEGIN
+
+inline ImageBase::Ptr
+create_for_type (ImageType type, int width, int height, int channels)
+{
+    switch (type)
+    {
+        case IMAGE_TYPE_UINT8:
+            return Image<uint8_t>::create(width, height, channels);
+        case IMAGE_TYPE_UINT16:
+            return Image<uint16_t>::create(width, height, channels);
+        case IMAGE_TYPE_UINT32:
+            return Image<uint32_t>::create(width, height, channels);
+        case IMAGE_TYPE_UINT64:
+            return Image<uint64_t>::create(width, height, channels);
+        case IMAGE_TYPE_SINT8:
+            return Image<int8_t>::create(width, height, channels);
+        case IMAGE_TYPE_SINT16:
+            return Image<int16_t>::create(width, height, channels);
+        case IMAGE_TYPE_SINT32:
+            return Image<int32_t>::create(width, height, channels);
+        case IMAGE_TYPE_SINT64:
+            return Image<int64_t>::create(width, height, channels);
+        case IMAGE_TYPE_FLOAT:
+            return Image<float>::create(width, height, channels);
+        case IMAGE_TYPE_DOUBLE:
+            return Image<double>::create(width, height, channels);
+        default:
+            break;
+    }
+
+    return ImageBase::Ptr(NULL);
+}
+
+MVE_NAMESPACE_END
+
+/* ------------------------- Implementation ----------------------- */
+
 #include <cmath> // for std::ceil, std::floor
 
 MVE_NAMESPACE_BEGIN
+
 
 template <typename T>
 inline
