@@ -26,12 +26,6 @@ typedef Image<int> IntImage;
 //typedef Image<bool> BoolImage;
 
 /**
- * Creates an image instance for a given type.
- */
-ImageBase::Ptr
-create_for_type (ImageType type, int width, int height, int channels);
-
-/**
  * Multi-channel image class of arbitrary but homogenous data type.
  * Image data is interleaved, i.e. "RGBRGB...", not planar "RR..GG..BB..".
  */
@@ -112,9 +106,24 @@ public:
 
 MVE_NAMESPACE_END
 
+/* ---------------------------------------------------------------- */
+
+MVE_NAMESPACE_BEGIN
+MVE_IMAGE_NAMESPACE_BEGIN
+
+/**
+ * Creates an image instance for a given type.
+ */
+ImageBase::Ptr
+create_for_type (ImageType type, int width, int height, int channels);
+
+MVE_IMAGE_NAMESPACE_END
+MVE_NAMESPACE_END
+
 /* ------------------------- Implementation ----------------------- */
 
 MVE_NAMESPACE_BEGIN
+MVE_IMAGE_NAMESPACE_BEGIN
 
 inline ImageBase::Ptr
 create_for_type (ImageType type, int width, int height, int channels)
@@ -148,6 +157,7 @@ create_for_type (ImageType type, int width, int height, int channels)
     return ImageBase::Ptr(NULL);
 }
 
+MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
 
 /* ------------------------- Implementation ----------------------- */
