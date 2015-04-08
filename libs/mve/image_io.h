@@ -14,6 +14,18 @@
 MVE_NAMESPACE_BEGIN
 MVE_IMAGE_NAMESPACE_BEGIN
 
+/**
+ * Image meta data. Some loaders offer to retrieve only this meta data
+ * and skip loading the payload.
+ */
+struct ImageHeaders
+{
+    int width;
+    int height;
+    int channels;
+    ImageType type;
+};
+
 /*
  * ------------------ Image loading and saving --------------------
  *
@@ -25,7 +37,6 @@ MVE_IMAGE_NAMESPACE_BEGIN
  * more ppm file docs: http://netpbm.sourceforge.net/doc/#formats
  *
  * TODO
- * - Throw-safe read/write streams (not important)
  * - Read and display PNG embedded "keywords" (author, comment, etc.)
  * - Fix PPM endianess
  */
@@ -36,6 +47,13 @@ MVE_IMAGE_NAMESPACE_BEGIN
  */
 ByteImage::Ptr
 load_file (std::string const& filename);
+
+/**
+ * Loads the image headers, detecting file type.
+ * May throw util::Exception.
+ */
+void
+load_file_headers (std::string const& filename, ImageHeaders* headers);
 
 /**
  * Saves a byte image to file, detecting file type.
@@ -206,6 +224,12 @@ save_ppm_file (ByteImage::ConstPtr image, std::string const& filename);
  */
 ImageBase::Ptr
 load_mvei_file (std::string const& filename);
+
+/**
+ * Loads the meta information for a native MVE image.
+ */
+void
+load_mvei_file_headers (std::string const& filename, ImageHeaders* headers);
 
 /**
  * Writes a native MVE image. Supports arbitrary type, size and depth.
