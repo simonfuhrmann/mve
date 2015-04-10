@@ -17,61 +17,36 @@ FSSR_NAMESPACE_BEGIN
 
 /**
  * The Gaussian function in 3D. This basis function expects 'pos' to be
- * shifted properly but is rotation invariant.
+ * translated into the sample's LCS but is rotation invariant.
  */
 template <typename T>
 T
 gaussian (T const& sigma, math::Vector<T, 3> const& pos);
 
 /**
- * Evaluates the 3D Gaussian with respect to the sample's position and scale.
- */
-template <typename T>
-T
-gaussian (Sample const& sample, math::Vector<T, 3> const& pos);
-
-/**
- * The normalized Gaussian function in 3D. This basis function expects
- * 'pos' to be shifted properly but is rotation invariant.
+ * The normalized Gaussian in 3D. This basis function expects 'pos' to be
+ * translated into the sample's LCS but is rotation invariant.
  */
 template <typename T>
 T
 gaussian_normalized (T const& sigma, math::Vector<T, 3> const& pos);
 
 /**
- * Evaluates the normalized 3D Gaussian with respect to the sample's
- * position and scale.
+ * Evaluates the FSSR basis function which is a Gaussian derivative in the
+ * direction of the normal and a regular Gaussian orthogonal to the normal.
+ * Here, the normal direction is defined to be the positive x-axis, thus 'pos'
+ * must be translated and rotated into the sample's LCS. The function
+ * takes positive values in front and negative values behind the sample.
  */
 template <typename T>
 T
-gaussian_normalized (Sample const& sample, math::Vector<T, 3> const& pos);
-
-/*
- * The Gaussian derivative function in 3D. This is actually the function
- * where the Gaussian derivative is used in x-direction (along the normal),
- * the y and z direction are usual Gaussians. This function expects 'pos'
- * to be shifted and rotated into the local coordinate system of the sample.
- */
-template <typename T>
-T
-gaussian_derivative (T const& sigma, math::Vector<T, 3> const& pos);
-
-/**
- * Evaluates the 3D derivative of the Gaussian with respect to the sample's
- * position and orientation for the given query position. The query is
- * shifted and rotated into the local coordinate systen of the sample, such
- * that the function takes positive values in front and negative values
- * behind the sample.
- */
-template <typename T>
-T
-gaussian_derivative (Sample const& sample, math::Vector<T, 3> const& pos);
+gaussian_fssr (T const& sigma, math::Vector<T, 3> const& pos);
 
 /* ----------------------------- Linear Ramp ----------------------------- */
 
 /**
  * Implementation of a linear ramp signed distance function. Expects the
- * sample and the NON-TRANSFORMED sample position. The SDF is computed
+ * sample and the NON-TRANSFORMED voxel position. The SDF is computed
  * using the dot product sdf = < pos - sample.pos | sample.normal >.
  */
 template <typename T>
@@ -81,34 +56,29 @@ linear_ramp (Sample const& sample, math::Vector<T, 3> const& pos);
 /* ------------------------- Weighting function -------------------------- */
 
 /**
- * Weighting function in x-direction in [-3, 3]. The function falls of
- * less quickly in front of the surface, i.e. in normal direction (positive x)
- * and more quickly behind the surface (negative x).
+ * Weighting function in x-direction in [-3, 3] using polynomials.
+ * The function is 1 in the center, falls of quicky behind the surface
+ * (negative x) and less quickly in front of the surface (positive x).
  */
 template <typename T>
 T
 weighting_function_x (T const& x);
 
 /**
- * Weighting function in y and z direction.
+ * Weighting function in y and z direction in [-3, 3]^2.
  */
 template <typename T>
 T
 weighting_function_yz (T const& y, T const& z);
 
 /**
- * Evaluates the weighting function for a variable sigma.
+ * Evaluates the weighting function scaled according to sample scale.
+ * Similar to the basis functions, it expects 'pos' to be translated and
+ * rotated into the LCS of the sample.
  */
 template <typename T>
 inline T
 weighting_function (T const& sample_scale, math::Vector<T, 3> const& pos);
-
-/**
- * Evaluates the weighting function of a sample for a given position.
- */
-template <typename T>
-inline T
-weighting_function (Sample const& sample, math::Vector<T, 3> const& pos);
 
 /* ----------------------- MPU Weighting function ------------------------ */
 
@@ -120,13 +90,14 @@ template <typename T>
 T
 weighting_function_mpu (T const& x);
 
+/**
+ * Evaluates the weighting function scaled according to sample scale.
+ * Similar to the basis functions, it expects 'pos' to be translated
+ * into the sample's LCS but is rotation invariant.
+ */
 template <typename T>
 inline T
 weighting_function_mpu (T const& sample_scale, math::Vector<T, 3> const& pos);
-
-template <typename T>
-inline T
-weighting_function_mpu (Sample const& sample, math::Vector<T, 3> const& pos);
 
 /* -------------------------- Helper functions --------------------------- */
 
@@ -159,13 +130,6 @@ gaussian (T const& sigma, math::Vector<T, 3> const& pos)
 
 template <typename T>
 inline T
-gaussian (Sample const& sample, math::Vector<T, 3> const& pos)
-{
-    return gaussian(sample.scale, pos - sample.pos);
-}
-
-template <typename T>
-inline T
 gaussian_normalized (T const& sigma, math::Vector<T, 3> const& pos)
 {
     return gaussian(sigma, pos) / (sigma * MATH_SQRT_2PI);
@@ -173,24 +137,9 @@ gaussian_normalized (T const& sigma, math::Vector<T, 3> const& pos)
 
 template <typename T>
 inline T
-gaussian_normalized (Sample const& sample, math::Vector<T, 3> const& pos)
-{
-    return gaussian(sample, pos) / (sample.scale * MATH_SQRT_2PI);
-}
-
-template <typename T>
-inline T
-gaussian_derivative (T const& sigma, math::Vector<T, 3> const& pos)
+gaussian_fssr (T const& sigma, math::Vector<T, 3> const& pos)
 {
     return pos[0] * gaussian(sigma, pos) / (MATH_POW4(sigma) * 2.0 * MATH_PI);
-}
-
-template <typename T>
-T
-gaussian_derivative (Sample const& sample, math::Vector<T, 3> const& pos)
-{
-    math::Vector<T, 3> const tpos = transform_position(pos, sample);
-    return gaussian_derivative(sample.scale, tpos);
 }
 
 /* -------------------------------------------------------------------- */
@@ -250,14 +199,6 @@ weighting_function (T const& sample_scale, math::Vector<T, 3> const& pos)
         * weighting_function_yz(pos[1] / sample_scale, pos[2] / sample_scale);
 }
 
-template <typename T>
-inline T
-weighting_function (Sample const& sample, math::Vector<T, 3> const& pos)
-{
-    math::Vec3f const tpos = transform_position(pos, sample);
-    return weighting_function(sample.scale, tpos);
-}
-
 /* -------------------------------------------------------------------- */
 
 template <typename T>
@@ -280,13 +221,6 @@ inline T
 weighting_function_mpu (T const& sample_scale, math::Vector<T, 3> const& pos)
 {
     return weighting_function_mpu(pos.norm() / sample_scale);
-}
-
-template <typename T>
-inline T
-weighting_function_mpu (Sample const& sample, math::Vector<T, 3> const& pos)
-{
-    return weighting_function_mpu(sample.scale, pos - sample.pos);
 }
 
 /* -------------------------------------------------------------------- */

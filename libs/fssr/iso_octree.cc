@@ -111,8 +111,8 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
     /* Evaluate implicit function as the sum of basis functions. */
     double total_ifn = 0.0;
     double total_weight = 0.0;
-    double total_scale = 0.0f;
-    math::Vec3d total_color(0.0f);
+    double total_scale = 0.0;
+    math::Vec3d total_color(0.0);
     double total_color_weight = 0.0;
 
     for (std::size_t i = 0; i < samples.size(); ++i)
@@ -123,12 +123,10 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
 
         math::Vec3f const tpos = transform_position(voxel_pos, sample);
 
-        /* Evaluate basis fucntion. */
-        double const value = gaussian_derivative(sample.scale, tpos);
-        //double const value = linear_ramp(sample, voxel_pos);
-
-        /* Evaluate weight function. */
+        /* Evaluate basis and weighting fucntion. */
+        double const value = gaussian_fssr(sample.scale, tpos);
         double const weight = weighting_function(sample.scale, tpos) * sample.confidence;
+        //double const value = linear_ramp(sample, voxel_pos);
         //double const weight = weighting_function_mpu(sample.scale, tpos) * sample.confidence;
 
         /* Incrementally update. */
