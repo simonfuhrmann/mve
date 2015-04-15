@@ -79,15 +79,15 @@ load_file (std::string const& filename)
     }
 }
 
-void
-load_file_headers (std::string const& filename, ImageHeaders* headers)
+ImageHeaders
+load_file_headers (std::string const& filename)
 {
     try
     {
         try
-        { return load_mvei_file_headers(filename, headers); }
-        catch (util::FileException& e) { throw; }
-        catch (util::Exception& e) {}
+        { return load_mvei_file_headers(filename); }
+        catch (util::FileException&) { throw; }
+        catch (util::Exception&) {}
 
         throw util::Exception("Cannot determine image format");
     }
@@ -96,8 +96,6 @@ load_file_headers (std::string const& filename, ImageHeaders* headers)
         throw util::Exception("Error opening file: ", e.what());
     }
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 save_file (ByteImage::ConstPtr image, std::string const& filename)
@@ -139,15 +137,11 @@ save_file (ByteImage::ConstPtr image, std::string const& filename)
     throw util::Exception("Output filetype not supported");
 }
 
-/* ---------------------------------------------------------------- */
-
 void
 save_file (ByteImage::Ptr image, std::string const& filename)
 {
     save_file(ByteImage::ConstPtr(image), filename);
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 save_file (FloatImage::ConstPtr image, std::string const& filename)
@@ -164,8 +158,6 @@ save_file (FloatImage::ConstPtr image, std::string const& filename)
     throw util::Exception("Output filetype not supported");
 }
 
-/* ---------------------------------------------------------------- */
-
 void
 save_file (FloatImage::Ptr image, std::string const& filename)
 {
@@ -176,6 +168,66 @@ save_file (FloatImage::Ptr image, std::string const& filename)
 
 #ifndef MVE_NO_PNG_SUPPORT
 
+namespace
+{
+    void
+    load_png_headers_intern (FILE* fp, ImageHeaders* headers,
+        png_structp* png, png_infop* png_info)
+    {
+        /* Identify the PNG signature. */
+        png_byte signature[8];
+        if (std::fread(signature, 1, 8, fp) != 8)
+        {
+            std::fclose(fp);
+            throw util::Exception("PNG signature could not be read");
+        }
+        if (png_sig_cmp(signature, 0, 8) != 0)
+        {
+            std::fclose(fp);
+            throw util::Exception("PNG signature did not match");
+        }
+
+        /* Initialize PNG structures. */
+        *png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        if (!*png)
+        {
+            std::fclose(fp);
+            throw util::Exception("Out of memory");
+        }
+
+        *png_info = png_create_info_struct(*png);
+        if (!*png_info)
+        {
+            png_destroy_read_struct(png, NULL, NULL);
+            std::fclose(fp);
+            throw util::Exception("Out of memory");
+        }
+
+        /* Init PNG file IO */
+        png_init_io(*png, fp);
+        png_set_sig_bytes(*png, 8);
+
+        /* Read PNG header info. */
+        png_read_info(*png, *png_info);
+
+        headers->width = png_get_image_width(*png, *png_info);
+        headers->height = png_get_image_height(*png, *png_info);
+        headers->channels = png_get_channels(*png, *png_info);
+
+        int const bit_depth = png_get_bit_depth(*png, *png_info);
+        if (bit_depth <= 8)
+            headers->type = IMAGE_TYPE_UINT8;
+        else if (bit_depth == 16)
+            headers->type = IMAGE_TYPE_UINT16;
+        else
+        {
+            png_destroy_read_struct(png, png_info, NULL);
+            std::fclose(fp);
+            throw util::Exception("PNG with unknown bit depth");
+        }
+    }
+}
+
 ByteImage::Ptr
 load_png_file (std::string const& filename)
 {
@@ -184,48 +236,14 @@ load_png_file (std::string const& filename)
     if (fp == NULL)
         throw util::FileException(filename, std::strerror(errno));
 
-    /* Identify the PNG signature. */
-    png_byte signature[8];
-    if (std::fread(signature, 1, 8, fp) != 8)
-    {
-        std::fclose(fp);
-        throw util::Exception("PNG signature could not be read");
-    }
-    if (png_sig_cmp(signature, 0, 8) != 0)
-    {
-        std::fclose(fp);
-        throw util::Exception("PNG signature did not match");
-    }
-
+    /* Read PNG header info. */
+    ImageHeaders headers;
     png_structp png = NULL;
     png_infop png_info = NULL;
-
-    /* Initialize PNG structures. */
-    png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-        //(png_voidp)user_error_ptr, user_error_fn, user_warning_fn);
-    if (!png)
-    {
-        std::fclose(fp);
-        throw util::Exception("Out of memory");
-    }
-
-    png_info = png_create_info_struct(png);
-    if (!png_info)
-    {
-        png_destroy_read_struct(&png, NULL, NULL);
-        std::fclose(fp);
-        throw util::Exception("Out of memory");
-    }
-
-    /* Init PNG file IO */
-    png_init_io(png, fp);
-    png_set_sig_bytes(png, 8);
-
-    /* Read PNG header info. */
-    png_read_info(png, png_info);
+    load_png_headers_intern(fp, &headers, &png, &png_info);
 
     /* Check if bit depth is valid. */
-    int bit_depth = png_get_bit_depth(png, png_info);
+    int const bit_depth = png_get_bit_depth(png, png_info);
     if (bit_depth > 8)
     {
         png_destroy_read_struct(&png, &png_info, NULL);
@@ -234,7 +252,7 @@ load_png_file (std::string const& filename)
     }
 
     /* Apply transformations. */
-    int color_type = png_get_color_type(png, png_info);
+    int const color_type = png_get_color_type(png, png_info);
     if (color_type == PNG_COLOR_TYPE_PALETTE)
         png_set_palette_to_rgb(png);
     if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
@@ -246,18 +264,15 @@ load_png_file (std::string const& filename)
     png_read_update_info(png, png_info);
 
     /* Create image. */
-    int width = png_get_image_width(png, png_info);
-    int height = png_get_image_height(png, png_info);
-    int channels = png_get_channels(png, png_info);
     ByteImage::Ptr image = ByteImage::create();
-    image->allocate(width, height, channels);
+    image->allocate(headers.width, headers.height, headers.channels);
     ByteImage::ImageData& data = image->get_data();
 
     /* Setup row pointers. */
     std::vector<png_bytep> row_pointers;
-    row_pointers.resize(height);
-    for (int i = 0; i < height; ++i)
-        row_pointers[i] = &data[i * width * channels];
+    row_pointers.resize(headers.height);
+    for (int i = 0; i < headers.height; ++i)
+        row_pointers[i] = &data[i * headers.width * headers.channels];
 
     /* Read the whole PNG in memory. */
     png_read_image(png, &row_pointers[0]);
@@ -269,7 +284,25 @@ load_png_file (std::string const& filename)
     return image;
 }
 
-/* ---------------------------------------------------------------- */
+ImageHeaders
+load_png_file_headers (std::string const& filename)
+{
+    FILE* fp = std::fopen(filename.c_str(), "rb");
+    if (fp == NULL)
+        throw util::FileException(filename, std::strerror(errno));
+
+    /* Read PNG header info. */
+    ImageHeaders headers;
+    png_structp png = NULL;
+    png_infop png_info = NULL;
+    load_png_headers_intern(fp, &headers, &png, &png_info);
+
+    /* Clean up. */
+    png_destroy_read_struct(&png, &png_info, NULL);
+    std::fclose(fp);
+
+    return headers;
+}
 
 void
 save_png_file (ByteImage::ConstPtr image,
@@ -453,9 +486,7 @@ load_jpg_file (std::string const& filename, std::string* exif)
     return image;
 }
 
-/* ---------------------------------------------------------------- */
 // http://download.blender.org/source/chest/blender_2.03_tree/jpeg/example.c
-
 void
 save_jpg_file (ByteImage::ConstPtr image, std::string const& filename, int quality)
 {
@@ -548,7 +579,6 @@ load_tiff_file (std::string const& filename)
             throw util::Exception("Expected 8 bit TIFF file");
         ByteImage::Ptr image = ByteImage::create(width, height, channels);
 
-#if 1
         /* Scanline based TIFF reading. */
         uint32 rowstride = TIFFScanlineSize(tif);
         ByteImage::ImageData& data = image->get_data();
@@ -557,37 +587,6 @@ load_tiff_file (std::string const& filename)
             tdata_t row_pointer = &data[row * rowstride];
             TIFFReadScanline(tif, row_pointer, row);
         }
-#endif
-
-#if 0
-        /* Simplest possible image reading. */
-        ByteImage::ImageData& data = image->get_data();
-        int ret = TIFFReadRGBAImageOriented(tif, width, height,
-            (uint32_t*)&data[0], ORIENTATION_TOPLEFT, 0);
-        if (ret == 0)
-            throw util::Exception("Error reading TIFF image");
-
-#endif
-
-#if 0
-        /* Simple image reading but in separate buffer first. */
-        std::vector<uint32_t> buffer;
-        buffer.resize(width * height);
-        int ret = TIFFReadRGBAImageOriented(tif, width, height,
-            &buffer[0], ORIENTATION_TOPLEFT, 0);
-
-        if (ret == 0)
-            throw util::Exception("Error reading TIFF image");
-
-        for (std::size_t i = 0; i < buffer.size(); ++i)
-        {
-            image->at(i * 4 + 0) = TIFFGetR(buffer[i]);
-            image->at(i * 4 + 1) = TIFFGetG(buffer[i]);
-            image->at(i * 4 + 2) = TIFFGetB(buffer[i]);
-            image->at(i * 4 + 3) = TIFFGetA(buffer[i]);
-        }
-        buffer.clear();
-#endif
 
         TIFFClose(tif);
         return image;
@@ -598,8 +597,6 @@ load_tiff_file (std::string const& filename)
         throw;
     }
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 save_tiff_file (ByteImage::ConstPtr image, std::string const& filename)
@@ -630,8 +627,6 @@ save_tiff_file (ByteImage::ConstPtr image, std::string const& filename)
     if (ret < 0)
         throw util::Exception("Error writing TIFF image");
 }
-
-/* ---------------------------------------------------------------- */
 
 RawImage::Ptr
 load_tiff_16_file (std::string const& filename)
@@ -678,8 +673,6 @@ load_tiff_16_file (std::string const& filename)
         throw;
     }
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
@@ -792,8 +785,6 @@ load_pfm_file (std::string const& filename)
    return image;
 }
 
-/* ---------------------------------------------------------------- */
-
 void
 save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
 {
@@ -905,8 +896,6 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
     return ret;
 }
 
-/* ---------------------------------------------------------------- */
-
 RawImage::Ptr
 load_ppm_16_file (std::string const& filename)
 {
@@ -918,8 +907,6 @@ load_ppm_file (std::string const& filename)
 {
     return load_ppm_file_intern(filename, true);
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
@@ -967,8 +954,6 @@ save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
     }
     out.close();
 }
-
-/* ---------------------------------------------------------------- */
 
 void
 save_ppm_16_file (RawImage::ConstPtr image, std::string const& filename)
@@ -1035,14 +1020,16 @@ load_mvei_file (std::string const& filename)
     return image;
 }
 
-void
-load_mvei_file_headers (std::string const& filename, ImageHeaders* headers)
+ImageHeaders
+load_mvei_file_headers (std::string const& filename)
 {
     std::ifstream in(filename.c_str());
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 
-    load_mvei_headers_intern(in, headers);
+    ImageHeaders headers;
+    load_mvei_headers_intern(in, &headers);
+    return headers;
 }
 
 void

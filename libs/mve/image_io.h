@@ -52,8 +52,8 @@ load_file (std::string const& filename);
  * Loads the image headers, detecting file type.
  * May throw util::Exception.
  */
-void
-load_file_headers (std::string const& filename, ImageHeaders* headers);
+ImageHeaders
+load_file_headers (std::string const& filename);
 
 /**
  * Saves a byte image to file, detecting file type.
@@ -92,11 +92,18 @@ save_file (FloatImage::Ptr image, std::string const& filename);
 /**
  * Loads a PNG file.
  * PNG has 1, 2, 3 or 4 channels with gray, gray-alpha, RGB or RGBA values.
- * Conversion of 1, 2, 4 and 16 bit values to 8 bit is auto-applied.
+ * Conversion of 1, 2 and 4 to 8 bit is auto-applied.
  * May throw util::FileException and util::Exception.
  */
 ByteImage::Ptr
 load_png_file (std::string const& filename);
+
+/**
+ * Loads PNG file headers only.
+ * May throw util::FileException and util::Exception.
+ */
+ImageHeaders
+load_png_file_headers (std::string const& filename);
 
 /**
  * Saves image data to a PNG file. Supports 1, 2, 3 and 4 channel images.
@@ -228,8 +235,8 @@ load_mvei_file (std::string const& filename);
 /**
  * Loads the meta information for a native MVE image.
  */
-void
-load_mvei_file_headers (std::string const& filename, ImageHeaders* headers);
+ImageHeaders
+load_mvei_file_headers (std::string const& filename);
 
 /**
  * Writes a native MVE image. Supports arbitrary type, size and depth.
