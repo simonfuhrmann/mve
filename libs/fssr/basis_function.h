@@ -11,25 +11,24 @@
 #include "fssr/defines.h"
 #include "fssr/sample.h"
 
+// Use new weighting function with continuous derivative
+#define FSSR_NEW_WEIGHT 0
+
 FSSR_NAMESPACE_BEGIN
 
-/* ------------------------- Gaussian funcitons -------------------------- */
+/* ---------------------- Gaussian functions ---------------------- */
 
-/**
- * The Gaussian function in 3D. This basis function expects 'pos' to be
- * translated into the sample's LCS but is rotation invariant.
- */
+/** The Gaussian function in 3D. */
 template <typename T>
 T
-gaussian (T const& sigma, math::Vector<T, 3> const& pos);
+gaussian (T const& sigma, math::Vector<T, 3> const& x);
 
-/**
- * The normalized Gaussian in 3D. This basis function expects 'pos' to be
- * translated into the sample's LCS but is rotation invariant.
- */
+/** The normalized Gaussian function in 3D. */
 template <typename T>
 T
-gaussian_normalized (T const& sigma, math::Vector<T, 3> const& pos);
+gaussian_normalized (T const& sigma, math::Vector<T, 3> const& x);
+
+/* ---------------------- FSSR basis function --------------------- */
 
 /**
  * Evaluates the FSSR basis function which is a Gaussian derivative in the
@@ -40,76 +39,48 @@ gaussian_normalized (T const& sigma, math::Vector<T, 3> const& pos);
  */
 template <typename T>
 T
-gaussian_fssr (T const& sigma, math::Vector<T, 3> const& pos);
-
-/* ----------------------------- Linear Ramp ----------------------------- */
+fssr_basis (T const& scale, math::Vector<T, 3> const& pos);
 
 /**
- * Implementation of a linear ramp signed distance function. Expects the
- * sample and the NON-TRANSFORMED voxel position. The SDF is computed
- * using the dot product sdf = < pos - sample.pos | sample.normal >.
+ * Evaluates the FSSR basis function and its directional derivatives.
+ * Similar to fssr_basis(), it expects 'pos' to be in the sample's LCS.
+ */
+template <typename T>
+math::Vector<T, 4>
+fssr_basis_deriv (T const& scale, math::Vector<T, 3> const& pos);
+
+/* --------------------- FSSR weight function --------------------- */
+
+/**
+ * Evaluates the FSSR basis function which is composed of polynomials
+ * and second and third degree. The function is one in the center, falls
+ * of quickly behind the surface (negative x) and less quickly in front of
+ * the surface (positive x), and is radially symmetric in y and z direction.
+ * Similar to fssr_basis(), it expects 'pos' to be in the sample's LCS.
  */
 template <typename T>
 T
-linear_ramp (Sample const& sample, math::Vector<T, 3> const& pos);
-
-/* ------------------------- Weighting function -------------------------- */
+fssr_weight (T const& scale, math::Vector<T, 3> const& pos);
 
 /**
- * Weighting function in x-direction in [-3, 3] using polynomials.
- * The function is 1 in the center, falls of quicky behind the surface
- * (negative x) and less quickly in front of the surface (positive x).
+ * Evaluates the FSSR weighting function and its directional derivatives.
+ * Similar to fssr_basis(), it expects 'pos' to be in the sample's LCS.
  */
 template <typename T>
-T
-weighting_function_x (T const& x);
-
-/**
- * Weighting function in y and z direction in [-3, 3]^2.
- */
-template <typename T>
-T
-weighting_function_yz (T const& y, T const& z);
-
-/**
- * Evaluates the weighting function scaled according to sample scale.
- * Similar to the basis functions, it expects 'pos' to be translated and
- * rotated into the LCS of the sample.
- */
-template <typename T>
-inline T
-weighting_function (T const& sample_scale, math::Vector<T, 3> const& pos);
-
-/* ----------------------- MPU Weighting function ------------------------ */
-
-/**
- * Radially symmetric weighting function in [-3, 3] from the MPU paper (3)
- * which uses a quadratic B-spline.
- */
-template <typename T>
-T
-weighting_function_mpu (T const& x);
-
-/**
- * Evaluates the weighting function scaled according to sample scale.
- * Similar to the basis functions, it expects 'pos' to be translated
- * into the sample's LCS but is rotation invariant.
- */
-template <typename T>
-inline T
-weighting_function_mpu (T const& sample_scale, math::Vector<T, 3> const& pos);
+math::Vector<T, 4>
+fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos);
 
 /* -------------------------- Helper functions --------------------------- */
 
-/**
- * Transforms the given position according to the samples position and normal.
- */
+/** Transforms 'pos' according to the samples position and normal. */
 math::Vec3f
 transform_position (math::Vec3f const& pos, Sample const& sample);
 
+/** Generates a rotation matrix that transforms in the FSSR LCS. */
 void
 rotation_from_normal (math::Vec3f const& normal, math::Matrix3f* rot);
 
+/** Generates a rotation matrix that transforms in the FSSR LCS. */
 void
 rotation_from_normal (math::Vec2f const& normal, math::Matrix2f* rot);
 
@@ -123,84 +94,192 @@ FSSR_NAMESPACE_BEGIN
 
 template <typename T>
 inline T
-gaussian (T const& sigma, math::Vector<T, 3> const& pos)
+gaussian (T const& sigma, math::Vector<T, 3> const& x)
 {
-    return std::exp(-pos.dot(pos) / (T(2) * MATH_POW2(sigma)));
+    return std::exp(-x.dot(x) / (T(2) * MATH_POW2(sigma)));
 }
 
 template <typename T>
 inline T
-gaussian_normalized (T const& sigma, math::Vector<T, 3> const& pos)
+gaussian_normalized (T const& sigma, math::Vector<T, 3> const& x)
 {
-    return gaussian(sigma, pos) / (sigma * MATH_SQRT_2PI);
+    return gaussian(sigma, x) / (sigma * MATH_SQRT_2PI);
 }
+
+/* -------------------------------------------------------------------- */
 
 template <typename T>
 inline T
-gaussian_fssr (T const& sigma, math::Vector<T, 3> const& pos)
+fssr_basis (T const& scale, math::Vector<T, 3> const& pos)
 {
-    return pos[0] * gaussian(sigma, pos) / (MATH_POW4(sigma) * 2.0 * MATH_PI);
+    return pos[0] * gaussian(scale, pos) / (MATH_POW4(scale) * 2.0 * MATH_PI);
+}
+
+template <typename T>
+inline math::Vector<T, 4>
+fssr_basis_deriv (T const& scale, math::Vector<T, 3> const& pos)
+{
+    double const gaussian_value = gaussian(scale, pos);
+    double const norm_value = T(2) * MATH_PI * MATH_POW4(scale);
+    double const norm_deriv = norm_value * T(2) * MATH_POW2(scale);
+
+    math::Vector<T, 4> ret;
+    ret[0] = pos[0] * gaussian_value / norm_value;
+    ret[1] = (T(2) * MATH_POW2(scale) - T(2) * MATH_POW2(pos[0]))
+        * gaussian_value / norm_deriv;
+    ret[2] = (-T(2) * pos[0] * pos[1]) * gaussian_value / norm_deriv;
+    ret[3] = (-T(2) * pos[0] * pos[2]) * gaussian_value / norm_deriv;
+    return ret;
 }
 
 /* -------------------------------------------------------------------- */
 
 template <typename T>
 T
+fssr_weight_x (T const& scale, math::Vector<T, 3> const& pos)
+{
+    T const x = pos[0] / scale;
+    if (x > T(-3) && x < T(0))
+    {
+#if FSSR_NEW_WEIGHT
+        // w(x) = (2/27 x^3 / s^3 - 1/3 x^2 / s^2 + 1)^2
+        T const a0 = T(1);
+        T const a2 = -T(1) / T(3);
+        T const a3 = T(2) / T(27);
+        return MATH_POW2(a0 + a2 * MATH_POW2(x) - a3 * MATH_POW3(x));
+#else
+        // w(x) = 1/9 x^2 / s^2 + 2/3 x / s + 1
+        T const a0 = T(1);
+        T const a1 = T(2) / T(3);
+        T const a2 = T(1) / T(9);
+        return a0 + a1 * x + a2 * MATH_POW2(x);
+#endif
+    }
+    if (x >= T(0) && x < T(3))
+    {
+        // 2/27 x^3 / s^3 - 1/3 x^2 / s^2 + 1
+        T const a0 = T(1);
+        T const a2 = -T(1) / T(3);
+        T const a3 = T(2) / T(27);
+        return a0 + a2 * MATH_POW2(x) + a3 * MATH_POW3(x);
+    }
+    return T(0);
+}
+
+template <typename T>
+T
+fssr_weight_yz (T const& scale, math::Vector<T, 3> const& pos)
+{
+    T const y = pos[1] / scale;
+    T const z = pos[2] / scale;
+    if (y * y + z * z < T(9))
+    {
+        // 2/27 r^3 / s^3 - 1/3 r^2 / s^2 + 1
+        T const a0 = T(1);
+        T const a2 = -T(1) / T(3);
+        T const a3 = T(2) / T(27);
+        return a0 + a2 * (MATH_POW2(y) + MATH_POW2(z))
+            + a3 * std::pow(MATH_POW2(y) + MATH_POW2(z), T(1.5));
+    }
+    return T(0);
+}
+
+template <typename T>
+T
+fssr_weight (T const& scale, math::Vector<T, 3> const& pos)
+{
+    T const weight_x = fssr_weight_x(scale, pos);
+    T const weight_yz = fssr_weight_yz(scale, pos);
+    return weight_x * weight_yz;
+}
+
+template <typename T>
+math::Vector<T, 4>
+fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos)
+{
+    T const weight_x = fssr_weight_x(scale, pos);
+    T const weight_yz = fssr_weight_yz(scale, pos);
+    T const x = pos[0] / scale;
+    T const y = pos[1] / scale;
+    T const z = pos[2] / scale;
+
+    T deriv_x = T(0);
+    if (x > T(-3) && x <= T(0))
+    {
+#if FSSR_NEW_WEIGHT
+        // w'(x) = (12/27 x^2 / s^3 - 4/3 x / s^2) * weight_x
+        T const a1 = -T(4) / T(3);
+        T const a2 = T(12) / T(27);
+        deriv_x = (a1 * x + a2 * MATH_POW2(x)) * weight_x / scale;
+#else
+        // w'(x) = 2/9 x / s^2 + 2/3 / s
+        T const a0 = T(2) / T(3);
+        T const a1 = T(2) / T(9);
+        deriv_x = (a0 + a1 * x) / scale;
+#endif
+    }
+    else if (x > T(0) && x < T(3))
+    {
+        // w'(x) = 6/27 x^2 / s^3 - 2/3 x / s^2
+        T const a1 = -T(2) / T(3);
+        T const a2 = T(6) / T(27);
+        deriv_x = (a1 * x + a2 * MATH_POW2(x)) / scale;
+    }
+
+    /*
+     * w(y, z) = 2/27 (y^2 + z^2)^(3/2) / s^3 - 1/3 (y^2 + z^2) / s^2 + 1
+     * d/dy w'(y, z) = y/s * (12 / (54 s^2) * (y^2 + z^2)^(1/2) - 2 / (3s))
+     * d/dz w'(y, z) = z/s * (12 / (54 s^2) * (y^2 + z^2)^(1/2) - 2 / (3s))
+     */
+    T deriv_y = T(0);
+    T deriv_z = T(0);
+    if (y * y + z * z < T(9))
+    {
+        T const factor = (T(12) / (T(54) * scale)
+            * std::sqrt(MATH_POW2(pos[1]) + MATH_POW2(pos[2]))
+            - T(2) / T(3)) / MATH_POW2(scale);
+        deriv_y = factor * pos[1];
+        deriv_z = factor * pos[2];
+    }
+
+    math::Vector<T, 4> ret;
+    ret[0] = weight_x * weight_yz;
+    ret[1] = deriv_x * weight_yz;
+    ret[2] = weight_x * deriv_y;
+    ret[3] = weight_x * deriv_z;
+    return ret;
+}
+
+/* -------------------------------------------------------------------- */
+
+inline math::Vec3f
+transform_position (math::Vec3f const& pos, Sample const& sample)
+{
+    math::Matrix3f rot;
+    rotation_from_normal(sample.normal, &rot);
+    return rot * (pos - sample.pos);
+}
+
+/* -------------------------------------------------------------------- */
+
+#if 0  /* Following is some dead but potentially still useful code. */
+/**
+ * Implementation of a linear ramp signed distance function. Expects the
+ * sample and the NON-TRANSFORMED voxel position. The SDF is computed
+ * using the dot product sdf = < pos - sample.pos | sample.normal >.
+ */
+template <typename T>
+inline T
 linear_ramp (Sample const& sample, math::Vector<T, 3> const& pos)
 {
     return (pos - sample.pos).dot(sample.normal);
 }
 
-/* -------------------------------------------------------------------- */
 
-template <typename T>
-T
-weighting_function_x (T const& x)
-{
-    if (x <= -T(3) || x >= T(3))
-        return T(0);
-
-    if (x > T(0))
-    {
-        T const a_o = T(2) / T(27);
-        T const b_o = -T(1) / T(3);
-        T const d_o = T(1);
-        T const value = a_o * MATH_POW3(x) + b_o * MATH_POW2(x) + d_o;
-        return value;
-    }
-
-    T const a_i = T(1) / T(9);
-    T const b_i = T(2) / T(3);
-    T const c_i = T(1);
-    T const value = a_i * MATH_POW2(x) + b_i * x + c_i;
-    return value;
-}
-
-template <typename T>
-T
-weighting_function_yz (T const& y, T const& z)
-{
-    if (y * y + z * z > T(9))
-        return T(0);
-
-    T const a_o = T(2) / T(27);
-    T const b_o = -T(1) / T(3);
-    T const d_o = T(1);
-    T const value = a_o * std::pow(MATH_POW2(y) + MATH_POW2(z), T(1.5))
-        + b_o * (MATH_POW2(y) + MATH_POW2(z)) + d_o;
-    return value;
-}
-
-template <typename T>
-inline T
-weighting_function (T const& sample_scale, math::Vector<T, 3> const& pos)
-{
-    return weighting_function_x(pos[0] / sample_scale)
-        * weighting_function_yz(pos[1] / sample_scale, pos[2] / sample_scale);
-}
-
-/* -------------------------------------------------------------------- */
-
+/**
+ * Radially symmetric weighting function in [-3, 3] from the MPU paper (3)
+ * which uses a quadratic B-spline.
+ */
 template <typename T>
 T
 weighting_function_mpu (T const& x)
@@ -216,22 +295,18 @@ weighting_function_mpu (T const& x)
     return MATH_POW2(T(3) - xf) / T(2);
 }
 
+/**
+ * Evaluates the weighting function scaled according to sample scale.
+ * Similar to the basis functions, it expects 'pos' to be translated
+ * into the sample's LCS but is rotation invariant.
+ */
 template <typename T>
 inline T
 weighting_function_mpu (T const& sample_scale, math::Vector<T, 3> const& pos)
 {
     return weighting_function_mpu(pos.norm() / sample_scale);
 }
-
-/* -------------------------------------------------------------------- */
-
-inline math::Vec3f
-transform_position (math::Vec3f const& pos, Sample const& sample)
-{
-    math::Matrix3f rot;
-    rotation_from_normal(sample.normal, &rot);
-    return rot * (pos - sample.pos);
-}
+#endif
 
 FSSR_NAMESPACE_END
 

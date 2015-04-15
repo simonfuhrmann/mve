@@ -124,10 +124,8 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
         math::Vec3f const tpos = transform_position(voxel_pos, sample);
 
         /* Evaluate basis and weighting fucntion. */
-        double const value = gaussian_fssr(sample.scale, tpos);
-        double const weight = weighting_function(sample.scale, tpos) * sample.confidence;
-        //double const value = linear_ramp(sample, voxel_pos);
-        //double const weight = weighting_function_mpu(sample.scale, tpos) * sample.confidence;
+        double const value = fssr_basis(sample.scale, tpos);
+        double const weight = fssr_weight(sample.scale, tpos) * sample.confidence;
 
         /* Incrementally update. */
         total_ifn += value * weight;
