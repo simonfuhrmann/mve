@@ -11,7 +11,7 @@
 FSSR_NAMESPACE_BEGIN
 
 void
-PointSet::read_from_file (std::string const& filename)
+PointSet::read_file (std::string const& filename,  SampleList* samples)
 {
     /* Load or generate point set. */
     mve::TriangleMesh::Ptr mesh = mve::geom::load_ply_mesh(filename);
@@ -46,7 +46,7 @@ PointSet::read_from_file (std::string const& filename)
     std::size_t num_skipped_invalid_scale = 0;
     std::size_t num_skipped_large_scale = 0;
     std::size_t num_unnormalized_normals = 0;
-    this->samples.reserve(verts.size());
+    samples->reserve(verts.size());
     for (std::size_t i = 0; i < verts.size(); i += 1)
     {
         Sample s;
@@ -56,42 +56,42 @@ PointSet::read_from_file (std::string const& filename)
         s.confidence = vconfs[i];
         s.color = math::Vec3f(*vcolors[i]);
 
+        /* Skip invalid samples. */
         if (s.scale <= 0.0f)
         {
             num_skipped_invalid_scale += 1;
             continue;
         }
-
         if (s.confidence <= 0.0f)
         {
             num_skipped_invalid_confidence += 1;
             continue;
         }
-
         if (s.normal.square_norm() == 0.0f)
         {
             num_skipped_zero_normal += 1;
             continue;
         }
 
+        /* Normalize normals. */
         if (!MATH_EPSILON_EQ(1.0f, s.normal.square_norm(), 1e-5f))
         {
             s.normal.normalize();
             num_unnormalized_normals += 1;
         }
 
+        /* Process sample scale if requested. */
         if (this->opts.max_scale > 0.0f && s.scale > this->opts.max_scale)
         {
             num_skipped_large_scale += 1;
             continue;
         }
-
-        /* Process sample scale options. */
         if (this->opts.min_scale > 0.0f)
             s.scale = std::max(this->opts.min_scale, s.scale);
         s.scale *= this->opts.scale_factor;
 
-        this->samples.push_back(s);
+        /* Add sample to list. */
+        samples->push_back(s);
     }
 
     if (num_skipped_invalid_scale > 0)

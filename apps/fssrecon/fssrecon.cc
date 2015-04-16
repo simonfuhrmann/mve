@@ -100,9 +100,10 @@ main (int argc, char** argv)
     {
         std::cout << "Loading: " << app_opts.in_files[i] << "..." << std::endl;
         fssr::PointSet pset(pset_opts);
+        fssr::PointSet::SampleList samples;
         try
         {
-            pset.read_from_file(app_opts.in_files[i]);
+            pset.read_file(app_opts.in_files[i], &samples);
         }
         catch (std::exception& e)
         {
@@ -112,7 +113,7 @@ main (int argc, char** argv)
 
         std::cout << "Inserting samples into the octree..." << std::flush;
         timer.reset();
-        octree.insert_samples(pset);
+        octree.insert_samples(samples);
         std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
     }
 

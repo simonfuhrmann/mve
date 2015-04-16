@@ -84,7 +84,7 @@ public:
     /**
      * Inserts all samples from the point set into the octree.
      */
-    void insert_samples (PointSet const& pset);
+    void insert_samples (PointSet::SampleList const& samples);
 
     /**
      * Inserts a single sample into the octree. The sample scale is used to

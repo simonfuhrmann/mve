@@ -36,22 +36,11 @@ public:
     /** Default constructor setting options. */
     PointSet (Options const& opts);
 
-    /** Sets the factor multiplied with sample scale. */
-    void set_scale_factor (float factor);
-    /** Sets how many samples are skipped, defaults to 0. */
-    void set_skip_samples (int num_skip);
-
-    /** Reads the input file. Options need to be set before calling this. */
-    void read_from_file (std::string const& filename);
-
-    /* Returns the list of samples. */
-    SampleList const& get_samples (void) const;
-    /* Returns the list of samples. */
-    SampleList& get_samples (void);
+    /** Reads all input samples in memory. */
+    void read_file (std::string const& filename, SampleList* samples);
 
 private:
     Options opts;
-    SampleList samples;
 };
 
 /* ---------------------------------------------------------------- */
@@ -68,18 +57,6 @@ inline
 PointSet::PointSet (Options const& opts)
     : opts(opts)
 {
-}
-
-inline PointSet::SampleList const&
-PointSet::get_samples (void) const
-{
-    return this->samples;
-}
-
-inline PointSet::SampleList&
-PointSet::get_samples (void)
-{
-    return this->samples;
 }
 
 FSSR_NAMESPACE_END
