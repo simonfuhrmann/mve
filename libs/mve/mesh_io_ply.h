@@ -6,8 +6,10 @@
 #ifndef MVE_PLY_FILE_HEADER
 #define MVE_PLY_FILE_HEADER
 
+#include <istream>
 #include <string>
 
+#include "util/endian.h"
 #include "mve/defines.h"
 #include "mve/image.h"
 #include "mve/camera.h"
@@ -116,6 +118,55 @@ save_xf_file (std::string const& filename, CameraInfo const& camera);
  */
 void
 save_xf_file (std::string const& filename, float const* ctw);
+
+/* ---------------------------------------------------------------- */
+
+/** PLY vertex element properties. */
+enum PLYVertexProperty
+{
+    PLY_V_FLOAT_X,
+    PLY_V_FLOAT_Y,
+    PLY_V_FLOAT_Z,
+    PLY_V_FLOAT_NX,
+    PLY_V_FLOAT_NY,
+    PLY_V_FLOAT_NZ,
+    PLY_V_UINT8_R,
+    PLY_V_UINT8_G,
+    PLY_V_UINT8_B,
+    PLY_V_FLOAT_R,
+    PLY_V_FLOAT_G,
+    PLY_V_FLOAT_B,
+    PLY_V_FLOAT_U,
+    PLY_V_FLOAT_V,
+    PLY_V_FLOAT_CONF,
+    PLY_V_FLOAT_VALUE,
+    PLY_V_IGNORE_FLOAT,
+    PLY_V_IGNORE_UINT32,
+    PLY_V_IGNORE_UINT8
+};
+
+/** PLY face element properties. */
+enum PLYFaceProperty
+{
+    PLY_F_VERTEX_INDICES,
+    PLY_F_IGNORE_UINT32,
+    PLY_F_IGNORE_UINT8,
+    PLY_F_IGNORE_FLOAT
+};
+
+/** PLY data encoding formats. */
+enum PLYFormat
+{
+    PLY_ASCII,
+    PLY_BINARY_LE,
+    PLY_BINARY_BE,
+    PLY_UNKNOWN
+};
+
+/** Reads a value from the input stream given the PLY format. */
+template <typename T>
+T
+ply_read_value (std::istream& input, PLYFormat format);
 
 MVE_GEOM_NAMESPACE_END
 MVE_NAMESPACE_END

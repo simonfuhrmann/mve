@@ -6,7 +6,6 @@
 
 #include "util/exception.h"
 #include "util/tokenizer.h"
-#include "util/endian.h"
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "mve/depthmap.h"
@@ -15,99 +14,53 @@
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
 
-/* PLY File format enum. */
-enum PlyFormat
-{
-    PLY_ASCII,
-    PLY_BINARY_LE,
-    PLY_BINARY_BE,
-    PLY_UNKNOWN
-};
-
-/* Vertex element enum. */
-enum PlyVertexElement
-{
-    PLY_V_FLOAT_X,
-    PLY_V_FLOAT_Y,
-    PLY_V_FLOAT_Z,
-    PLY_V_FLOAT_NX,
-    PLY_V_FLOAT_NY,
-    PLY_V_FLOAT_NZ,
-    PLY_V_UCHAR_R,
-    PLY_V_UCHAR_G,
-    PLY_V_UCHAR_B,
-    PLY_V_FLOAT_R,
-    PLY_V_FLOAT_G,
-    PLY_V_FLOAT_B,
-    PLY_V_FLOAT_U,
-    PLY_V_FLOAT_V,
-    PLY_V_FLOAT_CONF,
-    PLY_V_FLOAT_VALUE,
-    PLY_V_FLOAT_IGNORE,
-    PLY_V_INT_IGNORE,
-    PLY_V_BYTE_IGNORE
-};
-
-/* Face element enum. */
-enum PlyFaceElement
-{
-    PLY_F_VERTEX_INDICES,
-    PLY_F_INT_IGNORE,
-    PLY_F_BYTE_IGNORE,
-    PLY_F_FLOAT_IGNORE
-};
-
-/* Returns a data type from file depending on encoding. */
 template <typename T>
 T
-ply_get_value (std::istream& input, PlyFormat format)
+ply_read_value (std::istream& input, PLYFormat format)
 {
+    T value;
     switch (format)
     {
         case PLY_ASCII:
-        {
-            T f;
-            input >> f;
-            return f;
-        }
+            input >> value;
+            return value;
+
         case PLY_BINARY_LE:
-        {
-            T f;
-            input.read((char*)&f, sizeof(T));
-            return util::system::letoh(f);
-        }
+            input.read(reinterpret_cast<char*>(&value), sizeof(T));
+            return util::system::letoh(value);
+
         case PLY_BINARY_BE:
-        {
-            T f;
-            input.read((char*)&f, sizeof(T));
-            return util::system::betoh(f);
-        }
+            input.read(reinterpret_cast<char*>(&value), sizeof(T));
+            return util::system::betoh(value);
 
         default:
             throw std::invalid_argument("Invalid data format");
     }
 }
 
-/* Specialization for unsigned char, ASCII reading differs. */
+/*
+ * Template specialization for 'unsigned char', as the generic template
+ * function will handle it incorrectly (reads one char, not the number).
+ */
 template <>
 unsigned char
-ply_get_value<unsigned char> (std::istream& input, PlyFormat format)
+ply_read_value<unsigned char> (std::istream& input, PLYFormat format)
 {
     switch (format)
     {
         case PLY_ASCII:
         {
-            int tmp_f;
-            input >> tmp_f;
-            return (unsigned char)tmp_f;
+            int temp;
+            input >> temp;
+            return static_cast<unsigned char>(temp);
         }
 
         case PLY_BINARY_LE:
         case PLY_BINARY_BE:
         {
-            unsigned char f;
-            input.read((char*)&f, sizeof(unsigned char));
-            return f;
+            unsigned char value;
+            input.read(reinterpret_cast<char*>(&value), 1);
+            return value;
         }
 
         default:
@@ -115,10 +68,27 @@ ply_get_value<unsigned char> (std::istream& input, PlyFormat format)
     }
 }
 
-/* Not yet implemented. */
+/* Declare specialization for 'char' but leave it undefined for now. */
 template <>
 char
-ply_get_value<char> (std::istream& input, PlyFormat format);
+ply_read_value<char> (std::istream& input, PLYFormat format);
+
+/* Explicit template instantiation for 'float'. */
+template
+float
+ply_read_value<float> (std::istream& input, PLYFormat format);
+
+/* Explicit template instantiation for 'unsigned int'. */
+template
+unsigned int
+ply_read_value<unsigned int> (std::istream& input, PLYFormat format);
+
+/* Explicit template instantiation for 'int'. */
+template
+int
+ply_read_value<int> (std::istream& input, PLYFormat format);
+
+/* ---------------------------------------------------------------- */
 
 /* Converts 'num' float values in [0,1] to unsigned char in [0,255]. */
 void
@@ -160,15 +130,15 @@ load_ply_mesh (std::string const& filename)
     /* Discard the rest of the line. */
     std::getline(input, buffer);
 
-    PlyFormat ply_format = PLY_UNKNOWN;
+    PLYFormat ply_format = PLY_UNKNOWN;
     std::size_t num_faces = 0;
     std::size_t num_vertices = 0;
     std::size_t num_grid = 0;
     std::size_t num_tristrips = 0;
     std::size_t grid_cols = 0;
     std::size_t grid_rows = 0;
-    std::vector<int> v_format;
-    std::vector<int> f_format;
+    std::vector<PLYVertexProperty> v_format;
+    std::vector<PLYFaceProperty> f_format;
 
     bool critical = false;
     bool reading_verts = false;
@@ -289,27 +259,27 @@ load_ply_mesh (std::string const& filename)
                     else if (header[2] == "value")
                         v_format.push_back(PLY_V_FLOAT_VALUE);
                     else
-                        v_format.push_back(PLY_V_FLOAT_IGNORE);
+                        v_format.push_back(PLY_V_IGNORE_FLOAT);
                 }
                 else if (header[1] == "uchar" || header[1] == "uint8")
                 {
                     /* Accept uchar r,g,b values. */
                     if (header[2] == "r" || header[2] == "red"
                         || header[2] == "diffuse_red")
-                        v_format.push_back(PLY_V_UCHAR_R);
+                        v_format.push_back(PLY_V_UINT8_R);
                     else if (header[2] == "g" || header[2] == "green"
                         || header[2] == "diffuse_green")
-                        v_format.push_back(PLY_V_UCHAR_G);
+                        v_format.push_back(PLY_V_UINT8_G);
                     else if (header[2] == "b" || header[2] == "blue"
                         || header[2] == "diffuse_blue")
-                        v_format.push_back(PLY_V_UCHAR_B);
+                        v_format.push_back(PLY_V_UINT8_B);
                     else
-                        v_format.push_back(PLY_V_BYTE_IGNORE);
+                        v_format.push_back(PLY_V_IGNORE_UINT8);
                 }
                 else if (header[1] == "int")
                 {
                     /* Ignore int data types. */
-                    v_format.push_back(PLY_V_INT_IGNORE);
+                    v_format.push_back(PLY_V_IGNORE_UINT32);
                 }
                 else
                 {
@@ -325,11 +295,11 @@ load_ply_mesh (std::string const& filename)
                 if (header[1] == "list")
                     f_format.push_back(PLY_F_VERTEX_INDICES);
                 else if (header[1] == "int")
-                    f_format.push_back(PLY_F_INT_IGNORE);
+                    f_format.push_back(PLY_F_IGNORE_UINT32);
                 else if (header[1] == "uchar")
-                    f_format.push_back(PLY_F_BYTE_IGNORE);
+                    f_format.push_back(PLY_F_IGNORE_UINT8);
                 else if (header[1] == "float")
-                    f_format.push_back(PLY_F_FLOAT_IGNORE);
+                    f_format.push_back(PLY_F_IGNORE_FLOAT);
                 else
                 {
                     std::cout << "PLY Loader: Unrecognized face property \""
@@ -387,9 +357,9 @@ load_ply_mesh (std::string const& filename)
     {
         switch (v_format[i])
         {
-            case PLY_V_UCHAR_R:
-            case PLY_V_UCHAR_G:
-            case PLY_V_UCHAR_B:
+            case PLY_V_UINT8_R:
+            case PLY_V_UINT8_G:
+            case PLY_V_UINT8_B:
             case PLY_V_FLOAT_R:
             case PLY_V_FLOAT_G:
             case PLY_V_FLOAT_B:
@@ -439,28 +409,28 @@ load_ply_mesh (std::string const& filename)
 
         for (std::size_t n = 0; n < v_format.size(); ++n)
         {
-            PlyVertexElement elem = (PlyVertexElement)v_format[n];
+            PLYVertexProperty elem = v_format[n];
             switch (elem)
             {
             case PLY_V_FLOAT_X:
             case PLY_V_FLOAT_Y:
             case PLY_V_FLOAT_Z:
                 vertex[(int)elem - PLY_V_FLOAT_X]
-                    = ply_get_value<float>(input, ply_format);
+                    = ply_read_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_NX:
             case PLY_V_FLOAT_NY:
             case PLY_V_FLOAT_NZ:
                 vnormal[(int)elem - PLY_V_FLOAT_NX]
-                    = ply_get_value<float>(input, ply_format);
+                    = ply_read_value<float>(input, ply_format);
                 break;
 
-            case PLY_V_UCHAR_R:
-            case PLY_V_UCHAR_G:
-            case PLY_V_UCHAR_B:
-                color[(int)elem - PLY_V_UCHAR_R]
-                    = (float)ply_get_value<unsigned char>(input, ply_format)
+            case PLY_V_UINT8_R:
+            case PLY_V_UINT8_G:
+            case PLY_V_UINT8_B:
+                color[(int)elem - PLY_V_UINT8_R]
+                    = (float)ply_read_value<unsigned char>(input, ply_format)
                     * (1.0f / 255.0f);
                 break;
 
@@ -468,36 +438,37 @@ load_ply_mesh (std::string const& filename)
             case PLY_V_FLOAT_G:
             case PLY_V_FLOAT_B:
                 color[(int)elem - PLY_V_FLOAT_R]
-                    = ply_get_value<float>(input, ply_format);
+                    = ply_read_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_U:
             case PLY_V_FLOAT_V:
                 tex_coord[(int)elem - PLY_V_FLOAT_U]
-                    = ply_get_value<float>(input, ply_format);
+                    = ply_read_value<float>(input, ply_format);
                 break;
 
             case PLY_V_FLOAT_CONF:
-                vconfs.push_back(ply_get_value<float>(input, ply_format));
+                vconfs.push_back(ply_read_value<float>(input, ply_format));
                 break;
 
             case PLY_V_FLOAT_VALUE:
-                vvalues.push_back(ply_get_value<float>(input, ply_format));
+                vvalues.push_back(ply_read_value<float>(input, ply_format));
                 break;
 
-            case PLY_V_FLOAT_IGNORE:
-                ply_get_value<float>(input, ply_format);
+            case PLY_V_IGNORE_FLOAT:
+                ply_read_value<float>(input, ply_format);
                 break;
 
-            case PLY_V_INT_IGNORE:
-                ply_get_value<unsigned int>(input, ply_format);
+            case PLY_V_IGNORE_UINT32:
+                ply_read_value<unsigned int>(input, ply_format);
+                break;
+
+            case PLY_V_IGNORE_UINT8:
+                ply_read_value<unsigned char>(input, ply_format);
                 break;
 
             default:
-            case PLY_V_BYTE_IGNORE:
-                ply_get_value<unsigned char>(input, ply_format);
-                break;
-
+                throw std::runtime_error("Unhandled PLY vertex property");
             }
         }
 
@@ -520,28 +491,28 @@ load_ply_mesh (std::string const& filename)
     {
         for (std::size_t n = 0; n < f_format.size(); ++n)
         {
-            PlyFaceElement elem = (PlyFaceElement)f_format[n];
+            PLYFaceProperty elem = f_format[n];
             switch (elem)
             {
                 case PLY_F_VERTEX_INDICES:
                 {
                     /* Read the amount of vertex indices for the face. */
-                    unsigned char n_verts = ply_get_value<unsigned char>(input, ply_format);
+                    unsigned char n_verts = ply_read_value<unsigned char>(input, ply_format);
 
                     if (n_verts == 3)
                     {
                         /* Process 3-vertex faces. */
-                        faces.push_back(ply_get_value<unsigned int>(input, ply_format));
-                        faces.push_back(ply_get_value<unsigned int>(input, ply_format));
-                        faces.push_back(ply_get_value<unsigned int>(input, ply_format));
+                        faces.push_back(ply_read_value<unsigned int>(input, ply_format));
+                        faces.push_back(ply_read_value<unsigned int>(input, ply_format));
+                        faces.push_back(ply_read_value<unsigned int>(input, ply_format));
                     }
                     else if (n_verts == 4)
                     {
                         /* Process 4-vertex faces. */
-                        unsigned int a = ply_get_value<unsigned int>(input, ply_format);
-                        unsigned int b = ply_get_value<unsigned int>(input, ply_format);
-                        unsigned int c = ply_get_value<unsigned int>(input, ply_format);
-                        unsigned int d = ply_get_value<unsigned int>(input, ply_format);
+                        unsigned int a = ply_read_value<unsigned int>(input, ply_format);
+                        unsigned int b = ply_read_value<unsigned int>(input, ply_format);
+                        unsigned int c = ply_read_value<unsigned int>(input, ply_format);
+                        unsigned int d = ply_read_value<unsigned int>(input, ply_format);
 #if 1
                         /* Interpret as tetmesh. */
                         faces.push_back(a);
@@ -565,23 +536,23 @@ load_ply_mesh (std::string const& filename)
                             << static_cast<int>(n_verts)
                             << " vertices!" << std::endl;
                         for (int vid = 0; vid < n_verts; ++vid)
-                            ply_get_value<unsigned int>(input, ply_format);
+                            ply_read_value<unsigned int>(input, ply_format);
                     }
                     break;
                 }
 
-                case PLY_F_INT_IGNORE:
-                    ply_get_value<int>(input, ply_format);
+                case PLY_F_IGNORE_UINT32:
+                    ply_read_value<int>(input, ply_format);
                     break;
-
-                case PLY_F_FLOAT_IGNORE:
-                    ply_get_value<float>(input, ply_format);
+                case PLY_F_IGNORE_UINT8:
+                    ply_read_value<unsigned char>(input, ply_format);
+                    break;
+                case PLY_F_IGNORE_FLOAT:
+                    ply_read_value<float>(input, ply_format);
                     break;
 
                 default:
-                case PLY_F_BYTE_IGNORE:
-                    ply_get_value<unsigned char>(input, ply_format);
-                    break;
+                    throw std::runtime_error("Unhandled PLY face property");
             }
 
             eof = input.eof();
@@ -595,11 +566,11 @@ load_ply_mesh (std::string const& filename)
         Image<unsigned int> img(grid_cols, grid_rows, 1);
         for (std::size_t i = 0; i < num_grid; ++i)
         {
-            unsigned char indicator = ply_get_value<unsigned char>(input, ply_format);
+            unsigned char indicator = ply_read_value<unsigned char>(input, ply_format);
             if (!indicator)
                 img[i] = static_cast<unsigned int>(-1);
             else
-                img[i] = ply_get_value<unsigned int>(input, ply_format);
+                img[i] = ply_read_value<unsigned int>(input, ply_format);
 
             eof = input.eof();
         }
@@ -612,12 +583,12 @@ load_ply_mesh (std::string const& filename)
         std::cout << " triangle strips..." << std::flush;
         for (std::size_t i = 0; i < num_tristrips; ++i)
         {
-            unsigned int num = ply_get_value<unsigned int>(input, ply_format);
+            unsigned int num = ply_read_value<unsigned int>(input, ply_format);
             int last_id1 = -1, last_id2 = -1;
             bool inverted = false;
             for (unsigned int j = 0; j < num; ++j)
             {
-                int idx = ply_get_value<int>(input, ply_format);
+                int idx = ply_read_value<int>(input, ply_format);
                 if (idx < 0)
                 {
                     last_id1 = -1;
