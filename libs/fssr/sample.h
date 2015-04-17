@@ -6,6 +6,8 @@
 #ifndef FSSR_SAMPLE_HEADER
 #define FSSR_SAMPLE_HEADER
 
+#include <vector>
+
 #include "math/vector.h"
 #include "fssr/defines.h"
 
@@ -20,6 +22,9 @@ struct Sample
     float scale;
     float confidence;
 };
+
+/** Representation of a list of samples. */
+typedef std::vector<Sample> SampleList;
 
 /** Comparator that orders samples according to scale. */
 bool

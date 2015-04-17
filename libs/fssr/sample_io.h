@@ -3,25 +3,22 @@
  * Written by Simon Fuhrmann.
  */
 
-#ifndef FSSR_POINTSET_HEADER
-#define FSSR_POINTSET_HEADER
+#ifndef FSSR_SAMPLE_IO_HEADER
+#define FSSR_SAMPLE_IO_HEADER
 
 #include <string>
-#include <vector>
 
+#include "mve/mesh_io_ply.h"
 #include "fssr/defines.h"
 #include "fssr/sample.h"
 
 FSSR_NAMESPACE_BEGIN
 
 /**
- * Reads a point set from file and converts it to samples.
+ * Reads samples from a PLY file.
  */
-class PointSet
+class SampleIO
 {
-public:
-    typedef std::vector<Sample> SampleList;
-
 public:
     struct Options
     {
@@ -34,10 +31,25 @@ public:
 
 public:
     /** Default constructor setting options. */
-    PointSet (Options const& opts);
+    SampleIO (Options const& opts);
 
     /** Reads all input samples in memory. */
     void read_file (std::string const& filename, SampleList* samples);
+
+private:
+    struct SamplesState
+    {
+        unsigned int num_skipped_zero_normal;
+        unsigned int num_skipped_invalid_confidence;
+        unsigned int num_skipped_invalid_scale;
+        unsigned int num_skipped_large_scale;
+        unsigned int num_unnormalized_normals;
+    };
+
+private:
+    bool process_sample (Sample* sample, SamplesState* state);
+    void reset_samples_state (SamplesState* state);
+    void print_samples_state (SamplesState* state);
 
 private:
     Options opts;
@@ -46,7 +58,7 @@ private:
 /* ---------------------------------------------------------------- */
 
 inline
-PointSet::Options::Options (void)
+SampleIO::Options::Options (void)
     : scale_factor(1.0f)
     , min_scale(-1.0f)
     , max_scale(-1.0f)
@@ -54,11 +66,11 @@ PointSet::Options::Options (void)
 }
 
 inline
-PointSet::PointSet (Options const& opts)
+SampleIO::SampleIO (Options const& opts)
     : opts(opts)
 {
 }
 
 FSSR_NAMESPACE_END
 
-#endif /* FSSR_POINTSET_HEADER */
+#endif /* FSSR_SAMPLE_IO_HEADER */

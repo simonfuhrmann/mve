@@ -17,7 +17,7 @@
 #include "mve/mesh_io_ply.h"
 #include "util/timer.h"
 #include "util/arguments.h"
-#include "fssr/pointset.h"
+#include "fssr/sample_io.h"
 #include "fssr/iso_octree.h"
 #include "fssr/iso_surface.h"
 
@@ -50,7 +50,7 @@ main (int argc, char** argv)
     args.parse(argc, argv);
 
     /* Init default settings. */
-    fssr::PointSet::Options pset_opts;
+    fssr::SampleIO::Options pset_opts;
     AppOptions app_opts;
     app_opts.refine_octree = 0;
 
@@ -99,11 +99,11 @@ main (int argc, char** argv)
     for (std::size_t i = 0; i < app_opts.in_files.size(); ++i)
     {
         std::cout << "Loading: " << app_opts.in_files[i] << "..." << std::endl;
-        fssr::PointSet pset(pset_opts);
-        fssr::PointSet::SampleList samples;
+        fssr::SampleIO loader(pset_opts);
+        fssr::SampleList samples;
         try
         {
-            pset.read_file(app_opts.in_files[i], &samples);
+            loader.read_file(app_opts.in_files[i], &samples);
         }
         catch (std::exception& e)
         {

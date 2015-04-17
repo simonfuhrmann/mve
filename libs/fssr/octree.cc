@@ -145,7 +145,7 @@ Octree::Iterator::ascend (void) const
 /* -------------------------------------------------------------------- */
 
 void
-Octree::insert_samples (PointSet::SampleList const& samples)
+Octree::insert_samples (SampleList const& samples)
 {
     for (std::size_t i = 0; i < samples.size(); i++)
         this->insert_sample(samples[i]);
