@@ -121,16 +121,22 @@ save_png_file (ByteImage::ConstPtr image,
 #ifndef MVE_NO_JPEG_SUPPORT
 
 /**
- * Loads a JPG file.
- * JPGs have 1 or 3 channels, a gray-value channel or RGB channels.
- * Optional EXIF data may be loaded into string pointed to by 'exif'.
+ * Loads a JPEG file. The EXIF data blob may be loaded into 'exif'.
+ * JPEGs have 1 (gray values) or 3 (RGB) channels.
  * May throw util::FileException and util::Exception.
  */
 ByteImage::Ptr
 load_jpg_file (std::string const& filename, std::string* exif = NULL);
 
 /**
- * Saves image data to a JPG file. Supports 1 and 3 channel images.
+ * Loads JPEG file headers only.
+ * May throw util::FileException and util::Exception.
+ */
+ImageHeaders
+load_jpg_file_headers (std::string const& filename);
+
+/**
+ * Saves image data to a JPEG file. Supports 1 and 3 channel images.
  * The quality value is in range [0, 100] from worst to best quality.
  * May throw util::FileException and util::Exception.
  */
@@ -226,7 +232,8 @@ save_ppm_file (ByteImage::ConstPtr image, std::string const& filename);
 /* ------------------- Native MVE image support ------------------- */
 
 /**
- * Loads a native MVE image. Supports arbitrary type, size and depth.
+ * Loads a native MVE image. Supports arbitrary type, size and depth,
+ * with a primitive, uncompressed format.
  * May throw util::FileException.
  */
 ImageBase::Ptr
@@ -239,7 +246,8 @@ ImageHeaders
 load_mvei_file_headers (std::string const& filename);
 
 /**
- * Writes a native MVE image. Supports arbitrary type, size and depth.
+ * Writes a native MVE image. Supports arbitrary type, size and depth,
+ * with a primitive, uncompressed format.
  * May throw util::FileException.
  */
 void

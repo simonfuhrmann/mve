@@ -70,13 +70,13 @@ load_file (std::string const& filename)
         { return load_ppm_file(filename); }
         catch (util::FileException& e) { throw; }
         catch (util::Exception& e) {}
-
-        throw util::Exception("Cannot determine image format");
     }
     catch (util::FileException& e)
     {
         throw util::Exception("Error opening file: ", e.what());
     }
+
+    throw util::Exception("Cannot determine image format");
 }
 
 ImageHeaders
@@ -85,16 +85,26 @@ load_file_headers (std::string const& filename)
     try
     {
         try
-        { return load_mvei_file_headers(filename); }
+        { return load_png_file_headers(filename); }
         catch (util::FileException&) { throw; }
         catch (util::Exception&) {}
 
-        throw util::Exception("Cannot determine image format");
+        try
+        { return load_jpg_file_headers(filename); }
+        catch (util::FileException&) { throw; }
+        catch (util::Exception&) {}
+
+        try
+        { return load_mvei_file_headers(filename); }
+        catch (util::FileException&) { throw; }
+        catch (util::Exception&) {}
     }
     catch (util::FileException& e)
     {
         throw util::Exception("Error opening file: ", e.what());
     }
+
+    throw util::Exception("Cannot determine image format");
 }
 
 void
@@ -411,10 +421,9 @@ load_jpg_file (std::string const& filename, std::string* exif)
     if (fp == NULL)
         throw util::FileException(filename, std::strerror(errno));
 
-    struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
+    jpeg_decompress_struct cinfo;
+    jpeg_error_mgr jerr;
     ByteImage::Ptr image;
-
     try
     {
         /* Setup error handler and JPEG reader. */
@@ -448,16 +457,14 @@ load_jpg_file (std::string const& filename, std::string* exif)
             }
         }
 
+        if (cinfo.out_color_space != JCS_GRAYSCALE
+            && cinfo.out_color_space != JCS_RGB)
+            throw util::Exception("Invalid JPEG color space");
+
         /* Create image. */
-        int width = cinfo.image_width;
-        int height = cinfo.image_height;
-        int channels = 0;
-        switch (cinfo.out_color_space)
-        {
-            case JCS_GRAYSCALE: channels = 1; break;
-            case JCS_RGB: channels = 3; break;
-            default: throw util::Exception("Invalid JPEG color space");
-        }
+        int const width = cinfo.image_width;
+        int const height = cinfo.image_height;
+        int const channels = (cinfo.out_color_space == JCS_RGB ? 3 : 1);
         image = ByteImage::create(width, height, channels);
         ByteImage::ImageData& data = image->get_data();
 
@@ -476,7 +483,7 @@ load_jpg_file (std::string const& filename, std::string* exif)
         jpeg_destroy_decompress(&cinfo);
         std::fclose(fp);
     }
-    catch (std::exception& /*e*/)
+    catch (...)
     {
         jpeg_destroy_decompress(&cinfo);
         std::fclose(fp);
@@ -484,6 +491,49 @@ load_jpg_file (std::string const& filename, std::string* exif)
     }
 
     return image;
+}
+
+ImageHeaders
+load_jpg_file_headers (std::string const& filename)
+{
+    FILE* fp = std::fopen(filename.c_str(), "rb");
+    if (fp == NULL)
+        throw util::FileException(filename, std::strerror(errno));
+
+    jpeg_decompress_struct cinfo;
+    jpeg_error_mgr jerr;
+    ImageHeaders headers;
+    try
+    {
+        /* Setup error handler and JPEG reader. */
+        cinfo.err = jpeg_std_error(&jerr);
+        jerr.error_exit = &jpg_error_handler;
+        jerr.emit_message = &jpg_message_handler;
+        jpeg_create_decompress(&cinfo);
+        jpeg_stdio_src(&cinfo, fp);
+
+        /* Read JPEG header. */
+        int ret = jpeg_read_header(&cinfo, false);
+        if (ret != JPEG_HEADER_OK)
+            throw util::Exception("JPEG header not recognized");
+
+        if (cinfo.out_color_space != JCS_GRAYSCALE
+            && cinfo.out_color_space != JCS_RGB)
+            throw util::Exception("Invalid JPEG color space");
+
+        headers.width = cinfo.image_width;
+        headers.height = cinfo.image_height;
+        headers.channels = (cinfo.out_color_space == JCS_RGB ? 3 : 1);
+        headers.type = IMAGE_TYPE_UINT8;
+    }
+    catch (...)
+    {
+        jpeg_destroy_decompress(&cinfo);
+        std::fclose(fp);
+        throw;
+    }
+
+    return headers;
 }
 
 // http://download.blender.org/source/chest/blender_2.03_tree/jpeg/example.c

@@ -17,8 +17,8 @@ MVE_NAMESPACE_BEGIN
 
 /**
  * Identifiers for image types.
- * Do not change ordering or prepend new types. These numbers are stored
- * to files and changing them will break compatibility.
+ * WARNING: Do not change ordering or insert new types. These numbers
+ * are stored in files and changing them will break compatibility.
  */
 enum ImageType
 {

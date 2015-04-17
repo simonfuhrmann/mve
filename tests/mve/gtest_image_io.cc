@@ -98,7 +98,7 @@ namespace
 #ifndef MVE_NO_JPEG_SUPPORT
 TEST(ImageFileTest, JPEGSaveLoad)
 {
-    TempFile filename("jpegtest");
+    TempFile filename("jpegtest1");
     mve::ByteImage::Ptr img1, img2;
 
     img1 = make_byte_image(255, 256, 1);
@@ -111,12 +111,33 @@ TEST(ImageFileTest, JPEGSaveLoad)
     img2 = mve::image::load_jpg_file(filename);
     EXPECT_TRUE(compare_jpeg(img1, img2));
 }
-#endif
+
+TEST(ImageFileTest, JPEGLoadHeaders)
+{
+    TempFile filename("jpegtest2");
+    mve::ByteImage::Ptr img1 = make_byte_image(12, 15, 1);
+    mve::image::save_jpg_file(img1, filename, 90);
+    mve::image::ImageHeaders headers;
+    headers = mve::image::load_jpg_file_headers(filename);
+    EXPECT_EQ(img1->width(), headers.width);
+    EXPECT_EQ(img1->height(), headers.height);
+    EXPECT_EQ(img1->channels(), headers.channels);
+    EXPECT_EQ(img1->get_type(), headers.type);
+
+    img1 = make_byte_image(18, 15, 3);
+    mve::image::save_jpg_file(img1, filename, 90);
+    headers = mve::image::load_jpg_file_headers(filename);
+    EXPECT_EQ(img1->width(), headers.width);
+    EXPECT_EQ(img1->height(), headers.height);
+    EXPECT_EQ(img1->channels(), headers.channels);
+    EXPECT_EQ(img1->get_type(), headers.type);
+}
+#endif // MVE_NO_JPEG_SUPPORT
 
 #ifndef MVE_NO_PNG_SUPPORT
 TEST(ImageFileTest, PNGSaveLoad)
 {
-    TempFile filename("pngtest");
+    TempFile filename("pngtest1");
     mve::ByteImage::Ptr img1, img2;
 
     img1 = make_byte_image(256, 255, 1);
@@ -139,7 +160,28 @@ TEST(ImageFileTest, PNGSaveLoad)
     img2 = mve::image::load_png_file(filename);
     EXPECT_TRUE(compare_exact<uint8_t>(img1, img2));
 }
-#endif
+
+TEST(ImageFileTest, PNGLoadHeaders)
+{
+    TempFile filename("pngtest2");
+    mve::ByteImage::Ptr img1 = make_byte_image(17, 35, 1);
+    mve::image::save_png_file(img1, filename);
+    mve::image::ImageHeaders headers;
+    headers = mve::image::load_png_file_headers(filename);
+    EXPECT_EQ(img1->width(), headers.width);
+    EXPECT_EQ(img1->height(), headers.height);
+    EXPECT_EQ(img1->channels(), headers.channels);
+    EXPECT_EQ(img1->get_type(), headers.type);
+
+    img1 = make_byte_image(28, 15, 3);
+    mve::image::save_png_file(img1, filename);
+    headers = mve::image::load_png_file_headers(filename);
+    EXPECT_EQ(img1->width(), headers.width);
+    EXPECT_EQ(img1->height(), headers.height);
+    EXPECT_EQ(img1->channels(), headers.channels);
+    EXPECT_EQ(img1->get_type(), headers.type);
+}
+#endif //MVE_NO_PNG_SUPPORT
 
 TEST(ImageFileTest, PPMSaveLoad)
 {
@@ -276,4 +318,25 @@ TEST(ImageFileTest, MVEISaveLoadFloatImage)
     mve::image::save_mvei_file(img1, filename);
     img2 = mve::image::load_mvei_file(filename);
     EXPECT_TRUE(compare_exact<float>(img1, img2));
+}
+
+TEST(ImageFileTest, MVEILoadHeaders)
+{
+    TempFile filename("mveitestheaders");
+    mve::ByteImage::Ptr img1 = make_byte_image(11, 22, 6);
+    mve::image::save_mvei_file(img1, filename);
+    mve::image::ImageHeaders headers;
+    headers = mve::image::load_mvei_file_headers(filename);
+    EXPECT_EQ(img1->width(), headers.width);
+    EXPECT_EQ(img1->height(), headers.height);
+    EXPECT_EQ(img1->channels(), headers.channels);
+    EXPECT_EQ(img1->get_type(), headers.type);
+
+    img1 = make_byte_image(28, 15, 1);
+    mve::image::save_mvei_file(img1, filename);
+    headers = mve::image::load_mvei_file_headers(filename);
+    EXPECT_EQ(img1->width(), headers.width);
+    EXPECT_EQ(img1->height(), headers.height);
+    EXPECT_EQ(img1->channels(), headers.channels);
+    EXPECT_EQ(img1->get_type(), headers.type);
 }
