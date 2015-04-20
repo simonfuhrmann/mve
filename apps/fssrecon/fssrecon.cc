@@ -94,16 +94,19 @@ main (int argc, char** argv)
     }
 
     /* Load input point set and insert samples in the octree. */
-    util::WallTimer timer;
     fssr::IsoOctree octree;
     for (std::size_t i = 0; i < app_opts.in_files.size(); ++i)
     {
         std::cout << "Loading: " << app_opts.in_files[i] << "..." << std::endl;
-        fssr::SampleIO loader(pset_opts);
-        fssr::SampleList samples;
+        util::WallTimer timer;
+
         try
         {
-            loader.read_file(app_opts.in_files[i], &samples);
+            fssr::SampleIO loader(pset_opts);
+            loader.open_file(app_opts.in_files[i]);
+            fssr::Sample sample;
+            while (loader.next_sample(&sample))
+                octree.insert_sample(sample);
         }
         catch (std::exception& e)
         {
@@ -111,17 +114,15 @@ main (int argc, char** argv)
             return 1;
         }
 
-        std::cout << "Inserting samples into the octree..." << std::flush;
-        timer.reset();
-        octree.insert_samples(samples);
-        std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
+        std::cout << "Loading samples took "
+            << timer.get_elapsed() << "ms." << std::endl;
     }
 
-    /* Refine octree if requested. Each iteration adds one level voxels. */
+    /* Refine octree if requested. Each iteration adds one level. */
     if (app_opts.refine_octree > 0)
     {
-        timer.reset();
         std::cout << "Refining octree..." << std::flush;
+        util::WallTimer timer;
         for (int i = 0; i < app_opts.refine_octree; ++i)
             octree.refine_octree();
         std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
@@ -137,7 +138,7 @@ main (int argc, char** argv)
     mve::TriangleMesh::Ptr mesh;
     {
         std::cout << "Extracting isosurface..." << std::endl;
-        timer.reset();
+        util::WallTimer timer;
         fssr::IsoSurface iso_surface(&octree, octree.get_voxels());
         mesh = iso_surface.extract_mesh();
         std::cout << "  Done. Surface extraction took "
@@ -153,17 +154,17 @@ main (int argc, char** argv)
     }
 
     /* Surfaces between voxels with zero confidence are ghosts. */
-    std::cout << "Deleting zero confidence vertices..." << std::flush;
     {
-        timer.reset();
+        std::cout << "Deleting zero confidence vertices..." << std::flush;
+        util::WallTimer timer;
         std::size_t num_vertices = mesh->get_vertices().size();
         mve::TriangleMesh::DeleteList delete_verts(num_vertices, false);
         for (std::size_t i = 0; i < num_vertices; ++i)
             if (mesh->get_vertex_confidences()[i] == 0.0f)
                 delete_verts[i] = true;
         mesh->delete_vertices_fix_faces(delete_verts);
+        std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
     }
-    std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
 
     /* Check for color and delete if not existing. */
     mve::TriangleMesh::ColorList& colors = mesh->get_vertex_colors();
