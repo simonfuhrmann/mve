@@ -1,7 +1,6 @@
 #include <sstream>
 #include <iostream>
 #include <limits>
-#include <unistd.h>
 
 #if defined(_OPENMP)
 #   include <omp.h>
@@ -23,6 +22,7 @@ inline int omp_get_num_procs (void) { return 1; }
 #endif
 
 #include "util/file_system.h"
+#include "util/system.h"
 #include "mve/image.h"
 #include "mve/image_tools.h"
 #include "mve/bundle.h"
@@ -851,7 +851,7 @@ SfmControls::on_apply_to_scene (void)
                 win.setValue(num_views_saved);
                 while (QCoreApplication::hasPendingEvents())
                     QCoreApplication::processEvents();
-                ::sleep(1);
+                util::system::sleep_sec(1.0f);
             }
 
 #   pragma omp taskwait
