@@ -668,13 +668,13 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
     std::size_t face_amount = faces.size() / options.verts_per_simplex;
 
     bool write_vcolors = options.write_vertex_colors;
-    write_vcolors = write_vcolors && mesh->has_vertex_colors();
+    write_vcolors = write_vcolors && verts.size() == vcolors.size();
     bool write_vnormals = options.write_vertex_normals;
-    write_vnormals = write_vnormals && mesh->has_vertex_normals();
+    write_vnormals = write_vnormals && verts.size() == vnormals.size();
     bool write_vconfidences = options.write_vertex_confidences;
-    write_vconfidences = write_vconfidences && mesh->has_vertex_confidences();
+    write_vconfidences = write_vconfidences && verts.size() == conf.size();
     bool write_vvalues = options.write_vertex_values;
-    write_vvalues = write_vvalues && mesh->has_vertex_values();
+    write_vvalues = write_vvalues && verts.size() == vvalues.size();
     bool write_fcolors = options.write_face_colors;
     write_fcolors = write_fcolors && fcolors.size() == face_amount;
     bool write_fnormals = options.write_face_normals;
