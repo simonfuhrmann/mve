@@ -43,7 +43,7 @@ MATH_NAMESPACE_BEGIN
 template <typename T>
 void
 matrix_svd (T const* mat_a, int rows, int cols,
-    T* mat_u, T* vec_s, T* mat_v, T const& epsilon = 1e-12);
+    T* mat_u, T* vec_s, T* mat_v, T const& epsilon = T(1e-12));
 
 /**
  * SVD for compile-time fixed-size matrices. The implementation of this
@@ -53,7 +53,8 @@ matrix_svd (T const* mat_a, int rows, int cols,
 template <typename T, int M, int N>
 void
 matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
-    Matrix<T, N, N>* mat_s, Matrix<T, N, N>* mat_v, T const& epsilon = 1e-12);
+    Matrix<T, N, N>* mat_s, Matrix<T, N, N>* mat_v,
+    T const& epsilon = T(1e-12));
 
 /**
  * Computes the Moore–Penrose pseudoinverse of matrix A using the SVD.
@@ -64,7 +65,7 @@ matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
 template <typename T, int M, int N>
 void
 matrix_pseudo_inverse (Matrix<T, M, N> const& A,
-    Matrix<T, N, M>* result, T const& epsilon = 1e-12);
+    Matrix<T, N, M>* result, T const& epsilon = T(1e-12));
 
 MATH_NAMESPACE_END
 

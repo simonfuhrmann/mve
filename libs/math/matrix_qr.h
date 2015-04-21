@@ -25,7 +25,7 @@ MATH_NAMESPACE_BEGIN
 template <typename T>
 void
 matrix_qr (T const* mat_a, int rows, int cols,
-    T* mat_q, T* mat_r, T const& epsilon = 1e-12);
+    T* mat_q, T* mat_r, T const& epsilon = T(1e-12));
 
 /**
  * Matrix QR decomposition for compile-time fixed-size matrices. The
@@ -34,7 +34,7 @@ matrix_qr (T const* mat_a, int rows, int cols,
 template <typename T, int M, int N>
 void
 matrix_qr (Matrix<T, M, N> const& mat_a, Matrix<T, M, M>* mat_q,
-    Matrix<T, M, N>* mat_r, T const& epsilon = 1e-12);
+    Matrix<T, M, N>* mat_r, T const& epsilon = T(1e-12));
 
 MATH_NAMESPACE_END
 
