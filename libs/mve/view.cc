@@ -311,6 +311,12 @@ View::set_value (std::string const& key, std::string const& value)
 }
 
 void
+View::delete_value (std::string const& key)
+{
+    this->meta_data.data.erase(key);
+}
+
+void
 View::set_camera (CameraInfo const& camera)
 {
     this->meta_data.camera = camera;

@@ -4,11 +4,11 @@
 #include <gtest/gtest.h>
 
 #include "mve/image.h"
-#include "mve/view_io.h"
+#include "mve/view.h"
 
 TEST(ViewTest, AddSetHasRemoveTest)
 {
-    mve::ViewIO view;
+    mve::View view;
 
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 100, 1);
     EXPECT_FALSE(view.has_image("image"));
@@ -45,7 +45,7 @@ TEST(ViewTest, AddRemoveMemorySizeTest)
 {
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 100, 1);
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
-    mve::ViewIO view;
+    mve::View view;
     view.add_image(image, "image");
     EXPECT_EQ(100 * 100, view.get_byte_size());
     view.add_blob(blob, "blob");
@@ -60,7 +60,7 @@ TEST(ViewTest, IsDirtyTest)
 {
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 100, 1);
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
-    mve::ViewIO view1, view2, view3;
+    mve::View view1, view2, view3;
 
     EXPECT_FALSE(view1.is_dirty());
     view1.add_image(image, "image");
@@ -81,12 +81,12 @@ TEST(ViewTest, CacheCleanupTest)
 {
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 1, 1);
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
-    mve::ViewIO view;
+    mve::View view;
     view.add_image(image, "image");
     view.add_blob(blob, "blob");
 
-    mve::ViewIO::ImageProxy const* image_proxy = view.get_image_proxy("image");
-    mve::ViewIO::BlobProxy const* blob_proxy = view.get_blob_proxy("blob");
+    mve::View::ImageProxy const* image_proxy = view.get_image_proxy("image");
+    mve::View::BlobProxy const* blob_proxy = view.get_blob_proxy("blob");
 
     EXPECT_TRUE(image_proxy->image != NULL);
     EXPECT_TRUE(blob_proxy->blob != NULL);
@@ -103,7 +103,7 @@ TEST(ViewTest, CacheCleanupTest)
 
 TEST(ViewTest, KeyValueTest)
 {
-    mve::ViewIO view;
+    mve::View view;
     EXPECT_THROW(view.set_value("", ""), std::exception);
     EXPECT_THROW(view.set_value("key", ""), std::exception);
     EXPECT_NO_THROW(view.set_value("section.key", ""));
@@ -116,12 +116,14 @@ TEST(ViewTest, KeyValueTest)
 
     EXPECT_EQ(view.get_value("section.key2"), "");
     EXPECT_EQ(view.get_value("section.key"), "value");
+    view.delete_value("section.key");
+    EXPECT_EQ(view.get_value("section.key"), "");
 }
 
 TEST(ViewTest, GetByTypeTest)
 {
     mve::FloatImage::Ptr image = mve::FloatImage::create(10, 12, 1);
-    mve::ViewIO view;
+    mve::View view;
 
     EXPECT_TRUE(view.get_image_proxy("image") == NULL);
     EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_FLOAT) == NULL);
@@ -147,9 +149,9 @@ TEST(ViewTest, GetByTypeTest)
     EXPECT_TRUE(view.has_image("image"));
 }
 
-TEST(ViewTest, GetSetNameCamera)
+TEST(ViewTest, GetSetNameIdCamera)
 {
-    mve::ViewIO view;
+    mve::View view;
     EXPECT_EQ(view.get_name(), "");
     view.set_name("testname");
     EXPECT_EQ(view.get_name(), "testname");
