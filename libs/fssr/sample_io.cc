@@ -206,6 +206,10 @@ SampleIO::open_file (std::string const& filename)
         throw util::Exception("Unknown PLY file format");
     }
 
+    /* If the PLY does not contain vertices, ignore properties. */
+    if (this->stream.num_vertices == 0)
+        return;
+
     std::vector<bool> prop_table;
     for (std::size_t i = 0; i < this->stream.props.size(); ++i)
     {

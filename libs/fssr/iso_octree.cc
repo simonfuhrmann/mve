@@ -124,14 +124,16 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
         math::Vec3f const tpos = transform_position(voxel_pos, sample);
 
         /* Evaluate basis and weighting fucntion. */
-        double const value = fssr_basis(sample.scale, tpos);
-        double const weight = fssr_weight(sample.scale, tpos) * sample.confidence;
+        double const value = fssr_basis<double>(sample.scale, tpos);
+        double const weight = fssr_weight<double>(sample.scale, tpos)
+            * sample.confidence;
 
         /* Incrementally update. */
         total_ifn += value * weight;
         total_weight += weight;
 
-        double const color_weight = gaussian_normalized(sample.scale / 5.0f, tpos) * sample.confidence;
+        double const color_weight = gaussian_normalized<double>
+            (sample.scale / 5.0f, tpos) * sample.confidence;
         total_scale += sample.scale * color_weight;
         total_color += sample.color * color_weight;
         total_color_weight += color_weight;
