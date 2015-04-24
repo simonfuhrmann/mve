@@ -11,6 +11,28 @@
 
 FSSR_NAMESPACE_BEGIN
 
+void
+evaluate (math::Vec3f const& pos, Sample const& sample,
+    math::Vec4d* value, math::Vec4d* weight)
+{
+    math::Matrix3f rot, inv_rot;
+    rotation_from_normal(sample.normal, &rot);
+    inv_rot = rot.transposed();
+
+    math::Vec3f tpos = rot * (pos - sample.pos);
+    math::Vec4d v = fssr_basis_deriv<double>(sample.scale, tpos);
+    math::Vec4d w = fssr_weight_deriv<double>(sample.scale, tpos);
+
+    (*value)[0] = v[0];
+    (*value)[1] = inv_rot[0] * v[1] + inv_rot[1] * v[2] + inv_rot[2] * v[3];
+    (*value)[2] = inv_rot[3] * v[1] + inv_rot[4] * v[2] + inv_rot[5] * v[3];
+    (*value)[3] = inv_rot[6] * v[1] + inv_rot[7] * v[2] + inv_rot[8] * v[3];
+    (*weight)[0] = w[0];
+    (*weight)[1] = inv_rot[0] * w[1] + inv_rot[1] * w[2] + inv_rot[2] * w[3];
+    (*weight)[2] = inv_rot[3] * w[1] + inv_rot[4] * w[2] + inv_rot[5] * w[3];
+    (*weight)[3] = inv_rot[6] * w[1] + inv_rot[7] * w[2] + inv_rot[8] * w[3];
+}
+
 /*
  * Rotation from normal in 3D.
  * The rotation axis is determined using cross product between the reference

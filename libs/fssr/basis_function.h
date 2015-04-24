@@ -1,6 +1,10 @@
 /*
  * This file is part of the Floating Scale Surface Reconstruction software.
  * Written by Simon Fuhrmann.
+ *
+ * GNUplot basis functions:
+ * nw(r) = r < 0 ? 1.0 - 2.0/3.0 * r**2 - 8.0/27.0 * r**3 - 1.0/27.0 * r**4 : 1.0 - 2.0/3.0 * r**2 + 8.0/27.0 * r**3 - 1.0/27.0 * r**4
+ * ow(r) = r < 0 ? 1.0 + 2.0/3.0 * r + 1.0/9.0 * r**2 : 1 - 1.0/3.0 * r**2 + 2.0/27.0 * r**3
  */
 
 #ifndef FSSR_BASIS_FUNCTION_HEADER
@@ -11,7 +15,7 @@
 #include "fssr/defines.h"
 #include "fssr/sample.h"
 
-// Use new weighting function with continuous derivative
+/* Use new weighting function with continuous derivative. */
 #define FSSR_NEW_WEIGHT 0
 
 FSSR_NAMESPACE_BEGIN
@@ -71,6 +75,15 @@ math::Vector<T, 4>
 fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos);
 
 /* -------------------------- Helper functions --------------------------- */
+
+/**
+ * Rotates the given point in the LCS of the sample, wvaluates the basis
+ * and weighting functions and their derivatives, and rotates the derivatives
+ * back to the global coordinate system.
+ */
+void
+evaluate (math::Vec3f const& pos, Sample const& sample,
+    math::Vec4d* value, math::Vec4d* weight);
 
 /** Transforms 'pos' according to the samples position and normal. */
 math::Vec3f
@@ -134,6 +147,39 @@ fssr_basis_deriv (T const& scale, math::Vector<T, 3> const& pos)
 
 /* -------------------------------------------------------------------- */
 
+#if FSSR_NEW_WEIGHT
+
+template <typename T>
+T
+fssr_weight (T const& scale, math::Vector<T, 3> const& pos)
+{
+    T const square_radius = pos_tmp.square_norm() / MATH_POW2(scale);
+    return T(1) - T(2) / T(3) * square_radius
+        + T(8) / T(27) * std::pow(square_radius, T(1.5))
+        - T(1) / T(27) * MATH_POW2(square_radius);
+}
+
+template <typename T>
+math::Vector<T, 4>
+fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos)
+{
+    T const square_radius = pos.square_norm() / MATH_POW2(scale);
+    T const deriv_factor = -T(4) / T(3)
+        + T(48) / T(54) * std::sqrt(square_radius)
+        - T(4) / T(27) * square_radius;
+
+    math::Vector<T, 4> ret;
+    ret[0] = T(1) - T(2) / T(3) * square_radius
+        + T(8) / T(27) * std::pow(square_radius, T(1.5))
+        - T(1) / T(27) * MATH_POW2(square_radius);
+    ret[1] = pos[0] / scale * deriv_factor;
+    ret[2] = pos[1] / scale * deriv_factor;
+    ret[3] = pos[2] / scale * deriv_factor;
+    return ret;
+}
+
+#else
+
 template <typename T>
 T
 fssr_weight_x (T const& scale, math::Vector<T, 3> const& pos)
@@ -141,19 +187,11 @@ fssr_weight_x (T const& scale, math::Vector<T, 3> const& pos)
     T const x = pos[0] / scale;
     if (x > T(-3) && x < T(0))
     {
-#if FSSR_NEW_WEIGHT
-        // w(x) = (2/27 x^3 / s^3 - 1/3 x^2 / s^2 + 1)^2
-        T const a0 = T(1);
-        T const a2 = -T(1) / T(3);
-        T const a3 = T(2) / T(27);
-        return MATH_POW2(a0 + a2 * MATH_POW2(x) - a3 * MATH_POW3(x));
-#else
         // w(x) = 1/9 x^2 / s^2 + 2/3 x / s + 1
         T const a0 = T(1);
         T const a1 = T(2) / T(3);
         T const a2 = T(1) / T(9);
         return a0 + a1 * x + a2 * MATH_POW2(x);
-#endif
     }
     if (x >= T(0) && x < T(3))
     {
@@ -206,17 +244,10 @@ fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos)
     T deriv_x = T(0);
     if (x > T(-3) && x <= T(0))
     {
-#if FSSR_NEW_WEIGHT
-        // w'(x) = (12/27 x^2 / s^3 - 4/3 x / s^2) * weight_x
-        T const a1 = -T(4) / T(3);
-        T const a2 = T(12) / T(27);
-        deriv_x = (a1 * x + a2 * MATH_POW2(x)) * weight_x / scale;
-#else
         // w'(x) = 2/9 x / s^2 + 2/3 / s
         T const a0 = T(2) / T(3);
         T const a1 = T(2) / T(9);
         deriv_x = (a0 + a1 * x) / scale;
-#endif
     }
     else if (x > T(0) && x < T(3))
     {
@@ -250,6 +281,8 @@ fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos)
     return ret;
 }
 
+#endif
+
 /* -------------------------------------------------------------------- */
 
 inline math::Vec3f
@@ -262,7 +295,7 @@ transform_position (math::Vec3f const& pos, Sample const& sample)
 
 /* -------------------------------------------------------------------- */
 
-#if 0  /* Following is some dead but potentially still useful code. */
+#if 0  /* Following is dead but potentially still useful code. */
 /**
  * Implementation of a linear ramp signed distance function. Expects the
  * sample and the NON-TRANSFORMED voxel position. The SDF is computed
@@ -274,7 +307,6 @@ linear_ramp (Sample const& sample, math::Vector<T, 3> const& pos)
 {
     return (pos - sample.pos).dot(sample.normal);
 }
-
 
 /**
  * Radially symmetric weighting function in [-3, 3] from the MPU paper (3)
