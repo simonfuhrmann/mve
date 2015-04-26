@@ -58,8 +58,6 @@ public:
 
     /** Returns a view by ID or 0 on failure. */
     View::Ptr get_view_by_id (std::size_t id);
-    /** Returns an image by view ID and image name. */
-    //ImageBase::Ptr get_image (std::size_t view_id, std::string const& name);
 
     /** Saves bundle file if dirty as well as dirty embeddings. */
     void save_scene (void);

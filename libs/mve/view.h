@@ -198,6 +198,12 @@ public:
     bool has_image (std::string const& name,
         ImageType type = IMAGE_TYPE_UNKNOWN);
 
+    /** Returns an image of type IMAGE_TYPE_UINT8. */
+    ByteImage::Ptr get_byte_image (std::string const& name);
+
+    /** Returns an image of type IMAGE_TYPE_FLOAT. */
+    FloatImage::Ptr get_float_image (std::string const& name);
+
     /**
      * Adds a new image to the view.
      * If an image by that name already exists, an exception is raised.
@@ -254,6 +260,7 @@ public:
     void debug_print (void);
 
     /* ------------------ Convenience Functions ------------------- */
+
 
 public: // TODO: Make protected.
     /** Creates an uninitialized view. */
@@ -399,6 +406,18 @@ inline bool
 View::is_camera_valid (void) const
 {
     return this->meta_data.camera.flen > 0.0f;
+}
+
+inline ByteImage::Ptr
+View::get_byte_image (std::string const& name)
+{
+    return this->get_image(name, IMAGE_TYPE_UINT8);
+}
+
+inline FloatImage::Ptr
+View::get_float_image (std::string const& name)
+{
+    return this->get_image(name, IMAGE_TYPE_FLOAT);
 }
 
 MVE_NAMESPACE_END

@@ -149,6 +149,24 @@ TEST(ViewTest, GetByTypeTest)
     EXPECT_TRUE(view.has_image("image"));
 }
 
+TEST(ViewTest, GetTypeImageTest)
+{
+    mve::View view;
+
+    EXPECT_EQ(mve::FloatImage::Ptr(), view.get_float_image("image"));
+    EXPECT_EQ(mve::ByteImage::Ptr(), view.get_byte_image("image"));
+
+    mve::FloatImage::Ptr image = mve::FloatImage::create(10, 12, 1);
+    view.add_image(image, "image");
+    EXPECT_EQ(image, view.get_float_image("image"));
+    EXPECT_EQ(mve::ByteImage::Ptr(), view.get_byte_image("image"));
+
+    mve::ByteImage::Ptr image2 = mve::ByteImage::create(10, 12, 1);
+    view.add_image(image2, "image2");
+    EXPECT_EQ(image2, view.get_byte_image("image2"));
+    EXPECT_EQ(mve::FloatImage::Ptr(), view.get_float_image("image2"));
+}
+
 TEST(ViewTest, GetSetNameIdCamera)
 {
     mve::View view;
