@@ -46,8 +46,8 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
             continue;
 
         mve::View::Ptr view = views[i];
-        mve::ByteImage::Ptr image = view->get_image
-            (this->opts.image_embedding, mve::IMAGE_TYPE_UINT8);
+        mve::ByteImage::Ptr image = view->get_byte_image
+            (this->opts.image_embedding);
         if (image == NULL)
             continue;
 
