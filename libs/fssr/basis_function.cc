@@ -13,24 +13,28 @@ FSSR_NAMESPACE_BEGIN
 
 void
 evaluate (math::Vec3f const& pos, Sample const& sample,
-    math::Vec4d* value, math::Vec4d* weight)
+    double* value, double* weight,
+    math::Vector<double, 3>* value_deriv,
+    math::Vector<double, 3>* weight_deriv)
 {
-    math::Matrix3f rot, inv_rot;
+    /* Rotate voxel position into the sample's LCS. */
+    math::Matrix3f rot;
     rotation_from_normal(sample.normal, &rot);
-    inv_rot = rot.transposed();
-
     math::Vec3f tpos = rot * (pos - sample.pos);
-    math::Vec4d v = fssr_basis_deriv<double>(sample.scale, tpos);
-    math::Vec4d w = fssr_weight_deriv<double>(sample.scale, tpos);
 
-    (*value)[0] = v[0];
-    (*value)[1] = inv_rot[0] * v[1] + inv_rot[1] * v[2] + inv_rot[2] * v[3];
-    (*value)[2] = inv_rot[3] * v[1] + inv_rot[4] * v[2] + inv_rot[5] * v[3];
-    (*value)[3] = inv_rot[6] * v[1] + inv_rot[7] * v[2] + inv_rot[8] * v[3];
-    (*weight)[0] = w[0];
-    (*weight)[1] = inv_rot[0] * w[1] + inv_rot[1] * w[2] + inv_rot[2] * w[3];
-    (*weight)[2] = inv_rot[3] * w[1] + inv_rot[4] * w[2] + inv_rot[5] * w[3];
-    (*weight)[3] = inv_rot[6] * w[1] + inv_rot[7] * w[2] + inv_rot[8] * w[3];
+    /* Evaluate basis and weight functions. */
+    (*value) = fssr_basis<double>(sample.scale, tpos, value_deriv);
+    (*weight) = fssr_weight<double>(sample.scale, tpos, weight_deriv);
+
+    if (value_deriv == NULL && weight_deriv == NULL)
+        return;
+
+    /* Rotate derivative back to original coordinate system. */
+    math::Matrix3f irot = rot.transposed();
+    if (value_deriv != NULL)
+        *value_deriv = irot.mult(*value_deriv);
+    if (weight_deriv != NULL)
+        *weight_deriv = irot.mult(*weight_deriv);
 }
 
 /*

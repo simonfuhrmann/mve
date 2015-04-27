@@ -1,10 +1,6 @@
 /*
  * This file is part of the Floating Scale Surface Reconstruction software.
  * Written by Simon Fuhrmann.
- *
- * GNUplot basis functions:
- * nw(r) = r < 0 ? 1.0 - 2.0/3.0 * r**2 - 8.0/27.0 * r**3 - 1.0/27.0 * r**4 : 1.0 - 2.0/3.0 * r**2 + 8.0/27.0 * r**3 - 1.0/27.0 * r**4
- * ow(r) = r < 0 ? 1.0 + 2.0/3.0 * r + 1.0/9.0 * r**2 : 1 - 1.0/3.0 * r**2 + 2.0/27.0 * r**3
  */
 
 #ifndef FSSR_BASIS_FUNCTION_HEADER
@@ -15,7 +11,7 @@
 #include "fssr/defines.h"
 #include "fssr/sample.h"
 
-/* Use new weighting function with continuous derivative. */
+/* Use new weight function with continuous derivative. */
 #define FSSR_NEW_WEIGHT 0
 
 FSSR_NAMESPACE_BEGIN
@@ -35,55 +31,43 @@ gaussian_normalized (T const& sigma, math::Vector<T, 3> const& x);
 /* ---------------------- FSSR basis function --------------------- */
 
 /**
- * Evaluates the FSSR basis function which is a Gaussian derivative in the
- * direction of the normal and a regular Gaussian orthogonal to the normal.
- * Here, the normal direction is defined to be the positive x-axis, thus 'pos'
- * must be translated and rotated into the sample's LCS. The function
- * takes positive values in front and negative values behind the sample.
+ * Evaluates the FSSR basis function and directional derivatives (optional).
+ * The basis function is a Gaussian derivative in the direction of the normal
+ * and a regular Gaussian orthogonal to the normal. Here, the normal direction
+ * is defined to be the positive x-axis, thus 'pos' must be translated and
+ * rotated into the sample's LCS. The function takes positive values in front
+ * and negative values behind the sample.
  */
 template <typename T>
 T
-fssr_basis (T const& scale, math::Vector<T, 3> const& pos);
-
-/**
- * Evaluates the FSSR basis function and its directional derivatives.
- * Similar to fssr_basis(), it expects 'pos' to be in the sample's LCS.
- */
-template <typename T>
-math::Vector<T, 4>
-fssr_basis_deriv (T const& scale, math::Vector<T, 3> const& pos);
+fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
+    math::Vector<T, 3>* deriv = NULL);
 
 /* --------------------- FSSR weight function --------------------- */
 
 /**
- * Evaluates the FSSR basis function which is composed of polynomials
- * and second and third degree. The function is one in the center, falls
- * of quickly behind the surface (negative x) and less quickly in front of
- * the surface (positive x), and is radially symmetric in y and z direction.
+ * Evaluates the FSSR weight function and directional derivatives (optional).
+ * The weight function is composed of polynomials up to the forth degree.
+ * The function is one in the center, and falls of to zero at 3 * scale.
  * Similar to fssr_basis(), it expects 'pos' to be in the sample's LCS.
  */
 template <typename T>
 T
-fssr_weight (T const& scale, math::Vector<T, 3> const& pos);
-
-/**
- * Evaluates the FSSR weighting function and its directional derivatives.
- * Similar to fssr_basis(), it expects 'pos' to be in the sample's LCS.
- */
-template <typename T>
-math::Vector<T, 4>
-fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos);
+fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
+    math::Vector<T, 3>* deriv = NULL);
 
 /* -------------------------- Helper functions --------------------------- */
 
 /**
- * Rotates the given point in the LCS of the sample, wvaluates the basis
- * and weighting functions and their derivatives, and rotates the derivatives
+ * Rotates the given point in the LCS of the sample, evaluates the basis
+ * and weight functions and their derivatives, and rotates the derivatives
  * back to the global coordinate system.
  */
 void
 evaluate (math::Vec3f const& pos, Sample const& sample,
-    math::Vec4d* value, math::Vec4d* weight);
+    double* value, double* weight,
+    math::Vector<double, 3>* value_deriv,
+    math::Vector<double, 3>* weight_deriv);
 
 /** Transforms 'pos' according to the samples position and normal. */
 math::Vec3f
@@ -123,26 +107,22 @@ gaussian_normalized (T const& sigma, math::Vector<T, 3> const& x)
 
 template <typename T>
 inline T
-fssr_basis (T const& scale, math::Vector<T, 3> const& pos)
-{
-    return pos[0] * gaussian(scale, pos) / (MATH_POW4(scale) * 2.0 * MATH_PI);
-}
-
-template <typename T>
-inline math::Vector<T, 4>
-fssr_basis_deriv (T const& scale, math::Vector<T, 3> const& pos)
+fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
+    math::Vector<T, 3>* deriv)
 {
     double const gaussian_value = gaussian(scale, pos);
-    double const norm_value = T(2) * MATH_PI * MATH_POW4(scale);
-    double const norm_deriv = norm_value * T(2) * MATH_POW2(scale);
+    double const value_norm = T(2) * MATH_PI * MATH_POW4(scale);
 
-    math::Vector<T, 4> ret;
-    ret[0] = pos[0] * gaussian_value / norm_value;
-    ret[1] = (T(2) * MATH_POW2(scale) - T(2) * MATH_POW2(pos[0]))
-        * gaussian_value / norm_deriv;
-    ret[2] = (-T(2) * pos[0] * pos[1]) * gaussian_value / norm_deriv;
-    ret[3] = (-T(2) * pos[0] * pos[2]) * gaussian_value / norm_deriv;
-    return ret;
+    if (deriv != NULL)
+    {
+        double const deriv_norm = value_norm * T(2) * MATH_POW2(scale);
+        (*deriv)[0] = T(2) * (MATH_POW2(scale) - MATH_POW2(pos[0]))
+            * gaussian_value / deriv_norm;
+        (*deriv)[1] = (-T(2) * pos[0] * pos[1]) * gaussian_value / deriv_norm;
+        (*deriv)[2] = (-T(2) * pos[0] * pos[2]) * gaussian_value / deriv_norm;
+    }
+
+    return pos[0] * gaussian_value / value_norm;
 }
 
 /* -------------------------------------------------------------------- */
@@ -151,134 +131,116 @@ fssr_basis_deriv (T const& scale, math::Vector<T, 3> const& pos)
 
 template <typename T>
 T
-fssr_weight (T const& scale, math::Vector<T, 3> const& pos)
+fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
+    math::Vector<T, 3>* deriv = NULL)
 {
-    T const square_radius = pos_tmp.square_norm() / MATH_POW2(scale);
+    T const square_radius = pos.square_norm() / MATH_POW2(scale);
+    if (square_radius >= T(9))
+    {
+        if (deriv != NULL)
+            deriv->fill(T(0));
+        return T(0);
+    }
+
+    if (deriv != NULL)
+    {
+        T const deriv_factor = -T(4) / T(3)
+            + T(48) / T(54) * std::sqrt(square_radius)
+            - T(4) / T(27) * square_radius;
+
+        (*deriv)[0] = deriv_factor * pos[0] / scale;
+        (*deriv)[1] = deriv_factor * pos[1] / scale;
+        (*deriv)[2] = deriv_factor * pos[2] / scale;
+    }
+
+    /*
+     * w(r > 0) = 1.0 - 2.0/3.0 * r**2 + 8.0/27.0 * r**3 - 1.0/27.0 * r**4
+     * w(r < 0) = 1.0 - 2.0/3.0 * r**2 - 8.0/27.0 * r**3 - 1.0/27.0 * r**4
+     */
     return T(1) - T(2) / T(3) * square_radius
         + T(8) / T(27) * std::pow(square_radius, T(1.5))
         - T(1) / T(27) * MATH_POW2(square_radius);
-}
-
-template <typename T>
-math::Vector<T, 4>
-fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos)
-{
-    T const square_radius = pos.square_norm() / MATH_POW2(scale);
-    T const deriv_factor = -T(4) / T(3)
-        + T(48) / T(54) * std::sqrt(square_radius)
-        - T(4) / T(27) * square_radius;
-
-    math::Vector<T, 4> ret;
-    ret[0] = T(1) - T(2) / T(3) * square_radius
-        + T(8) / T(27) * std::pow(square_radius, T(1.5))
-        - T(1) / T(27) * MATH_POW2(square_radius);
-    ret[1] = pos[0] / scale * deriv_factor;
-    ret[2] = pos[1] / scale * deriv_factor;
-    ret[3] = pos[2] / scale * deriv_factor;
-    return ret;
 }
 
 #else
 
 template <typename T>
 T
-fssr_weight_x (T const& scale, math::Vector<T, 3> const& pos)
+fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
+    math::Vector<T, 3>* deriv = NULL)
 {
     T const x = pos[0] / scale;
+    T const y = pos[1] / scale;
+    T const z = pos[2] / scale;
+    T const square_radius = MATH_POW2(y) + MATH_POW2(z);
+
+    /*
+     * wx(x > 0) = 1.0 - 1.0/3.0 * r**2 + 2.0/27.0 * r**3
+     * wx(x < 0) = 1.0 + 2.0/3.0 * r + 1.0/9.0 * r**2
+     */
+    T weight_x = T(0);
     if (x > T(-3) && x < T(0))
     {
-        // w(x) = 1/9 x^2 / s^2 + 2/3 x / s + 1
-        T const a0 = T(1);
-        T const a1 = T(2) / T(3);
-        T const a2 = T(1) / T(9);
-        return a0 + a1 * x + a2 * MATH_POW2(x);
+        weight_x = T(1)
+            + T(2) / T(3) * x
+            + T(1) / T(9) * MATH_POW2(x);
     }
-    if (x >= T(0) && x < T(3))
+    else if (x >= T(0) && x < T(3))
     {
-        // 2/27 x^3 / s^3 - 1/3 x^2 / s^2 + 1
-        T const a0 = T(1);
-        T const a2 = -T(1) / T(3);
-        T const a3 = T(2) / T(27);
-        return a0 + a2 * MATH_POW2(x) + a3 * MATH_POW3(x);
-    }
-    return T(0);
-}
-
-template <typename T>
-T
-fssr_weight_yz (T const& scale, math::Vector<T, 3> const& pos)
-{
-    T const y = pos[1] / scale;
-    T const z = pos[2] / scale;
-    if (y * y + z * z < T(9))
-    {
-        // 2/27 r^3 / s^3 - 1/3 r^2 / s^2 + 1
-        T const a0 = T(1);
-        T const a2 = -T(1) / T(3);
-        T const a3 = T(2) / T(27);
-        return a0 + a2 * (MATH_POW2(y) + MATH_POW2(z))
-            + a3 * std::pow(MATH_POW2(y) + MATH_POW2(z), T(1.5));
-    }
-    return T(0);
-}
-
-template <typename T>
-T
-fssr_weight (T const& scale, math::Vector<T, 3> const& pos)
-{
-    T const weight_x = fssr_weight_x(scale, pos);
-    T const weight_yz = fssr_weight_yz(scale, pos);
-    return weight_x * weight_yz;
-}
-
-template <typename T>
-math::Vector<T, 4>
-fssr_weight_deriv (T const& scale, math::Vector<T, 3> const& pos)
-{
-    T const weight_x = fssr_weight_x(scale, pos);
-    T const weight_yz = fssr_weight_yz(scale, pos);
-    T const x = pos[0] / scale;
-    T const y = pos[1] / scale;
-    T const z = pos[2] / scale;
-
-    T deriv_x = T(0);
-    if (x > T(-3) && x <= T(0))
-    {
-        // w'(x) = 2/9 x / s^2 + 2/3 / s
-        T const a0 = T(2) / T(3);
-        T const a1 = T(2) / T(9);
-        deriv_x = (a0 + a1 * x) / scale;
-    }
-    else if (x > T(0) && x < T(3))
-    {
-        // w'(x) = 6/27 x^2 / s^3 - 2/3 x / s^2
-        T const a1 = -T(2) / T(3);
-        T const a2 = T(6) / T(27);
-        deriv_x = (a1 * x + a2 * MATH_POW2(x)) / scale;
+        weight_x = T(1)
+            - T(1) / T(3) * MATH_POW2(x)
+            + T(2) / T(27) * MATH_POW3(x);
     }
 
     /*
-     * w(y, z) = 2/27 (y^2 + z^2)^(3/2) / s^3 - 1/3 (y^2 + z^2) / s^2 + 1
-     * d/dy w'(y, z) = y/s * (12 / (54 s^2) * (y^2 + z^2)^(1/2) - 2 / (3s))
-     * d/dz w'(y, z) = z/s * (12 / (54 s^2) * (y^2 + z^2)^(1/2) - 2 / (3s))
+     * wyz(r) = 1.0 - 1.0/3.0 r**2 / s**2 + 2.0/27.0 r**3 / s**3
      */
-    T deriv_y = T(0);
-    T deriv_z = T(0);
-    if (y * y + z * z < T(9))
+    T weight_yz = T(0);
+    if (square_radius < T(9))
     {
-        T const factor = (T(12) / (T(54) * scale)
-            * std::sqrt(MATH_POW2(pos[1]) + MATH_POW2(pos[2]))
-            - T(2) / T(3)) / MATH_POW2(scale);
-        deriv_y = factor * pos[1];
-        deriv_z = factor * pos[2];
+        weight_yz = T(1)
+            - T(1) / T(3) * square_radius
+            + T(2) / T(27) * std::pow(square_radius, T(1.5));
     }
 
-    math::Vector<T, 4> ret;
-    ret[0] = weight_x * weight_yz;
-    ret[1] = deriv_x * weight_yz;
-    ret[2] = weight_x * deriv_y;
-    ret[3] = weight_x * deriv_z;
-    return ret;
+    if (deriv != NULL)
+    {
+        /*
+         * wx'(x < 0) = 2.0/9.0 * x / s^2 + 2.0/3.0 / s
+         * wx'(x > 0) = 6.0/27.0 * x^2 / s^3 - 2.0/3.0 * x / s^2
+         */
+        T deriv_x = T(0);
+        if (x > T(-3) && x <= T(0))
+        {
+            deriv_x = (T(2) / T(3) + T(2) / T(9) * x) / scale;
+        }
+        else if (x > T(0) && x < T(3))
+        {
+            deriv_x = (-T(2) / T(3) * x + T(6) / T(27) * MATH_POW2(x)) / scale;
+        }
+
+        /*
+         * w(y,z) = 2/27 (y^2 + z^2)^(3/2) / s^3 - 1/3 (y^2 + z^2) / s^2 + 1
+         * d/dy w'(y,z) = y/s * (12 / (54 s^2) * (y^2 + z^2)^(1/2) - 2 / (3s))
+         * d/dz w'(y,z) = z/s * (12 / (54 s^2) * (y^2 + z^2)^(1/2) - 2 / (3s))
+         */
+        T deriv_y = T(0);
+        T deriv_z = T(0);
+        if (square_radius < T(9))
+        {
+            T const factor = (T(12) / (T(54) * scale)
+                * std::sqrt(MATH_POW2(pos[1]) + MATH_POW2(pos[2]))
+                - T(2) / T(3)) / MATH_POW2(scale);
+            deriv_y = factor * pos[1];
+            deriv_z = factor * pos[2];
+        }
+
+        (*deriv)[0] = deriv_x * weight_yz;
+        (*deriv)[1] = deriv_y * weight_x;
+        (*deriv)[2] = deriv_z * weight_x;
+    }
+
+    return weight_x * weight_yz;
 }
 
 #endif

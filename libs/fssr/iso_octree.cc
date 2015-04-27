@@ -121,9 +121,8 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
         if (sample.scale > sample_max_scale)
             continue;
 
+        /* Evaluate basis and weight function. */
         math::Vec3f const tpos = transform_position(voxel_pos, sample);
-
-        /* Evaluate basis and weighting fucntion. */
         double const value = fssr_basis<double>(sample.scale, tpos);
         double const weight = fssr_weight<double>(sample.scale, tpos)
             * sample.confidence;
@@ -139,7 +138,7 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
         total_color_weight += color_weight;
     }
 
-    /* Store voxel in the map. */
+    /* Compute final voxel data. */
     VoxelData data;
     data.value = total_ifn / total_weight;
     data.conf = total_weight;
