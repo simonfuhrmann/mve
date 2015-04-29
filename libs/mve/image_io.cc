@@ -11,6 +11,10 @@
 #endif
 
 #ifndef MVE_NO_JPEG_SUPPORT
+/* Include windows.h before jpeglib.h to prevent INT32 typedef collision. */
+#   if defined(_WIN32)
+#       include <windows.h>
+#   endif
 #   include <jpeglib.h>
 #endif
 
