@@ -136,14 +136,12 @@ View::load_view_from_mve_file  (std::string const& filename)
     }
 
     /* Read embeddings and populate view. */
-    std::cout << "Embedding buffers: " << embedding_buffers.size() << std::endl;
     for (std::size_t i = 0; i < embedding_buffers.size(); ++i)
     {
         std::string line;
         std::getline(infile, line);
         if (infile.eof())
             throw util::Exception("Premature EOF while reading payload");
-        std::cout << "Processing: " << line << std::endl;
 
         util::Tokenizer tokens;
         tokens.split(line);
