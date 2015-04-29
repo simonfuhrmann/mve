@@ -84,15 +84,19 @@ load_file_headers (std::string const& filename)
 {
     try
     {
+#ifndef MVE_NO_PNG_SUPPORT
         try
         { return load_png_file_headers(filename); }
         catch (util::FileException&) { throw; }
         catch (util::Exception&) {}
+#endif
 
+#ifndef MVE_NO_JPEG_SUPPORT
         try
         { return load_jpg_file_headers(filename); }
         catch (util::FileException&) { throw; }
         catch (util::Exception&) {}
+#endif
 
         try
         { return load_mvei_file_headers(filename); }
