@@ -77,10 +77,11 @@ int
 get_scale_from_max_pixels (mve::Scene::Ptr scene,
     AppSettings const& app_settings, mvs::Settings const& mvs_settings)
 {
-    mve::View::ConstPtr view = scene->get_view_by_id(mvs_settings.refViewNr);
+    mve::View::Ptr view = scene->get_view_by_id(mvs_settings.refViewNr);
     if (view == NULL)
         return 0;
-    mve::MVEFileProxy const* proxy = view->get_proxy(mvs_settings.imageEmbedding);
+
+    mve::View::ImageProxy const* proxy = view->get_image_proxy(mvs_settings.imageEmbedding);
     if (proxy == NULL)
         return 0;
 
@@ -296,13 +297,13 @@ main (int argc, char** argv)
 
             std::string embedding_name = "depth-L"
                 + util::string::get(settings.scale);
-            if (!conf.force_recon && views[id]->has_embedding(embedding_name))
+            if (!conf.force_recon && views[id]->has_image(embedding_name))
                 continue;
 
             try
             {
                 reconstruct(scene, settings);
-                views[id]->save_mve_file();
+                views[id]->save_view();
             }
             catch (std::exception &err)
             {
