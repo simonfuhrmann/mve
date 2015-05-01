@@ -218,7 +218,7 @@ add_exif_to_view (mve::View::Ptr view, std::string const& exif)
 
     mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
     std::copy(exif.begin(), exif.end(), exif_image->begin());
-    view->add_data("exif", exif_image);
+    view->add_blob(exif_image, "exif");
 }
 
 /* ---------------------------------------------------------------- */
@@ -326,8 +326,8 @@ import_bundle_nvm (AppSettings const& conf)
         }
 
         if (conf.import_orig)
-            view->add_image("original", image);
-        view->add_image("thumbnail", create_thumbnail(image));
+            view->add_image(image, "original");
+        view->add_image(create_thumbnail(image), "thumbnail");
         add_exif_to_view(view, exif);
 
         int const maxdim = std::max(image->width(), image->height());
@@ -336,12 +336,12 @@ import_bundle_nvm (AppSettings const& conf)
         mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
             (image, mve_cam.flen, nvm_cam.radial_distortion);
         undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
-        view->add_image("undistorted", undist);
+        view->add_image(undist, "undistorted");
         view->set_camera(mve_cam);
 
 #pragma omp critical
         std::cout << "Writing MVE file: " << fname << "..." << std::endl;
-        view->save_mve_file_as(conf.views_path + fname);
+        view->save_view_as(util::fs::join_path(conf.views_path, fname));
     }
 
     /* Use MVE to write MVE bundle file. */
@@ -523,9 +523,9 @@ import_bundle_openmvg (AppSettings const& conf)
         view->set_id(i);
         view->set_name(remove_file_extension(image_dir[i].name));
         view->set_camera(cams[i]);
-        view->set_image("undistorted", undist);
-        view->set_image("thumbnail", create_thumbnail(undist));
-        view->save_mve_file_as(util::fs::join_path(conf.views_path, fname));
+        view->set_image(undist, "undistorted");
+        view->set_image(create_thumbnail(undist), "thumbnail");
+        view->save_view_as(util::fs::join_path(conf.views_path, fname));
     }
 
     /* Write bundle output file. */
@@ -564,7 +564,7 @@ import_bundle (AppSettings const& conf)
 
     /* Build some paths. */
     std::string bundle_fname;
-    std::string imagelist_file;
+    std::string imglist_file;
     std::string image_path;
     std::string undist_path;
     BundleFormat bundler_fmt = BUNDLE_FORMAT_UNKNOWN;
@@ -588,10 +588,10 @@ import_bundle (AppSettings const& conf)
     if (bundler_fmt == BUNDLE_FORMAT_UNKNOWN)
     {
         bundle_fname = "synth_" + util::string::get(conf.bundle_id) + ".out";
-        bundle_fname = conf.bundle_path + bundle_fname;
-        imagelist_file = conf.input_path + "/" PS_BUNDLE_LOG;
-        image_path = conf.input_path + "/" PS_IMAGE_DIR;
-        undist_path = conf.input_path + "/" PS_UNDIST_DIR;
+        bundle_fname = util::fs::join_path(conf.bundle_path, bundle_fname);
+        imglist_file = util::fs::join_path(conf.input_path, PS_BUNDLE_LOG);
+        image_path = util::fs::join_path(conf.input_path, PS_IMAGE_DIR);
+        undist_path = util::fs::join_path(conf.input_path, PS_UNDIST_DIR);
 
         if (util::fs::file_exists(bundle_fname.c_str()))
         {
@@ -613,9 +613,9 @@ import_bundle (AppSettings const& conf)
         else
             bundle_fname = "bundle.out";
 
-        bundle_fname = conf.bundle_path + bundle_fname;
-        imagelist_file = conf.input_path + "/" BUNDLER_FILE_LIST;
-        image_path = conf.input_path + "/" BUNDLER_IMAGE_DIR;
+        bundle_fname = util::fs::join_path(conf.bundle_path, bundle_fname);
+        imglist_file = util::fs::join_path(conf.input_path, BUNDLER_FILE_LIST);
+        image_path = util::fs::join_path(conf.input_path, BUNDLER_IMAGE_DIR);
 
         if (util::fs::file_exists(bundle_fname.c_str()))
         {
@@ -661,7 +661,7 @@ import_bundle (AppSettings const& conf)
          * image was not registered. The paths of original images is required
          * because Bundler does not compute the undistorted images.
          */
-        read_noah_imagelist(imagelist_file, orig_files);
+        read_noah_imagelist(imglist_file, orig_files);
         if (orig_files.empty())
         {
             std::cerr << "Error: Empty list of original images." << std::endl;
@@ -685,7 +685,8 @@ import_bundle (AppSettings const& conf)
 
     /* Save bundle file. */
     std::cout << "Saving bundle file..." << std::endl;
-    mve::save_photosynther_bundle(bundle, conf.output_path + "/synth_0.out");
+    mve::save_photosynther_bundle(bundle,
+        util::fs::join_path(conf.output_path, "synth_0.out"));
 
     /* Save MVE views. */
     int num_valid_cams = 0;
@@ -767,8 +768,9 @@ import_bundle (AppSettings const& conf)
         if (bundler_fmt == BUNDLE_FORMAT_NOAH_BUNDLER)
         {
             /* For Noah datasets, load original image and undistort it. */
-            std::string orig_filename = image_path + orig_files[i];
-            original = load_8bit_image(orig_filename, &exif);
+            std::string orig_fname
+                = util::fs::join_path(image_path, orig_files[i]);
+            original = load_8bit_image(orig_fname, &exif);
             thumb = create_thumbnail(original);
 
             /* Convert Bundler's focal length to MVE focal length. */
@@ -789,12 +791,14 @@ import_bundle (AppSettings const& conf)
              * New version: forStereo_xxxx_yyyy.png
              * Old version: undistorted_xxxx_yyyy.jpg
              */
-            std::string undist_new_filename = undist_path + "forStereo_"
+            std::string undist_new_filename
+                = util::fs::join_path(undist_path, "forStereo_"
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(num_valid_cams, 4) + ".png";
-            std::string undist_old_filename = undist_path + "undistorted_"
+                + util::string::get_filled(num_valid_cams, 4) + ".png");
+            std::string undist_old_filename
+                = util::fs::join_path(undist_path, "undistorted_"
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(num_valid_cams, 4) + ".jpg";
+                + util::string::get_filled(num_valid_cams, 4) + ".jpg");
 
             /* Try the newer file name and fall back if not existing. */
             if (util::fs::file_exists(undist_new_filename.c_str()))
@@ -808,18 +812,18 @@ import_bundle (AppSettings const& conf)
 
         /* Add images to view. */
         if (thumb != NULL)
-            view->add_image("thumbnail", thumb);
+            view->add_image(thumb, "thumbnail");
 
         if (undist != NULL)
         {
             undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
-            view->add_image("undistorted", undist);
+            view->add_image(undist, "undistorted");
         }
         else if (cam.flen != 0.0f && undist == NULL)
             std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
         if (original != NULL)
-            view->add_image("original", original);
+            view->add_image(original, "original");
         if (original == NULL && import_original)
             std::cerr << "Warning: Original image missing!" << std::endl;
 
@@ -827,7 +831,7 @@ import_bundle (AppSettings const& conf)
         add_exif_to_view(view, exif);
 
         /* Save MVE file. */
-        view->save_mve_file_as(conf.views_path + fname);
+        view->save_view_as(util::fs::join_path(conf.views_path, fname));
 
         if (cam.flen != 0.0f)
             num_valid_cams += 1;
@@ -852,7 +856,7 @@ find_max_scene_id (std::string const& view_path)
     catch (...) { return -1; }
 
     /* Load all MVE files and remember largest view ID. */
-    std::size_t max_view_id = 0;
+    int max_view_id = 0;
     for (std::size_t i = 0; i < dir.size(); ++i)
     {
         std::string ext4 = util::string::right(dir[i].name, 4);
@@ -871,7 +875,7 @@ find_max_scene_id (std::string const& view_path)
         max_view_id = std::max(max_view_id, view->get_id());
     }
 
-    return static_cast<int>(max_view_id);
+    return max_view_id;
 }
 
 /* ---------------------------------------------------------------- */
@@ -937,12 +941,12 @@ import_images (AppSettings const& conf)
         mve::View::Ptr view = mve::View::create();
         view->set_id(id_cnt);
         view->set_name(remove_file_extension(fname));
-        view->add_image("original", image);
+        view->add_image(image, "original");
 
         /* Add thumbnail for byte images. */
         mve::ByteImage::Ptr thumb = create_thumbnail(image);
         if (thumb != NULL)
-            view->add_image("thumbnail", thumb);
+            view->add_image(thumb, "thumbnail");
 
         /* Add EXIF data to view if available. */
         add_exif_to_view(view, exif);
@@ -950,7 +954,7 @@ import_images (AppSettings const& conf)
         /* Save view to disc. */
         fname = "view_" + util::string::get_filled(id_cnt, 4) + ".mve";
         std::cout << "Writing MVE file: " << fname << "..." << std::endl;
-        view->save_mve_file_as(conf.views_path + fname);
+        view->save_view_as(util::fs::join_path(conf.views_path, fname));
 
         /* Advance ID of successfully imported images. */
         id_cnt += 1;
@@ -1040,6 +1044,8 @@ main (int argc, char** argv)
         args.generate_helptext(std::cerr);
         return EXIT_FAILURE;
     }
+    conf.views_path = util::fs::join_path(conf.output_path, VIEWS_DIR);
+    conf.bundle_path = util::fs::join_path(conf.input_path, BUNDLE_PATH);
 
     if (conf.append_images && !conf.images_only)
     {
@@ -1047,10 +1053,6 @@ main (int argc, char** argv)
             << std::endl;
         return EXIT_FAILURE;
     }
-
-    /* Build some paths. */
-    conf.views_path = conf.output_path + "/" VIEWS_DIR;
-    conf.bundle_path = conf.input_path + "/" BUNDLE_PATH;
 
     /* Check if output dir exists. */
     bool output_path_exists = util::fs::dir_exists(conf.output_path.c_str());
