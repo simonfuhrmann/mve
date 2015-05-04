@@ -11,9 +11,6 @@
 #include "fssr/defines.h"
 #include "fssr/sample.h"
 
-/* Use new weight function with continuous derivative. */
-#define FSSR_NEW_WEIGHT 0
-
 FSSR_NAMESPACE_BEGIN
 
 /* ---------------------- Gaussian functions ---------------------- */
@@ -127,7 +124,7 @@ fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
 
 /* -------------------------------------------------------------------- */
 
-#if FSSR_NEW_WEIGHT
+#if FSSR_NEW_WEIGHT_FUNCTION
 
 template <typename T>
 T

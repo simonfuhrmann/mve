@@ -69,8 +69,8 @@ public:
 
 /**
  * Interpolates between two VoxelData objects for Marching Cubes.
- * The interpolation linearly interpolates value and color, and uses
- * the minimum of the confidence.
+ * The specified weights 'w1' and 'w2' are used for interpolation of value,
+ * scale and color. For the confidence, however, the minimum value is used.
  */
 VoxelData
 interpolate (VoxelData const& d1, float w1, VoxelData const& d2, float w2);
