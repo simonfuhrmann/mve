@@ -222,6 +222,38 @@ rename (char const* from, char const* to)
 
 /* ---------------------------------------------------------------- */
 
+void
+copy_file (char const* src, char const* dst)
+{
+    std::ifstream src_stream(src, std::ios::binary);
+    if (!src_stream.good())
+        throw util::FileException(src, std::strerror(errno));
+    std::ofstream dst_stream(dst, std::ios::binary);
+    if (!dst_stream.good())
+        throw util::FileException(dst, std::strerror(errno));
+
+    int const BUFFER_SIZE = 4096;
+    char buffer[BUFFER_SIZE];
+    while (!src_stream.eof())
+    {
+        src_stream.read(buffer, BUFFER_SIZE);
+        if (src_stream.bad())
+            throw util::FileException(src, std::strerror(errno));
+        dst_stream.write(buffer, src_stream.gcount());
+        if (!dst_stream.good())
+            throw util::FileException(dst, std::strerror(errno));
+    }
+
+    src_stream.close();
+    if (src_stream.bad())
+        throw util::FileException(src, std::strerror(errno));
+    dst_stream.close();
+    if (!dst_stream.good())
+        throw util::FileException(dst, std::strerror(errno));
+}
+
+/* ---------------------------------------------------------------- */
+
 std::string
 get_cwd_string (void)
 {

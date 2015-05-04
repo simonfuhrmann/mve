@@ -1,10 +1,13 @@
 #include <cmath>
 #include <iostream>
+#include <cstring>
+#include <cerrno>
 
 #include "util/string.h"
 #include "util/timer.h"
 #include "util/system.h"
 #include "util/endian.h"
+#include "util/file_system.h"
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "math/algo.h"
@@ -30,8 +33,26 @@ int main (int argc, char** argv)
     if (argc == 0)
         argv = 0;
 
-
 #if 1
+    // Test copy file
+    try
+    {
+        util::WallTimer timer;
+        util::fs::copy_file("/tmp/testfile1.jpg", "/tmp/testfile2.jpg");
+        std::cout << "Took " << timer.get_elapsed() << " ms." << std::endl;
+    }
+    catch (util::FileException& e)
+    {
+        std::cerr << e.filename << ": " << e.what() << std::endl;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+#endif
+
+
+#if 0
     // Timing test for image operations.
     util::WallTimer timer;
     for (int i = 0; i < 100; ++i) {

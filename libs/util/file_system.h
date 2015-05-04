@@ -53,6 +53,9 @@ bool unlink (char const* pathname);
 /** Renames the given file 'from' to new name 'to'. */
 bool rename (char const* from, char const* to);
 
+/** Copies a file from 'src' to 'dst', throws FileException on error. */
+void copy_file (char const* src, char const* dst);
+
 /*
  * ----------------------------- File IO  ----------------------------
  */
