@@ -78,7 +78,7 @@ main (int argc, char** argv)
     args.set_description(
         "Generates a pointset from the scene by projecting reconstructed "
         "depth values in the world coordinate system.");
-    args.add_option('d', "depthmap", true, "Name of depthmap to use [depth-L0]");
+    args.add_option('d', "depthmap", true, "Name of depth map to use [depth-L0]");
     args.add_option('i', "image", true, "Name of color image to use [undistorted]");
     args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
     args.add_option('s', "with-scale", false, "Write points with scale values (PLY only)");

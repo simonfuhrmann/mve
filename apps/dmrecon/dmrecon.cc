@@ -119,7 +119,8 @@ main (int argc, char** argv)
         "reconstructs given view IDs (given as string \"0-10\")");
     args.add_option('s', "scale", true,
         "reconstruction on given scale, 0 is original [0]");
-    args.add_option('\0', "max-pixels", true, "Limit master image size [disabled]");
+    args.add_option('\0', "max-pixels", true,
+        "Limit master image size [disabled]");
     args.add_option('f', "filter-width", true,
         "patch size for NCC based comparison [5]");
     args.add_option('\0', "nocolorscale", false,
@@ -140,7 +141,8 @@ main (int argc, char** argv)
         "Six comma separated values used as AABB [disabled]");
     args.add_option('\0', "progress", true,
         "progress output style: 'silent', 'simple' or 'fancy'");
-    args.add_option('\0', "force", false, "Reconstruct existing depthmaps");
+    args.add_option('\0', "force", false,
+        "Reconstruct and overwrite existing depthmaps");
     args.parse(argc, argv);
 
     AppSettings conf;
