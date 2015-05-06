@@ -75,9 +75,8 @@ you can use the 'scene2pset' tool, which is included in the MVE distribution.
 
     Usage: scene2pset [ OPTS ] SCENE_DIR MESH_OUT
 
-Make sure the parameters --depth and --image specify the correct depth map
-and corresponding image. Also enable normals, scale and confidence with the
-parameters --with-normals, --with-scale and --with-conf.
+Make sure to specify the parameter --fssr=N which selects the correct depth
+map and image at scale N, and includes normals, scale and confidences.
 
 
 Running FSSR
