@@ -252,7 +252,7 @@ matrix_bidiagonalize (T const* mat_a, int rows, int cols, T* mat_u,
     int const steps = (rows == cols) ? (cols - 1) : cols;
     for (int k = 0; k < steps; ++k)
     {
-        int const sub_length = cols - k + (rows == cols ? 0 : 1);
+        int const sub_length = rows - k;
         std::vector<T> buffer(sub_length // input_vec
             + sub_length // house_vec
             + sub_length * sub_length // house_mat
