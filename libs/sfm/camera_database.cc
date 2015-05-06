@@ -142,6 +142,7 @@ CameraDatabase::CameraDatabase (void)
     this->add("Canon", "Canon PowerShot Pro90 IS", 7.144f, 5.358f, 1856, 1392);
     this->add("Canon", "Canon PowerShot S1 IS", 5.312f, 3.984f, 2048, 1536);
     this->add("Canon", "Canon PowerShot S100", 7.44f, 5.58f, 4000, 3000);
+    this->add("Canon", "Canon PowerShot S110", 7.44f, 5.58f, 4000, 3000);
     this->add("Canon", "Canon DIGITAL IXUS", 5.312f, 3.984f, 1600, 1200);
     this->add("Canon", "Canon DIGITAL IXUS v", 5.312f, 3.984f, 1600, 1200);
     this->add("Canon", "Canon PowerShot S120", 7.44f, 5.58f, 4000, 3000);
