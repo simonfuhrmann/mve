@@ -22,16 +22,10 @@ UTIL_NAMESPACE_BEGIN
 /**
  * Implements the STL allocator interface for aligned memory allocation.
  */
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 struct AlignedAllocator
 {
 public:
-#ifdef _MSC_VER
-    typedef T_raw T __declspec(align(alignment));
-#else
-    typedef T_raw T __attribute__((aligned(alignment)));
-#endif
-
     typedef T value_type;
     typedef T *pointer;
     typedef T const *const_pointer;
@@ -67,23 +61,23 @@ public:
 
 /* ------------------------ Implementation ------------------------ */
 
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 inline
-AlignedAllocator<T_raw, alignment>::AlignedAllocator (void)
+AlignedAllocator<T, alignment>::AlignedAllocator (void)
 {
 }
 
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 template <class T_other, size_t alignment_other>
 inline
-AlignedAllocator<T_raw, alignment>::AlignedAllocator
+AlignedAllocator<T, alignment>::AlignedAllocator
     (AlignedAllocator<T_other, alignment_other> const& /*other*/)
 {
 }
 
-template <typename T_raw, size_t alignment>
-inline typename AlignedAllocator<T_raw, alignment>::pointer
-AlignedAllocator<T_raw, alignment>::allocate (size_type n)
+template <typename T, size_t alignment>
+inline typename AlignedAllocator<T, alignment>::pointer
+AlignedAllocator<T, alignment>::allocate (size_type n)
 {
     if (n > this->max_size())
       throw std::bad_alloc();
@@ -100,9 +94,9 @@ AlignedAllocator<T_raw, alignment>::allocate (size_type n)
     return p;
 }
 
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 inline void
-AlignedAllocator<T_raw, alignment>::deallocate(pointer p, size_type /*n*/)
+AlignedAllocator<T, alignment>::deallocate(pointer p, size_type /*n*/)
 {
 #ifdef _MSC_VER
     ::_aligned_free(p);
@@ -111,40 +105,40 @@ AlignedAllocator<T_raw, alignment>::deallocate(pointer p, size_type /*n*/)
 #endif
 }
 
-template <typename T_raw, size_t alignment>
-inline typename AlignedAllocator<T_raw, alignment>::size_type
-AlignedAllocator<T_raw, alignment>::max_size (void) const
+template <typename T, size_t alignment>
+inline typename AlignedAllocator<T, alignment>::size_type
+AlignedAllocator<T, alignment>::max_size (void) const
 {
     return std::numeric_limits<size_t>::max() / sizeof(T);
 }
 
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 inline void
-AlignedAllocator<T_raw, alignment>::construct (pointer p, const_reference other)
+AlignedAllocator<T, alignment>::construct (pointer p, const_reference other)
 {
     ::new((void*)p) T(other);
 }
 
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 inline void
-AlignedAllocator<T_raw, alignment>::destroy (pointer p)
+AlignedAllocator<T, alignment>::destroy (pointer p)
 {
     p->~T();
 }
 
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 template <class T_other, size_t alignment_other>
 inline bool
-AlignedAllocator<T_raw, alignment>::operator==
+AlignedAllocator<T, alignment>::operator==
     (AlignedAllocator<T_other, alignment_other> const&)
 {
     return true;
 }
 
-template <typename T_raw, size_t alignment>
+template <typename T, size_t alignment>
 template <class T_other, size_t alignment_other>
 inline bool
-AlignedAllocator<T_raw, alignment>::operator!=
+AlignedAllocator<T, alignment>::operator!=
     (AlignedAllocator<T_other, alignment_other> const&)
 {
     return false;
