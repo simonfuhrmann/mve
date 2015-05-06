@@ -35,8 +35,12 @@ Matching::compute (ViewportList const& viewports,
     }
 
 #pragma omp parallel for schedule(dynamic)
-    for (std::size_t i = 0; i < num_pairs; ++i)
-    {
+#ifdef _MSC_VER
+    for (int64_t i = 0; i < num_pairs; ++i)
+#else
+	for (std::size_t i = 0; i < num_pairs; ++i)
+#endif
+	{
 #pragma omp critical
         {
             num_done += 1;

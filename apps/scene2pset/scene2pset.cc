@@ -195,7 +195,7 @@ main (int argc, char** argv)
 #if !defined(_MSC_VER)
     for (std::size_t i = 0; i < views.size(); ++i)
 #else
-    for (int i = 0; i < views.size(); ++i)
+    for (int64_t i = 0; i < views.size(); ++i)
 #endif
 		{
         mve::View::Ptr view = views[i];

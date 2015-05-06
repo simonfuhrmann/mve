@@ -292,7 +292,7 @@ main (int argc, char** argv)
 #if !defined(_MSC_VER)
         for (std::size_t i = 0; i < conf.view_ids.size(); ++i)
 #else
-        for (int i = 0; i < conf.view_ids.size(); ++i)
+        for (int64_t i = 0; i < conf.view_ids.size(); ++i)
 #endif
         {
             std::size_t id = conf.view_ids[i];
