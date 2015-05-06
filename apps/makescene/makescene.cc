@@ -852,7 +852,11 @@ import_images (AppSettings const& conf)
     std::atomic_int id_cnt(max_scene_id + 1);
     std::atomic_int num_imported(0);
 #pragma omp parallel for ordered schedule(dynamic,1)
+#if !defined(_MSC_VER)
     for (std::size_t i = 0; i < dir.size(); ++i)
+#else
+    for (int64_t i = 0; i < dir.size(); ++i)
+#endif
     {
         if (dir[i].is_dir)
         {
