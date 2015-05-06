@@ -164,7 +164,7 @@ fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
 template <typename T>
 T
 fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
-    math::Vector<T, 3>* deriv = NULL)
+    math::Vector<T, 3>* deriv)
 {
     T const x = pos[0] / scale;
     T const y = pos[1] / scale;
