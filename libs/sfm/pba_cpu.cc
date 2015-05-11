@@ -2312,8 +2312,8 @@ SparseBundleCPU:: SparseBundleCPU()
 {
     __cpu_data_precision = sizeof(double);
     if(__num_cpu_cores == 0)	__num_cpu_cores = omp_get_num_procs();
-    if(__verbose_level)			std::cout  << "CPU " << (__cpu_data_precision == 4 ? "single" : "double")
-                                           << "-precisoin solver; " << __num_cpu_cores << " cores"
+    if(__verbose_level)			std::cout  << "PBA: CPU " << (__cpu_data_precision == 4 ? "single" : "double")
+                                           << "-precision solver; " << __num_cpu_cores << " cores"
 #ifdef CPUPBA_USE_AVX
                                            << " (AVX)"
 #endif
@@ -2626,7 +2626,7 @@ bool SparseBundleCPU::ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int
 
     if(error)
     {
-        std::cout << "Error: incorrect constraints\n";
+        std::cout << "PBA error: incorrect constraints\n";
         _focal_mask = NULL;
         return false;
     }
@@ -2959,7 +2959,8 @@ void SparseBundleCPU::NormalizeDataF()
                     _camera_data[i].radial *= radial_factor;
                 }
             }
-            if(__verbose_level > 2) std::cout << "Focal length normalized by " << __focal_scaling << '\n';
+            if(__verbose_level > 2)
+                std::cout << "Focal length normalized by " << __focal_scaling << '\n';
             __reset_initial_distortion = false;
         }
     }else
@@ -2984,7 +2985,7 @@ void SparseBundleCPU::NormalizeDataF()
 
     if(incompatible_radial_distortion)
     {
-        std::cout << "ERROR: incompatible radial distortion input; reset to 0;\n";
+        std::cout << "PBA error: incompatible radial distortion input; reset to 0;\n";
     }
 
 }
@@ -3073,14 +3074,15 @@ void SparseBundleCPU::NormalizeDataD()
             }
             for(int i = 0; i < _num_point; ++i)
             {
-               /////////////////////////////////
                 _point_data[4 *i + 0] *= __depth_scaling;
                 _point_data[4 *i + 1] *= __depth_scaling;
                 _point_data[4 *i + 2] *= __depth_scaling;
             }
         }
-        if(__num_point_behind > 0)    std::cout << "WARNING: " << __num_point_behind << " points are behind camras.\n";
-        if(__num_camera_modified > 0) std::cout << "WARNING: " << __num_camera_modified << " camera moved to avoid degeneracy.\n";
+        if(__num_point_behind > 0)
+            std::cout << "PBA warning: " << __num_point_behind << " points are behind cameras.\n";
+        if(__num_camera_modified > 0)
+            std::cout << "PBA warning: " << __num_camera_modified << " camera moved to avoid degeneracy.\n";
     }
 }
 

@@ -39,9 +39,8 @@ struct AppSettings
     std::string prebundle_file;
     std::string log_file;
     int max_image_size;
-    int initial_pair_1;
-    int initial_pair_2;
     bool lowres_matching;
+    bool normalize_scene;
     bool skip_sfm;
     bool always_full_ba;
     bool fixed_intrinsics;
@@ -49,6 +48,8 @@ struct AppSettings
     int video_matching;
     float track_error_thres_factor;
     float new_track_error_thres;
+    int initial_pair_1;
+    int initial_pair_2;
 };
 
 void
@@ -117,7 +118,7 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
 
     if (pairwise_matching->empty())
     {
-        std::cerr << "No matching image pairs. Exiting." << std::endl;
+        std::cerr << "Error: No matching image pairs. Exiting." << std::endl;
         std::exit(1);
     }
 }
@@ -338,8 +339,12 @@ sfm_reconstruct (AppSettings const& conf)
     log_message(conf, "SfM reconstruction took "
         + util::string::get(timer.get_elapsed()) + "ms.");
 
-    std::cout << "Normalizing scene..." << std::endl;
-    incremental.normalize_scene();
+    /* Normalize scene if requested. */
+    if (conf.normalize_scene)
+    {
+        std::cout << "Normalizing scene..." << std::endl;
+        incremental.normalize_scene();
+    }
 
     /* Save bundle file to scene. */
     std::cout << "Creating bundle data structure..." << std::endl;
@@ -355,12 +360,14 @@ sfm_reconstruct (AppSettings const& conf)
         std::exit(1);
     }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic,1)
     for (std::size_t i = 0; i < bundle_cams.size(); ++i)
     {
         mve::View::Ptr view = views[i];
         mve::CameraInfo const& cam = bundle_cams[i];
-        if (view == NULL || (view->get_camera().flen == 0.0f && cam.flen == 0.0f))
+        if (view == NULL)
+            continue;
+        if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
             continue;
 
         view->set_camera(cam);
@@ -433,6 +440,7 @@ main (int argc, char** argv)
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle file [prebundle.sfm]");
     args.add_option('\0', "log-file", true, "Log some timings to file []");
     args.add_option('\0', "no-prediction", false, "Disable matchability prediction");
+    args.add_option('\0', "normalize", false, "Normalize scene after reconstruction");
     args.add_option('\0', "skip-sfm", false, "Compute prebundle, skip SfM reconstruction");
     args.add_option('\0', "always-full-ba", false, "Run full bundle adjustment after every view");
     args.add_option('\0', "video-matching", true, "Only match to ARG previous frames [0]");
@@ -451,9 +459,8 @@ main (int argc, char** argv)
     conf.exif_name = "exif";
     conf.prebundle_file = "prebundle.sfm";
     conf.max_image_size = 6000000;
-    conf.initial_pair_1 = -1;
-    conf.initial_pair_2 = -1;
     conf.lowres_matching = true;
+    conf.normalize_scene = false;
     conf.skip_sfm = false;
     conf.always_full_ba = false;
     conf.video_matching = 0;
@@ -461,6 +468,8 @@ main (int argc, char** argv)
     conf.shared_intrinsics = false;
     conf.track_error_thres_factor = 25.0f;
     conf.new_track_error_thres = 10.0f;
+    conf.initial_pair_1 = -1;
+    conf.initial_pair_2 = -1;
 
     /* Read arguments. */
     for (util::ArgResult const* i = args.next_option();
@@ -480,6 +489,8 @@ main (int argc, char** argv)
             conf.log_file = i->arg;
         else if (i->opt->lopt == "no-prediction")
             conf.lowres_matching = false;
+        else if (i->opt->lopt == "normalize")
+            conf.normalize_scene = true;
         else if (i->opt->lopt == "skip-sfm")
             conf.skip_sfm = true;
         else if (i->opt->lopt == "always-full-ba")
