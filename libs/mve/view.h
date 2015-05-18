@@ -114,6 +114,9 @@ public:
         ByteImage::Ptr blob;
     };
 
+    typedef std::vector<ImageProxy> ImageProxies;
+    typedef std::vector<BlobProxy> BlobProxies;
+
 public:
     static View::Ptr create (void);
     static View::Ptr create (std::string const& path);
@@ -251,10 +254,10 @@ public:
     MetaData const& get_meta_data (void) const;
 
     /** Returns a list of all image proxies (images may not be initialized). */
-    std::vector<ImageProxy> const& get_images (void) const;
+    ImageProxies const& get_images (void) const;
 
     /** Returns a list of all BLOB proxies (blobs may not be initialized). */
-    std::vector<BlobProxy> const& get_blobs (void) const;
+    BlobProxies const& get_blobs (void) const;
 
     /** Prints a formatted list of internal data. */
     void debug_print (void);
@@ -291,8 +294,8 @@ private:
 protected:
     std::string path;
     MetaData meta_data;
-    std::vector<ImageProxy> images;
-    std::vector<BlobProxy> blobs;
+    ImageProxies images;
+    BlobProxies blobs;
 };
 
 /* ---------------------------------------------------------------- */
@@ -359,13 +362,13 @@ View::get_meta_data (void) const
     return this->meta_data;
 }
 
-inline std::vector<View::ImageProxy> const&
+inline View::ImageProxies const&
 View::get_images (void) const
 {
     return this->images;
 }
 
-inline std::vector<View::BlobProxy> const&
+inline View::BlobProxies const&
 View::get_blobs (void) const
 {
     return this->blobs;
