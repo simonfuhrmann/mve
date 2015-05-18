@@ -671,7 +671,7 @@ IsoSurface::get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex)
         this->octree->get_root_node_size());
     /* Interpolate voxel data and position. */
     double const w = (vd1->value - ISO_VALUE) / (vd1->value - vd2->value);
-    iso_vertex->data = fssr::interpolate(*vd1, (1.0 - w), *vd2,  w);
+    iso_vertex->data = interpolate_voxel(*vd1, (1.0 - w), *vd2,  w);
     iso_vertex->pos = pos1 * (1.0 - w) + pos2 * w;
 }
 

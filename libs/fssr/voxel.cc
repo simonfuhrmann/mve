@@ -67,7 +67,7 @@ VoxelIndex::get_offset_z (void) const
 /* ---------------------------------------------------------------- */
 
 VoxelData
-interpolate (VoxelData const& d1, float w1, VoxelData const& d2, float w2)
+interpolate_voxel (VoxelData const& d1, float w1, VoxelData const& d2, float w2)
 {
     VoxelData ret;
     ret.value = w1 * d1.value + w2 * d2.value;

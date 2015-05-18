@@ -73,7 +73,8 @@ public:
  * scale and color. For the confidence, however, the minimum value is used.
  */
 VoxelData
-interpolate (VoxelData const& d1, float w1, VoxelData const& d2, float w2);
+interpolate_voxel (VoxelData const& d1, float w1,
+    VoxelData const& d2, float w2);
 
 FSSR_NAMESPACE_END
 
