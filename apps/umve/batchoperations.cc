@@ -39,7 +39,7 @@ BatchOperations::BatchOperations (QWidget* parent)
 
 void
 BatchOperations::get_embedding_names (mve::ImageType type,
-    std::vector<std::string>* result)
+        std::vector<std::string>* result)
 {
     if (this->scene == NULL)
         return;
@@ -52,10 +52,26 @@ BatchOperations::get_embedding_names (mve::ImageType type,
     {
         if (views[i] == NULL)
             continue;
-        mve::View::Proxies const& p(views[i]->get_proxies());
-        for (std::size_t j = 0; j < p.size(); ++j)
-            if (type == mve::IMAGE_TYPE_UNKNOWN || type == p[j].get_type())
-                names.insert(p[j].name);
+
+        std::vector<mve::View::ImageProxy> const& image_proxies
+            = views[i]->get_images();
+        for (std::size_t j = 0; j < image_proxies.size(); ++j)
+        {
+            mve::View::ImageProxy const* proxy
+                = views[i]->get_image_proxy(image_proxies[j].name);
+            if (type == mve::IMAGE_TYPE_UNKNOWN || type == proxy->type)
+                names.insert(proxy->name);
+        }
+
+        std::vector<mve::View::BlobProxy> const& blob_proxies
+            = views[i]->get_blobs();
+        for (std::size_t j = 0; j < blob_proxies.size(); ++j)
+        {
+            mve::View::BlobProxy const* proxy
+                = views[i]->get_blob_proxy(blob_proxies[j].name);
+            if (type == mve::IMAGE_TYPE_UNKNOWN)
+                names.insert(proxy->name);
+        }
     }
 
     std::copy(names.begin(), names.end(), std::back_inserter(*result));
@@ -123,7 +139,9 @@ BatchDelete::on_batchdel_exec (void)
 
         for (StringSet::iterator j = names.begin(); j != names.end(); ++j)
         {
-            bool removed = view->remove_embedding(*j);
+            bool removed = false;
+            removed |= view->remove_image(*j);
+            removed |= view->remove_blob(*j);
             if (removed)
             {
                 deleted += 1;
@@ -440,26 +458,26 @@ BatchImportImages::on_import_images (void)
         mve::View::Ptr view = mve::View::create();
         view->set_id(view_id);
         view->set_name(view_name);
-        view->add_image(embedding_name, image);
+        view->add_image(image, embedding_name);
 
         if (add_thumbnail)
         {
             mve::ByteImage::Ptr thumb = mve::image::create_thumbnail<uint8_t>
                 (image, thumb_width, thumb_height);
-            view->add_image(thumbnail_name, thumb);
+            view->add_image(thumb, thumbnail_name);
         }
 
         if (save_exif && !exif_data.empty())
         {
             mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif_data.size(), 1, 1);
             std::copy(exif_data.begin(), exif_data.end(), exif_image->begin());
-            view->add_data(exif_name, exif_image);
+            view->add_blob(exif_image, exif_name);
         }
 
         /* Save view to disc. */
         std::string scene_path = this->scene->get_path();
         filename = "view_" + util::string::get_filled(view_id, 4) + ".mve";
-        view->save_mve_file_as(scene_path + "/views/" + filename);
+        view->save_view_as(scene_path + "/views/" + filename);
 
         /* Add view to scene. */
         if (views.size() <= view_id)
@@ -526,7 +544,7 @@ BatchGenerateThumbs::on_generate (void)
             continue;
 
         img = mve::image::create_thumbnail<uint8_t>(img, 50, 50);
-        view->set_image("thumbnail", img);
+        view->set_image(img, "thumbnail");
         num_generated += 1;
     }
 
