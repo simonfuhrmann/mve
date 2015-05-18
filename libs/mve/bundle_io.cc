@@ -67,10 +67,7 @@ load_nvm_bundle (std::string const& filename,
     std::string signature;
     in >> signature;
     if (signature != "NVM_V3")
-    {
-        in.close();
         throw util::Exception("Invalid NVM signature");
-    }
 
     /* Discard the rest of the line (e.g. fixed camera parameter info). */
     {
@@ -84,11 +81,8 @@ load_nvm_bundle (std::string const& filename,
     int num_views = 0;
     in >> num_views;
     if (num_views < 0 || num_views > 10000)
-    {
-        in.close();
         throw util::Exception("Invalid number of views: ",
             util::string::get(num_views));
-    }
 
     /* Create new bundle and prepare NVM specific output. */
     Bundle::Ptr bundle = Bundle::create();
@@ -135,10 +129,7 @@ load_nvm_bundle (std::string const& filename,
         in >> temp;
 
         if (in.eof())
-        {
-            in.close();
-            throw util::Exception("Premature end of NVM file");
-        }
+            throw util::Exception("Unexpected EOF in NVM file");
 
         bundle_cams.push_back(bundle_cam);
         nvm_cams.push_back(nvm_cam);
@@ -148,11 +139,8 @@ load_nvm_bundle (std::string const& filename,
     int num_features = 0;
     in >> num_features;
     if (num_features < 0 || num_features > 1000000000)
-    {
-        in.close();
         throw util::Exception("Invalid number of features: ",
             util::string::get(num_features));
-    }
 
     Bundle::Features& features = bundle->get_features();
     features.reserve(num_features);
@@ -184,11 +172,8 @@ load_nvm_bundle (std::string const& filename,
 
         /* There should be at least 2 cameras that see the point. */
         if (num_refs < 2 || num_refs > num_views)
-        {
-            in.close();
             throw util::Exception("Invalid number of feature refs: ",
                 util::string::get(num_refs));
-        }
 
         /* Read refs. */
         feature.refs.reserve(num_refs);
@@ -299,16 +284,10 @@ load_bundler_ps_intern (std::string const& filename, BundleFormat format)
             format = BUNDLE_FORMAT_ERROR;
     }
     else
-    {
-        in.close();
         throw util::Exception("Invalid parser format");
-    }
 
     if (format == BUNDLE_FORMAT_ERROR)
-    {
-        in.close();
         throw util::Exception("Invalid file signature: ", version_string);
-    }
 
     /* Read number of cameras and number of points. */
     int num_views = 0;
@@ -316,17 +295,11 @@ load_bundler_ps_intern (std::string const& filename, BundleFormat format)
     in >> num_views >> num_features;
 
     if (in.eof())
-    {
-        in.close();
-        throw util::Exception("Unexpected EOF");
-    }
+        throw util::Exception("Unexpected EOF in bundle file");
 
     if (num_views < 0 || num_views > 10000
         || num_features < 0 || num_features > 100000000)
-    {
-        in.close();
         throw util::Exception("Spurious amount of cameras or features");
-    }
 
     /* Print message according to deteected parser format. */
     std::cout << "Reading " << parser_string << " file ("
@@ -350,10 +323,9 @@ load_bundler_ps_intern (std::string const& filename, BundleFormat format)
     }
 
     if (in.eof())
-    {
-        in.close();
-        throw util::Exception("Unexpected EOF");
-    }
+        throw util::Exception("Unexpected EOF in bundle file");
+    if (in.fail())
+        throw util::Exception("Bundle file read error");
 
     /* Read all features. */
     Bundle::Features& features = bundle->get_features();
@@ -454,14 +426,23 @@ save_photosynther_bundle (Bundle::ConstPtr bundle, std::string const& filename)
     /* Write all cameras to bundle file. */
     for (std::size_t i = 0; i < cameras.size(); ++i)
     {
-        if (cameras[i].flen == 0.0f)
+        CameraInfo const& cam = cameras[i];
+
+        bool camera_valid = true;
+        for (int j = 0; camera_valid && j < 3; ++j)
+            if (MATH_ISINF(cam.trans[j]) || MATH_ISNAN(cam.trans[j]))
+                camera_valid = false;
+        for (int j = 0; camera_valid && j < 9; ++j)
+            if (MATH_ISINF(cam.rot[j]) || MATH_ISNAN(cam.rot[j]))
+                camera_valid = false;
+
+        if (cam.flen == 0.0f || !camera_valid)
         {
             for (int i = 0; i < 5 * 3; ++i)
                 out << "0" << (i % 3 == 2 ? "\n" : " ");
             continue;
         }
 
-        CameraInfo const& cam = cameras[i];
         out << cam.flen << " " << cam.dist[0] << " " << cam.dist[1] << "\n";
         out << cam.rot[0] << " " << cam.rot[1] << " " << cam.rot[2] << "\n";
         out << cam.rot[3] << " " << cam.rot[4] << " " << cam.rot[5] << "\n";
