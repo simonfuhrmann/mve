@@ -41,8 +41,10 @@ SelectedView::set_view (mve::View::Ptr view)
 
     this->view = view;
     this->viewname->setText(("View: " + view->get_name()).c_str());
-    this->viewinfo->setText((util::string::get
-        (view->num_embeddings()) + " embeddings").c_str());
+    std::stringstream ss;
+    ss << view->get_images().size() << " images, ";
+    ss << view->get_blobs().size() << " BLOBs.";
+    this->viewinfo->setText(ss.str().c_str());
 
     mve::ByteImage::Ptr img(view->get_byte_image("thumbnail"));
     if (img != NULL)
@@ -77,6 +79,8 @@ SelectedView::fill_embeddings (QComboBox& cb, mve::ImageType type,
 
     cb.clear();
     cb.addItem("<none>");
+
+
 
     /* Read embedding names from view and sort. */
     typedef std::pair<std::string, mve::ImageType> ProxyType;

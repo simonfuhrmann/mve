@@ -27,6 +27,9 @@ protected:
     virtual void setup_gui (void) = 0;
     void get_embedding_names (mve::ImageType type,
         std::vector<std::string>* result);
+    void get_image_names (mve::ImageType type,
+        std::vector<std::string>* result);
+    void get_blob_names (std::vector<std::string>* result);
 
 private slots:
     void on_close_clicked (void);

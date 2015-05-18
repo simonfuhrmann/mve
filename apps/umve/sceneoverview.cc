@@ -81,11 +81,17 @@ SceneOverview::on_scene_changed (mve::Scene::Ptr scene)
 
         /* Add view if at least one embedding matches filter. */
         bool matches = filter_str.empty();
-        mve::View::Proxies const& embeddings(view->get_proxies());
-        for (std::size_t j = 0; !matches && j < embeddings.size(); ++j)
+        mve::View::ImageProxies const& images = view->get_images();
+        for (std::size_t j = 0; !matches && j < images.size(); ++j)
         {
-            std::string const& ename = embeddings[j].name;
-            if (ename.find(filter_str) != std::string::npos)
+            if (images[j].name.find(filter_str) != std::string::npos)
+                matches = true;
+        }
+
+        mve::View::BlobProxies const& blobs = view->get_blobs();
+        for (std::size_t j = 0; !matches && j < blobs.size(); ++j)
+        {
+            if (blobs[j].name.find(filter_str) != std::string::npos)
                 matches = true;
         }
 
@@ -106,8 +112,8 @@ SceneOverview::add_view_to_layout (std::size_t id, mve::View::Ptr view)
     /* Find view name and number of embeddings. */
     std::string const& view_name = view->get_name();
     std::string view_id = util::string::get(view->get_id());
-    int view_num_images = view->count_image_embeddings();
-    int view_num_data = view->num_embeddings() - view_num_images;
+    int view_num_images = view->get_images().size();
+    int view_num_data = view->get_blobs().size();
     bool cam_valid = view->get_camera().flen != 0.0f;
     QString name = QString("ID %2: %1")
         .arg(QString(view_name.c_str()), QString(view_id.c_str()));
