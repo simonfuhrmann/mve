@@ -31,6 +31,9 @@ struct AppOptions
 int
 main (int argc, char** argv)
 {
+    std::cout << "Floating Scale Surface Reconstruction "
+        << "(built on " __DATE__ ", " __TIME__ ")." << std::endl;
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_exit_on_error(true);
