@@ -60,6 +60,10 @@ MATH_NAMESPACE_END
 #define MATH_POW2(x) ((x) * (x))
 #define MATH_POW3(x) (MATH_POW2(x) * (x))
 #define MATH_POW4(x) (MATH_POW2(MATH_POW2(x)))
+#define MATH_POW5(x) (MATH_POW4(x) * (x))
+#define MATH_POW6(x) (MATH_POW3(MATH_POW2(x)))
+#define MATH_POW7(x) (MATH_POW6(x) * (x))
+#define MATH_POW8(x) (MATH_POW4(MATH_POW2(x)))
 
 /* Angle conversions macros, DEG <-> RAD. */
 #define MATH_RAD2DEG(x) ((x) * (180.0 / MATH_PI))
