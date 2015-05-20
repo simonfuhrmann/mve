@@ -127,6 +127,9 @@ enum PLYVertexProperty
     PLY_V_FLOAT_X,
     PLY_V_FLOAT_Y,
     PLY_V_FLOAT_Z,
+    PLY_V_DOUBLE_X,
+    PLY_V_DOUBLE_Y,
+    PLY_V_DOUBLE_Z,
     PLY_V_FLOAT_NX,
     PLY_V_FLOAT_NY,
     PLY_V_FLOAT_NZ,
@@ -141,6 +144,7 @@ enum PLYVertexProperty
     PLY_V_FLOAT_CONF,
     PLY_V_FLOAT_VALUE,
     PLY_V_IGNORE_FLOAT,
+    PLY_V_IGNORE_DOUBLE,
     PLY_V_IGNORE_UINT32,
     PLY_V_IGNORE_UINT8
 };

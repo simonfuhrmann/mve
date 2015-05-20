@@ -78,6 +78,11 @@ template
 float
 ply_read_value<float> (std::istream& input, PLYFormat format);
 
+/* Explicit template instantiation for 'double'. */
+template
+double
+ply_read_value<double> (std::istream& input, PLYFormat format);
+
 /* Explicit template instantiation for 'unsigned int'. */
 template
 unsigned int
@@ -261,6 +266,19 @@ load_ply_mesh (std::string const& filename)
                     else
                         v_format.push_back(PLY_V_IGNORE_FLOAT);
                 }
+                /* List of accepted and handled attributes. */
+                else if (header[1] == "double" || header[1] == "float64")
+                {
+                    /* Accept float x,y,z values. */
+                    if (header[2] == "x")
+                        v_format.push_back(PLY_V_DOUBLE_X);
+                    else if (header[2] == "y")
+                        v_format.push_back(PLY_V_DOUBLE_Y);
+                    else if (header[2] == "z")
+                        v_format.push_back(PLY_V_DOUBLE_Z);
+                    else
+                        v_format.push_back(PLY_V_IGNORE_DOUBLE);
+                }
                 else if (header[1] == "uchar" || header[1] == "uint8")
                 {
                     /* Accept uchar r,g,b values. */
@@ -419,6 +437,13 @@ load_ply_mesh (std::string const& filename)
                     = ply_read_value<float>(input, ply_format);
                 break;
 
+            case PLY_V_DOUBLE_X:
+            case PLY_V_DOUBLE_Y:
+            case PLY_V_DOUBLE_Z:
+                vertex[(int)elem - PLY_V_DOUBLE_X]
+                    = ply_read_value<double>(input, ply_format);
+                break;
+
             case PLY_V_FLOAT_NX:
             case PLY_V_FLOAT_NY:
             case PLY_V_FLOAT_NZ:
@@ -457,6 +482,10 @@ load_ply_mesh (std::string const& filename)
 
             case PLY_V_IGNORE_FLOAT:
                 ply_read_value<float>(input, ply_format);
+                break;
+
+            case PLY_V_IGNORE_DOUBLE:
+                ply_read_value<double>(input, ply_format);
                 break;
 
             case PLY_V_IGNORE_UINT32:
