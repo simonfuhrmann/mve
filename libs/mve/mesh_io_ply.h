@@ -49,9 +49,9 @@ struct SavePLYOptions
         : format_binary(true)
         , write_vertex_colors(true)
         , write_vertex_normals(false)
-        , write_vertex_confidences(false)
-        , write_vertex_values(false)
-        , write_face_colors(false)
+        , write_vertex_confidences(true)
+        , write_vertex_values(true)
+        , write_face_colors(true)
         , write_face_normals(false)
         , verts_per_simplex(3) {}
 
