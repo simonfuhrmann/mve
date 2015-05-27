@@ -122,7 +122,7 @@ ExternalProject_Add(qt5
 	URL ${QT5_URL}
 	URL_HASH SHA256=a75a07b886b54023aeffb2daae552a65062c9c1f14d410acad0d47341c45539d
 	CONFIGURE_COMMAND
-		configure -debug-and-release -opensource -confirm-license -shared
+		cmd /C configure -debug-and-release -opensource -confirm-license -shared
 				   -no-audio-backend -mp -opengl desktop -skip qtactiveqt
 				   -skip qtconnectivity -skip qtdeclarative -skip qtdoc
 				   -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia
