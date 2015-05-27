@@ -4,10 +4,10 @@ project(3rdparty)
 include(ExternalProject)
 
 set(LIBJPEG_FILENAME "jpegsr9a.zip")
-set(LIBPNG_FILENAME "lpng1610.zip")
+set(LIBPNG_FILENAME "lpng1617.zip")
 set(ZLIB_FILENAME "zlib128.zip")
 set(LIBTIFF_FILENAME "tiff-4.0.3.zip")
-set(GLEW_FILENAME "glew-1.10.0.zip")
+set(GLEW_FILENAME "glew-1.12.0.zip")
 set(QT5_FILENAME "qt-everywhere-opensource-src-5.2.1.zip")
 set(GTEST_FILENAME "gtest-1.7.0.zip")
 
@@ -15,7 +15,7 @@ set(LIBJPEG_URL "http://www.ijg.org/files/${LIBJPEG_FILENAME}")
 set(LIBPNG_URL "http://download.sourceforge.net/libpng/${LIBPNG_FILENAME}")
 set(ZLIB_URL "http://download.sourceforge.net/libpng/${ZLIB_FILENAME}")
 set(LIBTIFF_URL "ftp://ftp.remotesensing.org/pub/libtiff/${LIBTIFF_FILENAME}")
-set(GLEW_URL "http://downloads.sourceforge.net/project/glew/glew/1.10.0/${GLEW_FILENAME}")
+set(GLEW_URL "http://downloads.sourceforge.net/project/glew/glew/1.12.0/${GLEW_FILENAME}")
 set(QT5_URL "http://download.qt-project.org/official_releases/qt/5.2/5.2.1/single/${QT5_FILENAME}")
 set(GTEST_URL "https://googletest.googlecode.com/files/${GTEST_FILENAME}")
 
@@ -67,7 +67,7 @@ ExternalProject_Add(libpng
 	DEPENDS zlib
 	PREFIX build/libpng
 	URL ${LIBPNG_URL}
-	URL_HASH SHA256=d6d884e22c2af9ccef21349acd88064e38f551fd79a4ef86255781d2e65ea202
+	URL_HASH SHA256=bc302e6150381c461f1a188e64bdcbb8b02b6bc945e6506ec75db2c5896e1591
 	CMAKE_ARGS
 		-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
 		-DCMAKE_INSTALL_PREFIX:STRING=${CMAKE_CURRENT_SOURCE_DIR}
@@ -107,11 +107,10 @@ endif()
 ExternalProject_Add(glew
 	PREFIX build/glew
 	URL ${GLEW_URL}
-	URL_HASH SHA256=43c6229d787673ac1d35ebaad52dfdcc78c8b55d13ee78d8e4d7e4a6cb72b050
+	URL_HASH SHA256=6f1083eb034efbc3b2017ef052d58f3e9bd70963ec2acd26b3d59231ee1633d4
 	CONFIGURE_COMMAND ""
 	PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${PATCHES_DIR}/glew.rc build
-	BUILD_COMMAND cd build/vc10
-		COMMAND devenv /upgrade glew.sln
+	BUILD_COMMAND cd build/vc12
 		COMMAND msbuild glew.sln /m /p:Configuration=${VS_CONFIG} /p:Platform=${VS_PLATFORM}
 	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/build/glew/src/glew/include ${CMAKE_CURRENT_SOURCE_DIR}/include
 		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/build/glew/src/glew/lib/${VS_CONFIG}/${VS_PLATFORM}/glew32s.lib ${CMAKE_CURRENT_SOURCE_DIR}/lib
