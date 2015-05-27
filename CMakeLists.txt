@@ -1,10 +1,10 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.1)
 
 project(MVE)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(WIN32 AND NOT UNIX)
-	set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty")
+	set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qt5/src/qt5/qtbase/lib/cmake/Qt5")
 	set(JPEG_NAMES "libjpeg")
     set(CPACK_GENERATOR "ZIP")
 else(WIN32 AND NOT UNIX)
