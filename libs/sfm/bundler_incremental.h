@@ -65,8 +65,8 @@ public:
     void find_next_views (std::vector<int>* next_views);
     /** Incrementally adds the given view to the bundle. */
     bool reconstruct_next_view (int view_id);
-    /** Triangulates tracks without 3D position and at least 2 views. */
-    void triangulate_new_tracks (void);
+    /** Triangulates tracks without 3D position and at least N views. */
+    void triangulate_new_tracks (int min_num_views);
     /** Deletes tracks with a large reprojection error. */
     void invalidate_large_error_tracks (void);
     /** Runs bundle adjustment on both, structure and motion. */

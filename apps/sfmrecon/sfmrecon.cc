@@ -264,7 +264,7 @@ sfm_reconstruct (AppSettings const& conf)
     incremental.initialize(&viewports, &tracks, &cameras);
 
     /* Reconstruct track positions for the intial pair. */
-    incremental.triangulate_new_tracks();
+    incremental.triangulate_new_tracks(2);
     incremental.invalidate_large_error_tracks();
 
     /* Run bundle adjustment. */
@@ -307,7 +307,7 @@ sfm_reconstruct (AppSettings const& conf)
 
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
-        incremental.triangulate_new_tracks();
+        incremental.triangulate_new_tracks(3);
         incremental.invalidate_large_error_tracks();
         num_cameras_reconstructed += 1;
 

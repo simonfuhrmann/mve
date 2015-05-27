@@ -173,7 +173,7 @@ Incremental::reconstruct_next_view (int view_id)
 /* ---------------------------------------------------------------- */
 
 void
-Incremental::triangulate_new_tracks (void)
+Incremental::triangulate_new_tracks (int min_num_views)
 {
     Triangulate::Options triangulate_opts;
     triangulate_opts.error_threshold = this->opts.new_track_error_threshold;
@@ -208,7 +208,7 @@ Incremental::triangulate_new_tracks (void)
         }
 
         /* Skip tracks with too few valid cameras. */
-        if (poses.size() < 2)
+        if ((int)poses.size() < min_num_views)
             continue;
 
         /* Accept track if triangulation was successful. */
