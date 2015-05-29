@@ -646,7 +646,7 @@ SfmControls::on_recon_init_pair (void)
         &this->tracks, &this->cameras);
 
     /* Reconstruct track positions with the intial pair. */
-    this->incremental_sfm.triangulate_new_tracks();
+    this->incremental_sfm.triangulate_new_tracks(2);
     this->incremental_sfm.invalidate_large_error_tracks();
 
     /* Run bundle adjustment. */
@@ -694,7 +694,7 @@ SfmControls::on_recon_next_camera (void)
     }
 
     this->incremental_sfm.bundle_adjustment_single_cam(next_view_id);
-    this->incremental_sfm.triangulate_new_tracks();
+    this->incremental_sfm.triangulate_new_tracks(3);
     this->incremental_sfm.invalidate_large_error_tracks();
     this->incremental_sfm.bundle_adjustment_full();
 
