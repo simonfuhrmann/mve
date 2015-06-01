@@ -14,7 +14,8 @@ FSSR_NAMESPACE_BEGIN
 bool
 edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
     std::size_t v1, std::size_t v2, math::Vec3f const& new_vert,
-    std::vector<std::size_t> const& afaces)
+    std::vector<std::size_t> const& afaces,
+    float acos_threshold = 0.95f)
 {
     mve::TriangleMesh::FaceList& faces = mesh->get_faces();
     mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
@@ -33,7 +34,7 @@ edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
         math::Vec3f n2 = (av1 - new_vert).cross(av2 - new_vert).normalized();
 
         float dot = n1.dot(n2);
-        if (MATH_ISNAN(dot) || dot < 0.95f)
+        if (MATH_ISNAN(dot) || dot < acos_threshold)
             return false;
     }
 
@@ -49,7 +50,7 @@ edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
         math::Vec3f n2 = (av1 - new_vert).cross(av2 - new_vert).normalized();
 
         float dot = n1.dot(n2);
-        if (MATH_ISNAN(dot) || dot < 0.95f)
+        if (MATH_ISNAN(dot) || dot < acos_threshold)
             return false;
     }
 
@@ -112,6 +113,9 @@ edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
 
 namespace
 {
+    /*
+     * Returns the ratio of the smallest by the second smallest edge length.
+     */
     float
     get_needle_ratio_squared (mve::TriangleMesh::VertexList const& verts,
         unsigned int const* vid,
@@ -142,7 +146,7 @@ namespace
 std::size_t
 clean_needles (mve::TriangleMesh::Ptr mesh, float needle_ratio_thres)
 {
-    float const needle_ratio_thres_squared = MATH_POW2(needle_ratio_thres);
+    float const square_needle_ratio_thres = MATH_POW2(needle_ratio_thres);
     mve::VertexInfoList vinfos(mesh);
 
     /*
@@ -163,8 +167,9 @@ clean_needles (mve::TriangleMesh::Ptr mesh, float needle_ratio_thres)
 
         /* Skip faces that are no needles. */
         std::size_t v1, v2;
-        if (get_needle_ratio_squared(verts, &faces[i], &v1, &v2)
-            > needle_ratio_thres_squared)
+        float const needle_ratio_squared
+            = get_needle_ratio_squared(verts, &faces[i], &v1, &v2);
+        if (needle_ratio_squared > square_needle_ratio_thres)
             continue;
 
         /* Skip edges between non-simple vertices. */
