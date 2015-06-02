@@ -118,9 +118,9 @@ main (int argc, char** argv)
     args.add_option('l', "list-view", true,
         "reconstructs given view IDs (given as string \"0-10\")");
     args.add_option('s', "scale", true,
-        "reconstruction on given scale, 0 is original [0]");
+        "reconstruction on given scale, 0 is original");
     args.add_option('\0', "max-pixels", true,
-        "Limit master image size [disabled]");
+        "Limit master image size [1500000]");
     args.add_option('f', "filter-width", true,
         "patch size for NCC based comparison [5]");
     args.add_option('\0', "nocolorscale", false,
@@ -152,7 +152,7 @@ main (int argc, char** argv)
     conf.master_id = -1;
     conf.force_recon = false;
     conf.write_ply = false;
-    conf.max_pixels = 0;
+    conf.max_pixels = 1500000;
 #ifdef _WIN32
     conf.progress_style = PROGRESS_SIMPLE;
 #else
@@ -167,7 +167,10 @@ main (int argc, char** argv)
         else if (arg->opt->lopt == "nocolorscale")
             conf.mvs.useColorScale = false;
         else if (arg->opt->lopt == "scale")
+        {
+            conf.max_pixels = 0;
             conf.mvs.scale = arg->get_arg<int>();
+        }
         else if (arg->opt->lopt == "filter-width")
             conf.mvs.filterWidth = arg->get_arg<unsigned int>();
         else if (arg->opt->lopt == "image")
