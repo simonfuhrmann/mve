@@ -129,25 +129,6 @@ main (int argc, char** argv)
         return 1;
     }
 
-    /* Delete requested attributes. */
-    if (conf.delete_scale)
-    {
-        std::cout << "Deleting scale values..." << std::endl;
-        mesh->get_vertex_values().clear();
-    }
-
-    if (conf.delete_conf)
-    {
-        std::cout << "Deleting confidence values..." << std::endl;
-        mesh->get_vertex_confidences().clear();
-    }
-
-    if (conf.delete_colors)
-    {
-        std::cout << "Deleting color values..." << std::endl;
-        mesh->get_vertex_colors().clear();
-    }
-
     /* Remove low-confidence geometry. */
     if (conf.conf_threshold > 0.0f)
     {
@@ -182,9 +163,9 @@ main (int argc, char** argv)
 
     /* Write output mesh. */
     mve::geom::SavePLYOptions ply_opts;
-    ply_opts.write_vertex_colors = true;
-    ply_opts.write_vertex_confidences = true;
-    ply_opts.write_vertex_values = true;
+    ply_opts.write_vertex_colors = !conf.delete_colors;
+    ply_opts.write_vertex_confidences = !conf.delete_conf;
+    ply_opts.write_vertex_values = !conf.delete_scale;
     std::cout << "Writing mesh: " << conf.out_mesh << std::endl;
     mve::geom::save_ply_mesh(mesh, conf.out_mesh, ply_opts);
 
