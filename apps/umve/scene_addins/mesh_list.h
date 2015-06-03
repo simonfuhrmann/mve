@@ -47,6 +47,12 @@ private slots:
     void on_delete_vertex_values (void);
     void on_colorize_values (void);
     void on_colorize_with_attrib (std::vector<float> const& attrib);
+    void on_colorize_mesh_red (void);
+    void on_colorize_mesh_green (void);
+    void on_colorize_mesh_blue (void);
+    void on_colorize_mesh_custom (void);
+    void on_colorize_mesh (float red, float green, float blue);
+
 
 public:
     QListWidgetItem* item;

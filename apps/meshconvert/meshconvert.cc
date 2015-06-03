@@ -63,8 +63,7 @@ main (int argc, char** argv)
 
     try
     {
-        if (conf.compute_normals
-            && util::string::right(conf.outfile, 4) == ".ply")
+        if (util::string::right(conf.outfile, 4) == ".ply")
         {
             mve::geom::SavePLYOptions opts;
             opts.write_vertex_normals = true;

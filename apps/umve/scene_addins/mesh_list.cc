@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QColorDialog>
 
 #include "util/file_system.h"
 #include "util/string.h"
@@ -118,6 +119,26 @@ QMeshContextMenu::build (void)
 
     if (rep->mesh->has_face_colors())
         this->addAction(tr("Face Colors: Yes"))->setEnabled(false);
+
+    this->addSeparator();
+
+    /* Colorize menu. */
+    {
+        QMenu* menu = this->addMenu(tr("Colorize"));
+        QAction* colorize_red = menu->addAction(tr("Red"));
+        QAction* colorize_green = menu->addAction(tr("Green"));
+        QAction* colorize_blue = menu->addAction(tr("Blue"));
+        QAction* colorize_custom = menu->addAction(tr("Custom..."));
+
+        this->connect(colorize_red, SIGNAL(triggered()),
+            this, SLOT(on_colorize_mesh_red()));
+        this->connect(colorize_green, SIGNAL(triggered()),
+            this, SLOT(on_colorize_mesh_green()));
+        this->connect(colorize_blue, SIGNAL(triggered()),
+            this, SLOT(on_colorize_mesh_blue()));
+        this->connect(colorize_custom, SIGNAL(triggered()),
+            this, SLOT(on_colorize_mesh_custom()));
+    }
 
     this->addSeparator();
     this->addAction(action_reload_mesh);
@@ -363,7 +384,7 @@ QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
     if (attrib.size() != this->rep->mesh->get_vertices().size())
         return;
 
-#if 0
+#if 1
     /* Find min/max value of the attribute. */
     float fmin = std::numeric_limits<float>::max();
     float fmax = -std::numeric_limits<float>::max();
@@ -372,6 +393,9 @@ QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
         fmin = std::min(fmin, attrib[i]);
         fmax = std::max(fmax, attrib[i]);
     }
+    std::cout << "Mapping min: " << fmin << ", max: " << fmax << std::endl;
+    //fmin = 0.0f;
+    //fmax = 0.00002f;
 #else
     /* Robust percentile min/max assignment. */
     std::vector<float> tmp = attrib;
@@ -388,9 +412,48 @@ QMeshContextMenu::on_colorize_with_attrib (std::vector<float> const& attrib)
         float value = (attrib[i] - fmin) / (fmax - fmin);
         value = std::max(0.0f, std::min(1.0f, value));
         //value = std::pow(value, 2.0f);
-        //vcolor[i] = math::Vec4f(1.0f, 1.0f - value, 1.0f - value, 1.0f);
-        vcolor[i] = math::Vec4f(1.0f, value, value, 1.0f);
+        vcolor[i] = math::Vec4f(1.0f, 1.0f - value, 1.0f - value, 1.0f);
     }
+
+    this->rep->renderer.reset();
+    emit this->parent->signal_redraw();
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+QMeshContextMenu::on_colorize_mesh_red (void)
+{
+    this->on_colorize_mesh(1.0f, 0.0f, 0.0f);
+}
+
+void
+QMeshContextMenu::on_colorize_mesh_green (void)
+{
+    this->on_colorize_mesh(0.0f, 1.0f, 0.0f);
+}
+
+void
+QMeshContextMenu::on_colorize_mesh_blue (void)
+{
+    this->on_colorize_mesh(0.0f, 0.0f, 1.0f);
+}
+
+void
+QMeshContextMenu::on_colorize_mesh_custom (void)
+{
+    QColor color = QColorDialog::getColor(Qt::white, this);
+    this->on_colorize_mesh(color.redF(), color.greenF(), color.blueF());
+}
+
+void
+QMeshContextMenu::on_colorize_mesh (float red, float green, float blue)
+{
+    mve::TriangleMesh::ColorList& vcolor
+        = this->rep->mesh->get_vertex_colors();
+    vcolor.clear();
+    vcolor.resize(this->rep->mesh->get_vertices().size(),
+        math::Vec4f(red, green, blue, 1.0f));
 
     this->rep->renderer.reset();
     emit this->parent->signal_redraw();
