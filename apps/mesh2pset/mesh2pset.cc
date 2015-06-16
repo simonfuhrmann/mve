@@ -158,7 +158,7 @@ main (int argc, char** argv)
         for (std::size_t i = 0; i < vinfo.size(); ++i)
         {
             mve::MeshVertexInfo const& vi = vinfo[i];
-            if (vi.verts.empty() || vi.verts.size() <= 3)
+            if (vi.verts.size() < 3)
             {
                 num_unreferenced += 1;
                 values[i] = 0.0f;
