@@ -11,10 +11,7 @@ CXXFLAGS += -pthread
 
 UNAME = $(shell uname)
 ifeq (${UNAME},Darwin)
-    # Use a recent OS X SDK - homebrew qt5 needs it.
     OPENMP = 
-    CXXFLAGS += -mmacosx-version-min=10.7
-    LDFLAGS += -mmacosx-version-min=10.7
 endif
 
 COMPILE.cc = ${CXX} ${CXXFLAGS} ${CPPFLAGS} -c

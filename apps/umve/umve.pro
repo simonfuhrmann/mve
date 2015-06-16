@@ -22,7 +22,7 @@ RCC_DIR = build
 
 # Options specific to OS X.
 macx {
-    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
     CONFIG -= app_bundle
     QMAKE_LFLAGS += -L/usr/local/lib
     QMAKE_LFLAGS -= -fopenmp
