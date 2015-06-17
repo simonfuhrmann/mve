@@ -70,7 +70,7 @@ SampleIO::open_file (std::string const& filename)
     this->reset_stream_state();
     this->reset_samples_state(&this->samples);
     this->stream.filename = filename;
-    this->stream.stream.open(filename.c_str());
+    this->stream.stream.open(filename.c_str(), std::ios::binary);
     if (!this->stream.stream.good())
         throw util::FileException(filename, std::strerror(errno));
 
