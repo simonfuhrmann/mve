@@ -129,9 +129,7 @@ public:
     /** Initializes the view from a deprecated .mve file. */
     void load_view_from_mve_file (std::string const& filename);
 
-    /**
-     * Reloads the view. This will discard all unsaved changes.
-     */
+    /** Reloads the view. This will discard all unsaved changes. */
     void reload_view (void);
 
     /** Writes the view to an MVE directory. */
@@ -208,16 +206,17 @@ public:
     FloatImage::Ptr get_float_image (std::string const& name);
 
     /**
-     * Adds a new image to the view.
-     * If an image by that name already exists, an exception is raised.
-     */
-    void add_image (ImageBase::Ptr image, std::string const& name);
-
-    /**
      * Sets an image to the view and marks it dirty.
      * If an image by that name already exists, it is overwritten.
      */
     void set_image (ImageBase::Ptr image, std::string const& name);
+
+    /**
+     * Sets an image reference. The image will be loaded on first access.
+     * When saving a view, the reference will be copied into the view and
+     * not converted to a lossless format.
+     */
+    void set_image_ref (std::string const& filename, std::string name);
 
     /** Returns true if an image by that name has been removed. */
     bool remove_image (std::string const& name);
@@ -232,12 +231,6 @@ public:
 
     /** Returns true if a BLOB by that name exist. */
     bool has_blob (std::string const& name);
-
-    /**
-     * Adds a new BLOB to the view.
-     * If a BLOB by that name already exists, an exception is raised.
-     */
-    void add_blob (ByteImage::Ptr blob, std::string const& name);
 
     /**
      * Sets a BLOB to the view and marks it dirty.

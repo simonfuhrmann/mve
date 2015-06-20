@@ -11,7 +11,26 @@ int
 main (int argc, char** argv)
 {
 
-#if 1
+#if 1 // test copy view
+    mve::View view;
+    view.load_view("/tmp/testview.mve");
+    view.save_view_as("/tmp/testview-copy.mve");
+#endif
+
+#if 0 // test image references
+    mve::View view;
+    view.set_image_ref("/tmp/tree.jpg", "image");
+    view.debug_print();
+    view.save_view_as("/tmp/testview2.mve");
+    view.debug_print();
+
+    //mve::ByteImage::Ptr image = view.get_image("image");
+    //view.debug_print();
+    //mve::image::save_file(image, "/tmp/view_export.png");
+
+#endif
+
+#if 0 // create view from MVE file
     std::string fname = "/data/dev/phd/datasets/mve_persil_maus/views/view_0000.mve";
     mve::View view;
     view.load_view_from_mve_file(fname);

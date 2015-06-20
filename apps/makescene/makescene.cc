@@ -326,8 +326,8 @@ import_bundle_nvm (AppSettings const& conf)
         }
 
         if (conf.import_orig)
-            view->add_image(image, "original");
-        view->add_image(create_thumbnail(image), "thumbnail");
+            view->set_image(image, "original");
+        view->set_image(create_thumbnail(image), "thumbnail");
         add_exif_to_view(view, exif);
 
         int const maxdim = std::max(image->width(), image->height());
@@ -336,7 +336,7 @@ import_bundle_nvm (AppSettings const& conf)
         mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
             (image, mve_cam.flen, nvm_cam.radial_distortion);
         undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
-        view->add_image(undist, "undistorted");
+        view->set_image(undist, "undistorted");
         view->set_camera(mve_cam);
 
 #pragma omp critical
@@ -812,18 +812,18 @@ import_bundle (AppSettings const& conf)
 
         /* Add images to view. */
         if (thumb != NULL)
-            view->add_image(thumb, "thumbnail");
+            view->set_image(thumb, "thumbnail");
 
         if (undist != NULL)
         {
             undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
-            view->add_image(undist, "undistorted");
+            view->set_image(undist, "undistorted");
         }
         else if (cam.flen != 0.0f && undist == NULL)
             std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
         if (original != NULL)
-            view->add_image(original, "original");
+            view->set_image(original, "original");
         if (original == NULL && import_original)
             std::cerr << "Warning: Original image missing!" << std::endl;
 
@@ -941,12 +941,12 @@ import_images (AppSettings const& conf)
         mve::View::Ptr view = mve::View::create();
         view->set_id(id_cnt);
         view->set_name(remove_file_extension(fname));
-        view->add_image(image, "original");
+        view->set_image(image, "original");
 
         /* Add thumbnail for byte images. */
         mve::ByteImage::Ptr thumb = create_thumbnail(image);
         if (thumb != NULL)
-            view->add_image(thumb, "thumbnail");
+            view->set_image(thumb, "thumbnail");
 
         /* Add EXIF data to view if available. */
         add_exif_to_view(view, exif);

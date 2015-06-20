@@ -458,13 +458,13 @@ BatchImportImages::on_import_images (void)
         mve::View::Ptr view = mve::View::create();
         view->set_id(view_id);
         view->set_name(view_name);
-        view->add_image(image, embedding_name);
+        view->set_image(image, embedding_name);
 
         if (add_thumbnail)
         {
             mve::ByteImage::Ptr thumb = mve::image::create_thumbnail<uint8_t>
                 (image, thumb_width, thumb_height);
-            view->add_image(thumb, thumbnail_name);
+            view->set_image(thumb, thumbnail_name);
         }
 
         if (save_exif && !exif_data.empty())

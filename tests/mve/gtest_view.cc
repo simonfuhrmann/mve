@@ -13,9 +13,7 @@ TEST(ViewTest, AddSetHasRemoveTest)
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 100, 1);
     EXPECT_FALSE(view.has_image("image"));
     EXPECT_EQ(0, view.get_images().size());
-    EXPECT_NO_THROW(view.add_image(image, "image"));
-    EXPECT_EQ(1, view.get_images().size());
-    EXPECT_THROW(view.add_image(image, "image"), std::exception);
+    EXPECT_NO_THROW(view.set_image(image, "image"));
     EXPECT_EQ(1, view.get_images().size());
     EXPECT_NO_THROW(view.set_image(image, "image"));
     EXPECT_EQ(1, view.get_images().size());
@@ -28,9 +26,7 @@ TEST(ViewTest, AddSetHasRemoveTest)
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
     EXPECT_FALSE(view.has_blob("blob"));
     EXPECT_EQ(0, view.get_blobs().size());
-    EXPECT_NO_THROW(view.add_blob(blob, "blob"));
-    EXPECT_EQ(1, view.get_blobs().size());
-    EXPECT_THROW(view.add_blob(blob, "blob"), std::exception);
+    EXPECT_NO_THROW(view.set_blob(blob, "blob"));
     EXPECT_EQ(1, view.get_blobs().size());
     EXPECT_NO_THROW(view.set_blob(blob, "blob"));
     EXPECT_EQ(1, view.get_blobs().size());
@@ -46,9 +42,9 @@ TEST(ViewTest, AddRemoveMemorySizeTest)
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 100, 1);
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
     mve::View view;
-    view.add_image(image, "image");
+    view.set_image(image, "image");
     EXPECT_EQ(100 * 100, view.get_byte_size());
-    view.add_blob(blob, "blob");
+    view.set_blob(blob, "blob");
     EXPECT_EQ(100 * 100 + 100, view.get_byte_size());
     view.remove_image("image");
     EXPECT_EQ(100, view.get_byte_size());
@@ -63,11 +59,11 @@ TEST(ViewTest, IsDirtyTest)
     mve::View view1, view2, view3;
 
     EXPECT_FALSE(view1.is_dirty());
-    view1.add_image(image, "image");
+    view1.set_image(image, "image");
     EXPECT_TRUE(view1.is_dirty());
 
     EXPECT_FALSE(view2.is_dirty());
-    view2.add_blob(blob, "blob");
+    view2.set_blob(blob, "blob");
     EXPECT_TRUE(view2.is_dirty());
 
     EXPECT_FALSE(view3.is_dirty());
@@ -82,8 +78,8 @@ TEST(ViewTest, CacheCleanupTest)
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 1, 1);
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
     mve::View view;
-    view.add_image(image, "image");
-    view.add_blob(blob, "blob");
+    view.set_image(image, "image");
+    view.set_blob(blob, "blob");
 
     mve::View::ImageProxy const* image_proxy = view.get_image_proxy("image");
     mve::View::BlobProxy const* blob_proxy = view.get_blob_proxy("blob");
@@ -131,7 +127,7 @@ TEST(ViewTest, GetByTypeTest)
     EXPECT_FALSE(view.has_image("image", mve::IMAGE_TYPE_UNKNOWN));
     EXPECT_FALSE(view.has_image("image", mve::IMAGE_TYPE_FLOAT));
 
-    view.add_image(image, "image");
+    view.set_image(image, "image");
 
     EXPECT_TRUE(view.get_image("image", mve::IMAGE_TYPE_UINT8) == NULL);
     EXPECT_EQ(image, view.get_image("image", mve::IMAGE_TYPE_FLOAT));
@@ -157,12 +153,12 @@ TEST(ViewTest, GetTypeImageTest)
     EXPECT_EQ(mve::ByteImage::Ptr(), view.get_byte_image("image"));
 
     mve::FloatImage::Ptr image = mve::FloatImage::create(10, 12, 1);
-    view.add_image(image, "image");
+    view.set_image(image, "image");
     EXPECT_EQ(image, view.get_float_image("image"));
     EXPECT_EQ(mve::ByteImage::Ptr(), view.get_byte_image("image"));
 
     mve::ByteImage::Ptr image2 = mve::ByteImage::create(10, 12, 1);
-    view.add_image(image2, "image2");
+    view.set_image(image2, "image2");
     EXPECT_EQ(image2, view.get_byte_image("image2"));
     EXPECT_EQ(mve::FloatImage::Ptr(), view.get_float_image("image2"));
 }
