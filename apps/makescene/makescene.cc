@@ -218,7 +218,7 @@ add_exif_to_view (mve::View::Ptr view, std::string const& exif)
 
     mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif.size(), 1, 1);
     std::copy(exif.begin(), exif.end(), exif_image->begin());
-    view->add_blob(exif_image, "exif");
+    view->set_blob(exif_image, "exif");
 }
 
 /* ---------------------------------------------------------------- */
@@ -285,6 +285,16 @@ limit_image_size (typename mve::Image<T>::Ptr img, int max_pixels)
 
 /* ---------------------------------------------------------------- */
 
+bool
+has_jpeg_extension (std::string const& filename)
+{
+    std::string lcfname(util::string::lowercase(filename));
+    return util::string::right(lcfname, 4) == ".jpg"
+        || util::string::right(lcfname, 5) == ".jpeg";
+}
+
+/* ---------------------------------------------------------------- */
+
 void
 import_bundle_nvm (AppSettings const& conf)
 {
@@ -316,6 +326,7 @@ import_bundle_nvm (AppSettings const& conf)
         view->set_id(i);
         view->set_name(util::string::get_filled(i, 4, '0'));
 
+        /* Load original image. */
         std::string exif;
         mve::ByteImage::Ptr image = load_8bit_image(nvm_cam.filename, &exif);
         if (image == NULL)
@@ -325,11 +336,18 @@ import_bundle_nvm (AppSettings const& conf)
             continue;
         }
 
+        /* Add original image. */
         if (conf.import_orig)
-            view->set_image(image, "original");
+        {
+            if (has_jpeg_extension(fname))
+                view->set_image_ref(fname, "original");
+            else
+                view->set_image(image, "original");
+        }
         view->set_image(create_thumbnail(image), "thumbnail");
         add_exif_to_view(view, exif);
 
+        /* Normalize focal length, add undistorted image. */
         int const maxdim = std::max(image->width(), image->height());
         mve_cam.flen = mve_cam.flen / static_cast<float>(maxdim);
 
@@ -339,6 +357,7 @@ import_bundle_nvm (AppSettings const& conf)
         view->set_image(undist, "undistorted");
         view->set_camera(mve_cam);
 
+        /* Save view. */
 #pragma omp critical
         std::cout << "Writing MVE file: " << fname << "..." << std::endl;
         view->save_view_as(util::fs::join_path(conf.views_path, fname));
@@ -931,17 +950,22 @@ import_images (AppSettings const& conf)
         std::string exif;
         mve::ByteImage::Ptr image = load_any_image
             (dir[i].get_absolute_name(), &exif);
+
         if (image == NULL)
             continue;
-
-        /* Rescale images. */
-        image = limit_image_size<uint8_t>(image, conf.max_pixels);
 
         /* Create view, set headers, add image. */
         mve::View::Ptr view = mve::View::create();
         view->set_id(id_cnt);
         view->set_name(remove_file_extension(fname));
-        view->set_image(image, "original");
+
+        /* Rescale and add original image. */
+        int orig_width = image->width();
+        image = limit_image_size<uint8_t>(image, conf.max_pixels);
+        if (orig_width == image->width() && has_jpeg_extension(fname))
+            view->set_image_ref(fname, "original");
+        else
+            view->set_image(image, "original");
 
         /* Add thumbnail for byte images. */
         mve::ByteImage::Ptr thumb = create_thumbnail(image);
