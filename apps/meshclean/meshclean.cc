@@ -162,12 +162,19 @@ main (int argc, char** argv)
     }
 
     /* Write output mesh. */
-    mve::geom::SavePLYOptions ply_opts;
-    ply_opts.write_vertex_colors = !conf.delete_colors;
-    ply_opts.write_vertex_confidences = !conf.delete_conf;
-    ply_opts.write_vertex_values = !conf.delete_scale;
     std::cout << "Writing mesh: " << conf.out_mesh << std::endl;
-    mve::geom::save_ply_mesh(mesh, conf.out_mesh, ply_opts);
+    if (util::string::right(conf.out_mesh, 4) == ".ply")
+    {
+        mve::geom::SavePLYOptions ply_opts;
+        ply_opts.write_vertex_colors = !conf.delete_colors;
+        ply_opts.write_vertex_confidences = !conf.delete_conf;
+        ply_opts.write_vertex_values = !conf.delete_scale;
+        mve::geom::save_ply_mesh(mesh, conf.out_mesh, ply_opts);
+    }
+    else
+    {
+        mve::geom::save_mesh(mesh, conf.out_mesh);
+    }
 
     return 0;
 }
