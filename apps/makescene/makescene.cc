@@ -24,6 +24,7 @@
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
 #include "math/algo.h"
+#include "util/timer.h"
 #include "util/arguments.h"
 #include "util/string.h"
 #include "util/file_system.h"
@@ -291,6 +292,14 @@ has_jpeg_extension (std::string const& filename)
     std::string lcfname(util::string::lowercase(filename));
     return util::string::right(lcfname, 4) == ".jpg"
         || util::string::right(lcfname, 5) == ".jpeg";
+}
+
+/* ---------------------------------------------------------------- */
+
+std::string
+make_image_name (int id)
+{
+    return "view_" + util::string::get_filled(id, 4) + ".mve";
 }
 
 /* ---------------------------------------------------------------- */
@@ -902,6 +911,8 @@ find_max_scene_id (std::string const& view_path)
 void
 import_images (AppSettings const& conf)
 {
+    util::WallTimer timer;
+
     util::fs::Directory dir;
     try { dir.scan(conf.input_path); }
     catch (std::exception& e)
@@ -944,13 +955,12 @@ import_images (AppSettings const& conf)
             continue;
         }
 
-        std::string fname(dir[i].name);
+        std::string fname = dir[i].name;
+        std::string afname = dir[i].get_absolute_name();
+
         std::cout << "Importing image " << fname << "..." << std::endl;
-
         std::string exif;
-        mve::ByteImage::Ptr image = load_any_image
-            (dir[i].get_absolute_name(), &exif);
-
+        mve::ByteImage::Ptr image = load_any_image(afname, &exif);
         if (image == NULL)
             continue;
 
@@ -963,7 +973,7 @@ import_images (AppSettings const& conf)
         int orig_width = image->width();
         image = limit_image_size<uint8_t>(image, conf.max_pixels);
         if (orig_width == image->width() && has_jpeg_extension(fname))
-            view->set_image_ref(fname, "original");
+            view->set_image_ref(afname, "original");
         else
             view->set_image(image, "original");
 
@@ -976,16 +986,17 @@ import_images (AppSettings const& conf)
         add_exif_to_view(view, exif);
 
         /* Save view to disc. */
-        fname = "view_" + util::string::get_filled(id_cnt, 4) + ".mve";
-        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
-        view->save_view_as(util::fs::join_path(conf.views_path, fname));
+        std::string mve_fname = make_image_name(id_cnt);
+        std::cout << "Writing MVE file: " << mve_fname << "..." << std::endl;
+        view->save_view_as(util::fs::join_path(conf.views_path, mve_fname));
 
         /* Advance ID of successfully imported images. */
         id_cnt += 1;
         num_imported += 1;
     }
 
-    std::cout << "Imported " << num_imported << " input images." << std::endl;
+    std::cout << "Imported " << num_imported << " input images, "
+        << "took " << timer.get_elapsed() << " ms." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */

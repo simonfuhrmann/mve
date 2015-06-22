@@ -9,7 +9,6 @@ all:
 	$(MAKE) -C mesh2pset
 	$(MAKE) -C meshalign
 	$(MAKE) -C meshclean
-	$(MAKE) -C mveshell
 
 clean:
 	$(MAKE) -C bundle2ply $@
@@ -22,6 +21,5 @@ clean:
 	$(MAKE) -C mesh2pset $@
 	$(MAKE) -C meshalign $@
 	$(MAKE) -C meshclean $@
-	$(MAKE) -C mveshell $@
 
 .PHONY: all clean
