@@ -841,6 +841,7 @@ View::save_image_intern (ImageProxy* proxy)
         std::string ext = get_file_extension(proxy->filename);
         std::string fname = proxy->name + ext;
         std::string pname = util::fs::join_path(this->path, fname);
+        std::cout << "View: Copying image " << fname << std::endl;
         util::fs::copy_file(proxy->filename.c_str(), pname.c_str());
         proxy->filename = fname;
         proxy->is_dirty = false;

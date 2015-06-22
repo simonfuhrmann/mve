@@ -383,12 +383,12 @@ sfm_reconstruct (AppSettings const& conf)
             mve::ByteImage::Ptr undist
                 = mve::image::image_undistort_vsfm<uint8_t>
                 (original, cam.flen, cam.dist[0]);
-            view->set_image(conf.undistorted_name, undist);
+            view->set_image(undist, conf.undistorted_name);
         }
 
 #pragma omp critical
-        std::cout << "Saving MVE view " << view->get_filename() << std::endl;
-        view->save_mve_file();
+        std::cout << "Saving MVE view " << view->get_directory() << std::endl;
+        view->save_view();
         view->cache_cleanup();
     }
 
