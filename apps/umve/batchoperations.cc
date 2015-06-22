@@ -53,24 +53,27 @@ BatchOperations::get_embedding_names (mve::ImageType type,
         if (views[i] == NULL)
             continue;
 
-        std::vector<mve::View::ImageProxy> const& image_proxies
-            = views[i]->get_images();
+        mve::View::ImageProxies const& image_proxies = views[i]->get_images();
         for (std::size_t j = 0; j < image_proxies.size(); ++j)
         {
-            mve::View::ImageProxy const* proxy
-                = views[i]->get_image_proxy(image_proxies[j].name);
-            if (type == mve::IMAGE_TYPE_UNKNOWN || type == proxy->type)
-                names.insert(proxy->name);
+            mve::View::ImageProxy const& proxy = image_proxies[j];
+            if (type == mve::IMAGE_TYPE_UNKNOWN)
+                names.insert(proxy.name);
+            else
+            {
+                views[i]->get_image_proxy(proxy.name);
+                if (proxy.type == type)
+                    names.insert(proxy.name);
+            }
         }
 
         std::vector<mve::View::BlobProxy> const& blob_proxies
             = views[i]->get_blobs();
         for (std::size_t j = 0; j < blob_proxies.size(); ++j)
         {
-            mve::View::BlobProxy const* proxy
-                = views[i]->get_blob_proxy(blob_proxies[j].name);
+            mve::View::BlobProxy const& proxy = blob_proxies[j];
             if (type == mve::IMAGE_TYPE_UNKNOWN)
-                names.insert(proxy->name);
+                names.insert(proxy.name);
         }
     }
 
@@ -381,6 +384,7 @@ BatchImportImages::on_import_images (void)
 
     int const thumb_width = 50;
     int const thumb_height = 50;
+    bool is_jpeg = false;
 
     std::size_t last_reused_id = 0;
 
@@ -405,7 +409,11 @@ BatchImportImages::on_import_images (void)
         std::string exif_data;
         if (save_exif)
         {
-            try { image = mve::image::load_jpg_file(filename, &exif_data); }
+            try
+            {
+                image = mve::image::load_jpg_file(filename, &exif_data);
+                is_jpeg = true;
+            }
             catch (...) {}
         }
 
@@ -458,7 +466,11 @@ BatchImportImages::on_import_images (void)
         mve::View::Ptr view = mve::View::create();
         view->set_id(view_id);
         view->set_name(view_name);
-        view->set_image(image, embedding_name);
+
+        if (is_jpeg)
+            view->set_image_ref(filename, embedding_name);
+        else
+            view->set_image(image, embedding_name);
 
         if (add_thumbnail)
         {
@@ -471,7 +483,7 @@ BatchImportImages::on_import_images (void)
         {
             mve::ByteImage::Ptr exif_image = mve::ByteImage::create(exif_data.size(), 1, 1);
             std::copy(exif_data.begin(), exif_data.end(), exif_image->begin());
-            view->add_blob(exif_image, exif_name);
+            view->set_blob(exif_image, exif_name);
         }
 
         /* Save view to disc. */

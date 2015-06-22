@@ -807,10 +807,9 @@ SfmControls::on_apply_to_scene (void)
                 view->set_camera(cam);
 
                 /* Check original image. */
-                mve::MVEFileProxy const* proxy
-                    = view->get_proxy(original_image_name);
-                if (!proxy->is_image
-                    || proxy->get_type() != mve::IMAGE_TYPE_UINT8)
+                mve::View::ImageProxy const* proxy = view->get_image_proxy
+                    (original_image_name, mve::IMAGE_TYPE_UINT8);
+                if (proxy == NULL)
                 {
                     num_views_saved += 1;
                     continue;
@@ -824,7 +823,7 @@ SfmControls::on_apply_to_scene (void)
                     mve::ByteImage::Ptr undist
                         = mve::image::image_undistort_vsfm<uint8_t>
                         (original, cam.flen, cam.dist[0]);
-                    view->set_image(undistorted_image_name, undist);
+                    view->set_image(undist, undistorted_image_name);
 
                     if (omp_get_thread_num() == 0)
                     {
@@ -836,8 +835,8 @@ SfmControls::on_apply_to_scene (void)
 
 #           pragma omp critical
                     std::cout << "Saving MVE view "
-                        << view->get_filename() << std::endl;
-                    view->save_mve_file();
+                        << view->get_directory() << std::endl;
+                    view->save_view();
                     view->cache_cleanup();
 
 #           pragma omp atomic
