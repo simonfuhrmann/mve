@@ -33,6 +33,7 @@
  * PNG is chosen for 1, 2, 3 and 4 channel images, MVEI for all others.
  *
  * TODO: File locks?
+ * TODO: Handle delete requests separately.
  */
 
 #ifndef MVE_VIEW_HEADER

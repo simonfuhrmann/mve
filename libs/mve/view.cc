@@ -827,6 +827,7 @@ View::save_image_intern (ImageProxy* proxy)
     /* An empty name indicates a delete request. */
     if (proxy->name.empty() && !proxy->filename.empty())
     {
+        std::cout << "View: Deleting image " << proxy->filename << std::endl;
         std::string fname = util::fs::join_path(this->path, proxy->filename);
         if (util::fs::file_exists(fname.c_str())
             && !util::fs::unlink(fname.c_str()))
@@ -876,10 +877,13 @@ View::save_image_intern (ImageProxy* proxy)
     this->replace_file(fname_save, fname_new);
 
     /* If the original file was different (e.g. JPG to lossless), remove it. */
-    if (fname_save != fname_orig
-        && util::fs::file_exists(fname_orig.c_str())
-        && !util::fs::unlink(fname_orig.c_str()))
-        throw util::FileException(fname_orig, std::strerror(errno));
+    if (fname_save != fname_orig)
+    {
+        std::cout << "View: Deleting file " << fname_orig << std::endl;
+        if (util::fs::file_exists(fname_orig.c_str())
+            && !util::fs::unlink(fname_orig.c_str()))
+            throw util::FileException(fname_orig, std::strerror(errno));
+    }
 
     /* Fully update the proxy. */
     proxy->is_dirty = false;
