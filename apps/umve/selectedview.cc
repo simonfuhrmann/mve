@@ -80,27 +80,21 @@ SelectedView::fill_embeddings (QComboBox& cb, mve::ImageType type,
     cb.clear();
     cb.addItem("<none>");
 
-
-
-    /* Read embedding names from view and sort. */
-    typedef std::pair<std::string, mve::ImageType> ProxyType;
-    typedef std::vector<ProxyType> ProxyVector;
-    mve::View::Proxies const& proxies(this->view->get_proxies());
-    ProxyVector pvec;
+    std::vector<std::string> names;
+    mve::View::ImageProxies const& proxies = this->view->get_images();
     for (std::size_t i = 0; i < proxies.size(); ++i)
-        pvec.push_back(std::make_pair(proxies[i].name,
-            proxies[i].get_type()));
-    std::sort(pvec.begin(), pvec.end());
-
-    /* Add views to combo box. */
-    for (std::size_t i = 0; i < pvec.size(); ++i)
     {
-        ProxyType const& p(pvec[i]);
-        if (p.second != type)
+        mve::View::ImageProxy const* proxy = this->view->get_image_proxy(proxies[i].name);
+        if (proxy->type != type)
             continue;
+        names.push_back(proxy->name);
+    }
+    std::sort(names.begin(), names.end());
 
-        cb.addItem(p.first.c_str());
-        if (p.first == default_name)
+    for (std::size_t i = 0; i < names.size(); ++i)
+    {
+        cb.addItem(names[i].c_str());
+        if (names[i] == default_name)
             cb.setCurrentIndex(cb.count() - 1);
     }
 }

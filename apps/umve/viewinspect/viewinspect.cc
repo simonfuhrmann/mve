@@ -284,7 +284,7 @@ ViewInspect::load_mve_file (QString filename)
 {
     mve::View::Ptr view(mve::View::create());
     try
-    { view->load_mve_file(filename.toStdString()); }
+    { view->load_view(filename.toStdString()); }
     catch (std::exception& e)
     {
         QMessageBox::warning(this, tr("Image Viewer"),
@@ -441,11 +441,11 @@ ViewInspect::load_recent_embedding (void)
 {
     /* If no embedding is set, fall back to undistorted image. */
     if (this->recent_embedding.empty()
-        || !this->view->has_embedding(this->recent_embedding))
+        || !this->view->has_image(this->recent_embedding))
         this->recent_embedding = "undistorted";
 
     /* Give up. */
-    if (!this->view->has_embedding(this->recent_embedding))
+    if (!this->view->has_image(this->recent_embedding))
         return;
 
     /* Load embedding. */
@@ -461,19 +461,16 @@ ViewInspect::populate_embeddings (void)
     if (this->view == NULL)
         return;
 
-    std::vector<std::string> vec;
-
-    mve::View::Proxies const& proxies(this->view->get_proxies());
+    std::vector<std::string> names;
+    mve::View::ImageProxies const& proxies = this->view->get_images();
     for (std::size_t i = 0; i < proxies.size(); ++i)
-        if (proxies[i].is_image)
-            vec.push_back(proxies[i].name);
-    std::sort(vec.begin(), vec.end());
+        names.push_back(proxies[i].name);
+    std::sort(names.begin(), names.end());
 
-    for (std::size_t i = 0; i < vec.size(); ++i)
+    for (std::size_t i = 0; i < names.size(); ++i)
     {
-        std::string const& name(vec[i]);
-        this->embeddings->addItem(QString(name.c_str()), (int)i);
-        if (name == this->recent_embedding)
+        this->embeddings->addItem(QString(names[i].c_str()), (int)i);
+        if (names[i] == this->recent_embedding)
            this->embeddings->setCurrentIndex(this->embeddings->count() - 1);
     }
     this->embeddings->adjustSize();
@@ -490,7 +487,7 @@ ViewInspect::populate_exif_viewer (void)
     if (this->view == NULL)
         return;
 
-    mve::ByteImage::Ptr exif = this->view->get_data("exif");
+    mve::ByteImage::Ptr exif = this->view->get_blob("exif");
     if (exif == NULL)
         return;
 
@@ -575,13 +572,13 @@ ViewInspect::on_view_reload (void)
     QMessageBox::StandardButton answer = QMessageBox::question(this,
         tr("Reload view?"), tr("Really reload view \"%1\" from file?"
         " Unsaved changes get lost, this cannot be undone.")
-        .arg(this->view->get_filename().c_str()),
+        .arg(this->view->get_directory().c_str()),
         QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes);
 
     if (answer != QMessageBox::Yes)
         return;
 
-    this->view->reload_mve_file();
+    this->view->reload_view();
     this->populate_embeddings();
 }
 
@@ -736,7 +733,7 @@ ViewInspect::on_copy_embedding (void)
         return;
     }
 
-    bool exists = this->view->has_embedding(text);
+    bool exists = this->view->has_image(text);
     if (exists)
     {
         QMessageBox::StandardButton answer = QMessageBox::question(this,
@@ -749,7 +746,7 @@ ViewInspect::on_copy_embedding (void)
     }
 
     mve::ImageBase::Ptr image_copy = this->image->duplicate();
-    this->view->set_image(text, image_copy);
+    this->view->set_image(image_copy, text);
     this->populate_embeddings();
 }
 
@@ -773,7 +770,7 @@ ViewInspect::on_del_embedding (void)
     if (answer != QMessageBox::Yes)
         return;
 
-    this->view->remove_embedding(this->recent_embedding);
+    this->view->remove_image(this->recent_embedding);
     this->load_recent_embedding();
     this->populate_embeddings();
 }
@@ -792,7 +789,7 @@ ViewInspect::on_save_view (void)
 
     try
     {
-        this->view->save_mve_file();
+        this->view->save_view();
     }
     catch (std::exception& e)
     {

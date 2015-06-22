@@ -84,8 +84,7 @@ AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
             "Neither output image nor depth specified");
         return;
     }
-    mve::MVEFileProxy const* proxy = view->get_proxy(source_name);
-    if (proxy == NULL || !proxy->is_image)
+    if (!view->has_image(source_name))
     {
         this->show_error_box("Error", "Source embedding not available!");
         return;
@@ -99,8 +98,8 @@ AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
 
     /* Get all parameters and check them. */
     mve::CameraInfo const& camera_info = view->get_camera();
-    int const width = proxy->width;
-    int const height = proxy->height;
+    int const width = view->get_image_proxy(source_name)->width;
+    int const height = view->get_image_proxy(source_name)->height;
     float const dimension_aspect = static_cast<float>(width) / height;
     float const pixel_aspect = camera_info.paspect;
     float const image_aspect = dimension_aspect * pixel_aspect;
@@ -168,7 +167,7 @@ AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
 
     /* Put re-photography into view as embedding. */
     if (!dest_color_name.empty())
-        view->set_image(dest_color_name, image);
+        view->set_image(image, dest_color_name);
 
     /* Put depth buffer into view as embedding. */
     if (!dest_depth_name.empty())
@@ -183,10 +182,10 @@ AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
         math::Matrix3f inv_calib;
         camera_info.fill_inverse_calibration(*inv_calib, width, height);
         mve::image::depthmap_convert_conventions<float>(depth, inv_calib, true);
-        view->set_image(dest_depth_name, depth);
+        view->set_image(depth, dest_depth_name);
     }
 
-    view->save_mve_file();
+    view->save_view();
     SceneManager::get().refresh_view();
 }
 
@@ -204,7 +203,7 @@ AddinRephotographer::on_rephoto_all (void)
         mve::View::Ptr view = views[i];
         if (view == NULL)
             continue;
-        if (!view->has_embedding(source_embedding_name))
+        if (!view->has_image(source_embedding_name))
             continue;
         this->on_rephoto_view(view);
         num_rephotographed += 1;

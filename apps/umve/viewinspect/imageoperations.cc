@@ -281,7 +281,7 @@ ImageOperationsWidget::threaded_dmrecon (JobDMRecon* job)
     {
         try
         {
-            job->view->save_mve_file();
+            job->view->save_view();
         }
         catch (std::exception& e)
         {
@@ -343,7 +343,7 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     {
         if (views[i] == NULL || !views[i]->is_camera_valid())
             continue;
-        if (views[i]->has_embedding(dmname))
+        if (views[i]->has_image(dmname))
             continue;
         this->start_dmrecon_job(views[i]);
         added = true;
@@ -387,7 +387,7 @@ ImageOperationsWidget::exec_dmclean (void)
 
     mve::FloatImage::Ptr ret = mve::image::depthmap_cleanup(img, csize);
 
-    view->set_image(dst_img, ret);
+    view->set_image(ret, dst_img);
     emit this->signal_select_embedding(QString(dst_img.c_str()));
     emit this->signal_reload_embeddings();
 }
