@@ -85,16 +85,26 @@ public:
     {
         ImageProxy (void);
 
-        /* These fields are always initialized. */
+        /** Indicates if the image is unsaved or has been changed. */
         bool is_dirty;
+
+        /** The name of the image. */
         std::string name;
+
+        /**
+         * The filename is empty if the image has not been saved yet.
+         * The filename is relative if the image is mapped to the view on disc.
+         * The filename is absolute if the image referenced outside the view.
+         */
         std::string filename;
+
         /* These fields are initialized on-demand (get_*_proxy()). */
         bool is_initialized;
         int32_t width;
         int32_t height;
         int32_t channels;
         ImageType type;
+
         /* This field is initialized on request with get_image(). */
         ImageBase::Ptr image;
     };
@@ -104,13 +114,22 @@ public:
     {
         BlobProxy (void);
 
-        /* These fields are always initialized. */
+        /** Indicates if the BLOB is unsaved or has been changed. */
         bool is_dirty;
+
+        /** The name of the BLOB. */
         std::string name;
+
+        /**
+         * Filename is empty if the BLOB has not been saved yet,
+         * or relative if the BLOB is mapped to the view on disc.
+         */
         std::string filename;
+
         /* These fields are initialized on-demand. */
         bool is_initialized;
         uint64_t size;
+
         /* This field is initialized on request with get_blob(). */
         ByteImage::Ptr blob;
     };
@@ -286,10 +305,14 @@ private:
     void save_blob_intern (BlobProxy* proxy);
 
 protected:
+    typedef std::vector<std::string> FilenameList;
+
+protected:
     std::string path;
     MetaData meta_data;
     ImageProxies images;
     BlobProxies blobs;
+    FilenameList to_delete;
 };
 
 /* ---------------------------------------------------------------- */
