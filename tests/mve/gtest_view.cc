@@ -21,7 +21,7 @@ TEST(ViewTest, AddSetHasRemoveTest)
     EXPECT_TRUE(view.remove_image("image"));
     EXPECT_FALSE(view.remove_image("image"));
     EXPECT_FALSE(view.has_image("image"));
-    EXPECT_EQ(1, view.get_images().size());
+    EXPECT_EQ(0, view.get_images().size());
 
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
     EXPECT_FALSE(view.has_blob("blob"));
@@ -34,7 +34,7 @@ TEST(ViewTest, AddSetHasRemoveTest)
     EXPECT_TRUE(view.remove_blob("blob"));
     EXPECT_FALSE(view.remove_blob("blob"));
     EXPECT_FALSE(view.has_blob("blob"));
-    EXPECT_EQ(1, view.get_blobs().size());
+    EXPECT_EQ(0, view.get_blobs().size());
 }
 
 TEST(ViewTest, AddRemoveMemorySizeTest)

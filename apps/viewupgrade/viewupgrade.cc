@@ -60,7 +60,7 @@ main (int argc, char** argv)
     args.set_nonopt_minnum(1);
     args.set_helptext_indent(22);
     args.set_description("This utility upgrades an MVE view or scene to "
-        "the new MVE view format. In the old format, a view is a single "
+        "the new MVE view format. In the deprecated format, a view is one "
         "file, while in the new format, a view is a directory. INPUT can "
         "either be a single .mve view, or a scene in which case all views "
         "are upgraded.");
