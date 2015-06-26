@@ -397,8 +397,12 @@ sfm_reconstruct (AppSettings const& conf)
     }
 
 #pragma omp parallel for schedule(dynamic,1)
+#ifndef _MSC_VER
     for (std::size_t i = 0; i < bundle_cams.size(); ++i)
-    {
+#else
+	for (int64_t i = 0; i < bundle_cams.size(); ++i)
+#endif
+	{
         mve::View::Ptr view = views[i];
         mve::CameraInfo const& cam = bundle_cams[i];
         if (view == nullptr)
