@@ -22,9 +22,13 @@ UTIL_STRING_NAMESPACE_BEGIN
 template <typename T>
 std::string get (T const& value);
 
-/** From floating point types to fixed digits string conversions. */
+/** Returns string with 'digits' of fixed precision (fills with zeros). */
 template <typename T>
 std::string get_fixed (T const& value, int digits);
+
+/** Returns string with 'digits' of precision. */
+template <typename T>
+std::string get_digits (T const& value, int digits);
 
 /** Returns a string filled to the left to a length of 'width' chars. */
 template <typename T>
@@ -117,6 +121,15 @@ get_fixed (T const& value, int digits)
 {
     std::stringstream ss;
     ss << std::fixed << std::setprecision(digits) << value;
+    return ss.str();
+}
+
+template <typename T>
+inline std::string
+get_digits (T const& value, int digits)
+{
+    std::stringstream ss;
+    ss << std::setprecision(digits) << value;
     return ss.str();
 }
 

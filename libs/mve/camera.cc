@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <algorithm>
 
@@ -175,6 +176,7 @@ std::string
 CameraInfo::get_rotation_string (void) const
 {
     std::stringstream ss;
+    ss << std::setprecision(10);
     for (int i = 0; i < 9; ++i)
         ss << this->rot[i] << (i < 8 ? " " : "");
     return ss.str();
@@ -184,6 +186,7 @@ std::string
 CameraInfo::get_translation_string (void) const
 {
     std::stringstream ss;
+    ss << std::setprecision(10);
     for (int i = 0; i < 3; ++i)
         ss << this->trans[i] << (i < 2 ? " " : "");
     return ss.str();
