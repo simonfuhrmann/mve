@@ -20,17 +20,18 @@
 MVE_NAMESPACE_BEGIN
 
 void
-View::load_view (std::string const& path)
+View::load_view (std::string const& user_path)
 {
+    std::string safe_path = util::fs::abspath(user_path);
     std::cout << "View: Loading view: " << path << std::endl;
 
     /* Open meta.ini and populate images and blobs. */
     this->clear();
     try
     {
-        this->load_meta_data(path);
-        this->populate_images_and_blobs(path);
-        this->path = path;
+        this->load_meta_data(safe_path);
+        this->populate_images_and_blobs(safe_path);
+        this->path = safe_path;
     }
     catch (...)
     {
@@ -171,16 +172,17 @@ View::reload_view (void)
 }
 
 void
-View::save_view_as (std::string const& path)
+View::save_view_as (std::string const& user_path)
 {
-    std::cout << "View: Saving view: " << path << std::endl;
+    std::string safe_path = util::fs::abspath(user_path);
+    std::cout << "View: Saving view: " << safe_path << std::endl;
 
     /* Create view directory if needed. */
-    if (util::fs::file_exists(path.c_str()))
-        throw util::FileException(path, "Is not a directory");
-    if (!util::fs::dir_exists(path.c_str()))
-        if (!util::fs::mkdir(path.c_str()))
-            throw util::FileException(path, std::strerror(errno));
+    if (util::fs::file_exists(safe_path.c_str()))
+        throw util::FileException(safe_path, "Is not a directory");
+    if (!util::fs::dir_exists(safe_path.c_str()))
+        if (!util::fs::mkdir(safe_path.c_str()))
+            throw util::FileException(safe_path, std::strerror(errno));
 
     /* Load all images and BLOBS. */
     for (std::size_t i = 0; i < this->images.size(); ++i)
@@ -197,8 +199,8 @@ View::save_view_as (std::string const& path)
     }
 
     /* Save meta data, images and BLOBS, and free memory. */
-    this->save_meta_data(path);
-    this->path = path;
+    this->save_meta_data(safe_path);
+    this->path = safe_path;
     this->save_view();
     this->cache_cleanup();
 }
@@ -363,11 +365,13 @@ View::set_camera (CameraInfo const& camera)
     this->meta_data.is_dirty = true;
 
     /* Re-generate the "camera" section. */
-    this->set_value("camera.focal_length", util::string::get(camera.flen));
-    this->set_value("camera.pixel_aspect", util::string::get(camera.paspect));
+    this->set_value("camera.focal_length",
+        util::string::get_digits(camera.flen, 10));
+    this->set_value("camera.pixel_aspect",
+        util::string::get_digits(camera.paspect, 10));
     this->set_value("camera.principal_point",
-        util::string::get(camera.ppoint[0]) + " "
-        + util::string::get(camera.ppoint[1]));
+        util::string::get_digits(camera.ppoint[0], 10) + " "
+        + util::string::get_digits(camera.ppoint[1], 10));
     this->set_value("camera.rotation", camera.get_rotation_string());
     this->set_value("camera.translation", camera.get_translation_string());
 }

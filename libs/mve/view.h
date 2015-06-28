@@ -184,24 +184,22 @@ public:
     /** Deletes the key/value pair from the meta information. */
     void delete_value (std::string const& key);
 
+    /* --------------------- Meta Data Helpers -------------------- */
+
     /** Sets the view ID (key "view.id"). */
     void set_id (int view_id);
-
-    /** Sets the name of the view (key "view.name"). */
-    void set_name (std::string const& name);
-
-    /** Sets camera information of the view (section "camera"). */
-    void set_camera (CameraInfo const& camera);
-
     /** Returns the ID of the view (key "view.id"). */
     int get_id (void) const;
 
+    /** Sets the name of the view (key "view.name"). */
+    void set_name (std::string const& name);
     /** Returns the name of the view (key "view.name"). */
     std::string get_name (void) const;
 
+    /** Sets camera information of the view (section "camera"). */
+    void set_camera (CameraInfo const& camera);
     /** Returns the camera information of the view (section "camera"). */
     CameraInfo const& get_camera (void) const;
-
     /** Returns true if the camera is valid. */
     bool is_camera_valid (void) const;
 
