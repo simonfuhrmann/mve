@@ -22,7 +22,8 @@ MVE_NAMESPACE_BEGIN
 void
 View::load_view (std::string const& user_path)
 {
-    std::string safe_path = util::fs::abspath(user_path);
+    std::string safe_path = util::fs::sanitize_path(user_path);
+    safe_path = util::fs::abspath(safe_path);
     std::cout << "View: Loading view: " << path << std::endl;
 
     /* Open meta.ini and populate images and blobs. */
@@ -174,7 +175,8 @@ View::reload_view (void)
 void
 View::save_view_as (std::string const& user_path)
 {
-    std::string safe_path = util::fs::abspath(user_path);
+    std::string safe_path = util::fs::sanitize_path(user_path);
+    safe_path = util::fs::abspath(safe_path);
     std::cout << "View: Saving view: " << safe_path << std::endl;
 
     /* Create view directory if needed. */
