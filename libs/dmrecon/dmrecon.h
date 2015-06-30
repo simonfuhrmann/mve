@@ -32,13 +32,11 @@ class DMRecon
 {
 public:
     DMRecon(mve::Scene::Ptr scene, Settings const& settings);
-    ~DMRecon();
 
+    std::size_t getRefViewNr() const;
     Progress const& getProgress() const;
     Progress& getProgress();
     void start();
-
-    std::size_t getRefViewNr() const;
 
 private:
     mve::Scene::Ptr scene;
@@ -52,7 +50,6 @@ private:
     int width;
     int height;
     Progress progress;
-    std::ofstream log;
 
     void analyzeFeatures();
     void globalViewSelection();

@@ -74,46 +74,6 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     if (!settings.quiet)
         std::cout << "scaled image size: " << this->width << " x "
                   << this->height << std::endl;
-
-    /* Create log file and write out some general MVS information */
-    if (!settings.logPath.empty())
-    {
-        // Create directory if necessary
-        if (!util::fs::dir_exists(settings.logPath.c_str()))
-            if (!util::fs::mkdir(settings.logPath.c_str()))
-                if (!util::fs::dir_exists(settings.logPath.c_str()))
-                    throw std::runtime_error("Error creating directory: "
-                        + settings.logPath);
-
-        /* Build log file name and open file */
-        std::string logfn = util::fs::join_path(settings.logPath,
-            refV->createFileName(settings.scale) + ".log");
-        if (!settings.quiet)
-            std::cout << "Creating log file at " << logfn
-                      << std::endl;
-        log.open(logfn.c_str());
-        if (!log.good())
-            throw std::runtime_error("Cannot open log file");
-    }
-
-    log << "MULTI-VIEW STEREO LOG FILE" << std::endl;
-    log << "--------------------------" << std::endl;
-    log << std::endl;
-    log << "Data main path is " << scene->get_path() << std::endl;
-    log << std::setw(20) << "Master image: "
-        << std::setw(5) << settings.refViewNr << std::endl;
-    log << std::setw(20) << "Global VS maximum: "
-        << std::setw(5) << settings.globalVSMax << std::endl;
-    log << std::setw(20) << "Use color scale: "
-        << std::setw(5) << (settings.useColorScale ? "true" : "false")
-        << std::endl;
-}
-
-DMRecon::~DMRecon()
-{
-    /* Close log file if it is open */
-    if (log.is_open())
-        log.close();
 }
 
 void
@@ -184,22 +144,17 @@ DMRecon::start()
                 std::cout << "Filled " << progress.filled << " pixels, i.e. "
                           << util::string::get_fixed(percent * 100.f, 1)
                           << " %." << std::endl;
-            log << "Filled " << progress.filled << " pixels, i.e. "
-                  << util::string::get_fixed(percent * 100.f, 1)
-                  << " %." << std::endl;
         }
 
         /* Output required time to process the image */
         size_t mvs_time = std::time(NULL) - progress.start_time;
         if (!settings.quiet)
             std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
-        log << "MVS took " << mvs_time << " seconds." << std::endl;
     }
     catch (util::Exception e)
     {
         if (!settings.quiet)
             std::cout << "Reconstruction failed: " << e << std::endl;
-        log << "Reconstruction failed: " << e << std::endl;
 
         progress.status = RECON_CANCELLED;
         return;
@@ -257,16 +212,15 @@ DMRecon::globalViewSelection()
     if (neighViews.empty())
         throw std::runtime_error("Global View Selection failed");
 
-    /* Logging and output. */
-    std::stringstream ss;
-    ss << "Global View Selection:";
-    for (IndexSet::const_iterator iter = neighViews.begin();
-        iter != neighViews.end(); ++iter)
-        ss << " " << *iter;
-    ss << std::endl;
+    /* Print result of global view selection. */
     if (!settings.quiet)
-        std::cout << ss.str();
-    log << ss.str();
+    {
+        std::cout << "Global View Selection:";
+        for (IndexSet::const_iterator iter = neighViews.begin();
+            iter != neighViews.end(); ++iter)
+            std::cout << " " << *iter;
+        std::cout << std::endl;
+    }
 
     /* Load selected images. */
     if (!settings.quiet)
@@ -288,8 +242,6 @@ DMRecon::processFeatures()
     if (!settings.quiet)
         std::cout << "Processing " << features.size()
             << " features..." << std::endl;
-    log << "Processing " << features.size()
-        << " features..." << std::endl;
 
     std::size_t success = 0;
     std::size_t processed = 0;
@@ -366,8 +318,6 @@ DMRecon::processFeatures()
     if (!settings.quiet)
         std::cout << "Processed " << processed << " features, from which "
                   << success << " succeeded optimization." << std::endl;
-    log << "Processed " << processed << " features, from which "
-          << success << " succeeded optimization." << std::endl;
 }
 
 void
@@ -380,7 +330,7 @@ DMRecon::processQueue()
 
     if (!settings.quiet)
         std::cout << "Process queue ..." << std::endl;
-    log << "Process queue ..." << std::endl;
+
     size_t count = 0, lastStatus = 1;
     progress.queueSize = prQueue.size();
     if (!settings.quiet)
@@ -388,10 +338,6 @@ DMRecon::processQueue()
                   << "  filled: " << std::setw(8) << progress.filled
                   << "  Queue: " << std::setw(8) << progress.queueSize
                   << std::endl;
-    log << "Count: " << std::setw(8) << count
-          << "  filled: " << std::setw(8) << progress.filled
-          << "  Queue: " << std::setw(8) << progress.queueSize
-          << std::endl;
     lastStatus = progress.filled;
 
     while (!prQueue.empty() && !progress.cancelled)
@@ -404,10 +350,6 @@ DMRecon::processQueue()
                           << "  filled: " << std::setw(8) << progress.filled
                           << "  Queue: " << std::setw(8) << progress.queueSize
                           << std::endl;
-            log << "Count: " << std::setw(8) << count
-                  << "  filled: " << std::setw(8) << progress.filled
-                  << "  Queue: " << std::setw(8) << progress.queueSize
-                  << std::endl;
             lastStatus = progress.filled;
         }
         QueueData tmpData = prQueue.top();

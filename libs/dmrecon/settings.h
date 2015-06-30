@@ -38,7 +38,6 @@ struct Settings
     math::Vec3f aabbMax;
 
     std::string plyPath;
-    std::string logPath;
 
     bool keepDzMap;
     bool keepConfidenceMap;

@@ -26,7 +26,6 @@ struct AppSettings
 {
     std::string scene_path;
     std::string ply_dest;
-    std::string log_dest;
     int master_id;
     std::vector<int> view_ids;
     int max_pixels;
@@ -135,8 +134,6 @@ main (int argc, char** argv)
         "use this option to write the ply file");
     args.add_option('\0', "plydest", true,
         "path suffix appended to scene dir to write ply files");
-    args.add_option('\0', "logdest", true,
-        "path suffix appended to scene dir to write log files");
     args.add_option('\0', "bounding-box", true,
         "Six comma separated values used as AABB [disabled]");
     args.add_option('\0', "progress", true,
@@ -148,7 +145,6 @@ main (int argc, char** argv)
     AppSettings conf;
     conf.scene_path = args.get_nth_nonopt(0);
     conf.ply_dest = "recon";
-    conf.log_dest = "log";
     conf.master_id = -1;
     conf.force_recon = false;
     conf.write_ply = false;
@@ -187,8 +183,6 @@ main (int argc, char** argv)
             conf.write_ply = true;
         else if (arg->opt->lopt == "plydest")
             conf.ply_dest = arg->arg;
-        else if (arg->opt->lopt == "logdest")
-            conf.log_dest = arg->arg;
         else if (arg->opt->lopt == "max-pixels")
             conf.max_pixels = arg->get_arg<std::size_t>();
         else if (arg->opt->lopt == "bounding-box")
@@ -240,7 +234,6 @@ main (int argc, char** argv)
     /* Settings for Multi-view stereo */
     conf.mvs.writePlyFile = conf.write_ply;
     conf.mvs.plyPath = util::fs::join_path(conf.scene_path, conf.ply_dest);
-    conf.mvs.logPath = util::fs::join_path(conf.scene_path, conf.log_dest);
 
     fancyProgressPrinter.setBasePath(conf.scene_path);
     fancyProgressPrinter.setNumViews(scene->get_views().size());
