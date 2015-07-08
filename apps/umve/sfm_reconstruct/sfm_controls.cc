@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <sstream>
 #include <iostream>
 #include <limits>
@@ -263,7 +264,7 @@ SfmControls::init_impl (void)
     {
         std::cout << "Error initializing GLEW: " << glewGetErrorString(err)
             << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 #endif
 
@@ -759,7 +760,7 @@ SfmControls::on_apply_to_scene (void)
     if (bundle_cams.size() != views.size())
     {
         std::cerr << "Error: Invalid number of cameras!" << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     std::string original_image_name

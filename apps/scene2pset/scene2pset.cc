@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <cerrno>
+#include <cstdlib>
 
 #include "math/octree_tools.h"
 #include "util/arguments.h"
@@ -53,7 +54,7 @@ aabb_from_string (std::string const& str,
     if (tok.size() != 6)
     {
         std::cerr << "Error: Invalid AABB given" << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     for (int i = 0; i < 3; ++i)
@@ -387,5 +388,5 @@ main (int argc, char** argv)
         mve::geom::save_mesh(pset, conf.outmesh);
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

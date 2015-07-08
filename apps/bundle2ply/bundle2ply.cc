@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 
 #include "util/arguments.h"
@@ -111,7 +112,7 @@ main (int argc, char** argv)
         {
             args.generate_helptext(std::cout);
             std::cerr << "Unexpected option: " << i->opt->lopt << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
@@ -123,7 +124,7 @@ main (int argc, char** argv)
     catch (std::exception& e)
     {
         std::cerr << "Error reading bundle: " << e.what() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     mve::TriangleMesh::Ptr mesh = bundle->get_features_as_mesh();
@@ -137,8 +138,8 @@ main (int argc, char** argv)
     catch (std::exception& e)
     {
         std::cerr << "Error writing PLY: " << e.what() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -96,7 +96,7 @@ read_noah_imagelist (std::string const& filename, StringVector& files)
     {
         std::cerr << "Error: Cannot read bundler list file!" << std::endl;
         std::cerr << "File: " << filename << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     while (true)
@@ -375,7 +375,7 @@ import_bundle_openmvg (AppSettings const& conf)
         std::cerr << e.what() << std::endl;
         std::cerr << "  " << image_dir_name << std::endl;
         std::cerr << "  " << camera_dir_name << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     std::cout << "  Number of images: " << image_dir.size() << std::endl;
@@ -384,7 +384,7 @@ import_bundle_openmvg (AppSettings const& conf)
     if (image_dir.empty() || image_dir.size() != camera_dir.size())
     {
         std::cerr << "Error: Invalid number of images/cameras!" << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     std::sort(image_dir.begin(), image_dir.end());
@@ -405,7 +405,7 @@ import_bundle_openmvg (AppSettings const& conf)
         {
             in.close();
             std::cerr << "Error opening: " << cam_fname << std::endl;
-            std::exit(1);
+            std::exit(EXIT_FAILURE);
         }
 
         mve::CameraInfo cam;
@@ -423,7 +423,7 @@ import_bundle_openmvg (AppSettings const& conf)
         {
             in.close();
             std::cerr << "Premature EOF: " << cam_fname << std::endl;
-            std::exit(1);
+            std::exit(EXIT_FAILURE);
         }
         in.close();
     }
@@ -436,7 +436,7 @@ import_bundle_openmvg (AppSettings const& conf)
     if (!in.good())
     {
         std::cerr << "Error opening: " << points_fname << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     /* Read SfM points: Scan to "end_header" token. */
@@ -448,7 +448,7 @@ import_bundle_openmvg (AppSettings const& conf)
         {
             in.close();
             std::cerr << "Error reading SfM points!" << std::endl;
-            std::exit(1);
+            std::exit(EXIT_FAILURE);
         }
 
         if (token == "end_header")
@@ -635,13 +635,13 @@ import_bundle (AppSettings const& conf)
         else
         {
             std::cerr << "Error: Could not detect bundle format." << std::endl;
-            std::exit(1);
+            std::exit(EXIT_FAILURE);
         }
     }
     catch (std::exception& e)
     {
         std::cerr << "Error reading bundle: " << e.what() << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     /* Read the list of original images filenames. */
@@ -665,12 +665,12 @@ import_bundle (AppSettings const& conf)
         if (orig_files.empty())
         {
             std::cerr << "Error: Empty list of original images." << std::endl;
-            std::exit(1);
+            std::exit(EXIT_FAILURE);
         }
         if (orig_files.size() != bundle->get_num_cameras())
         {
             std::cerr << "Error: Invalid amount of original images." << std::endl;
-            std::exit(1);
+            std::exit(EXIT_FAILURE);
         }
         std::cout << "Recognized " << orig_files.size()
             << " original images from Noah's Bundler." << std::endl;
@@ -884,7 +884,7 @@ import_images (AppSettings const& conf)
     catch (std::exception& e)
     {
         std::cerr << "Error scanning input dir: " << e.what() << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
     std::cout << "Found " << dir.size() << " directory entries." << std::endl;
 
@@ -905,7 +905,7 @@ import_images (AppSettings const& conf)
         if (max_scene_id < 0)
         {
             std::cerr << "Error: Cannot find view ID for appending." << std::endl;
-            std::exit(1);
+            std::exit(EXIT_FAILURE);
         }
     }
 
@@ -1038,14 +1038,14 @@ main (int argc, char** argv)
     if (conf.input_path.empty() || conf.output_path.empty())
     {
         args.generate_helptext(std::cerr);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if (conf.append_images && !conf.images_only)
     {
         std::cerr << "Error: Cannot --append-images without --images-only."
             << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Build some paths. */
@@ -1065,7 +1065,7 @@ main (int argc, char** argv)
     {
         std::cerr << "Error: Output dir does not exist. Cannot append images."
             << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if (conf.images_only)
@@ -1073,5 +1073,5 @@ main (int argc, char** argv)
     else
         import_bundle(conf);
 
-    return 0;
+    return EXIT_SUCCESS;
 }

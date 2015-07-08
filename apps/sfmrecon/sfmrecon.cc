@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <cstdlib>
 
 #include "util/system.h"
 #include "util/timer.h"
@@ -119,7 +120,7 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     if (pairwise_matching->empty())
     {
         std::cerr << "Error: No matching image pairs. Exiting." << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 }
 
@@ -165,7 +166,7 @@ sfm_reconstruct (AppSettings const& conf)
     if (conf.skip_sfm)
     {
         std::cout << "Prebundle finished, skipping SfM. Exiting." << std::endl;
-        std::exit(0);
+        std::exit(EXIT_SUCCESS);
     }
 
     /* Drop descriptors and embeddings to save memory. */
@@ -177,7 +178,7 @@ sfm_reconstruct (AppSettings const& conf)
     if (pairwise_matching.empty())
     {
         std::cerr << "No matching image pairs. Exiting." << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     /* Start timer for incremental SfM. */
@@ -231,7 +232,7 @@ sfm_reconstruct (AppSettings const& conf)
         || init_pair_result.view_2_id >= static_cast<int>(viewports.size()))
     {
         std::cerr << "Error finding initial pair, exiting!" << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     std::cout << "Using views " << init_pair_result.view_1_id
@@ -357,7 +358,7 @@ sfm_reconstruct (AppSettings const& conf)
     if (bundle_cams.size() != views.size())
     {
         std::cerr << "Error: Invalid number of cameras!" << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
 #pragma omp parallel for schedule(dynamic,1)
@@ -412,7 +413,7 @@ check_prebundle (AppSettings const& conf)
             << prebundle_path << std::endl;
         std::cerr << "Note: The prebundle is relative to the scene."
             << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
     out.close();
 
@@ -512,7 +513,7 @@ main (int argc, char** argv)
             if (tok.size() != 2)
             {
                 std::cerr << "Error: Cannot parse initial pair." << std::endl;
-                std::exit(1);
+                std::exit(EXIT_FAILURE);
             }
             conf.initial_pair_1 = tok.get_as<int>(0);
             conf.initial_pair_2 = tok.get_as<int>(1);
@@ -526,5 +527,5 @@ main (int argc, char** argv)
     check_prebundle(conf);
     sfm_reconstruct(conf);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
