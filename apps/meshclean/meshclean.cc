@@ -3,6 +3,7 @@
  * Written by Simon Fuhrmann.
  */
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -90,7 +91,7 @@ main (int argc, char** argv)
         else
         {
             std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
@@ -104,21 +105,21 @@ main (int argc, char** argv)
     catch (std::exception& e)
     {
         std::cerr << "Error loading mesh: " << e.what() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Sanity checks. */
     if (mesh->get_vertices().empty())
     {
         std::cerr << "Error: Mesh is empty!" << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if (!mesh->has_vertex_confidences() && conf.conf_threshold > 0.0f)
     {
         std::cerr << "Error: Confidence cleanup requested, but mesh "
             "has no confidence values." << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if (mesh->get_faces().empty()
@@ -126,7 +127,7 @@ main (int argc, char** argv)
     {
         std::cerr << "Error: Components/faces cleanup "
             "requested, but mesh has no faces." << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Remove low-confidence geometry. */
@@ -176,5 +177,5 @@ main (int argc, char** argv)
         mve::geom::save_mesh(mesh, conf.out_mesh);
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

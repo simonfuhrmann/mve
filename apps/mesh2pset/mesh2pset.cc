@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <limits>
@@ -113,7 +114,7 @@ main (int argc, char** argv)
             case 'n': conf.no_normals = true; break;
             default:
                 std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
-                return 1;
+                return EXIT_FAILURE;
         }
     }
 
@@ -127,7 +128,7 @@ main (int argc, char** argv)
         if (tok.size() != 6)
         {
             std::cerr << "Error: Invalid AABB: " << conf.aabb << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
 
         for (int i = 0; i < 3; ++i)
@@ -224,5 +225,5 @@ main (int argc, char** argv)
     ply_options.write_vertex_values = !conf.no_scale_values;
     mve::geom::save_ply_mesh(mesh, conf.out_pointset, ply_options);
 
-    return 0;
+    return EXIT_SUCCESS;
 }

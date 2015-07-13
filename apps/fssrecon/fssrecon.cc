@@ -10,6 +10,7 @@
  *     http://tinyurl.com/floating-scale-surface-recon
  */
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -77,14 +78,14 @@ main (int argc, char** argv)
         else
         {
             std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
     if (app_opts.in_files.size() < 2)
     {
         args.generate_helptext(std::cerr);
-        return 1;
+        return EXIT_FAILURE;
     }
     app_opts.out_mesh = app_opts.in_files.back();
     app_opts.in_files.pop_back();
@@ -93,7 +94,7 @@ main (int argc, char** argv)
     {
         std::cerr << "Unreasonable refine level of "
             << app_opts.refine_octree << ", exiting." << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Load input point set and insert samples in the octree. */
@@ -114,7 +115,7 @@ main (int argc, char** argv)
         catch (std::exception& e)
         {
             std::cerr << "Error: " << e.what() << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
 
         std::cout << "Loading samples took "
@@ -153,7 +154,7 @@ main (int argc, char** argv)
     if (mesh->get_vertices().empty())
     {
         std::cerr << "Isosurface does not contain any vertices." << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Surfaces between voxels with zero confidence are ghosts. */
@@ -187,5 +188,5 @@ main (int argc, char** argv)
 
     std::cout << "All done. Remember to clean the output mesh." << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -84,7 +85,7 @@ main (int argc, char** argv)
         {
             default:
                 std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;
-                return 1;
+                return EXIT_FAILURE;
         }
     }
 
@@ -92,7 +93,7 @@ main (int argc, char** argv)
     if (conf.input.size() < 2)
     {
         args.generate_helptext(std::cerr);
-        return 1;
+        return EXIT_FAILURE;
     }
     conf.output = conf.input.back();
     conf.input.pop_back();
@@ -101,7 +102,7 @@ main (int argc, char** argv)
     if (util::fs::file_exists(conf.output.c_str()))
     {
         std::cerr << "Error: Output exists, exiting." << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Read all stanford config files and merge into one mesh. */
@@ -120,7 +121,7 @@ main (int argc, char** argv)
             catch (std::exception& e)
             {
                 std::cerr << "Error: " << e.what() << std::endl;
-                return 1;
+                return EXIT_FAILURE;
             }
         }
         else if (util::string::right(conf.input[i], 5) == ".conf")
@@ -132,19 +133,19 @@ main (int argc, char** argv)
             catch (std::exception& e)
             {
                 std::cerr << "Error: " << e.what() << std::endl;
-                return 1;
+                return EXIT_FAILURE;
             }
         }
         else
         {
             std::cerr << "Unknown alignment format: "
                 << conf.input[i] << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
     std::cout << "Writing mesh: " << conf.output << std::endl;
     mve::geom::save_mesh(all_meshes, conf.output);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
