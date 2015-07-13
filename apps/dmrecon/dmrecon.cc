@@ -61,7 +61,7 @@ aabb_from_string (std::string const& str,
     if (tok.size() != 6)
     {
         std::cerr << "Error: Invalid AABB given" << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
     for (int i = 0; i < 3; ++i)
@@ -199,7 +199,7 @@ main (int argc, char** argv)
             {
                 args.generate_helptext(std::cerr);
                 std::cerr << "Error: Unrecognized progress style" << std::endl;
-                return 1;
+                return EXIT_FAILURE;
             }
 
         }
@@ -210,7 +210,7 @@ main (int argc, char** argv)
             args.generate_helptext(std::cerr);
             std::cerr << "Error: unrecognized option: "
                 << arg->opt->lopt << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
@@ -228,7 +228,7 @@ main (int argc, char** argv)
     catch (std::exception& e)
     {
         std::cerr << "Error loading scene: " << e.what() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Settings for Multi-view stereo */
@@ -257,7 +257,7 @@ main (int argc, char** argv)
         catch (std::exception &err)
         {
             std::cerr << err.what() << std::endl;
-            return 1;
+            return EXIT_FAILURE;
         }
     }
     else
@@ -324,5 +324,5 @@ main (int argc, char** argv)
     std::cout << "Saving views back to disc..." << std::endl;
     scene->save_views();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

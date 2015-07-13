@@ -25,7 +25,7 @@ void
 print_help_and_exit (util::Arguments const& args)
 {
     args.generate_helptext(std::cerr);
-    std::exit(1);
+    std::exit(EXIT_FAILURE);
 }
 
 int

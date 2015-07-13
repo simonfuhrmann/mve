@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -55,7 +56,7 @@ main (int argc, char** argv)
     catch (std::exception& e)
     {
         std::cerr << "Error loading mesh: " << e.what() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if (conf.compute_normals)
@@ -75,8 +76,8 @@ main (int argc, char** argv)
     catch (std::exception& e)
     {
         std::cerr << "Error saving mesh: " << e.what() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

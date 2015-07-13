@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 
 #include <QFormLayout>
@@ -188,7 +189,7 @@ AddinManager::init_impl (void)
     {
         std::cout << "Error initializing GLEW: " << glewGetErrorString(err)
             << std::endl;
-        std::exit(1);
+        std::exit(EXIT_FAILURE);
     }
 #endif
 
