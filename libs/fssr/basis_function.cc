@@ -3,6 +3,8 @@
  * Written by Simon Fuhrmann.
  */
 
+#include <algorithm>
+
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
@@ -38,10 +40,7 @@ evaluate (math::Vec3f const& pos, Sample const& sample,
 }
 
 /*
- * Rotation from normal in 3D.
- * The rotation axis is determined using cross product between the reference
- * normal and the given normal. The rotation angle is obtained using the
- * dot product. MVE is used to obtain the 3x3 rotation matrix.
+ * Rotation from normal in 3D using two axis orthogonal to the normal.
  */
 void
 rotation_from_normal (math::Vec3f const& normal, math::Matrix3f* rot)
@@ -59,14 +58,15 @@ rotation_from_normal (math::Vec3f const& normal, math::Matrix3f* rot)
         /* 180 degree rotation around the z-axis. */
         (*rot)[0] = -1.0f; (*rot)[1] = 0.0f;  (*rot)[2] = 0.0f;
         (*rot)[3] = 0.0f;  (*rot)[4] = -1.0f; (*rot)[5] = 0.0f;
-        (*rot)[6] = 0.0f; (*rot)[7] = 0.0f;   (*rot)[8] = 1.0f;
+        (*rot)[6] = 0.0f;  (*rot)[7] = 0.0f;  (*rot)[8] = 1.0f;
         return;
     }
 
-    math::Vec3f const axis = normal.cross(ref).normalized();
-    float const cos_alpha = math::clamp(ref.dot(normal), -1.0f, 1.0f);
-    float const angle = std::acos(cos_alpha);
-    *rot = math::matrix_rotation_from_axis_angle(axis, angle);
+    math::Vec3f const axis1 = normal.cross(ref).normalized();
+    math::Vec3f const axis2 = normal.cross(axis1);
+    std::copy(normal.begin(), normal.end(), rot->begin() + 0);
+    std::copy(axis1.begin(), axis1.end(), rot->begin() + 3);
+    std::copy(axis2.begin(), axis2.end(), rot->begin() + 6);
 }
 
 /*
