@@ -291,7 +291,8 @@ CameraDatabase::CameraDatabase (void)
     this->add("Minolta Co., Ltd.", "DiMAGE S304", 7.144f, 5.358f, 2048, 1536);
     this->add("Minolta Co., Ltd.", "DiMAGE 5", 7.144f, 5.358f, 2048, 1536);
     this->add("Minolta Co., Ltd.", "DiMAGE 7", 8.8f, 6.6f, 2560, 1920);
-    this->add("OLYMPUS IMAGING CORP.", "E-PL5", 6.4f, 4.8f, 1344, 1008);
+    this->add("OLYMPUS IMAGING CORP.", "E-PL5", 17.3f, 13.0f, 4608, 3456);
+    this->add("OLYMPUS IMAGING CORP.", "E-PL7", 17.3f, 13.0f, 4608, 3456);
 
     /* Cameras from Kyocera. */
     this->add("KYOCERA", "FC-S3", 7.144f, 5.358f, 2048, 1536);
