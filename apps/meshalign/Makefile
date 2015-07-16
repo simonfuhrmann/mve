@@ -1,16 +1,12 @@
-MVE_ROOT := ../../../mve
+MVE_ROOT := ../..
 TARGET := $(shell basename `pwd`)
 include ${MVE_ROOT}/Makefile.inc
 
-FSSR_ROOT := ../..
-vpath libfssr.a ${FSSR_ROOT}/libs/fssr/
-
-CXXFLAGS += -I${FSSR_ROOT}/libs -I${MVE_ROOT}/libs ${OPENMP}
+CXXFLAGS += -I${MVE_ROOT}/libs ${OPENMP}
 LDLIBS += -lpng -ltiff -ljpeg ${OPENMP}
 
 SOURCES := $(wildcard [^_]*.cc)
-${TARGET}: ${SOURCES:.cc=.o} libmve.a libmve_util.a
-	$(LINK.o) $^ $(LDLIBS) -o $@
+${TARGET}: ${SOURCES:.cc=.o} libmve_fssr.a libmve.a libmve_util.a
 
 clean:
 	${RM} ${TARGET} *.o Makefile.dep

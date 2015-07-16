@@ -7,10 +7,10 @@ SOURCES = $(wildcard math/gtest_*.cc) $(wildcard mve/gtest_*.cc) $(wildcard sfm/
 CXXFLAGS = -g -O3 -pthread -I${MVE_ROOT}/libs -I${GTEST_PATH}/include
 LDLIBS += -lpng -ltiff -ljpeg
 
-test: ${SOURCES:.cc=.o} gtest_main.a libmve_sfm.a libmve.a libmve_util.a libmve_fssr.a
+test: ${SOURCES:.cc=.o} libmve_fssr.a libmve_sfm.a libmve.a libmve_util.a gtest_main.a
 	${LINK.cc} -o $@ $^ ${LDLIBS}
 
 clean:
-	${RM} ${TARGET} mve/*.o util/*.o math/*.o fssr/*.o Makefile.dep
+	${RM} ${TARGET} mve/*.o util/*.o math/*.o sfm/*.o fssr/*.o Makefile.dep
 
 .PHONY: test
