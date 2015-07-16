@@ -4,6 +4,7 @@ all:
 	${MAKE} -C mve
 	${MAKE} -C sfm
 	${MAKE} -C dmrecon
+	$(MAKE) -C fssr
 	${MAKE} -C ogl
 
 clean:
@@ -12,6 +13,7 @@ clean:
 	${MAKE} -C mve $@
 	${MAKE} -C sfm $@
 	${MAKE} -C dmrecon $@
+	$(MAKE) -C fssr $@
 	${MAKE} -C ogl $@
 
 .PHONY: all clean

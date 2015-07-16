@@ -11,7 +11,6 @@ test:
 clean:
 	$(MAKE) -C apps $@
 	$(MAKE) -C libs $@
-	#$(MAKE) -C docs $@
 	$(MAKE) -C tests $@
 
 .PHONY: all doc test clean
