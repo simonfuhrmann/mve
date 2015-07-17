@@ -24,7 +24,7 @@ View::load_view (std::string const& user_path)
 {
     std::string safe_path = util::fs::sanitize_path(user_path);
     safe_path = util::fs::abspath(safe_path);
-    std::cout << "View: Loading view: " << path << std::endl;
+    //std::cout << "View: Loading view: " << path << std::endl;
 
     /* Open meta.ini and populate images and blobs. */
     this->clear();
@@ -177,7 +177,7 @@ View::save_view_as (std::string const& user_path)
 {
     std::string safe_path = util::fs::sanitize_path(user_path);
     safe_path = util::fs::abspath(safe_path);
-    std::cout << "View: Saving view: " << safe_path << std::endl;
+    //std::cout << "View: Saving view: " << safe_path << std::endl;
 
     /* Create view directory if needed. */
     if (util::fs::file_exists(safe_path.c_str()))
@@ -244,8 +244,8 @@ View::save_view (void)
     /* Delete files of removed images and BLOBs. */
     for (std::size_t i = 0; i < this->to_delete.size(); ++i)
     {
-        std::cout << "View: Deleting file: "
-            << this->to_delete[i] << std::endl;
+        //std::cout << "View: Deleting file: "
+        //    << this->to_delete[i] << std::endl;
 
         std::string fname = util::fs::join_path(this->path, this->to_delete[i]);
         if (util::fs::file_exists(fname.c_str())
@@ -308,8 +308,8 @@ View::cache_cleanup (void)
         released += 1;
     }
 
-    std::cout << "View: Released " << released
-        << " cache entries." << std::endl;
+    //std::cout << "View: Released " << released
+    //    << " cache entries." << std::endl;
 
     return released;
 }
@@ -655,7 +655,7 @@ View::parse_meta_data_file (std::string const& path)
 void
 View::save_meta_data (std::string const& path)
 {
-    std::cout << "View: Saving meta data: " VIEW_IO_META_FILE << std::endl;
+    //std::cout << "View: Saving meta data: " VIEW_IO_META_FILE << std::endl;
     std::string const fname = util::fs::join_path(path, VIEW_IO_META_FILE);
     std::string const fname_new = fname + ".new";
 
@@ -727,8 +727,8 @@ View::populate_images_and_blobs (std::string const& path)
         if (ext4 == ".png" || ext4 == ".jpg" ||
             ext5 == ".jpeg" || ext5 == ".mvei")
         {
-            std::cout << "View: Adding image proxy: "
-                << file.name << std::endl;
+            //std::cout << "View: Adding image proxy: "
+            //    << file.name << std::endl;
 
             ImageProxy proxy;
             proxy.is_dirty = false;
@@ -738,8 +738,8 @@ View::populate_images_and_blobs (std::string const& path)
         }
         else if (ext5 == ".blob")
         {
-            std::cout << "View: Adding BLOB proxy: "
-                << file.name << std::endl;
+            //std::cout << "View: Adding BLOB proxy: "
+            //    << file.name << std::endl;
 
             BlobProxy proxy;
             proxy.is_dirty = false;
@@ -815,7 +815,7 @@ View::load_image_intern (ImageProxy* proxy, bool init_only)
 
     if (init_only)
     {
-        std::cout << "View: Initializing image " << filename << std::endl;
+        //std::cout << "View: Initializing image " << filename << std::endl;
         image::ImageHeaders headers = image::load_file_headers(filename);
         proxy->is_dirty = false;
         proxy->width = headers.width;
@@ -826,7 +826,7 @@ View::load_image_intern (ImageProxy* proxy, bool init_only)
         return;
     }
 
-    std::cout << "View: Loading image " << filename << std::endl;
+    //std::cout << "View: Loading image " << filename << std::endl;
     std::string ext4 = util::string::right(proxy->filename, 4);
     std::string ext5 = util::string::right(proxy->filename, 5);
     ext4 = util::string::lowercase(ext4);
@@ -872,7 +872,7 @@ View::save_image_intern (ImageProxy* proxy)
         std::string ext = get_file_extension(proxy->filename);
         std::string fname = proxy->name + ext;
         std::string pname = util::fs::join_path(this->path, fname);
-        std::cout << "View: Copying image: " << fname << std::endl;
+        //std::cout << "View: Copying image: " << fname << std::endl;
         util::fs::copy_file(proxy->filename.c_str(), pname.c_str());
         proxy->filename = fname;
         proxy->is_dirty = false;
@@ -897,7 +897,7 @@ View::save_image_intern (ImageProxy* proxy)
     std::string fname_new = fname_save + ".new";
 
     /* Save the new image. */
-    std::cout << "View: Saving image: " << filename << std::endl;
+    //std::cout << "View: Saving image: " << filename << std::endl;
     if (use_png_format)
         image::save_png_file(proxy->image, fname_new);
     else
@@ -909,7 +909,7 @@ View::save_image_intern (ImageProxy* proxy)
     /* If the original file was different (e.g. JPG to lossless), remove it. */
     if (!proxy->filename.empty() && fname_save != fname_orig)
     {
-        std::cout << "View: Deleting file: " << fname_orig << std::endl;
+        //std::cout << "View: Deleting file: " << fname_orig << std::endl;
         if (util::fs::file_exists(fname_orig.c_str())
             && !util::fs::unlink(fname_orig.c_str()))
             throw util::FileException(fname_orig, std::strerror(errno));
@@ -982,14 +982,14 @@ View::load_blob_intern (BlobProxy* proxy, bool init_only)
 
     if (init_only)
     {
-        std::cout << "View: Initializing BLOB: " << filename << std::endl;
+        //std::cout << "View: Initializing BLOB: " << filename << std::endl;
         proxy->size = size;
         proxy->is_initialized = true;
         return;
     }
 
     /* Read blob payload. */
-    std::cout << "View: Loading BLOB: " << filename << std::endl;
+    //std::cout << "View: Loading BLOB: " << filename << std::endl;
     ByteImage::Ptr blob = ByteImage::create(size, 1, 1);
     in.read(blob->get_byte_pointer(), blob->get_byte_size());
     if (!in.good())
@@ -1019,7 +1019,7 @@ View::save_blob_intern (BlobProxy* proxy)
     std::string fname_new = fname_orig + ".new";
 
     // Check if file exists? Create unique temp name?
-    std::cout << "View: Saving BLOB " << proxy->filename << std::endl;
+    //std::cout << "View: Saving BLOB " << proxy->filename << std::endl;
     std::ofstream out(fname_new.c_str());
     if (!out.good())
         throw util::FileException(fname_new, std::strerror(errno));
