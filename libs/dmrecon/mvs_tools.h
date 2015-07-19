@@ -13,16 +13,16 @@
 MVS_NAMESPACE_BEGIN
 
 /** interpolate color and derivative at given sample positions */
-void colAndExactDeriv(mve::ImageBase const& img,
+void colAndExactDeriv(mve::ByteImage const& img,
     PixelCoords const& imgPos, PixelCoords const& gradDir,
     Samples& color, Samples& deriv);
 
 /** get color at given pixel positions (no interpolation) */
-void getXYZColorAtPix(mve::ImageBase const& img,
+void getXYZColorAtPix(mve::ByteImage const& img,
     std::vector<math::Vec2i> const& imgPos, Samples* color);
 
 /** interpolate only color at given sample positions */
-void getXYZColorAtPos(mve::ImageBase const& img,
+void getXYZColorAtPos(mve::ByteImage const& img,
     PixelCoords const& imgPos, Samples* color);
 
 /** Computes the parallax between two views with respect to some 3D point p */

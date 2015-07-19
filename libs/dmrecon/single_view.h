@@ -29,8 +29,8 @@ public:
     void addFeature(std::size_t idx);
     std::vector<std::size_t> const& getFeatureIndices() const;
     int clampLevel(int level) const;
-    mve::ImageBase::ConstPtr const& getScaledImg() const;
-    mve::ImageBase::ConstPtr const& getPyramidImg(int level) const;
+    mve::ByteImage::ConstPtr const& getScaledImg() const;
+    mve::ByteImage::ConstPtr const& getPyramidImg(int level) const;
     mve::View::Ptr getMVEView() const;
 
     std::string createFileName(float scale) const;
@@ -118,17 +118,15 @@ SingleView::getMVEView() const
     return this->view;
 }
 
-inline mve::ImageBase::ConstPtr const&
+inline mve::ByteImage::ConstPtr const&
 SingleView::getPyramidImg(int level) const
 {
-    assert(this->img_pyramid->at(level).image != NULL);
     return this->img_pyramid->at(level).image;
 }
 
-inline mve::ImageBase::ConstPtr const&
+inline mve::ByteImage::ConstPtr const&
 SingleView::getScaledImg() const
 {
-    assert(this->has_target_level);
     return this->target_level.image;
 }
 
