@@ -50,67 +50,40 @@ namespace
         if (levels[minLevel].image != NULL)
             return;
 
-        mve::ImageBase::Ptr img = view->get_image(embeddingName);
+        mve::ByteImage::Ptr img = view->get_byte_image(embeddingName);
         int channels = img->channels();
-        mve::ImageType type = img->get_type();
 
-        switch (type)
-        {
-            case mve::IMAGE_TYPE_UINT8:
-                if (channels == 2 || channels == 4)
-                    mve::image::reduce_alpha<uint8_t>(img);
-                if (img->channels() == 1)
-                    img = mve::image::expand_grayscale<uint8_t>(img);
-                break;
-
-            case mve::IMAGE_TYPE_FLOAT:
-                if (channels == 2 || channels == 4)
-                    mve::image::reduce_alpha<float>(img);
-                if (img->channels() == 1)
-                    img = mve::image::expand_grayscale<float>(img);
-                break;
-
-            default:
-                throw util::Exception("Invalid image type");
-        }
-
+        /* Remove alpha channel. */
+        if (channels == 2 || channels == 4)
+            mve::image::reduce_alpha<uint8_t>(img);
+        /* Expand grayscale images to RGB. */
+        if (img->channels() == 1)
+            img = mve::image::expand_grayscale<uint8_t>(img);
+        /* Expect 3-channel images. */
         if (img->channels() != 3)
             throw std::invalid_argument("Image with invalid number of channels");
 
-        /* create image pyramid */
+        /* Create image pyramid. */
         int curr_width = img->width();
         int curr_height = img->height();
-
-        int i = 0;
-
-        if (0 >= minLevel)
-            levels[0].image = img;
-
-        while (std::min(curr_width, curr_height) >= MIN_IMAGE_DIM)
+        for (int i = 0; std::min(curr_width, curr_height) >= MIN_IMAGE_DIM; ++i)
         {
-            ++i;
-
             if (levels[i].image != NULL)
                 break;
 
-            if (type == mve::IMAGE_TYPE_UINT8)
+            if (i > 0)
+            {
                 img = mve::image::rescale_half_size_gaussian<uint8_t>(img, 1.f);
-            else if (type == mve::IMAGE_TYPE_FLOAT)
-                img = mve::image::rescale_half_size_gaussian<float>(img, 1.f);
-            else
-                throw util::Exception("Invalid image type");
+                curr_width = img->width();
+                curr_height = img->height();
+            }
 
-            /* compute new projection matrix */
-            curr_width = img->width();
-            curr_height = img->height();
-
-            if (i >= minLevel)
+            if (minLevel <= i)
                 levels[i].image = img;
         }
 
         view->cache_cleanup();
     }
-
 }
 
 ImagePyramid::ConstPtr

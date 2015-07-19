@@ -7,26 +7,20 @@
 
 MVS_NAMESPACE_BEGIN
 
-PatchSampler::PatchSampler(
-    std::vector<SingleView::Ptr> const& _views,
+PatchSampler::PatchSampler(std::vector<SingleView::Ptr> const& _views,
     Settings const& _settings,
-    int _x,          // pixel position
-    int _y,
-    float _depth,
-    float _dzI,
-    float _dzJ)
-    :
-    views(_views),
-    settings(_settings),
-    midPix(_x,_y),
-    masterMeanCol(0.f),
-    depth(_depth),
-    dzI(_dzI),
-    dzJ(_dzJ),
-    success(views.size(), false)
+    int _x, int _y, float _depth, float _dzI, float _dzJ)
+    : views(_views)
+    , settings(_settings)
+    , midPix(_x,_y)
+    , masterMeanCol(0.f)
+    , depth(_depth)
+    , dzI(_dzI)
+    , dzJ(_dzJ)
+    , success(views.size(), false)
 {
     SingleView::Ptr refV(views[settings.refViewNr]);
-    mve::ImageBase::ConstPtr masterImg(refV->getScaledImg());
+    mve::ByteImage::ConstPtr masterImg(refV->getScaledImg());
 
     offset = settings.filterWidth / 2;
     nrSamples = sqr(settings.filterWidth);
@@ -41,12 +35,10 @@ PatchSampler::PatchSampler(
     h[0] = h[1] = offset;
     topLeft = midPix - h;
     bottomRight = midPix + h;
-    if (topLeft[0] < 0 || topLeft[1] < 0 ||
-        bottomRight[0] > (int) masterImg->width()-1 ||
-        bottomRight[1] > (int) masterImg->height()-1)
-    {
+    if (topLeft[0] < 0 || topLeft[1] < 0
+        || bottomRight[0] > (int) masterImg->width()-1
+        || bottomRight[1] > (int) masterImg->height()-1)
         return;
-    }
 
     /* initialize viewing rays from master view */
     std::size_t count = 0;
@@ -99,14 +91,15 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
     stepSize[v] = 1.f / d;
 
     /* request according undistorted color image */
-    mve::ImageBase::ConstPtr img(views[v]->getPyramidImg(mmLevel));
-    int w = img->width();
-    int h = img->height();
+    mve::ByteImage::ConstPtr img(views[v]->getPyramidImg(mmLevel));
+    int const w = img->width();
+    int const h = img->height();
 
     /* compute image position and gradient direction for each sample
        point in neighbor image v */
     std::vector<math::Vec2f> gradDir(nrSamples);
-    for (std::size_t i = 0; i < nrSamples; ++i) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
+    {
         math::Vec3f p0(patchPoints[i]);
         math::Vec3f p1(patchPoints[i] + masterViewDirs[i] * stepSize[v]);
         imgPos[i] = views[v]->worldToScreen(p0, mmLevel);
@@ -133,21 +126,20 @@ PatchSampler::fastColAndDeriv(std::size_t v, Samples& color, Samples& deriv)
 float
 PatchSampler::getFastNCC(std::size_t v)
 {
-    if (neighColorSamples[v].empty()) {
+    if (neighColorSamples[v].empty())
         computeNeighColorSamples(v);
-    }
     if (!success[v])
         return -1.f;
     assert(success[settings.refViewNr]);
     math::Vec3f meanY(0.f);
-    for (std::size_t i = 0; i < nrSamples; ++i) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
         meanY += neighColorSamples[v][i];
-    }
     meanY /= (float) nrSamples;
 
     float sqrDevY = 0.f;
     float devXY = 0.f;
-    for (std::size_t i = 0; i < nrSamples; ++i) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
+    {
         sqrDevY += (neighColorSamples[v][i] - meanY).square_norm();
         // Note: master color samples are normalized!
         devXY += (masterColorSamples[i] - meanX)
@@ -173,7 +165,8 @@ PatchSampler::getNCC(std::size_t u, std::size_t v)
 
     math::Vec3f meanX(0.f);
     math::Vec3f meanY(0.f);
-    for (std::size_t i = 0; i < nrSamples; ++i) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
+    {
         meanX += neighColorSamples[u][i];
         meanY += neighColorSamples[v][i];
     }
@@ -183,7 +176,8 @@ PatchSampler::getNCC(std::size_t u, std::size_t v)
     float sqrDevX = 0.f;
     float sqrDevY = 0.f;
     float devXY = 0.f;
-    for (std::size_t i = 0; i < nrSamples; ++i) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
+    {
         sqrDevX += (neighColorSamples[u][i] - meanX).square_norm();
         sqrDevY += (neighColorSamples[v][i] - meanY).square_norm();
         devXY += (neighColorSamples[u][i] - meanX)
@@ -224,8 +218,10 @@ PatchSampler::getSSD(std::size_t v, math::Vec3f const& cs)
         return -1.f;
 
     float sum = 0.f;
-    for (std::size_t i = 0; i < nrSamples; ++i) {
-        for (int c = 0; c < 3; ++c) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
+    {
+        for (int c = 0; c < 3; ++c)
+        {
             float diff = cs[c] * neighColorSamples[v][i][c] -
                 masterColorSamples[i][c];
             sum += diff * diff;
@@ -271,11 +267,14 @@ PatchSampler::computePatchPoints()
     SingleView::Ptr refV = views[settings.refViewNr];
 
     unsigned int count = 0;
-    for (int j = topLeft[1]; j <= bottomRight[1]; ++j) {
-        for (int i = topLeft[0]; i <= bottomRight[0]; ++i) {
+    for (int j = topLeft[1]; j <= bottomRight[1]; ++j)
+    {
+        for (int i = topLeft[0]; i <= bottomRight[0]; ++i)
+        {
             float tmpDepth = depth + (i - midPix[0]) * dzI +
                 (j - midPix[1]) * dzJ;
-            if (tmpDepth <= 0.f) {
+            if (tmpDepth <= 0.f)
+            {
                 success[settings.refViewNr] = false;
                 return;
             }
@@ -290,13 +289,14 @@ void
 PatchSampler::computeMasterSamples()
 {
     SingleView::Ptr refV = views[settings.refViewNr];
-    mve::ImageBase::ConstPtr img(refV->getScaledImg());
+    mve::ByteImage::ConstPtr img(refV->getScaledImg());
 
     /* draw color samples from image and compute mean color */
     std::size_t count = 0;
     std::vector<math::Vec2i> imgPos(nrSamples);
     for (int j = topLeft[1]; j <= bottomRight[1]; ++j)
-        for (int i = topLeft[0]; i <= bottomRight[0]; ++i) {
+        for (int i = topLeft[0]; i <= bottomRight[0]; ++i)
+        {
             imgPos[count][0] = i;
             imgPos[count][1] = j;
             ++count;
@@ -305,7 +305,8 @@ PatchSampler::computeMasterSamples()
 
     masterMeanCol = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i)
-        for (std::size_t c = 0; c < 3; ++c) {
+        for (std::size_t c = 0; c < 3; ++c)
+        {
             assert(masterColorSamples[i][c] >= 0 &&
                 masterColorSamples[i][c] <= 1);
             masterMeanCol += masterColorSamples[i][c];
@@ -321,7 +322,8 @@ PatchSampler::computeMasterSamples()
 
     /* normalize master samples so that average intensity over all
        channels is 1 and compute mean color afterwards */
-    for (std::size_t i = 0; i < nrSamples; ++i) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
+    {
         masterColorSamples[i] /= masterMeanCol;
         meanX += masterColorSamples[i];
     }
@@ -329,9 +331,8 @@ PatchSampler::computeMasterSamples()
     sqrDevX = 0.f;
 
     /* compute variance (independent from actual mean) */
-    for (std::size_t i = 0; i < nrSamples; ++i) {
+    for (std::size_t i = 0; i < nrSamples; ++i)
         sqrDevX += (masterColorSamples[i] - meanX).square_norm();
-    }
 }
 
 void
@@ -363,9 +364,9 @@ PatchSampler::computeNeighColorSamples(std::size_t v)
         ratio *= 2.f;
     }
     mmLevel = views[v]->clampLevel(mmLevel);
-    mve::ImageBase::ConstPtr img(views[v]->getPyramidImg(mmLevel));
-    int w = img->width();
-    int h = img->height();
+    mve::ByteImage::ConstPtr img(views[v]->getPyramidImg(mmLevel));
+    int const w = img->width();
+    int const h = img->height();
 
     color.resize(nrSamples);
     imgPos.resize(nrSamples);

@@ -54,7 +54,8 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     for (std::size_t i = 0; i < mve_views.size(); ++i)
     {
         if (mve_views[i] == NULL || !mve_views[i]->is_camera_valid() ||
-            !mve_views[i]->has_image(this->settings.imageEmbedding))
+            !mve_views[i]->has_image(this->settings.imageEmbedding,
+            mve::IMAGE_TYPE_UINT8))
             continue;
         views[i] = mvs::SingleView::create(scene, mve_views[i],
             this->settings.imageEmbedding);
@@ -67,7 +68,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     /* Prepare reconstruction */
     refV->loadColorImage(this->settings.scale);
     refV->prepareMasterView(settings.scale);
-    mve::ImageBase::ConstPtr scaled_img = refV->getScaledImg();
+    mve::ByteImage::ConstPtr scaled_img = refV->getScaledImg();
     this->width = scaled_img->width();
     this->height = scaled_img->height();
 
