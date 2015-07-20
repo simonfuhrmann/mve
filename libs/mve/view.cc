@@ -6,6 +6,7 @@
 #include "util/exception.h"
 #include "util/file_system.h"
 #include "util/tokenizer.h"
+#include "util/ini_parser.h"
 #include "mve/view.h"
 #include "mve/image_io.h"
 
@@ -589,67 +590,7 @@ View::parse_meta_data_file (std::string const& path)
         throw util::FileException(fname, "Error opening");
 
     /* Parse INI file. */
-    std::string line;
-    std::string section_name;
-    std::size_t line_number = 0;
-    std::stringstream failure_message;
-    while (true)
-    {
-        std::getline(in, line);
-        if (in.eof())
-            break;
-
-        line_number += 1;
-        util::string::clip_newlines(&line);
-        util::string::clip_whitespaces(&line);
-        if (line.empty())
-            continue;
-        if (line[0] == '#')
-            continue;
-
-        if (line[0] == '[' && line[line.size() - 1] == ']')
-        {
-            section_name = line.substr(1, line.size() - 2);
-            continue;
-        }
-
-        std::size_t sep_pos = line.find_first_of('=');
-        if (sep_pos != std::string::npos)
-        {
-            std::string key = line.substr(0, sep_pos);
-            util::string::clip_newlines(&key);
-            util::string::clip_whitespaces(&key);
-
-            std::string value = line.substr(sep_pos + 1);
-            util::string::clip_newlines(&value);
-            util::string::clip_whitespaces(&value);
-
-            if (key.empty())
-            {
-                failure_message << "Line " << line_number << ": Empty key";
-                break;
-            }
-
-            if (section_name.empty())
-            {
-                failure_message << "Line " << line_number << ": No section";
-                break;
-            }
-
-            key = section_name + "." + key;
-            this->meta_data.data[key] = value;
-            continue;
-        }
-
-        failure_message << "Line " << line_number << ": Invalid line";
-        break;
-    }
-    in.close();
-
-    /* Check for errors to report... */
-    std::string failure_string = failure_message.str();
-    if (!failure_string.empty())
-        throw util::Exception(failure_string);
+    util::parse_ini(in, &this->meta_data.data);
 }
 
 void
@@ -659,41 +600,24 @@ View::save_meta_data (std::string const& path)
     std::string const fname = util::fs::join_path(path, VIEW_IO_META_FILE);
     std::string const fname_new = fname + ".new";
 
-    /* Write meta data to file. */
     std::ofstream out(fname_new.c_str());
     if (!out.good())
         throw util::FileException(fname_new, std::strerror(errno));
 
+    /* Write meta data to file. */
     out << "# MVE view meta data is stored in INI-file syntax.\n";
     out << "# This file is generated, formatting will get lost.\n";
-
-    std::string last_section;
-    MetaData::KeyValueMap::const_iterator iter;
-    for (iter = this->meta_data.data.begin();
-        iter != this->meta_data.data.end(); iter++)
+    try
     {
-        std::string key = iter->first;
-        std::string value = iter->second;
-        util::string::clip_newlines(&key);
-        util::string::clip_whitespaces(&key);
-        util::string::clip_newlines(&value);
-        util::string::clip_whitespaces(&value);
-
-        std::size_t section_pos = key.find_first_of('.');
-        if (section_pos == std::string::npos)
-            throw std::runtime_error("Key/value pair without section");
-        std::string section = key.substr(0, section_pos);
-        key = key.substr(section_pos + 1);
-
-        if (section != last_section)
-        {
-            out << "\n[" << section << "]\n";
-            last_section = section;
-        }
-
-        out << key << " = " << value << std::endl;
+        util::write_ini(this->meta_data.data, out);
+        out.close();
     }
-    out.close();
+    catch (...)
+    {
+        out.close();
+        util::fs::unlink(fname_new.c_str());
+        throw;
+    }
 
     /* On succesfull write, move the new file in place. */
     this->replace_file(fname, fname_new);
