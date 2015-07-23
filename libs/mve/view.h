@@ -39,11 +39,11 @@
 #ifndef MVE_VIEW_HEADER
 #define MVE_VIEW_HEADER
 
-#include <stdint.h> // TODO: Use <cstdint> one C++11 is used.
-#include <string>
-#include <vector>
+#include <cstdint>
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "mve/defines.h"
 #include "mve/camera.h"
