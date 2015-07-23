@@ -43,8 +43,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
-#include "util/ref_ptr.h"
 #include "mve/defines.h"
 #include "mve/camera.h"
 #include "mve/image_base.h"
@@ -62,8 +62,8 @@ MVE_NAMESPACE_BEGIN
 class View
 {
 public:
-    typedef util::RefPtr<View> Ptr;
-    typedef util::RefPtr<View const> ConstPtr;
+    typedef std::shared_ptr<View> Ptr;
+    typedef std::shared_ptr<View const> ConstPtr;
 
     /**
      * View meta information that stores key/value pairs and the camera.
@@ -429,13 +429,15 @@ View::is_camera_valid (void) const
 inline ByteImage::Ptr
 View::get_byte_image (std::string const& name)
 {
-    return this->get_image(name, IMAGE_TYPE_UINT8);
+    return std::dynamic_pointer_cast<ByteImage>
+        (this->get_image(name, IMAGE_TYPE_UINT8));
 }
 
 inline FloatImage::Ptr
 View::get_float_image (std::string const& name)
 {
-    return this->get_image(name, IMAGE_TYPE_FLOAT);
+    return std::dynamic_pointer_cast<FloatImage>
+        (this->get_image(name, IMAGE_TYPE_FLOAT));
 }
 
 MVE_NAMESPACE_END

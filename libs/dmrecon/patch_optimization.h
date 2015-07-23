@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "math/vector.h"
-#include "util/ref_ptr.h"
 #include "dmrecon/defines.h"
 #include "dmrecon/patch_sampler.h"
 #include "dmrecon/single_view.h"

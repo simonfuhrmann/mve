@@ -1,7 +1,6 @@
 #ifndef DMRECON_LOCAL_VIEW_SELECTION_H
 #define DMRECON_LOCAL_VIEW_SELECTION_H
 
-#include "util/ref_ptr.h"
 #include "dmrecon/view_selection.h"
 #include "dmrecon/patch_sampler.h"
 #include "dmrecon/single_view.h"

@@ -11,8 +11,8 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <memory>
 
-#include "util/ref_ptr.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
 #include "ogl/check_gl_error.h"
@@ -32,8 +32,8 @@ OGL_NAMESPACE_BEGIN
 class VertexArray
 {
 public:
-    typedef util::RefPtr<VertexArray> Ptr;
-    typedef util::RefPtr<VertexArray const> ConstPtr;
+    typedef std::shared_ptr<VertexArray> Ptr;
+    typedef std::shared_ptr<VertexArray const> ConstPtr;
 
     typedef std::pair<VertexBuffer::Ptr, std::string> BoundVBO;
     typedef std::vector<BoundVBO> VBOList;

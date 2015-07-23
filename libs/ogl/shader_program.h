@@ -7,8 +7,8 @@
 #define OGL_SHADER_PROGRAM_HEADER
 
 #include <string>
+#include <memory>
 
-#include "util/ref_ptr.h"
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "ogl/defines.h"
@@ -28,8 +28,8 @@ OGL_NAMESPACE_BEGIN
 class ShaderProgram
 {
 public:
-    typedef util::RefPtr<ShaderProgram> Ptr;
-    typedef util::RefPtr<ShaderProgram const> ConstPtr;
+    typedef std::shared_ptr<ShaderProgram> Ptr;
+    typedef std::shared_ptr<ShaderProgram const> ConstPtr;
 
 public:
     ~ShaderProgram (void);

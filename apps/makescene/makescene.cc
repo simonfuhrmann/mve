@@ -232,13 +232,15 @@ create_thumbnail (mve::ImageBase::ConstPtr img)
     {
         case mve::IMAGE_TYPE_UINT8:
             image = mve::image::create_thumbnail<uint8_t>
-                (img, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+                (std::dynamic_pointer_cast<mve::ByteImage const>(img),
+                THUMBNAIL_SIZE, THUMBNAIL_SIZE);
             break;
 
         case mve::IMAGE_TYPE_UINT16:
         {
             mve::RawImage::Ptr temp = mve::image::create_thumbnail<uint16_t>
-                (img, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+                (std::dynamic_pointer_cast<mve::RawImage const>(img),
+                THUMBNAIL_SIZE, THUMBNAIL_SIZE);
             uint16_t vmin, vmax;
             find_min_max_percentile(temp, &vmin, &vmax);
             image = mve::image::raw_to_byte_image(temp, vmin, vmax);
@@ -248,7 +250,8 @@ create_thumbnail (mve::ImageBase::ConstPtr img)
         case mve::IMAGE_TYPE_FLOAT:
         {
             mve::FloatImage::Ptr temp = mve::image::create_thumbnail<float>
-                (img, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+                (std::dynamic_pointer_cast<mve::FloatImage const>(img),
+                THUMBNAIL_SIZE, THUMBNAIL_SIZE);
             float vmin, vmax;
             find_min_max_percentile(temp, &vmin, &vmax);
             image = mve::image::float_to_byte_image(temp, vmin, vmax);
@@ -960,7 +963,8 @@ import_images (AppSettings const& conf)
 
         std::cout << "Importing image " << fname << "..." << std::endl;
         std::string exif;
-        mve::ByteImage::Ptr image = load_any_image(afname, &exif);
+        mve::ByteImage::Ptr image = std::dynamic_pointer_cast<mve::ByteImage>
+            (load_any_image(afname, &exif));
         if (image == NULL)
             continue;
 

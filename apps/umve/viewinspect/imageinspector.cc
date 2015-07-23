@@ -175,7 +175,8 @@ ImageInspectorWidget::update_value_label (int x, int y)
     QString tooltip_str;
     if (this->orig_image->get_type() == mve::IMAGE_TYPE_FLOAT)
     {
-        mve::FloatImage::ConstPtr img(this->orig_image);
+        mve::FloatImage::ConstPtr img = std::dynamic_pointer_cast
+            <mve::FloatImage const>(this->orig_image);
         for (int i = 0; i < ic; ++i)
         {
             if (ic <= 4 || i < 3)
@@ -188,7 +189,8 @@ ImageInspectorWidget::update_value_label (int x, int y)
     }
     else if (this->orig_image->get_type() == mve::IMAGE_TYPE_UINT8)
     {
-        mve::ByteImage::ConstPtr img(this->orig_image);
+        mve::ByteImage::ConstPtr img = std::dynamic_pointer_cast
+            <mve::ByteImage const>(this->orig_image);
         for (int i = 0; i < ic; ++i)
         {
             if (ic <= 4 || i < 3)
@@ -201,7 +203,8 @@ ImageInspectorWidget::update_value_label (int x, int y)
     }
     else if (this->orig_image->get_type() == mve::IMAGE_TYPE_UINT16)
     {
-        mve::RawImage::ConstPtr img(this->orig_image);
+        mve::RawImage::ConstPtr img = std::dynamic_pointer_cast
+            <mve::RawImage const>(this->orig_image);
         for (int i = 0; i < ic; ++i)
         {
             if (ic <= 4 || i < 3)

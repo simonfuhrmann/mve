@@ -957,13 +957,15 @@ load_ppm_file_intern (std::string const& filename, bool bit8)
 RawImage::Ptr
 load_ppm_16_file (std::string const& filename)
 {
-    return load_ppm_file_intern(filename, false);
+    return std::dynamic_pointer_cast<RawImage>
+        (load_ppm_file_intern(filename, false));
 }
 
 ByteImage::Ptr
 load_ppm_file (std::string const& filename)
 {
-    return load_ppm_file_intern(filename, true);
+    return std::dynamic_pointer_cast<ByteImage>
+        (load_ppm_file_intern(filename, true));
 }
 
 void
@@ -1003,7 +1005,8 @@ save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
     else
     {
         /* PPM is big-endian, so we need to convert 16 bit data. */
-        RawImage::ConstPtr handle = image;
+        RawImage::ConstPtr handle
+            = std::dynamic_pointer_cast<RawImage const>(image);
         for (int i = 0; i < handle->get_value_amount(); ++i)
         {
             RawImage::ValueType value = util::system::betoh(handle->at(i));

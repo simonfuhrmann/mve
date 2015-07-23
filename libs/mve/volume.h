@@ -8,9 +8,9 @@
 
 #include <vector>
 #include <limits>
+#include <memory>
 
 #include "math/vector.h"
-#include "util/ref_ptr.h"
 #include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
@@ -25,8 +25,8 @@ template <typename T>
 class Volume
 {
 public:
-    typedef util::RefPtr<Volume<T> > Ptr;
-    typedef util::RefPtr<Volume<T> const> ConstPtr;
+    typedef std::shared_ptr<Volume<T> > Ptr;
+    typedef std::shared_ptr<Volume<T> const> ConstPtr;
     typedef std::vector<T> Voxels;
 
 public:

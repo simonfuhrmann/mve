@@ -7,9 +7,9 @@
 #define MVE_TRIANGLE_MESH_HEADER
 
 #include <vector>
+#include <memory>
 
 #include "math/vector.h"
-#include "util/ref_ptr.h"
 #include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
@@ -22,8 +22,8 @@ MVE_NAMESPACE_BEGIN
 class MeshBase
 {
 public:
-    typedef util::RefPtr<MeshBase> Ptr;
-    typedef util::RefPtr<MeshBase const> ConstPtr;
+    typedef std::shared_ptr<MeshBase> Ptr;
+    typedef std::shared_ptr<MeshBase const> ConstPtr;
 
     typedef unsigned int VertexID;
     typedef std::vector<math::Vec3f> VertexList;
@@ -85,8 +85,8 @@ protected:
 class TriangleMesh : public MeshBase
 {
 public:
-    typedef util::RefPtr<TriangleMesh> Ptr;
-    typedef util::RefPtr<TriangleMesh const> ConstPtr;
+    typedef std::shared_ptr<TriangleMesh> Ptr;
+    typedef std::shared_ptr<TriangleMesh const> ConstPtr;
 
     typedef std::vector<math::Vec3f> NormalList;
     typedef std::vector<math::Vec2f> TexCoordList;

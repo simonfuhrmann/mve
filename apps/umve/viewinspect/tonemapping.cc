@@ -323,8 +323,7 @@ void
 ToneMapping::on_ignore_zeroes_changed (void)
 {
     this->ignore_zeros = this->ignore_zeros_checkbox->isChecked();
-    this->find_min_max();
-    this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
+    this->setup_histogram();
     emit this->tone_mapping_changed();
 }
 
@@ -374,58 +373,24 @@ ToneMapping::highlight_from_slider (void) const
 }
 
 void
-ToneMapping::setup_histogram (mve::FloatImage::ConstPtr img)
+ToneMapping::setup_histogram (void)
 {
-    //util::WallTimer timer;
-    //std::cout << "Computing histogram..." << std::flush;
-    int const num_bins = this->histogram->preferred_num_bins();
-    std::vector<int> bins(num_bins, 0);
-    float const image_range = this->image_vmax - this->image_vmin;
-    /* Only build a histogram if the image is not constant. */
-    if (this->image_vmax != this->image_vmin)
-    {
-        for (float const* ptr = img->begin(); ptr != img->end(); ++ptr)
-        {
-            if (!std::isfinite(*ptr) || *ptr < this->image_vmin || *ptr > this->image_vmax)
-                continue;
-            float normalized = (*ptr - this->image_vmin) / image_range;
-            int bin = std::log10(1.0f + 9.0f * normalized) * (num_bins - 1);
-            bins[bin] += 1;
-        }
-    }
-    this->histogram->set_bins(bins);
-    //std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
-}
-
-void
-ToneMapping::setup_histogram (mve::ByteImage::ConstPtr img)
-{
-    float const vmin = 0.0f;
-    float const vmax = 255.0f;
-    int const num_bins = this->histogram->preferred_num_bins();
-    std::vector<int> bins(num_bins, 0);
-    for (uint8_t const* ptr = img->begin(); ptr != img->end(); ++ptr)
-    {
-        int bin = (*ptr - vmin) / (vmax - vmin) * (num_bins - 1);
-        bins[bin]++;
-    }
-    this->histogram->set_bins(bins);
-}
-
-void
-ToneMapping::find_min_max ()
-{
+    /* Don't compute histogram for byte images for performance reasons. */
+    if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
+        return;
     if (this->image->get_type() != mve::IMAGE_TYPE_FLOAT)
-        throw std::invalid_argument("Only float images are supported.");
+        throw std::invalid_argument("Unsupported image type.");
 
-    mve::FloatImage const& fimg = dynamic_cast<mve::FloatImage const&>(*this->image);
+    mve::FloatImage::ConstPtr fimg_ptr =
+        std::dynamic_pointer_cast<mve::FloatImage const>(this->image);
+    mve::FloatImage const& fimg = *fimg_ptr;
 
+    /* Find min/max value of the image. */
     float min = std::numeric_limits<float>::max();
     float max = -std::numeric_limits<float>::max();
-
     for (float const *p = fimg.begin(); p != fimg.end(); ++p)
     {
-        float v = *p;
+        float const v = *p;
         if (std::isfinite(v) && (!this->ignore_zeros || v != 0.0f))
         {
             min = std::min(min, v);
@@ -435,36 +400,41 @@ ToneMapping::find_min_max ()
 
     this->image_vmin = min;
     this->image_vmax = max;
+
+    /* Compute image histogram. */
+    int const num_bins = this->histogram->preferred_num_bins();
+    std::vector<int> bins(num_bins, 0);
+    float const image_range = this->image_vmax - this->image_vmin;
+    /* Only build a histogram if the image is not constant. */
+    if (this->image_vmax != this->image_vmin)
+    {
+        for (float const* ptr = fimg.begin(); ptr != fimg.end(); ++ptr)
+        {
+            float const value = *ptr;
+            if (value < this->image_vmin || value > this->image_vmax
+                || !std::isfinite(value))
+                continue;
+            float normalized = (*ptr - this->image_vmin) / image_range;
+            int bin = std::log10(1.0f + 9.0f * normalized) * (num_bins - 1);
+            bins[bin] += 1;
+        }
+    }
+    this->histogram->set_bins(bins);
 }
 
 void
 ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 {
     this->image = img;
+
+    /* Convert 16 bit image to float. */
+    if (this->image->get_type() == mve::IMAGE_TYPE_UINT16)
+        this->image = mve::image::type_to_type_image<uint16_t, float>
+            (std::dynamic_pointer_cast<mve::RawImage const>(this->image));
+
+    /* Compute image histogram. */
     this->histogram->clear();
-
-    switch (this->image->get_type())
-    {
-        case mve::IMAGE_TYPE_FLOAT:
-            this->find_min_max();
-            this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
-            break;
-
-        case mve::IMAGE_TYPE_UINT8:
-            // This takes too long!
-            //this->setup_histogram(mve::ByteImage::ConstPtr(this->image));
-            break;
-
-        case mve::IMAGE_TYPE_UINT16:
-            this->image = mve::image::type_to_type_image<uint16_t, float>(img);
-            this->find_min_max();
-            this->setup_histogram(mve::FloatImage::ConstPtr(this->image));
-            break;
-
-        default:
-            std::cerr << "Warning: Unsupported image type" << std::endl;
-            break;
-    }
+    this->setup_histogram();
 
     /*
      * Create channel assignment UI.
@@ -555,7 +525,7 @@ mve::ByteImage::ConstPtr
 ToneMapping::render (void)
 {
     if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
-        return this->image;
+        return std::dynamic_pointer_cast<mve::ByteImage const>(this->image);
 
     //util::WallTimer timer;
     //std::cout << "Rendering..." << std::flush;
@@ -581,7 +551,8 @@ ToneMapping::render (void)
     float min_value = this->image_vmin + linear_min * image_range;
     float max_value = this->image_vmin + linear_max * image_range;
 
-    mve::FloatImage::ConstPtr fimg = this->image;
+    mve::FloatImage::ConstPtr fimg = std::dynamic_pointer_cast
+        <mve::FloatImage const>(this->image);
     uint8_t* out_ptr = ret->begin();
     for (float const* px = fimg->begin();
         px != fimg->end(); px += chans, out_ptr += 3)

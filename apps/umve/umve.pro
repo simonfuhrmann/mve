@@ -1,6 +1,6 @@
 MVE_ROOT = ../..
 
-CONFIG += qt opengl release
+CONFIG += qt opengl release c++11
 QT += opengl
 
 QMAKE_LFLAGS += -rdynamic -fopenmp
