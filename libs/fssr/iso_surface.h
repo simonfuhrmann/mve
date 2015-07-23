@@ -13,7 +13,7 @@
 
 #include <vector>
 #include <map>
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
+#include <cstdint>
 
 #include "math/algo.h"
 #include "fssr/voxel.h"

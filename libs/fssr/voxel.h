@@ -6,7 +6,7 @@
 #ifndef FSSR_VOXEL_HEADER
 #define FSSR_VOXEL_HEADER
 
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
+#include <cstdint>
 
 #include "fssr/defines.h"
 #include "fssr/octree.h"

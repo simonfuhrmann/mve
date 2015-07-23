@@ -6,9 +6,9 @@
 #ifndef FSSR_OCTREE_HEADER
 #define FSSR_OCTREE_HEADER
 
-#include <stdint.h>  // TODO: Use <cstdint> once C++11 is standard.
 #include <vector>
 #include <string>
+#include <cstdint>
 
 #include "math/vector.h"
 #include "mve/mesh.h"

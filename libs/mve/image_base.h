@@ -6,10 +6,10 @@
 #ifndef MVE_IMAGE_BASE_HEADER
 #define MVE_IMAGE_BASE_HEADER
 
-#include <vector>
+#include <cstdint>
 #include <memory>
+#include <vector>
 
-#include "util/stdint_compat.h"
 #include "util/string.h"
 #include "mve/defines.h"
 

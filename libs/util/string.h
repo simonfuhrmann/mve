@@ -11,8 +11,8 @@
 #include <iomanip>
 #include <stdexcept>
 #include <algorithm>
+#include <cstdint>
 
-#include "util/stdint_compat.h"
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN
