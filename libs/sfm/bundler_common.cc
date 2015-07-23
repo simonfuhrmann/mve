@@ -62,7 +62,7 @@ load_viewports_data (std::istream& in, ViewportList* viewports)
     in.read(signature, VIEWPORTS_SIGNATURE_LEN);
     signature[VIEWPORTS_SIGNATURE_LEN] = '\0';
     if (std::string(VIEWPORTS_SIGNATURE) != signature)
-        throw std::invalid_argument("Error matching signature");
+        throw std::invalid_argument("Invalid viewports signature");
 
     /* Read number of viewports. */
     int32_t num_viewports;
@@ -221,7 +221,7 @@ deserialize_descriptors (mve::ByteImage::ConstPtr data,
     in.read(signature, DESCR_SIGNATURE_LEN);
     signature[DESCR_SIGNATURE_LEN] = '\0';
     if (std::string(DESCR_SIGNATURE) != signature)
-        throw std::invalid_argument("Error matching signature");
+        throw std::invalid_argument("Invalid descriptors signature");
 
     /* Read header. */
     int32_t num_descr, img_width, img_height;
@@ -230,7 +230,7 @@ deserialize_descriptors (mve::ByteImage::ConstPtr data,
     in.read(reinterpret_cast<char*>(&img_height), sizeof(int32_t));
 
     if (!in || in.eof() || num_descr < 0 || num_descr > 1000000)
-        throw std::invalid_argument("Error reading header");
+        throw std::invalid_argument("Invalid descriptors header");
 
     /* Read descriptors. */
     descriptors->resize(num_descr);
@@ -323,7 +323,7 @@ load_pairwise_matching (std::istream& in, PairwiseMatching* matching)
     in.read(signature, MATCHING_SIGNATURE_LEN);
     signature[MATCHING_SIGNATURE_LEN] = '\0';
     if (std::string(MATCHING_SIGNATURE) != signature)
-        throw std::invalid_argument("Error matching signature");
+        throw std::invalid_argument("Invalid matching signature");
 
     matching->clear();
 
