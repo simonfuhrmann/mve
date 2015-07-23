@@ -8,8 +8,8 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
-#include "util/ref_ptr.h"
 #include "mve/defines.h"
 #include "mve/view.h"
 #include "mve/bundle.h"
@@ -30,7 +30,7 @@ MVE_NAMESPACE_BEGIN
 class Scene
 {
 public:
-    typedef util::RefPtr<Scene> Ptr;
+    typedef std::shared_ptr<Scene> Ptr;
     typedef std::vector<View::Ptr> ViewList;
 
 public:

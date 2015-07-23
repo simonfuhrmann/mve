@@ -1,6 +1,5 @@
 #include "math/defines.h"
 #include "math/functions.h"
-#include "util/ref_ptr.h"
 #include "dmrecon/local_view_selection.h"
 #include "dmrecon/mvs_tools.h"
 #include "dmrecon/patch_sampler.h"

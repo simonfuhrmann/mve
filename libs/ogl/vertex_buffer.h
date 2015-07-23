@@ -6,7 +6,8 @@
 #ifndef OGL_VERTEX_BUFFER_HEADER
 #define OGL_VERTEX_BUFFER_HEADER
 
-#include "util/ref_ptr.h"
+#include <memory>
+
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
 #include "ogl/check_gl_error.h"
@@ -25,8 +26,8 @@ OGL_NAMESPACE_BEGIN
 class VertexBuffer
 {
 public:
-    typedef util::RefPtr<VertexBuffer> Ptr;
-    typedef util::RefPtr<VertexBuffer const> ConstPtr;
+    typedef std::shared_ptr<VertexBuffer> Ptr;
+    typedef std::shared_ptr<VertexBuffer const> ConstPtr;
 
 public:
     ~VertexBuffer (void);

@@ -80,9 +80,7 @@ private slots:
 private:
     float gamma_from_slider (void) const;
     float highlight_from_slider (void) const;
-    void setup_histogram (mve::FloatImage::ConstPtr img);
-    void setup_histogram (mve::ByteImage::ConstPtr img);
-    void find_min_max (void);
+    void setup_histogram (void);
 
 private:
     QTimer timer;

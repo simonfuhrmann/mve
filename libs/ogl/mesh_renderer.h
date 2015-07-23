@@ -6,7 +6,8 @@
 #ifndef OGL_MESH_RENDERER_HEADER
 #define OGL_MESH_RENDERER_HEADER
 
-#include "util/ref_ptr.h"
+#include <memory>
+
 #include "mve/mesh.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
@@ -23,8 +24,8 @@ OGL_NAMESPACE_BEGIN
 class MeshRenderer : public VertexArray
 {
 public:
-    typedef util::RefPtr<MeshRenderer> Ptr;
-    typedef util::RefPtr<MeshRenderer const> ConstPtr;
+    typedef std::shared_ptr<MeshRenderer> Ptr;
+    typedef std::shared_ptr<MeshRenderer const> ConstPtr;
 
 public:
     static Ptr create (void);

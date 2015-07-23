@@ -2,6 +2,7 @@
 #define DMRECON_IMAGE_PYRAMID_H
 
 #include <vector>
+#include <memory>
 #include <map>
 
 #include "mve/scene.h"
@@ -10,7 +11,6 @@
 
 #include "mve/camera.h"
 #include "math/matrix.h"
-#include "util/ref_ptr.h"
 #include "dmrecon/defines.h"
 #include "util/thread.h"
 #include "util/thread_locks.h"
@@ -53,8 +53,8 @@ ImagePyramidLevel::ImagePyramidLevel(mve::CameraInfo const& cam,
 class ImagePyramid : public std::vector<ImagePyramidLevel>
 {
 public:
-    typedef util::RefPtr<ImagePyramid> Ptr;
-    typedef util::RefPtr<ImagePyramid const> ConstPtr;
+    typedef std::shared_ptr<ImagePyramid> Ptr;
+    typedef std::shared_ptr<ImagePyramid const> ConstPtr;
 };
 
 class ImagePyramidCache

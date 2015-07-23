@@ -2,9 +2,9 @@
 #define DMRECON_PATCH_SAMPLER_H
 
 #include <map>
+#include <memory>
 
 #include "math/vector.h"
-#include "util/ref_ptr.h"
 #include "dmrecon/defines.h"
 #include "dmrecon/settings.h"
 #include "dmrecon/single_view.h"
@@ -14,7 +14,7 @@ MVS_NAMESPACE_BEGIN
 class PatchSampler
 {
 public:
-    typedef util::RefPtr<PatchSampler> Ptr;
+    typedef std::shared_ptr<PatchSampler> Ptr;
 
 public:
     /** Default constructor */

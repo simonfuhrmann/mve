@@ -7,10 +7,10 @@
 #define MVE_IMAGE_BASE_HEADER
 
 #include <vector>
+#include <memory>
 
 #include "util/stdint_compat.h"
 #include "util/string.h"
-#include "util/ref_ptr.h"
 #include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN
@@ -48,8 +48,8 @@ enum ImageType
 class ImageBase
 {
 public:
-    typedef util::RefPtr<ImageBase> Ptr;
-    typedef util::RefPtr<ImageBase const> ConstPtr;
+    typedef std::shared_ptr<ImageBase> Ptr;
+    typedef std::shared_ptr<ImageBase const> ConstPtr;
 
 public:
     /** Initializes members with 0. */
@@ -57,7 +57,7 @@ public:
     virtual ~ImageBase (void);
 
     /** Duplicates the image. Data holders need to reimplement this. */
-    virtual ImageBase::Ptr duplicate (void) const;
+    virtual ImageBase::Ptr duplicate_base (void) const;
 
     /** Returns the width of the image. */
     int width (void) const;
@@ -106,25 +106,21 @@ class TypedImageBase : public ImageBase
 {
 public:
     typedef T ValueType;
-    typedef util::RefPtr<TypedImageBase<T> > Ptr;
-    typedef util::RefPtr<TypedImageBase<T> const> ConstPtr;
+    typedef std::shared_ptr<TypedImageBase<T> > Ptr;
+    typedef std::shared_ptr<TypedImageBase<T> const> ConstPtr;
     typedef std::vector<T> ImageData;
 
 public:
-    /** Default ctor creates an empty image. */
+    /** Default constructor creates an empty image. */
     TypedImageBase (void);
 
-    /** Copy ctor duplicates another image. */
+    /** Copy constructor duplicates another image. */
     TypedImageBase (TypedImageBase<T> const& other);
-
-    /** Template copy ctor converts from another image. */
-    template <typename O>
-    TypedImageBase (TypedImageBase<O> const& other);
 
     virtual ~TypedImageBase (void);
 
     /** Duplicates the image. Data holders need to reimplement this. */
-    virtual ImageBase::Ptr duplicate (void) const;
+    virtual ImageBase::Ptr duplicate_base (void) const;
 
     /** Allocates new image space, clearing previous content. */
     void allocate (int width, int height, int chans);
@@ -183,11 +179,6 @@ public:
     /** Returns the char pointer to the data. */
     char* get_byte_pointer (void);
 
-    /* ------------------------- Operators ------------------------ */
-
-    // Assignment already works with default operator=
-    //TypedImageBase<T>& operator= (TypedImageBase<T> const& other);
-
 protected:
     ImageData data;
 };
@@ -206,7 +197,7 @@ ImageBase::~ImageBase (void)
 }
 
 inline ImageBase::Ptr
-ImageBase::duplicate (void) const
+ImageBase::duplicate_base (void) const
 {
     return ImageBase::Ptr(new ImageBase(*this));
 }
@@ -320,15 +311,6 @@ TypedImageBase<T>::TypedImageBase (TypedImageBase<T> const& other)
 }
 
 template <typename T>
-template <typename O>
-inline
-TypedImageBase<T>::TypedImageBase (TypedImageBase<O> const& other)
-{
-    this->allocate(other.width(), other.height(), other.channels());
-    std::copy(other.begin(), other.end(), this->begin());
-}
-
-template <typename T>
 inline
 TypedImageBase<T>::~TypedImageBase (void)
 {
@@ -336,7 +318,7 @@ TypedImageBase<T>::~TypedImageBase (void)
 
 template <typename T>
 inline ImageBase::Ptr
-TypedImageBase<T>::duplicate (void) const
+TypedImageBase<T>::duplicate_base (void) const
 {
     return ImageBase::Ptr(new TypedImageBase<T>(*this));
 }

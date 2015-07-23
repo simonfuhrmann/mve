@@ -6,7 +6,8 @@
 #ifndef OGL_TEXTURE_HEADER
 #define OGL_TEXTURE_HEADER
 
-#include "util/ref_ptr.h"
+#include <memory>
+
 #include "mve/image.h"
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
@@ -19,8 +20,8 @@ OGL_NAMESPACE_BEGIN
 class Texture
 {
 public:
-    typedef util::RefPtr<Texture> Ptr;
-    typedef util::RefPtr<Texture const> ConstPtr;
+    typedef std::shared_ptr<Texture> Ptr;
+    typedef std::shared_ptr<Texture const> ConstPtr;
 
 public:
     /** Creates a new texture object without image data. */

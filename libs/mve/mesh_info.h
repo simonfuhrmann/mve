@@ -8,8 +8,8 @@
 
 #include <algorithm>
 #include <vector>
+#include <memory>
 
-#include "util/ref_ptr.h"
 #include "mve/defines.h"
 #include "mve/mesh.h"
 
@@ -63,8 +63,8 @@ struct MeshVertexInfo
 class VertexInfoList : public std::vector<MeshVertexInfo>
 {
 public:
-    typedef util::RefPtr<VertexInfoList> Ptr;
-    typedef util::RefPtr<VertexInfoList const> ConstPtr;
+    typedef std::shared_ptr<VertexInfoList> Ptr;
+    typedef std::shared_ptr<VertexInfoList const> ConstPtr;
 
 public:
     /* Creates an uninitialized vertex info list. */

@@ -214,7 +214,7 @@ Sift::add_octave (mve::FloatImage::ConstPtr image,
     //    << has_sigma << ", blur = " << sigma << ")..." << std::endl;
     mve::FloatImage::Ptr base = (target_sigma > has_sigma
         ? mve::image::blur_gaussian<float>(image, sigma)
-        : mve::FloatImage::Ptr(image->duplicate()));
+        : image->duplicate());
 
     /* Create the new octave and add initial image. */
     this->octaves.push_back(Octave());

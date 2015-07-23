@@ -5,6 +5,7 @@
 #include <set>
 #include <iostream>
 #include <utility>
+#include <memory>
 
 #include "math/vector.h"
 #include "math/matrix.h"
@@ -18,8 +19,8 @@ MVS_NAMESPACE_BEGIN
 class SingleView
 {
 public:
-    typedef util::RefPtr<SingleView> Ptr;
-    typedef util::RefPtr<SingleView const> ConstPtr;
+    typedef std::shared_ptr<SingleView> Ptr;
+    typedef std::shared_ptr<SingleView const> ConstPtr;
 
 public:
     static Ptr create (mve::Scene::Ptr scene, mve::View::Ptr view,

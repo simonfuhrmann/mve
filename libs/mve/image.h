@@ -8,8 +8,8 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
-#include "util/ref_ptr.h"
 #include "math/functions.h"
 #include "mve/defines.h"
 #include "mve/image_base.h"
@@ -33,21 +33,20 @@ template <typename T>
 class Image : public TypedImageBase<T>
 {
 public:
-    typedef util::RefPtr<Image<T> > Ptr;
-    typedef util::RefPtr<Image<T> const> ConstPtr;
+    typedef std::shared_ptr<Image<T> > Ptr;
+    typedef std::shared_ptr<Image<T> const> ConstPtr;
     typedef std::vector<T> ImageData;
     typedef T ValueType;
 
 public:
-    /** Default ctor creates an empty image. */
+    /** Default constructor creates an empty image. */
     Image (void);
 
-    /** Allocating ctor. */
+    /** Allocating constructor. */
     Image (int width, int height, int channels);
 
-    /** Template copy ctor converts from another image. */
-    template <typename O>
-    Image (Image<O> const& other);
+    /** Copy constructor. */
+    Image (Image<T> const& other);
 
     /** Smart pointer image constructor. */
     static typename Image<T>::Ptr create (void);
@@ -55,6 +54,9 @@ public:
     static typename Image<T>::Ptr create (int width, int height, int channels);
     /** Smart pointer image copy constructor. */
     static typename Image<T>::Ptr create (Image<T> const& other);
+
+    /** Duplicates the image. */
+    Image<T>::Ptr duplicate (void) const;
 
     /** Fills every pixel of the image with the given color. */
     void fill_color (T const* color);
@@ -181,9 +183,8 @@ Image<T>::Image (int width, int height, int channels)
 }
 
 template <typename T>
-template <typename O>
 inline
-Image<T>::Image (Image<O> const& other)
+Image<T>::Image (Image<T> const& other)
     : TypedImageBase<T>(other)
 {
 }
@@ -207,6 +208,13 @@ inline typename Image<T>::Ptr
 Image<T>::create (Image<T> const& other)
 {
     return Ptr(new Image<T>(other));
+}
+
+template <typename T>
+inline typename Image<T>::Ptr
+Image<T>::duplicate (void) const
+{
+    return Ptr(new Image<T>(*this));
 }
 
 template <typename T>

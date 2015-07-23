@@ -7,8 +7,8 @@
 #define MVE_BUNDLE_HEADER
 
 #include <vector>
+#include <memory>
 
-#include "util/ref_ptr.h"
 #include "mve/camera.h"
 #include "mve/mesh.h"
 #include "mve/defines.h"
@@ -52,8 +52,8 @@ public:
     };
 
 public:
-    typedef util::RefPtr<Bundle> Ptr;
-    typedef util::RefPtr<Bundle const> ConstPtr;
+    typedef std::shared_ptr<Bundle> Ptr;
+    typedef std::shared_ptr<Bundle const> ConstPtr;
     typedef std::vector<CameraInfo> Cameras;
     typedef std::vector<Feature3D> Features;
 

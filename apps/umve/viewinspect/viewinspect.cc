@@ -745,7 +745,7 @@ ViewInspect::on_copy_embedding (void)
             return;
     }
 
-    mve::ImageBase::Ptr image_copy = this->image->duplicate();
+    mve::ImageBase::Ptr image_copy = this->image->duplicate_base();
     this->view->set_image(image_copy, text);
     this->populate_embeddings();
 }

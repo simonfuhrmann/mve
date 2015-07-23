@@ -1,7 +1,8 @@
 #ifndef DMRECON_VIEW_SELECTION_H
 #define DMRECON_VIEW_SELECTION_H
 
-#include "util/ref_ptr.h"
+#include <memory>
+
 #include "dmrecon/defines.h"
 #include "dmrecon/settings.h"
 
@@ -10,7 +11,7 @@ MVS_NAMESPACE_BEGIN
 class ViewSelection
 {
 public:
-    typedef util::RefPtr<ViewSelection> Ptr;
+    typedef std::shared_ptr<ViewSelection> Ptr;
 
     ViewSelection();
     ViewSelection(Settings const& settings);
