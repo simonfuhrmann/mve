@@ -1,5 +1,5 @@
 all:
-	$(MAKE) -C bundle2ply
+	$(MAKE) -C bundle2pset
 	$(MAKE) -C dmrecon
 	$(MAKE) -C makescene
 	$(MAKE) -C meshconvert
@@ -12,7 +12,7 @@ all:
 	$(MAKE) -C viewupgrade
 
 clean:
-	$(MAKE) -C bundle2ply $@
+	$(MAKE) -C bundle2pset $@
 	$(MAKE) -C dmrecon $@
 	$(MAKE) -C makescene $@
 	$(MAKE) -C meshconvert $@
