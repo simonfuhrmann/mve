@@ -1,10 +1,15 @@
 /*
- * Perspective 3-point algorithm (P3P) implementing [Kneip at al. 2011].
- * Written by Simon Fuhrmann.
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  *
  * Kneips original code is available here:
  * http://www.laurentkneip.de/research.html
  */
+
 #ifndef SFM_POSE_P3P_HEADER
 #define SFM_POSE_P3P_HEADER
 

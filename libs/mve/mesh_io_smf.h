@@ -1,8 +1,10 @@
 /*
- * IO functions for the SMF "Simple Model Format".
- * Written by Simon Fuhrmann.
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
  *
- * TODO: SMF is a subset of OBJ. Is it possible to unify OBJ and SMF?
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
 #ifndef MVE_MESH_IO_SMF_HEADER

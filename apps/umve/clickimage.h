@@ -1,3 +1,12 @@
+/*
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
+
 #ifndef CLICK_IMAGE_HEADER
 #define CLICK_IMAGE_HEADER
 
@@ -88,7 +97,7 @@ ClickImage::mouseMoveEvent (QMouseEvent* event)
     emit this->mouse_moved(pnt.x(), pnt.y(), event);
 }
 
-inline QPoint 
+inline QPoint
 ClickImage::get_mouse_coordinates (QMouseEvent* event)
 {
     QPoint pnt(event->pos());

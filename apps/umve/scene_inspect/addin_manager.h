@@ -1,3 +1,12 @@
+/*
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
+
 #ifndef UMVE_SCENE_ADDIN_MANAGER_HEADER
 #define UMVE_SCENE_ADDIN_MANAGER_HEADER
 
@@ -18,7 +27,6 @@
 #include "selectedview.h"
 #include "scene_addins/addin_base.h"
 #include "scene_addins/addin_axis_renderer.h"
-#include "scene_addins/addin_sfm_renderer.h"
 #include "scene_addins/addin_frusta_scene_renderer.h"
 #include "scene_addins/addin_mesh_renderer.h"
 #include "scene_addins/addin_dm_triangulate.h"
@@ -67,7 +75,6 @@ private:
 
     /* Addins. */
     AddinAxisRenderer* axis_renderer;
-    AddinSfmRenderer* sfm_renderer;
     AddinFrustaSceneRenderer* frusta_renderer;
     AddinMeshesRenderer* mesh_renderer;
     AddinDMTriangulate* dm_triangulate;

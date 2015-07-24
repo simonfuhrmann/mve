@@ -1,9 +1,10 @@
 /*
- * Routines for estimation of pose between two images.
- * Written by Simon Fuhrmann.
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
  *
- * Useful Matlab functions:
- * - http://www.csse.uwa.edu.au/~pk/Research/MatlabFns/index.html
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
 #include <limits>

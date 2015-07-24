@@ -1,11 +1,16 @@
 /*
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ *
  * Isosurface extraction for octrees. The algorithm is based on the paper:
  *
  *   Unconstrained Isosurface Extraction on Arbitrary Octrees
  *   Michael Kazhdan, Allison Klein, Ketan Dalal, Hugues Hoppe
  *   Symposium on Geometry Processing, 2007
- *
- * Written by Simon Fuhrmann.
  */
 
 #ifndef FSSR_ISO_SURFACE_HEADER

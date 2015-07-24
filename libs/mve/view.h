@@ -1,10 +1,14 @@
 /*
- * A reader, writer and API for MVE views.
- * Written by Simon Fuhrmann.
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
  *
- * MVE views are organized each in one directory, the directoy name being the
- * name of the view. The view contains one special file meta.ini and one
- * file for each embedding.
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ *
+ * A reader, writer and API for MVE views. MVE views are organized each in
+ * one directory, the directoy name being the name of the view. The view
+ * contains one special file meta.ini and one file for each embedding.
  *
  * Consider the following view representation in the file system:
  *
@@ -12,8 +16,8 @@
  *   meta.ini
  *   original.jpg
  *   undistorted.png
- *   normal_map.bin
- *   exif.bin
+ *   depth-L1.mvei
+ *   exif.blob
  *
  * The meta.ini file specifies basic view and camera information:
  *
@@ -33,7 +37,6 @@
  * PNG is chosen for 1, 2, 3 and 4 channel images, MVEI for all others.
  *
  * TODO: File locks?
- * TODO: Handle delete requests separately.
  */
 
 #ifndef MVE_VIEW_HEADER

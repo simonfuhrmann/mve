@@ -1,6 +1,11 @@
-// Keep on top because of Eigen
-#include "dmrecon/dmrecon.h"
-#include "dmrecon/settings.h"
+/*
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
 
 #include <iostream>
 #include <QFormLayout>
@@ -18,6 +23,8 @@
 #include "mve/mesh_io_ply.h"
 #include "util/exception.h"
 #include "util/file_system.h"
+#include "dmrecon/dmrecon.h"
+#include "dmrecon/settings.h"
 
 #include "jobqueue.h"
 #include "guihelpers.h"

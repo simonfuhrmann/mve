@@ -1,3 +1,12 @@
+/*
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
+
 #include <iostream>
 #include <cstdlib>
 
@@ -27,12 +36,10 @@ MainWindow::MainWindow (void)
     /* Populate notebook. */
     this->tab_viewinspect = new ViewInspect(this);
     this->tab_sceneinspect = new SceneInspect(this);
-    this->tab_sfm_recon = new SfmReconstruct(this);
 
     this->tabs = new QTabWidget(this);
     this->tabs->addTab(this->tab_viewinspect, this->tab_viewinspect->get_title());
     this->tabs->addTab(this->tab_sceneinspect, this->tab_sceneinspect->get_title());
-    this->tabs->addTab(this->tab_sfm_recon, this->tab_sfm_recon->get_title());
     this->load_plugins();
 
     this->memory_label = new QLabel("Memory: <unknown>");

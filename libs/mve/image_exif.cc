@@ -5,8 +5,8 @@
  * EXIF specifications can be found here:
  * http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
  *
- * Modifications: Copyright (c) 2011-2014 Simon Fuhrmann
- * Original code: Copyright (c) 2010-2013 Mayank Lahiri <mlahiri@gmail.com>
+ * Modifications: Copyright (c) 2011 - 2014 Simon Fuhrmann
+ * Original code: Copyright (c) 2010 - 2013 Mayank Lahiri <mlahiri@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
