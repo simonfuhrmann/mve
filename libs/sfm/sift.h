@@ -1,6 +1,10 @@
 /*
- * SIFT implementation.
- * Written by Simon Fuhrmann with great help from Ronny Klowsky.
+ * Copyright (C) 2015, Simon Fuhrmann, Ronny Klowsky
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  *
  * Notes:
  * - The implementation allows a minmum octave of -1 only.

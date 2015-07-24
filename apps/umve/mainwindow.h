@@ -1,3 +1,12 @@
+/*
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
+
 #ifndef UMVE_MAIN_WINDOW_HEADER
 #define UMVE_MAIN_WINDOW_HEADER
 
@@ -10,7 +19,6 @@
 
 #include "viewinspect/viewinspect.h"
 #include "scene_inspect/scene_inspect.h"
-#include "sfm_reconstruct/sfm_reconstruct.h"
 #include "jobqueue.h"
 #include "sceneoverview.h"
 
@@ -32,7 +40,6 @@ private:
     JobQueue* jobqueue;
     ViewInspect* tab_viewinspect;
     SceneInspect* tab_sceneinspect;
-    SfmReconstruct* tab_sfm_recon;
 
     QAction* action_new_scene;
     QAction* action_open_scene;

@@ -1,3 +1,12 @@
+/*
+ * Copyright (C) 2015, Ronny Klowsky, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
+
 #include <cassert>
 #include <string>
 
@@ -117,7 +126,7 @@ colAndExactDeriv(mve::ByteImage const& img, PixelCoords const& imgPos,
         color[i][0] = (1.f - y) * x0 + y * x3;
         color[i][1] = (1.f - y) * x1 + y * x4;
         color[i][2] = (1.f - y) * x2 + y * x5;
-        
+
         /* derivative in direction gradDir */
         float u = gradDir[i][0];
         float v = gradDir[i][1];

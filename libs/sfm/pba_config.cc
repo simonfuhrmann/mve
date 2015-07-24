@@ -22,14 +22,14 @@
 #include <string>
 
 #ifndef _WIN32
-        #include <sys/time.h>
+#   include <sys/time.h>
 #endif
 
 #include "sfm/pba_config.h"
 
 #ifdef _MSC_VER
-#define strcpy  strcpy_s
-#define sprintf sprintf_s
+#   define strcpy  strcpy_s
+#   define sprintf sprintf_s
 #endif
 
 SFM_NAMESPACE_BEGIN

@@ -1,6 +1,10 @@
 /*
- * Data structures for meshes (usually for triangle meshes).
- * Written by Simon Fuhrmann.
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
 #ifndef MVE_TRIANGLE_MESH_HEADER

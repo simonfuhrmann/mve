@@ -1,8 +1,13 @@
 /*
- * Tiny EXIF tag extractor.
- * Interface written by Simon Fuhrmann.
- * Original code written by Mayank Lahiri (see .cc file).
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
  *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ *
+ * Tiny EXIF tag extractor.
+ * Original code written by Mayank Lahiri (see .cc file).
  * Original code from: http://code.google.com/p/easyexif/
  * Some docs here: http://www.awaresystems.be/imaging/tiff/tifftags/privateifd/exif.html
  * More docs: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html

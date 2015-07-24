@@ -1,8 +1,12 @@
 /*
- * App to create MVE scenes from images and bundles.
- * Written by Simon Fuhrmann.
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
  *
- * The app supports:
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ *
+ * App to create MVE scenes from images and bundles. The app supports:
  * - Import of calibrated images from Photosynther and Noah bundler
  * - Import of calibrated images from VisualSfM
  * - Import of calibrated images from OpenMVG

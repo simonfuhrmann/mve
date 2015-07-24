@@ -1,5 +1,14 @@
-#ifndef SFM_MATCHINGVISUALIZER_HEADER
-#define SFM_MATCHINGVISUALIZER_HEADER
+/*
+ * Copyright (C) 2015, Simon Fuhrmann
+ * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
+
+#ifndef SFM_VISUALIZER_HEADER
+#define SFM_VISUALIZER_HEADER
 
 #include <utility>
 #include <vector>
@@ -51,4 +60,4 @@ public:
 
 SFM_NAMESPACE_END
 
-#endif /* SFM_MATCHINGVISUALIZER_HEADER */
+#endif /* SFM_VISUALIZER_HEADER */
