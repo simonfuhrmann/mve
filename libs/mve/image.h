@@ -49,14 +49,14 @@ public:
     Image (Image<T> const& other);
 
     /** Smart pointer image constructor. */
-    static typename Image<T>::Ptr create (void);
+    static Ptr create (void);
     /** Allocating smart pointer image constructor. */
-    static typename Image<T>::Ptr create (int width, int height, int channels);
+    static Ptr create (int width, int height, int channels);
     /** Smart pointer image copy constructor. */
-    static typename Image<T>::Ptr create (Image<T> const& other);
+    static Ptr create (Image<T> const& other);
 
     /** Duplicates the image. */
-    Image<T>::Ptr duplicate (void) const;
+    Ptr duplicate (void) const;
 
     /** Fills every pixel of the image with the given color. */
     void fill_color (T const* color);
