@@ -6,7 +6,7 @@ include(ExternalProject)
 set(LIBJPEG_FILENAME "jpegsr9a.zip")
 set(LIBPNG_FILENAME "lpng1617.zip")
 set(ZLIB_FILENAME "zlib128.zip")
-set(LIBTIFF_FILENAME "tiff-4.0.3.zip")
+set(LIBTIFF_FILENAME "tiff-4.0.4.zip")
 set(GLEW_FILENAME "glew-1.12.0.zip")
 set(QT5_FILENAME "qt-everywhere-opensource-src-5.2.1.zip")
 set(GTEST_FILENAME "gtest-1.7.0.zip")
@@ -77,7 +77,7 @@ ExternalProject_Add(libpng
 ExternalProject_Add(libtiff
 	PREFIX build/libtiff
 	URL ${LIBTIFF_URL}
-	URL_HASH SHA256=c77f0d23b4c6fef96ed18ddc811990b35687848ccd2bacd7edc327b5795b6481
+	URL_HASH SHA256=4fec3abf1c79b000805446235fecc6b5a764527c5fe30e1f707b251a8720fce3
 	CONFIGURE_COMMAND ""
 	BUILD_COMMAND nmake /f Makefile.vc lib
 	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/build/libtiff/src/libtiff/libtiff/tiffconf.h ${CMAKE_CURRENT_SOURCE_DIR}/include
