@@ -8,7 +8,7 @@
 #       define UMVE_API __declspec(dllexport)
 #   endif
 #elif __GNUC__ > 3
-#   define UMVE_API __attribute__((visibility("default"))
+#   define UMVE_API __attribute__((visibility("default")))
 #else
 #   define UMVE_API
 #endif
