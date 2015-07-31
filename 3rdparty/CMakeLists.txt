@@ -8,7 +8,7 @@ set(LIBPNG_FILENAME "lpng1617.zip")
 set(ZLIB_FILENAME "zlib128.zip")
 set(LIBTIFF_FILENAME "tiff-4.0.4.zip")
 set(GLEW_FILENAME "glew-1.12.0.zip")
-set(QT5_FILENAME "qt-everywhere-opensource-src-5.2.1.zip")
+set(QT5_FILENAME "qt-everywhere-opensource-src-5.5.0.zip")
 set(GTEST_FILENAME "gtest-1.7.0.zip")
 
 set(LIBJPEG_URL "http://www.ijg.org/files/${LIBJPEG_FILENAME}")
@@ -16,7 +16,7 @@ set(LIBPNG_URL "http://download.sourceforge.net/libpng/${LIBPNG_FILENAME}")
 set(ZLIB_URL "http://download.sourceforge.net/libpng/${ZLIB_FILENAME}")
 set(LIBTIFF_URL "ftp://ftp.remotesensing.org/pub/libtiff/${LIBTIFF_FILENAME}")
 set(GLEW_URL "http://downloads.sourceforge.net/project/glew/glew/1.12.0/${GLEW_FILENAME}")
-set(QT5_URL "http://download.qt-project.org/official_releases/qt/5.2/5.2.1/single/${QT5_FILENAME}")
+set(QT5_URL "http://download.qt-project.org/official_releases/qt/5.5/5.5.0/single/${QT5_FILENAME}")
 set(GTEST_URL "https://googletest.googlecode.com/files/${GTEST_FILENAME}")
 
 set(PATCHES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/patches")
@@ -120,15 +120,17 @@ ExternalProject_Add(glew
 ExternalProject_Add(qt5
 	PREFIX qt5
 	URL ${QT5_URL}
-	URL_HASH SHA256=a75a07b886b54023aeffb2daae552a65062c9c1f14d410acad0d47341c45539d
+	URL_HASH SHA256=479e68589bb3b1bcf0c5c355b7aba67bb72373f8785bab240b9154be6e278afb
 	CONFIGURE_COMMAND
 		cmd /C configure -debug-and-release -opensource -confirm-license -shared
-				   -no-audio-backend -mp -opengl desktop -skip qtactiveqt
-				   -skip qtconnectivity -skip qtdeclarative -skip qtdoc
-				   -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia
-				   -skip qtquick1 -skip qtquickcontrols -skip qtscript -skip qtsensors
-				   -skip qtserialport -skip qttools -skip qttranslations
-				   -skip qtwebkit -skip qtwebkit-examples
+				-no-audio-backend -mp -opengl desktop -skip qt3d -skip qtactiveqt
+				-skip qtandroidextras -skip qtcanvas3d -skip qtconnectivity
+				-skip qtdeclarative -skip qtdoc -skip qtenginio
+				-skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia
+				-skip qtquick1 -skip qtquickcontrols -skip qtscript
+				-skip qtsensors -skip qtserialport -skip qttools
+				-skip qttranslations -skip qtwayland -skip qtwebchannel
+				-skip qtwebkit -skip qtwebkit-examples -skip qtwebsockets
 	BUILD_COMMAND nmake
 	BUILD_IN_SOURCE 1
 	INSTALL_COMMAND "")
