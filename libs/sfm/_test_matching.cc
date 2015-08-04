@@ -218,9 +218,9 @@ feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
     sfm::FeatureSet::Options opts;
     opts.feature_types = sfm::FeatureSet::FEATURE_ALL;
     opts.surf_opts.contrast_threshold = 500.0f;
-    opts.sift_matching_opts.lowe_ratio_threshold = 0.9f;
+    opts.sift_matching_opts.lowe_ratio_threshold = 0.8f;
     opts.sift_matching_opts.descriptor_length = 128;
-    opts.surf_matching_opts.lowe_ratio_threshold = 0.9f;
+    opts.surf_matching_opts.lowe_ratio_threshold = 0.8f;
     opts.surf_matching_opts.descriptor_length = 64;
 
     sfm::FeatureSet feat1(opts);
