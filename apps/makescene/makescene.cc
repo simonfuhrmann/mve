@@ -9,7 +9,6 @@
  * App to create MVE scenes from images and bundles. The app supports:
  * - Import of calibrated images from Photosynther and Noah bundler
  * - Import of calibrated images from VisualSfM
- * - Import of calibrated images from OpenMVG
  * - Import of uncalibrated 8 bit, 16 bit or float images from a directory
  *   8 bit formats: JPEG, PNG, TIFF, PPM
  *   16 bit formats: TIFF, PPM
@@ -52,9 +51,6 @@
 #define BUNDLER_FILE_LIST "list.txt"
 #define BUNDLER_IMAGE_DIR ""
 #define VIEWS_DIR "views/"
-#define OPENMVG_IMAGE_DIR "images/"
-#define OPENMVG_CAMERA_DIR "cameras_disto/"
-#define OPENMVG_POINTS "clouds/calib.ply"
 
 typedef std::vector<std::string> StringVector;
 typedef std::vector<util::fs::File> FileVector;
@@ -390,188 +386,6 @@ import_bundle_nvm (AppSettings const& conf)
 
 /* ---------------------------------------------------------------- */
 
-void
-import_bundle_openmvg (AppSettings const& conf)
-{
-    /* Scan files in OPENMVG_IMAGE_DIR and OPENMVG_CAMERA_DIR. */
-    std::cout << "Scanning directories..." << std::endl;
-    std::string image_dir_name = util::fs::join_path
-        (conf.input_path, OPENMVG_IMAGE_DIR);
-    std::string camera_dir_name = util::fs::join_path
-        (conf.input_path, OPENMVG_CAMERA_DIR);
-    util::fs::Directory image_dir, camera_dir;
-    try
-    {
-        image_dir.scan(image_dir_name);
-        camera_dir.scan(camera_dir_name);
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "  " << image_dir_name << std::endl;
-        std::cerr << "  " << camera_dir_name << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    std::cout << "  Number of images: " << image_dir.size() << std::endl;
-    std::cout << "  Number of cameras: " << camera_dir.size() << std::endl;
-
-    if (image_dir.empty() || image_dir.size() != camera_dir.size())
-    {
-        std::cerr << "Error: Invalid number of images/cameras!" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    std::sort(image_dir.begin(), image_dir.end());
-    std::sort(camera_dir.begin(), camera_dir.end());
-
-    /* Prepare output bundle. */
-    mve::Bundle::Ptr bundle = mve::Bundle::create();
-    mve::Bundle::Cameras& cams = bundle->get_cameras();
-    mve::Bundle::Features& feats = bundle->get_features();
-
-    /* Read camera files. */
-    std::cout << "Reading camera files..." << std::endl;
-    for (std::size_t i = 0; i < camera_dir.size(); ++i)
-    {
-        std::string cam_fname = camera_dir[i].get_absolute_name();
-        std::ifstream in(cam_fname.c_str());
-        if (!in.good())
-        {
-            in.close();
-            std::cerr << "Error opening: " << cam_fname << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-        mve::CameraInfo cam;
-        float dummy;
-        in >> cam.flen;
-        in >> cam.ppoint[0] >> cam.ppoint[1];
-        in >> cam.dist[0] >> cam.dist[1] >> dummy;
-        for (int j = 0; j < 9; ++j)
-            in >> cam.rot[j];
-        for (int j = 0; j < 3; ++j)
-            in >> cam.trans[j];
-        cams.push_back(cam);
-
-        if (in.eof())
-        {
-            in.close();
-            std::cerr << "Premature EOF: " << cam_fname << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-        in.close();
-    }
-
-    /* Read SfM points. */
-    std::cout << "Reading SfM points..." << std::endl;
-    std::string points_fname = util::fs::join_path
-        (conf.input_path, OPENMVG_POINTS);
-    std::ifstream in(points_fname.c_str());
-    if (!in.good())
-    {
-        std::cerr << "Error opening: " << points_fname << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    /* Read SfM points: Scan to "end_header" token. */
-    while (true)
-    {
-        std::string token;
-        in >> token;
-        if (in.eof() || !in.good())
-        {
-            in.close();
-            std::cerr << "Error reading SfM points!" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-        if (token == "end_header")
-            break;
-    }
-
-    /* Read SfM points: Read point data. */
-    while (true)
-    {
-        mve::Bundle::Feature3D f3d;
-        for (int i = 0; i < 3; ++i)
-            in >> f3d.pos[i];
-        for (int i = 0; i < 3; ++i)
-        {
-            in >> f3d.color[i];
-            f3d.color[i] /= 255.0f;
-        }
-
-        float dummy;
-        in >> dummy;
-
-        int num_views;
-        in >> num_views;
-        for (int i = 0; i < num_views; ++i)
-        {
-            int view_id;
-            in >> view_id;
-            mve::Bundle::Feature2D f2d;
-            f2d.view_id = view_id;
-            f2d.feature_id = -1;
-            f2d.pos[0] = -1.0f;
-            f2d.pos[1] = -1.0f;
-            f3d.refs.push_back(f2d);
-        }
-
-        if (in.eof())
-            break;
-        feats.push_back(f3d);
-    }
-    in.close();
-
-    /* Create output dirs. */
-    std::cout << "Creating output directories..." << std::endl;
-    util::fs::mkdir(conf.output_path.c_str());
-    util::fs::mkdir(conf.views_path.c_str());
-
-    /* Load undistorted images and save views. */
-    for (std::size_t i = 0; i < image_dir.size(); ++i)
-    {
-        mve::ByteImage::Ptr undist;
-        try
-        {
-            undist = mve::image::load_file(image_dir[i].get_absolute_name());
-        }
-        catch (std::exception& e)
-        {
-            std::cerr << "Error loading: "
-                << image_dir[i].get_absolute_name()
-                << " (skipping view)." << std::endl;
-        }
-
-        /* Normalize focal length. */
-        cams[i].flen /= static_cast<float>
-            (std::max(undist->width(), undist->height()));
-        cams[i].ppoint[0] /= static_cast<float>(undist->width());
-        cams[i].ppoint[1] /= static_cast<float>(undist->height());
-
-        std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
-
-        std::cout << "Saving " << fname << " ..." << std::endl;
-        mve::View::Ptr view = mve::View::create();
-        view->set_id(i);
-        view->set_name(remove_file_extension(image_dir[i].name));
-        view->set_camera(cams[i]);
-        view->set_image(undist, "undistorted");
-        view->set_image(create_thumbnail(undist), "thumbnail");
-        view->save_view_as(util::fs::join_path(conf.views_path, fname));
-    }
-
-    /* Write bundle output file. */
-    std::cout << "Writing bundle file..." << std::endl;
-    std::string bundle_filename
-        = util::fs::join_path(conf.output_path, "synth_0.out");
-    mve::save_mve_bundle(bundle, bundle_filename);
-}
-
-/* ---------------------------------------------------------------- */
-
 namespace
 {
     enum BundleFormat
@@ -604,17 +418,6 @@ import_bundle (AppSettings const& conf)
     std::string undist_path;
     BundleFormat bundler_fmt = BUNDLE_FORMAT_UNKNOWN;
     bool import_original = conf.import_orig;
-
-    /*
-     * Try to detect OpenMVG scenes. This is detected if the file views.txt
-     * is located in the bundler directory.
-     */
-    if (util::fs::file_exists(util::fs::join_path
-        (conf.input_path, "views.txt").c_str()))
-    {
-        import_bundle_openmvg(conf);
-        return;
-    }
 
     /*
      * Try to detect Photosynther software. This is detected if the
@@ -1021,7 +824,7 @@ main (int argc, char** argv)
     args.set_helptext_indent(22);
     args.set_description("This utility creates MVE scenes by importing "
         "from an external SfM software. Supported are Noah's Bundler, "
-        "Photosynther, VisualSfM's compact .nvm file, and OpenMVG.\n\n"
+        "Photosynther and VisualSfM's compact .nvm file.\n\n"
 
         "For VisualSfM, makescene expects the .nvm file as INPUT. "
         "With VisualSfM, it is not possible to keep invalid views.\n\n"
@@ -1034,10 +837,6 @@ main (int argc, char** argv)
         "contains the \"bundle\" and the \"undistorted\" directory. "
         "With Photosynther, it is not possible to keep invalid views "
         "or import original images.\n\n"
-
-        "For OpenMVG, makescene expects the \"SfM_output\" bundle directory. "
-        "With OpenMVG, it is not possible to keep invalid images or import "
-        "original images.\n\n"
 
         "With the \"images-only\" option, all images in the INPUT directory "
         "are imported without camera information. If \"append-images\" is "
