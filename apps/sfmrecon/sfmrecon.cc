@@ -55,6 +55,7 @@ struct AppSettings
     float new_track_error_thres;
     int initial_pair_1;
     int initial_pair_2;
+    int min_views_per_track;
 };
 
 void
@@ -312,7 +313,7 @@ sfm_reconstruct (AppSettings const& conf)
 
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
-        incremental.triangulate_new_tracks(3);
+        incremental.triangulate_new_tracks(conf.min_views_per_track);
         incremental.invalidate_large_error_tracks();
         num_cameras_reconstructed += 1;
 
@@ -453,6 +454,7 @@ main (int argc, char** argv)
     args.add_option('\0', "shared-intrinsics", false, "Share intrinsics between all cameras");
     args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [10]");
     args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [25]");
+    args.add_option('\0', "use-2cam-tracks", false, "Triangulate tracks from only two cameras");
     args.add_option('\0', "initial-pair", true, "Manually specify initial pair IDs [-1,-1]");
     args.parse(argc, argv);
 
@@ -473,6 +475,7 @@ main (int argc, char** argv)
     conf.shared_intrinsics = false;
     conf.track_error_thres_factor = 25.0f;
     conf.new_track_error_thres = 10.0f;
+    conf.min_views_per_track = 3;
     conf.initial_pair_1 = -1;
     conf.initial_pair_2 = -1;
 
@@ -510,6 +513,8 @@ main (int argc, char** argv)
             conf.new_track_error_thres = i->get_arg<float>();
         else if (i->opt->lopt == "track-thres-factor")
             conf.track_error_thres_factor = i->get_arg<float>();
+        else if (i->opt->lopt == "use-2cam-tracks")
+            conf.min_views_per_track = 2;
         else if (i->opt->lopt == "initial-pair")
         {
             util::Tokenizer tok;
