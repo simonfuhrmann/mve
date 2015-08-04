@@ -30,6 +30,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
 
     /* Instanciate addins. */
     this->axis_renderer = new AddinAxisRenderer();
+    this->sfm_renderer = new AddinSfmRenderer();
     this->frusta_renderer = new AddinFrustaSceneRenderer();
     this->mesh_renderer = new AddinMeshesRenderer();
     this->dm_triangulate = new AddinDMTriangulate();
@@ -46,6 +47,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
 
     /* Register addins. */
     this->addins.push_back(this->axis_renderer);
+    this->addins.push_back(this->sfm_renderer);
     this->addins.push_back(this->frusta_renderer);
     this->addins.push_back(this->mesh_renderer);
     this->addins.push_back(this->dm_triangulate);
@@ -59,6 +61,7 @@ AddinManager::AddinManager (GLWidget* gl_widget, QTabWidget* tab_widget)
     /* Create scene rendering form. */
     QFormLayout* rendering_form = new QFormLayout();
     rendering_form->setVerticalSpacing(0);
+    rendering_form->addRow(this->sfm_renderer->get_sidebar_widget());
     rendering_form->addRow(this->axis_renderer->get_sidebar_widget());
     rendering_form->addRow(this->clear_color_cb);
 
