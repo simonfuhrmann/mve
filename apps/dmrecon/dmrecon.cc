@@ -136,6 +136,8 @@ main (int argc, char** argv)
         "turn off color scale");
     args.add_option('i', "image", true,
         "specify source image embedding [undistorted]");
+    args.add_option('\0', "local-neighbors", true,
+        "amount of neighbors for local view selection [4]");
     args.add_option('\0', "keep-dz", false,
         "store dz map into view");
     args.add_option('\0', "keep-conf", false,
@@ -185,6 +187,8 @@ main (int argc, char** argv)
             conf.mvs.keepDzMap = true;
         else if (arg->opt->lopt == "keep-conf")
             conf.mvs.keepConfidenceMap = true;
+        else if (arg->opt->lopt == "local-neighbors")
+            conf.mvs.nrReconNeighbors = arg->get_arg<int>();
         else if (arg->opt->lopt == "master-view")
             conf.master_id = arg->get_arg<int>();
         else if (arg->opt->lopt == "list-view")
