@@ -283,8 +283,30 @@ typename mve::Image<T>::Ptr
 limit_image_size (typename mve::Image<T>::Ptr img, int max_pixels)
 {
     while (img->get_pixel_amount() > max_pixels)
-        img = mve::image::rescale_half_size<uint8_t>(img);
+        img = mve::image::rescale_half_size<T>(img);
     return img;
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::ImageBase::Ptr
+limit_image_size (mve::ImageBase::Ptr image, int max_pixels)
+{
+    switch (image->get_type())
+    {
+        case mve::IMAGE_TYPE_FLOAT:
+            return limit_image_size<float>(std::dynamic_pointer_cast
+                <mve::FloatImage>(image), max_pixels);
+        case mve::IMAGE_TYPE_UINT8:
+            return limit_image_size<uint8_t>(std::dynamic_pointer_cast
+                <mve::ByteImage>(image), max_pixels);
+        case mve::IMAGE_TYPE_UINT16:
+            return limit_image_size<uint16_t>(std::dynamic_pointer_cast
+                <mve::RawImage>(image), max_pixels);
+        default:
+            break;
+    }
+    return mve::ImageBase::Ptr();
 }
 
 /* ---------------------------------------------------------------- */
@@ -770,8 +792,7 @@ import_images (AppSettings const& conf)
 
         std::cout << "Importing image " << fname << "..." << std::endl;
         std::string exif;
-        mve::ByteImage::Ptr image = std::dynamic_pointer_cast<mve::ByteImage>
-            (load_any_image(afname, &exif));
+        mve::ImageBase::Ptr image = load_any_image(afname, &exif);
         if (image == NULL)
             continue;
 
@@ -782,7 +803,7 @@ import_images (AppSettings const& conf)
 
         /* Rescale and add original image. */
         int orig_width = image->width();
-        image = limit_image_size<uint8_t>(image, conf.max_pixels);
+        image = limit_image_size(image, conf.max_pixels);
         if (orig_width == image->width() && has_jpeg_extension(fname))
             view->set_image_ref(afname, "original");
         else
