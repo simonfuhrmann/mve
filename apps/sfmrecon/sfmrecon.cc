@@ -145,13 +145,22 @@ sfm_reconstruct (AppSettings const& conf)
 #endif
 
     /* Load scene. */
-    mve::Scene::Ptr scene = mve::Scene::create(conf.scene_path);
-    std::string const prebundle_path
-        = util::fs::join_path(scene->get_path(), conf.prebundle_file);
+    mve::Scene::Ptr scene;
+    try
+    {
+        scene = mve::Scene::create(conf.scene_path);
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Error loading scene: " << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 
     /* Log time and date if a log file is specified. */
     log_message(conf, "Starting SfM reconstruction.");
 
+    std::string const prebundle_path
+        = util::fs::join_path(scene->get_path(), conf.prebundle_file);
     sfm::bundler::ViewportList viewports;
     sfm::bundler::PairwiseMatching pairwise_matching;
     if (!util::fs::file_exists(prebundle_path.c_str()))

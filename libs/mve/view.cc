@@ -34,9 +34,10 @@ View::load_view (std::string const& user_path)
 {
     std::string safe_path = util::fs::sanitize_path(user_path);
     safe_path = util::fs::abspath(safe_path);
-    //std::cout << "View: Loading view: " << path << std::endl;
+    this->deprecated_format_check(safe_path);
 
     /* Open meta.ini and populate images and blobs. */
+    //std::cout << "View: Loading view: " << path << std::endl;
     this->clear();
     try
     {
@@ -559,9 +560,33 @@ View::remove_blob (std::string const& name)
 /* ------------------------ Private Members ----------------------- */
 
 void
+View::deprecated_format_check (std::string const& path)
+{
+    /* If the given path is a file, report deprecated format info. */
+    if (util::fs::file_exists(path.c_str()))
+    {
+        char const* text =
+            "The dataset contains views in a deprecated file format.\n"
+            "Please upgrade your datasets using the 'viewupgrade' app.\n"
+            "See the GitHub wiki for more information about this change.";
+
+        std::cerr << std::endl << "NOTE: " << text << std::endl << std::endl;
+        throw std::invalid_argument(text);
+    }
+}
+
+void
 View::load_meta_data (std::string const& path)
 {
-    this->parse_meta_data_file(path);
+    std::string const fname = util::fs::join_path(path, VIEW_IO_META_FILE);
+
+    /* Open file and read key/value pairs. */
+    std::ifstream in(fname.c_str());
+    if (!in.good())
+        throw util::FileException(fname, "Error opening");
+    util::parse_ini(in, &this->meta_data.data);
+    this->meta_data.is_dirty = false;
+    in.close();
 
     /* Get camera data from key/value pairs. */
     std::string cam_fl = this->get_value("camera.focal_length");
@@ -585,21 +610,6 @@ View::load_meta_data (std::string const& path)
         this->meta_data.camera.set_rotation_from_string(cam_rot);
     if (!cam_trans.empty())
         this->meta_data.camera.set_translation_from_string(cam_trans);
-}
-
-void
-View::parse_meta_data_file (std::string const& path)
-{
-    std::string const fname = util::fs::join_path(path, VIEW_IO_META_FILE);
-    this->meta_data.is_dirty = false;
-
-    /* Open meta file and read key/value pairs. */
-    std::ifstream in(fname.c_str());
-    if (!in.good())
-        throw util::FileException(fname, "Error opening");
-
-    /* Parse INI file. */
-    util::parse_ini(in, &this->meta_data.data);
 }
 
 void
