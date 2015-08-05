@@ -114,7 +114,8 @@ Features::estimate_focal_length (mve::View::Ptr view, Viewport* viewport) const
     if (exif_data == NULL)
     {
 #pragma omp critical
-        std::cout << "No such embedding: " << this->opts.exif_embedding << std::endl;
+        std::cout << "No such embedding: "
+            << this->opts.exif_embedding << std::endl;
         this->fallback_focal_length(view, viewport);
         return;
     }

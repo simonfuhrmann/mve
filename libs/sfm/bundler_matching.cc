@@ -148,7 +148,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
         }
     }
 
-    /* Pose RANSAC. */
+    /* Compute fundamental matrix using RANSAC. */
     sfm::RansacFundamental::Result ransac_result;
     int num_inliers = 0;
     {

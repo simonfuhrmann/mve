@@ -156,23 +156,24 @@ sfm_reconstruct (AppSettings const& conf)
         std::exit(EXIT_FAILURE);
     }
 
-    /* Log time and date if a log file is specified. */
-    log_message(conf, "Starting SfM reconstruction.");
-
+    /* Try to load the pairwise matching from the prebundle. */
     std::string const prebundle_path
         = util::fs::join_path(scene->get_path(), conf.prebundle_file);
     sfm::bundler::ViewportList viewports;
     sfm::bundler::PairwiseMatching pairwise_matching;
     if (!util::fs::file_exists(prebundle_path.c_str()))
     {
+        log_message(conf, "Starting feature matching.");
         util::system::rand_seed(RAND_SEED_MATCHING);
         features_and_matching(scene, conf, &viewports, &pairwise_matching);
+
         std::cout << "Saving pre-bundle to file..." << std::endl;
         sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
     }
     else if (!conf.skip_sfm)
     {
-        std::cout << "Loading pre-bundle from file..." << std::endl;
+        log_message(conf, "Loading pairwise matching from file.");
+        std::cout << "Loading pairwise matching from file..." << std::endl;
         sfm::bundler::load_prebundle_from_file(prebundle_path,
             &viewports, &pairwise_matching);
     }
@@ -195,13 +196,29 @@ sfm_reconstruct (AppSettings const& conf)
         std::exit(EXIT_FAILURE);
     }
 
-    /* Start timer for incremental SfM. */
+    /*
+     * Obtain camera intrinsics from the views or guess them from EXIF.
+     * If neither is available, fall back to a default.
+     *
+     * FIXME: Once width and height in the viewport is gone, this fully
+     * initializes the viewports. Thus viewport info does not need to be
+     * saved in the prebundle.sfm, and the file becomes matching.sfm.
+     * Obtaining EXIF guesses can be moved out of the feature module to here.
+     * The following code can become its own module "bundler_intrinsics".
+     */
+    //if (conf.intrinsics_from_views)
+    //{
+    //}
+    //else if (conf.intrinsics_from_exif) ...
+
+    /* Start incremental SfM. */
+    log_message(conf, "Starting incremental SfM.");
     util::WallTimer timer;
+    util::system::rand_seed(RAND_SEED_SFM);
 
     /* Compute connected feature components, i.e. feature tracks. */
     sfm::bundler::TrackList tracks;
     {
-        util::system::rand_seed(RAND_SEED_SFM);
         sfm::bundler::Tracks::Options tracks_options;
         tracks_options.verbose_output = true;
 
