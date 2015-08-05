@@ -237,6 +237,7 @@ sfm_reconstruct (AppSettings const& conf)
         || init_pair_result.view_2_id >= static_cast<int>(viewports.size()))
     {
         std::cerr << "Error finding initial pair, exiting!" << std::endl;
+        std::cerr << "Try manually specifying an initial pair." << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
