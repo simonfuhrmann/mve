@@ -69,7 +69,10 @@ InitialPair::compute_pair (Result* result)
     }
 
     if (!found_pair)
-        throw std::invalid_argument("No more available pairs");
+    {
+        result->view_1_id = -1;
+        result->view_2_id = -1;
+    }
 }
 
 void

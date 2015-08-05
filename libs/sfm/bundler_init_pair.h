@@ -52,6 +52,10 @@ public:
         bool verbose_output;
     };
 
+    /**
+     * The resulting initial pair with view IDs and relative camera pose.
+     * If no initial pair could be found, both view IDs are set to -1.
+     */
     struct Result
     {
         int view_1_id;
