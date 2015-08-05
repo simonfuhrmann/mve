@@ -287,9 +287,9 @@ public: // TODO: Make protected.
     View (std::string const& path);
 
 private:
-    void parse_meta_data_file (std::string const& fname);
-    void load_meta_data (std::string const& fname);
-    void save_meta_data (std::string const& fname);
+    void deprecated_format_check (std::string const& path);
+    void load_meta_data (std::string const& path);
+    void save_meta_data (std::string const& path);
     void populate_images_and_blobs (std::string const& path);
     void replace_file (std::string const& old_fn, std::string const& new_fn);
 
