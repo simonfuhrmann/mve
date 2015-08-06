@@ -276,6 +276,7 @@ ToneMapping::ToneMapping (void)
     this->channel_mapper = new QSignalMapper();
     this->timer.setSingleShot(true);
     this->reset();
+    this->setEnabled(false);
 
     QHBoxLayout* gamma_box = new QHBoxLayout();
     gamma_box->addWidget(new QLabel("Gamma Exponent"), 1);
