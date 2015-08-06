@@ -452,6 +452,8 @@ void
 QMeshContextMenu::on_colorize_mesh_custom (void)
 {
     QColor color = QColorDialog::getColor(Qt::white, this);
+    if (!color.isValid())
+        return;
     this->on_colorize_mesh(color.redF(), color.greenF(), color.blueF());
 }
 
