@@ -68,6 +68,7 @@ inline void
 ScrollImage::reset_scale (void)
 {
     this->image->set_scale_factor(1.0);
+    this->scale_contents = false;
     //this->scale_factor = 1.0;
     //this->image_label->adjustSize();
 }
@@ -76,12 +77,14 @@ inline void
 ScrollImage::zoom_out (void)
 {
     this->set_scale(this->get_scale() * ZOOM_OUT_FACTOR);
+    this->scale_contents = false;
 }
 
 inline void
 ScrollImage::zoom_in (void)
 {
     this->set_scale(this->get_scale() * ZOOM_IN_FACTOR);
+    this->scale_contents = false;
 }
 
 inline double

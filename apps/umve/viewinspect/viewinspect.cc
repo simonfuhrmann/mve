@@ -231,11 +231,10 @@ void
 ViewInspect::update_actions (void)
 {
     bool active = this->scroll_image->get_pixmap() != nullptr;
-    bool fit = this->action_zoom_fit->isChecked();
     this->action_zoom_fit->setEnabled(active);
-    this->action_zoom_in->setEnabled(active && !fit);
-    this->action_zoom_out->setEnabled(active && !fit);
-    this->action_zoom_reset->setEnabled(active && !fit);
+    this->action_zoom_in->setEnabled(active);
+    this->action_zoom_out->setEnabled(active);
+    this->action_zoom_reset->setEnabled(active);
 }
 
 /* ---------------------------------------------------------------- */
@@ -531,6 +530,7 @@ void
 ViewInspect::on_zoom_in (void)
 {
     this->scroll_image->zoom_in();
+    this->action_zoom_fit->setChecked(false);
 }
 
 /* ---------------------------------------------------------------- */
@@ -539,6 +539,7 @@ void
 ViewInspect::on_zoom_out (void)
 {
     this->scroll_image->zoom_out();
+    this->action_zoom_fit->setChecked(false);
 }
 
 /* ---------------------------------------------------------------- */
@@ -547,6 +548,7 @@ void
 ViewInspect::on_normal_size (void)
 {
     this->scroll_image->reset_scale();
+    this->action_zoom_fit->setChecked(false);
 }
 
 /* ---------------------------------------------------------------- */

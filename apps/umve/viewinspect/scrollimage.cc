@@ -28,7 +28,7 @@ ScrollImage::ScrollImage (void)
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     /* Init members. */
-    this->scale_contents = false;
+    this->scale_contents = true;
 }
 
 /* ---------------------------------------------------------------- */
@@ -48,8 +48,11 @@ void
 ScrollImage::max_image_size (void)
 {
     QSize imgsize(this->image->pixmap()->size());
-    imgsize.scale(this->maximumViewportSize(), Qt::KeepAspectRatio);
-    this->image->resize(imgsize);
+    QSize newsize = imgsize.scaled(this->maximumViewportSize(),
+        Qt::KeepAspectRatio);
+    this->image->set_scale_factor(static_cast<float>(newsize.width())
+        / imgsize.width());
+    this->image->resize(newsize);
 }
 
 /* ---------------------------------------------------------------- */
@@ -73,12 +76,8 @@ ScrollImage::resizeEvent (QResizeEvent* event)
     //std::cout << "Resize Event: " << event->size().width() << "x"
     //    << event->size().height() << std::endl;
 
-    if (!this->scale_contents)
-        return;
-
-    QSize imgsize(this->image->pixmap()->size());
-    imgsize.scale(event->size(), Qt::KeepAspectRatio);
-    this->image->resize(imgsize);
+    if (this->scale_contents && this->image->pixmap())
+        this->max_image_size();
 }
 
 /* ---------------------------------------------------------------- */
