@@ -360,12 +360,13 @@ BatchImportImages::BatchImportImages (QWidget* parent)
     this->main_box.addLayout(form);
     this->button_box.addWidget(exec_but, 0);
     this->connect(exec_but, SIGNAL(clicked()), this, SLOT(on_import_images()));
+    this->show();
 }
 
 void
 BatchImportImages::setup_gui (void)
 {
-    this->file_list = QFileDialog::getOpenFileNames(this,
+    this->file_list = QFileDialog::getOpenFileNames(this->window(),
         "Select images for import", QDir::currentPath());
     this->file_list.sort();
     for (int i = 0; i < this->file_list.size(); ++i)

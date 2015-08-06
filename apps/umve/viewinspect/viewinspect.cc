@@ -556,7 +556,7 @@ ViewInspect::on_fit_to_window (void)
 void
 ViewInspect::on_open (void)
 {
-    QFileDialog dialog(this, tr("Open File"), last_image_dir);
+    QFileDialog dialog(this->window(), tr("Open File"), last_image_dir);
     dialog.setFileMode(QFileDialog::ExistingFile);
     if (!dialog.exec())
         return;
