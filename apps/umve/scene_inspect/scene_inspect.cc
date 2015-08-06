@@ -157,6 +157,8 @@ void
 SceneInspect::on_scene_selected (mve::Scene::Ptr scene)
 {
     this->addin_manager->set_scene(scene);
+    if (scene)
+        this->last_mesh_dir = scene->get_path();
 }
 
 /* ---------------------------------------------------------------- */
