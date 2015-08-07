@@ -84,10 +84,13 @@ namespace
 void
 AddinState::load_shaders (void)
 {
-    // FIXME: Here?
-    this->surface_shader = ogl::ShaderProgram::create();
-    this->wireframe_shader = ogl::ShaderProgram::create();
-    this->texture_shader = ogl::ShaderProgram::create();
+    /* Create shader programs only if necessary. */
+    if (!this->surface_shader)
+        this->surface_shader = ogl::ShaderProgram::create();
+    if (!this->wireframe_shader)
+        this->wireframe_shader = ogl::ShaderProgram::create();
+    if (!this->texture_shader)
+        this->texture_shader = ogl::ShaderProgram::create();
 
     /* Setup search paths for shader files. */
     std::string home_dir = util::fs::get_home_dir();
