@@ -27,7 +27,7 @@ SFM_NAMESPACE_BEGIN
  * this function triangulates the 3D point coordinate using the DLT algorithm.
  */
 math::Vector<double, 3>
-triangulate_match (Correspondence const& match,
+triangulate_match (Correspondence2D2D const& match,
     CameraPose const& pose1, CameraPose const& pose2);
 
 /**
@@ -43,7 +43,7 @@ triangulate_track (std::vector<math::Vec2f> const& pos,
  * returns true if the triangulated point is in front of both cameras.
  */
 bool
-is_consistent_pose (Correspondence const& match,
+is_consistent_pose (Correspondence2D2D const& match,
     CameraPose const& pose1, CameraPose const& pose2);
 
 /* --------------- Higher-level triangulation class --------------- */

@@ -17,7 +17,7 @@ SFM_NAMESPACE_BEGIN
 /* ---------------- Low-level triangulation solver ---------------- */
 
 math::Vector<double, 3>
-triangulate_match (Correspondence const& match,
+triangulate_match (Correspondence2D2D const& match,
     CameraPose const& pose1, CameraPose const& pose2)
 {
     /* The algorithm is described in HZ 12.2, page 312. */
@@ -73,7 +73,7 @@ triangulate_track (std::vector<math::Vec2f> const& pos,
 }
 
 bool
-is_consistent_pose (Correspondence const& match,
+is_consistent_pose (Correspondence2D2D const& match,
     CameraPose const& pose1, CameraPose const& pose2)
 {
     math::Vector<double, 3> x = triangulate_match(match, pose1, pose2);

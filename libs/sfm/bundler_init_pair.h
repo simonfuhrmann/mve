@@ -78,7 +78,7 @@ private:
     {
         int view_1_id;
         int view_2_id;
-        Correspondences matches;
+        Correspondences2D2D matches;
         bool operator< (CandidatePair const& other) const;
     };
     typedef std::vector<CandidatePair> CandidatePairs;

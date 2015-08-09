@@ -41,7 +41,7 @@ namespace
 }  // namespace
 
 bool
-fundamental_least_squares (Correspondences const& points,
+fundamental_least_squares (Correspondences2D2D const& points,
     FundamentalMatrix* result)
 {
     if (points.size() < 8)
@@ -51,7 +51,7 @@ fundamental_least_squares (Correspondences const& points,
     std::vector<double> A(points.size() * 9);
     for (std::size_t i = 0; i < points.size(); ++i)
     {
-        Correspondence const& p = points[i];
+        Correspondence2D2D const& p = points[i];
         A[i * 9 + 0] = p.p2[0] * p.p1[0];
         A[i * 9 + 1] = p.p2[0] * p.p1[1];
         A[i * 9 + 2] = p.p2[0] * 1.0;
@@ -222,7 +222,7 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
 
 
 double
-sampson_distance (FundamentalMatrix const& F, Correspondence const& m)
+sampson_distance (FundamentalMatrix const& F, Correspondence2D2D const& m)
 {
     /*
      * Computes the Sampson distance SD for a given match and fundamental

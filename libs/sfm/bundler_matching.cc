@@ -129,7 +129,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
     }
 
     /* Build correspondences from feature matching result. */
-    sfm::Correspondences unfiltered_matches;
+    sfm::Correspondences2D2D unfiltered_matches;
     sfm::CorrespondenceIndices unfiltered_indices;
     {
         std::vector<int> const& m12 = matching_result.matches_1_2;
@@ -138,7 +138,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
             if (m12[i] < 0)
                 continue;
 
-            sfm::Correspondence match;
+            sfm::Correspondence2D2D match;
             match.p1[0] = view_1.positions[i][0];
             match.p1[1] = view_1.positions[i][1];
             match.p2[0] = view_2.positions[m12[i]][0];

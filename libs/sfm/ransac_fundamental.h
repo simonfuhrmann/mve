@@ -70,12 +70,12 @@ public:
 
 public:
     explicit RansacFundamental (Options const& options);
-    void estimate (Correspondences const& matches, Result* result);
+    void estimate (Correspondences2D2D const& matches, Result* result);
 
 private:
-    void estimate_8_point (Correspondences const& matches,
+    void estimate_8_point (Correspondences2D2D const& matches,
         FundamentalMatrix* fundamental);
-    void find_inliers (Correspondences const& matches,
+    void find_inliers (Correspondences2D2D const& matches,
         FundamentalMatrix const& fundamental, std::vector<int>* result);
 
 private:

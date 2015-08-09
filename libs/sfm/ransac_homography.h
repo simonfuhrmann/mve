@@ -67,12 +67,12 @@ public:
 
 public:
     explicit RansacHomography (Options const& options);
-    void estimate (Correspondences const& matches, Result* result);
+    void estimate (Correspondences2D2D const& matches, Result* result);
 
 private:
-    void compute_homography (Correspondences const& matches,
+    void compute_homography (Correspondences2D2D const& matches,
         HomographyMatrix* homography);
-    void evaluate_homography (Correspondences const& matches,
+    void evaluate_homography (Correspondences2D2D const& matches,
         HomographyMatrix const& homography, std::vector<int>* inliers);
 
 private:

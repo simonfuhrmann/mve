@@ -70,7 +70,7 @@ typedef math::Matrix<double, 3, 3> EssentialMatrix;
  * constraints on the resulting matrix.
  */
 bool
-fundamental_least_squares (Correspondences const& points,
+fundamental_least_squares (Correspondences2D2D const& points,
     FundamentalMatrix* result);
 
 /**
@@ -135,7 +135,7 @@ fundamental_from_pose (CameraPose const& cam1, CameraPose const& cam2,
  */
 double
 sampson_distance (FundamentalMatrix const& fundamental,
-    Correspondence const& match);
+    Correspondence2D2D const& match);
 
 /**
  * Computes a transformation for 2D points in homogeneous coordinates

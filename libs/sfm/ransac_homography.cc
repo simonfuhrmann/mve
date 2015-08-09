@@ -25,7 +25,7 @@ RansacHomography::RansacHomography (Options const& options)
 }
 
 void
-RansacHomography::estimate (Correspondences const& matches, Result* result)
+RansacHomography::estimate (Correspondences2D2D const& matches, Result* result)
 {
     if (this->opts.verbose_output)
     {
@@ -59,7 +59,7 @@ RansacHomography::estimate (Correspondences const& matches, Result* result)
 }
 
 void
-RansacHomography::compute_homography (Correspondences const& matches,
+RansacHomography::compute_homography (Correspondences2D2D const& matches,
     HomographyMatrix* homography)
 {
     if (matches.size() < 4)
@@ -73,7 +73,7 @@ RansacHomography::compute_homography (Correspondences const& matches,
     while (result.size() < 4)
         result.insert(util::system::rand_int() % matches.size());
 
-    Correspondences four_correspondeces(4);
+    Correspondences2D2D four_correspondeces(4);
     std::set<int>::const_iterator iter = result.begin();
     for (std::size_t i = 0; i < 4; ++i, ++iter)
         four_correspondeces[i] = matches[*iter];
@@ -83,14 +83,14 @@ RansacHomography::compute_homography (Correspondences const& matches,
 }
 
 void
-RansacHomography::evaluate_homography (Correspondences const& matches,
+RansacHomography::evaluate_homography (Correspondences2D2D const& matches,
     HomographyMatrix const& homography, std::vector<int>* inliers)
 {
     double const square_threshold = MATH_POW2(this->opts.threshold);
     inliers->resize(0);
     for (std::size_t i = 0; i < matches.size(); i++)
     {
-        Correspondence const& match = matches[i];
+        Correspondence2D2D const& match = matches[i];
         double error = sfm::symmetric_transfer_error(homography, match);
         if (error < square_threshold)
             inliers->push_back(i);

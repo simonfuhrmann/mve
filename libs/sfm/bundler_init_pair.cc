@@ -149,7 +149,7 @@ InitialPair::compute_candidate_pairs (CandidatePairs* candidates)
                 Viewport const& view2 = this->viewports->at(v2id);
                 math::Vec2f const v1pos = view1.features.positions[f1id];
                 math::Vec2f const v2pos = view2.features.positions[f2id];
-                Correspondence match;
+                Correspondence2D2D match;
                 std::copy(v1pos.begin(), v1pos.end(), match.p1);
                 std::copy(v2pos.begin(), v2pos.end(), match.p2);
                 candidates->at(pair_id).matches.push_back(match);
@@ -190,7 +190,7 @@ InitialPair::compute_pose (CandidatePair const& candidate,
     /* Compute fundamental matrix from pair correspondences. */
     FundamentalMatrix fundamental;
     {
-        Correspondences matches = candidate.matches;
+        Correspondences2D2D matches = candidate.matches;
         FundamentalMatrix F;
         fundamental_least_squares(matches, &F);
         enforce_fundamental_constraints(&F);

@@ -46,8 +46,6 @@ struct CameraPose
     void fill_p_matrix (math::Matrix<double, 3, 4>* result) const;
     /** Initializes the K matrix from focal length and principal point. */
     void set_k_matrix (double flen, double px, double py);
-    /** Initializes the R and t from P and known K (must already be set). */
-    void set_from_p_and_known_k (math::Matrix<double, 3, 4> const& p_matrix);
     /** Returns the focal length as average of x and y focal length. */
     double get_focal_length (void) const;
     /** Returns the camera position (requires valid camera). */
@@ -58,43 +56,6 @@ struct CameraPose
 
 /** List of camera poses. */
 typedef std::vector<CameraPose> CameraPoseList;
-
-/**
- * Estimates the camera pose from 2D-3D correspondences, i.e. correspondences
- * between 3D world coordinates and 2D image coordiantes. At least six such
- * correspondences are required.
- *
- * In order to improve numerical stability of the operation, the input
- * correspondences, both 2D and 3D points, should be normalized by
- * removing the mean and scaling to the unit spare/cube.
- */
-void
-pose_from_2d_3d_correspondences (Correspondences2D3D const& corresp,
-    math::Matrix<double, 3, 4>* p_matrix);
-
-/**
- * Decomposes the P-matrix into intrinsic and extrinsic parameters.
- * This decomposes P into K [R|t] using QR decomposition.
- */
-void
-pose_from_p_matrix (math::Matrix<double, 3, 4> const& p_matrix,
-    CameraPose* pose);
-
-/**
- * Computes the optimal rotation matrix R for given matrix A such that the
- * squared frobenius norm ||A-R||^2 is minimized subject to R R^T = 1
- * and det(R) = 1. This is equivalent to maximizing tr(A^T R) and yields
- *
- *   R = U C V^T
- *
- * where U S V^T is the SVD of A and C a matrix that negates the last column
- * of V if and only if det(A) < 0. The technique is described in the paper
- *
- *   On the closed-form solution of the rotation matrix arising in
- *   computer vision problems, Andriy Myronenko and Xubo Song, 2009.
- */
-math::Matrix<double, 3, 3>
-matrix_optimal_rotation  (math::Matrix<double, 3, 3> const& matrix);
 
 SFM_NAMESPACE_END
 

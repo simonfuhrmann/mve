@@ -25,7 +25,7 @@ RansacFundamental::RansacFundamental (Options const& options)
 }
 
 void
-RansacFundamental::estimate (Correspondences const& matches, Result* result)
+RansacFundamental::estimate (Correspondences2D2D const& matches, Result* result)
 {
     if (this->opts.verbose_output)
     {
@@ -59,7 +59,7 @@ RansacFundamental::estimate (Correspondences const& matches, Result* result)
 }
 
 void
-RansacFundamental::estimate_8_point (Correspondences const& matches,
+RansacFundamental::estimate_8_point (Correspondences2D2D const& matches,
     FundamentalMatrix* fundamental)
 {
     if (matches.size() < 8)
@@ -77,7 +77,7 @@ RansacFundamental::estimate_8_point (Correspondences const& matches,
     std::set<int>::const_iterator iter = result.begin();
     for (int i = 0; i < 8; ++i, ++iter)
     {
-        Correspondence const& match = matches[*iter];
+        Correspondence2D2D const& match = matches[*iter];
         pset1(0, i) = match.p1[0];
         pset1(1, i) = match.p1[1];
         pset1(2, i) = 1.0;
@@ -92,7 +92,7 @@ RansacFundamental::estimate_8_point (Correspondences const& matches,
 }
 
 void
-RansacFundamental::find_inliers (Correspondences const& matches,
+RansacFundamental::find_inliers (Correspondences2D2D const& matches,
     FundamentalMatrix const& fundamental, std::vector<int>* result)
 {
     result->resize(0);

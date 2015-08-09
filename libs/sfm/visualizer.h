@@ -55,7 +55,7 @@ public:
      * Places images next to each other and draws a list of matches.
      */
     static mve::ByteImage::Ptr draw_matches (mve::ByteImage::ConstPtr image1,
-        mve::ByteImage::ConstPtr image2, Correspondences const& matches);
+        mve::ByteImage::ConstPtr image2, Correspondences2D2D const& matches);
 };
 
 SFM_NAMESPACE_END

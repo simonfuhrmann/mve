@@ -24,7 +24,7 @@ typedef math::Matrix3d HomographyMatrix;
  * the homography matrix from at least 4 correspondences.
  */
 bool
-homography_dlt (Correspondences const& matches, HomographyMatrix* result);
+homography_dlt (Correspondences2D2D const& matches, HomographyMatrix* result);
 
 /**
  * Computes the symmetric transfer error for an image correspondence given the
@@ -32,7 +32,7 @@ homography_dlt (Correspondences const& matches, HomographyMatrix* result);
  */
 double
 symmetric_transfer_error(HomographyMatrix const& homography,
-    Correspondence const& match);
+    Correspondence2D2D const& match);
 
 SFM_NAMESPACE_END
 

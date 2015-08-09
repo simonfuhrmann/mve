@@ -17,8 +17,8 @@
 
 SFM_NAMESPACE_BEGIN
 
-struct Correspondence;
-typedef std::vector<Correspondence> Correspondences;
+struct Correspondence2D2D;
+typedef std::vector<Correspondence2D2D> Correspondences2D2D;
 
 struct Correspondence2D3D;
 typedef std::vector<Correspondence2D3D> Correspondences2D3D;
@@ -33,7 +33,7 @@ typedef std::vector<CorrespondenceIndex> CorrespondenceIndices;
  * the same point in the scene.
  * TODO: Rename this to Correspondence2D2D.
  */
-struct Correspondence
+struct Correspondence2D2D
 {
     double p1[2];
     double p2[2];
@@ -48,41 +48,6 @@ struct Correspondence2D3D
     double p3d[3];
     double p2d[2];
 };
-
-/**
- * Computes two transformations for the 2D points specified in the
- * correspondences such that the mean of the points is zero and the points
- * fit in the unit square.
- */
-void
-compute_normalization (Correspondences const& correspondences,
-    math::Matrix<double, 3, 3>* transform1,
-    math::Matrix<double, 3, 3>* transform2);
-
-/**
- * Applies the normalization to all correspondences.
- */
-void
-apply_normalization (math::Matrix<double, 3, 3> const& transform1,
-    math::Matrix<double, 3, 3> const& transform2,
-    Correspondences* correspondences);
-
-/**
- * Computes two transformations for the 2D-3D correspondences such that
- * mean of the points is zero and the points fit in the unit squre/cube.
- */
-void
-compute_normalization (Correspondences2D3D const& correspondences,
-    math::Matrix<double, 3, 3>* transform_2d,
-    math::Matrix<double, 4, 4>* transform_3d);
-
-/**
- * Applies the normalization to all correspondences.
- */
-void
-apply_normalization (math::Matrix<double, 3, 3> const& transform_2d,
-    math::Matrix<double, 4, 4> const& transform_3d,
-    Correspondences2D3D* correspondences);
 
 SFM_NAMESPACE_END
 

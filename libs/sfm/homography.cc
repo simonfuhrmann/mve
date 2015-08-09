@@ -18,7 +18,7 @@
 SFM_NAMESPACE_BEGIN
 
 bool
-homography_dlt (Correspondences const& points, HomographyMatrix* result)
+homography_dlt (Correspondences2D2D const& points, HomographyMatrix* result)
 {
     if (points.size() < 4)
         throw std::invalid_argument("At least 4 matches required");
@@ -29,7 +29,7 @@ homography_dlt (Correspondences const& points, HomographyMatrix* result)
     {
         std::size_t const row1 = 9 * i;
         std::size_t const row2 = 9 * (i + points.size());
-        Correspondence const& match = points[i];
+        Correspondence2D2D const& match = points[i];
         A[row1 + 0] =  0.0;
         A[row1 + 1] =  0.0;
         A[row1 + 2] =  0.0;
@@ -63,7 +63,7 @@ homography_dlt (Correspondences const& points, HomographyMatrix* result)
 
 double
 symmetric_transfer_error(HomographyMatrix const& homography,
-    Correspondence const& match)
+    Correspondence2D2D const& match)
 {
     /*
      * Computes the symmetric transfer error for a given match and homography
