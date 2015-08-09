@@ -191,9 +191,8 @@ InitialPair::compute_pose (CandidatePair const& candidate,
     FundamentalMatrix fundamental;
     {
         Correspondences2D2D matches = candidate.matches;
-        FundamentalMatrix F;
-        fundamental_least_squares(matches, &F);
-        enforce_fundamental_constraints(&F);
+        fundamental_least_squares(matches, &fundamental);
+        enforce_fundamental_constraints(&fundamental);
     }
 
     /* Populate K-matrices. */

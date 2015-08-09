@@ -42,15 +42,15 @@ public:
         Options (void);
 
         /**
-         * The number of RANSAC iterations. Defaults to 100.
+         * The number of RANSAC iterations. Defaults to 1000.
          * Function compute_ransac_iterations() can be used to estimate the
          * required number of iterations for a certain RANSAC success rate.
          */
         int max_iterations;
 
         /**
-         * Threshold on the reprojection error used to determine inliers.
-         * Defaults to 0.0015.
+         * Threshold used to determine inliers. Defaults to 0.005.
+         * This threshold assumes that the input points are normalized.
          */
         double threshold;
 
@@ -98,7 +98,7 @@ private:
 inline
 RansacPoseP3P::Options::Options (void)
     : max_iterations(1000)
-    , threshold(0.015)
+    , threshold(0.005)
     , verbose_output(false)
 {
 }
