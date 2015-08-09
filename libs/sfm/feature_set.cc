@@ -16,6 +16,7 @@ SFM_NAMESPACE_BEGIN
 
 namespace
 {
+#if DISCRETIZE_DESCRIPTORS
     void
     convert_descriptor (Sift::Descriptor const& descr, unsigned short* data)
     {
@@ -39,7 +40,7 @@ namespace
             data[i] = static_cast<signed char>(value);
         }
     }
-
+#else // DISCRETIZE_DESCRIPTORS
     void
     convert_descriptor (Sift::Descriptor const& descr, float* data)
     {
@@ -51,6 +52,7 @@ namespace
     {
         std::copy(descr.data.begin(), descr.data.end(), data);
     }
+#endif // DISCRETIZE_DESCRIPTORS
 
     template <typename T>
     bool

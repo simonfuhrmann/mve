@@ -118,7 +118,6 @@ main (int argc, char** argv)
     sfm::RansacFundamental::Options ransac_fundamental_opts;
     ransac_fundamental_opts.max_iterations = 1000;
     ransac_fundamental_opts.threshold = 2.0f;
-    ransac_fundamental_opts.already_normalized = false;
     ransac_fundamental_opts.verbose_output = true;
     sfm::RansacFundamental ransac_fundamental(ransac_fundamental_opts);
     sfm::RansacFundamental::Result ransac_fundamental_result;
@@ -134,7 +133,6 @@ main (int argc, char** argv)
     sfm::RansacHomography::Options ransac_homography_opts;
     ransac_homography_opts.max_iterations = 1000;
     ransac_homography_opts.threshold = 2.0f;
-    ransac_homography_opts.already_normalized = false;
     ransac_homography_opts.verbose_output = true;
     sfm::RansacHomography ransac_homography(ransac_homography_opts);
     sfm::RansacHomography::Result ransac_homography_result;

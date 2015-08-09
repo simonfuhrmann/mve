@@ -120,12 +120,8 @@ Incremental::reconstruct_next_view (int view_id)
     }
 
     /* Initialize a temporary camera. */
-    float const maxdim = static_cast<float>
-        (std::max(viewport.width, viewport.height));
     CameraPose temp_camera;
-    temp_camera.set_k_matrix(viewport.focal_length * maxdim,
-        static_cast<float>(viewport.width) / 2.0f,
-        static_cast<float>(viewport.height) / 2.0f);
+    temp_camera.set_k_matrix(viewport.focal_length, 0.0, 0.0);
 
     /* Compute pose from 2D-3D correspondences using P3P. */
     RansacPoseP3P ransac(this->opts.pose_p3p_opts);
@@ -336,11 +332,11 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 
             int const feature_id = track.features[j].feature_id;
             Viewport const& view = this->viewports->at(view_id);
-            math::Vec2f f2d = view.features.positions[feature_id];
+            math::Vec2f const& f2d = view.features.positions[feature_id];
 
             pba::Point2D point;
-            point.x = f2d[0] - static_cast<float>(view.width) / 2.0f;
-            point.y = f2d[1] - static_cast<float>(view.height) / 2.0f;
+            point.x = f2d[0];
+            point.y = f2d[1];
 
             pba_2d_points.push_back(point);
             pba_track_ids.push_back(pba_tracks_mapping[i]);
@@ -544,13 +540,9 @@ Incremental::create_bundle (void) const
                 continue;
             }
 
-            float width = static_cast<float>(viewport.width);
-            float height = static_cast<float>(viewport.height);
-            float maxdim = std::max(width, height);
             cam.flen = static_cast<float>(pose.get_focal_length());
-            cam.flen /= maxdim;
-            cam.ppoint[0] = static_cast<float>(pose.K[2]) / width;
-            cam.ppoint[1] = static_cast<float>(pose.K[5]) / height;
+            cam.ppoint[0] = pose.K[2] + 0.5f;
+            cam.ppoint[1] = pose.K[5] + 0.5f;
             std::copy(pose.R.begin(), pose.R.end(), cam.rot);
             std::copy(pose.t.begin(), pose.t.end(), cam.trans);
             cam.dist[0] = viewport.radial_distortion

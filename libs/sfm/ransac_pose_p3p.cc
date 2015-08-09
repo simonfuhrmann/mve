@@ -87,9 +87,9 @@ RansacPoseP3P::compute_p3p (Correspondences2D3D const& corresp,
     Correspondence2D3D const& c3(corresp[*iter]);
     pose_p3p_kneip(
         math::Vec3d(c1.p3d), math::Vec3d(c2.p3d), math::Vec3d(c3.p3d),
-        inv_k_matrix.mult(math::Vec3d(c1.p2d[0] + 0.5, c1.p2d[1] + 0.5, 1.0)),
-        inv_k_matrix.mult(math::Vec3d(c2.p2d[0] + 0.5, c2.p2d[1] + 0.5, 1.0)),
-        inv_k_matrix.mult(math::Vec3d(c3.p2d[0] + 0.5, c3.p2d[1] + 0.5, 1.0)),
+        inv_k_matrix.mult(math::Vec3d(c1.p2d[0], c1.p2d[1], 1.0)),
+        inv_k_matrix.mult(math::Vec3d(c2.p2d[0], c2.p2d[1], 1.0)),
+        inv_k_matrix.mult(math::Vec3d(c3.p2d[0], c3.p2d[1], 1.0)),
         poses);
 }
 

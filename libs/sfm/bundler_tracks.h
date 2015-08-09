@@ -53,17 +53,6 @@ private:
     Options opts;
 };
 
-/* ---------------------------------------------------------------- */
-
-/**
- * Debugging facility to visualize tracks on an image.
- * Requries per-viewport width, height and positions.
- */
-mve::ByteImage::Ptr
-visualize_track (Track const& track, ViewportList const& viewports,
-    mve::Scene::Ptr scene, std::string const& image_embedding,
-    PairwiseMatching const& matching);
-
 /* ------------------------ Implementation ------------------------ */
 
 inline

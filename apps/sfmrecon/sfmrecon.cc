@@ -105,8 +105,8 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
 
     /* Exhaustive matching between all pairs of views. */
     sfm::bundler::Matching::Options matching_opts;
-    matching_opts.ransac_opts.already_normalized = false;
-    matching_opts.ransac_opts.threshold = 3.0f;
+    //matching_opts.ransac_opts.max_iterations = 1000;
+    //matching_opts.ransac_opts.threshold = 0.0015;
     matching_opts.ransac_opts.verbose_output = false;
     matching_opts.use_lowres_matching = conf.lowres_matching;
     matching_opts.match_num_previous_frames = conf.video_matching;
@@ -239,9 +239,8 @@ sfm_reconstruct (AppSettings const& conf)
     sfm::bundler::InitialPair::Options init_pair_opts;
     if (conf.initial_pair_1 < 0 || conf.initial_pair_2 < 0)
     {
-        init_pair_opts.homography_opts.max_iterations = 1000;
-        init_pair_opts.homography_opts.already_normalized = false;
-        init_pair_opts.homography_opts.threshold = 10.0f;
+        //init_pair_opts.homography_opts.max_iterations = 1000;
+        //init_pair_opts.homography_opts.threshold = 0.005f;
         init_pair_opts.homography_opts.verbose_output = false;
         init_pair_opts.max_homography_inliers = 0.6f;
         init_pair_opts.verbose_output = true;
@@ -273,12 +272,8 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* Incrementally compute full bundle. */
     sfm::bundler::Incremental::Options incremental_opts;
-    incremental_opts.fundamental_opts.already_normalized = false;
-    incremental_opts.fundamental_opts.threshold = 3.0f;
-    //incremental_opts.fundamental_opts.max_iterations = 1000;
-    incremental_opts.fundamental_opts.verbose_output = true;
-    incremental_opts.pose_p3p_opts.threshold = 10.0f;
     //incremental_opts.pose_p3p_opts.max_iterations = 1000;
+    //incremental_opts.pose_p3p_opts.threshold = 0.005f;
     incremental_opts.pose_p3p_opts.verbose_output = false;
     incremental_opts.track_error_threshold_factor = conf.track_error_thres_factor;
     incremental_opts.new_track_error_threshold = conf.new_track_error_thres;
@@ -419,7 +414,7 @@ sfm_reconstruct (AppSettings const& conf)
         }
 
 #pragma omp critical
-        std::cout << "Saving MVE view " << view->get_directory() << std::endl;
+        std::cout << "Saving view " << view->get_directory() << std::endl;
         view->save_view();
         view->cache_cleanup();
     }

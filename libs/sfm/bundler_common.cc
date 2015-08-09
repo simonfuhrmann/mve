@@ -38,8 +38,9 @@ save_viewports_data (ViewportList const& viewports, std::ostream& out)
     {
         Viewport const& vp = viewports[i];
         FeatureSet const& vpf = vp.features;
-        out.write(reinterpret_cast<char const*>(&vp.width), sizeof(int));
-        out.write(reinterpret_cast<char const*>(&vp.height), sizeof(int));
+        int const dummy = 0;
+        out.write(reinterpret_cast<char const*>(&dummy), sizeof(int));
+        out.write(reinterpret_cast<char const*>(&dummy), sizeof(int));
         out.write(reinterpret_cast<char const*>(&vp.focal_length), sizeof(float));
         out.write(reinterpret_cast<char const*>(&vp.radial_distortion), sizeof(float));
 
@@ -83,8 +84,9 @@ load_viewports_data (std::istream& in, ViewportList* viewports)
     {
         Viewport& vp = viewports->at(i);
         FeatureSet& vpf = vp.features;
-        in.read(reinterpret_cast<char*>(&vp.width), sizeof(int));
-        in.read(reinterpret_cast<char*>(&vp.height), sizeof(int));
+        int width = 0, height = 0;
+        in.read(reinterpret_cast<char*>(&width), sizeof(int));
+        in.read(reinterpret_cast<char*>(&height), sizeof(int));
         in.read(reinterpret_cast<char*>(&vp.focal_length), sizeof(float));
         in.read(reinterpret_cast<char*>(&vp.radial_distortion), sizeof(float));
 
@@ -94,6 +96,20 @@ load_viewports_data (std::istream& in, ViewportList* viewports)
         vpf.positions.resize(num_positions);
         for (int j = 0; j < num_positions; ++j)
             in.read(reinterpret_cast<char*>(&vpf.positions[j]), sizeof(math::Vec2f));
+
+        /* Normalize image coordinates. */
+        if (width > 0 && height > 0)
+        {
+            float const fwidth = static_cast<float>(width);
+            float const fheight = static_cast<float>(height);
+            float const fnorm = std::max(fwidth, fheight);
+            for (std::size_t j = 0; j < vpf.positions.size(); ++j)
+            {
+                math::Vec2f& pos = vpf.positions[j];
+                pos[0] = (pos[0] + 0.5f - fwidth / 2.0f) / fnorm;
+                pos[1] = (pos[1] + 0.5f - fheight / 2.0f) / fnorm;
+            }
+        }
 
         /* Read colors. */
         int32_t num_colors;

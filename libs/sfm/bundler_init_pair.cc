@@ -191,25 +191,17 @@ InitialPair::compute_pose (CandidatePair const& candidate,
     FundamentalMatrix fundamental;
     {
         Correspondences matches = candidate.matches;
-        math::Matrix3d T1, T2;
         FundamentalMatrix F;
-        compute_normalization(matches, &T1, &T2);
-        apply_normalization(T1, T2, &matches);
         fundamental_least_squares(matches, &F);
         enforce_fundamental_constraints(&F);
-        fundamental = T2.transposed() * F * T1;
     }
 
     /* Populate K-matrices. */
     Viewport const& view_1 = this->viewports->at(candidate.view_1_id);
     Viewport const& view_2 = this->viewports->at(candidate.view_2_id);
-    double const flen1 = view_1.focal_length
-        * static_cast<double>(std::max(view_1.width, view_1.height));
-    double const flen2 = view_2.focal_length
-        * static_cast<double>(std::max(view_2.width, view_2.height));
-    pose1->set_k_matrix(flen1, view_1.width / 2.0, view_1.height / 2.0);
+    pose1->set_k_matrix(view_1.focal_length, 0.0, 0.0);
     pose1->init_canonical_form();
-    pose2->set_k_matrix(flen2, view_2.width / 2.0, view_2.height / 2.0);
+    pose2->set_k_matrix(view_2.focal_length, 0.0, 0.0);
 
     /* Compute essential matrix from fundamental matrix (HZ (9.12)). */
     EssentialMatrix E = pose2->K.transposed() * fundamental * pose1->K;

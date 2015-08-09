@@ -45,8 +45,6 @@ struct Viewport
 {
     Viewport (void);
 
-    /** Image dimension used for feature computation. */
-    int width, height;
     /** Estimated focal length of the image. */
     float focal_length;
     /** Radial distortion parameter. */
@@ -205,9 +203,7 @@ TwoViewMatching::operator< (TwoViewMatching const& rhs) const
 
 inline
 Viewport::Viewport (void)
-    : width(0)
-    , height(0)
-    , focal_length(0.0f)
+    : focal_length(0.0f)
     , radial_distortion(0.0f)
 {
 }

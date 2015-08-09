@@ -87,22 +87,8 @@ RansacFundamental::estimate_8_point (Correspondences const& matches,
     }
 
     /* Compute fundamental matrix using normalized 8-point. */
-    math::Matrix<double, 3, 3> T1, T2;
-    if (!this->opts.already_normalized)
-    {
-        sfm::compute_normalization(pset1, &T1);
-        sfm::compute_normalization(pset2, &T2);
-        pset1 = T1 * pset1;
-        pset2 = T2 * pset2;
-    }
-
     sfm::fundamental_8_point(pset1, pset2, fundamental);
     sfm::enforce_fundamental_constraints(fundamental);
-
-    if (!this->opts.already_normalized)
-    {
-        *fundamental = T2.transposed().mult(*fundamental).mult(T1);
-    }
 }
 
 void

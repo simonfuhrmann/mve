@@ -31,8 +31,6 @@ public:
     {
         Options (void);
 
-        /** Options for computing initial pair fundamental matrix. */
-        RansacFundamental::Options fundamental_opts;
         /** Options for computing pose from 2D-3D correspondences. */
         RansacPoseP3P::Options pose_p3p_opts;
         /** Threshold (factor of the median error) for large error tracks. */

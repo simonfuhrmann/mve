@@ -70,27 +70,36 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         Viewport* viewport = &viewports->at(i);
         viewport->features.set_options(this->opts.feature_options);
         viewport->features.compute_features(image);
-        viewport->width = image->width();
-        viewport->height = image->height();
         std::size_t num_feats = viewport->features.positions.size();
+
+        /* Normalize image coordinates. */
+        float const fwidth = static_cast<float>(viewport->features.width);
+        float const fheight = static_cast<float>(viewport->features.height);
+        float const fnorm = std::max(fwidth, fheight);
+        for (std::size_t j = 0; j < viewport->features.positions.size(); ++j)
+        {
+            math::Vec2f& pos = viewport->features.positions[j];
+            pos[0] = (pos[0] + 0.5f - fwidth / 2.0f) / fnorm;
+            pos[1] = (pos[1] + 0.5f - fheight / 2.0f) / fnorm;
+        }
 
         /* Try to get an estimate for the focal length. */
         this->estimate_focal_length(view, viewport);
-
-        /* Clean up unused embeddings. */
-        image.reset();
-        view->cache_cleanup();
 
 #pragma omp critical
         {
             std::cout << "\rView ID "
                 << util::string::get_filled(view->get_id(), 4, '0') << " ("
-                << viewport->width << "x" << viewport->height << "), "
+                << image->width() << "x" << image->height() << "), "
                 << util::string::get_filled(num_feats, 5, ' ') << " features, "
                 << "flen: " << viewport->focal_length << ", took "
                 << timer.get_elapsed() << " ms." << std::endl;
             total_features += viewport->features.positions.size();
         }
+
+        /* Clean up unused embeddings. */
+        image.reset();
+        view->cache_cleanup();
     }
 
     std::cout << "\rComputed " << total_features << " features "

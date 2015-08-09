@@ -78,19 +78,8 @@ RansacHomography::compute_homography (Correspondences const& matches,
     for (std::size_t i = 0; i < 4; ++i, ++iter)
         four_correspondeces[i] = matches[*iter];
 
-    math::Matrix3d T1, T2, invT2;
-    if (!this->opts.already_normalized)
-    {
-        sfm::compute_normalization(four_correspondeces, &T1, &T2);
-        sfm::apply_normalization(T1, T2, &four_correspondeces);
-        invT2 = math::matrix_inverse(T2);
-    }
-
     sfm::homography_dlt(four_correspondeces, homography);
     *homography /= (*homography)[8];
-
-    if (!this->opts.already_normalized)
-        *homography = invT2 * *homography * T1;
 }
 
 void

@@ -50,7 +50,7 @@ public:
 
         /**
          * Threshold on the reprojection error used to determine inliers.
-         * Defaults to 0.001.
+         * Defaults to 0.0015.
          */
         double threshold;
 
@@ -98,7 +98,7 @@ private:
 inline
 RansacPoseP3P::Options::Options (void)
     : max_iterations(1000)
-    , threshold(0.01)
+    , threshold(0.015)
     , verbose_output(false)
 {
 }

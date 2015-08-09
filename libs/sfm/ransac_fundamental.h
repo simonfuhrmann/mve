@@ -42,21 +42,10 @@ public:
         int max_iterations;
 
         /**
-         * Threshold used to determine inliers. Defaults to 0.001.
-         * This threshold depends on whether the input points are normalized.
-         * In the normalized case, this threshold is relative to the image
-         * dimension, e.g. 1e-3. In the un-normalized case, this threshold
-         * is in pixels, e.g. 2.0.
-         * TODO: Test the threshold in the un-normalized case (seems small).
+         * Threshold used to determine inliers. Defaults to 0.0015.
+         * This threshold assumes that the input points are normalized.
          */
         double threshold;
-
-        /**
-         * Whether the input points are already normalized. Defaults to true.
-         * If this is set to false, in every RANSAC iteration the coordinates
-         * of the randomly selected matches will be normalized for 8-point.
-         */
-        bool already_normalized;
 
         /**
          * Produce status messages on the console.
@@ -98,8 +87,7 @@ private:
 inline
 RansacFundamental::Options::Options (void)
     : max_iterations(1000)
-    , threshold(1e-3)
-    , already_normalized(true)
+    , threshold(0.0015)
     , verbose_output(false)
 {
 }
