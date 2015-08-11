@@ -47,6 +47,8 @@ main (int argc, char** argv)
     {
         std::cout << "Loading " << image_filename << "..." << std::endl;
         image = mve::image::load_file(image_filename);
+        //image = mve::image::rescale_half_size<uint8_t>(image);
+        //image = mve::image::rescale_half_size<uint8_t>(image);
     }
     catch (std::exception& e)
     {
