@@ -162,7 +162,8 @@ public:
 
 protected:
     bool    __multiply_jx_usenoj;        //for debug purpose
-protected:
+
+public:
     /////////////////////////////
     int     __selected_device;
     int     __cpu_data_precision;
@@ -198,6 +199,7 @@ protected:
     double           __timer_record[NUM_TIMER];
     int              __num_cpu_thread_all;
     int              __num_cpu_thread[NUM_FUNC];
+
 protected:
     ConfigBA();
     ///////////////////////////////

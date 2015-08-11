@@ -10,6 +10,7 @@
 #include <limits>
 #include <iostream>
 
+#include "util/timer.h"
 #include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
 #include "sfm/pba_cpu.h"
@@ -263,16 +264,17 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     if (this->opts.ba_fixed_intrinsics)
         pba.SetFixedIntrinsics(true);
 
-    pba.GetInternalConfig()->__verbose_cg_iteration = false;
-    pba.GetInternalConfig()->__verbose_level = -1;
-    pba.GetInternalConfig()->__verbose_function_time = false;
-    pba.GetInternalConfig()->__verbose_allocation = false;
-    pba.GetInternalConfig()->__verbose_sse = false;
-    //pba.GetInternalConfig()->__lm_max_iteration = 100;
-    //pba.GetInternalConfig()->__cg_min_iteration = 30;
-    //pba.GetInternalConfig()->__cg_max_iteration = 300;
-    //pba.GetInternalConfig()->__lm_delta_threshold = 1E-7;
-    //pba.GetInternalConfig()->__lm_mse_threshold = 1E-2;
+    pba::ConfigBA* pba_config = pba.GetInternalConfig();
+    pba_config->__verbose_cg_iteration = false;
+    pba_config->__verbose_level = -2;
+    pba_config->__verbose_function_time = false;
+    pba_config->__verbose_allocation = false;
+    pba_config->__verbose_sse = false;
+    //pba_config->__lm_max_iteration = 50;
+    //pba_config->__cg_min_iteration = 30;
+    //pba_config->__cg_max_iteration = 300;
+    pba_config->__lm_delta_threshold = 1e-16;
+    pba_config->__lm_mse_threshold = 1e-8;
 
     /* Prepare camera data. */
     std::vector<pba::CameraT> pba_cams;
@@ -354,7 +356,14 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     }
 
     /* Run bundle adjustment. */
+    util::WallTimer timer;
     pba.RunBundleAdjustment();
+
+    std::cout << "PBA: MSE " << pba_config->__initial_mse << " -> "
+        << pba_config->__final_mse << " ("
+        << (char)pba_config->GetBundleReturnCode() << "), "
+        << pba_config->__num_lm_success << " iter, "
+        << timer.get_elapsed() << "ms." << std::endl;
 
     /* Transfer camera info and track positions back. */
     std::size_t pba_cam_counter = 0;

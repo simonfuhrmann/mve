@@ -2312,12 +2312,7 @@ SparseBundleCPU:: SparseBundleCPU()
 {
     __cpu_data_precision = sizeof(double);
     if(__num_cpu_cores == 0)	__num_cpu_cores = omp_get_num_procs();
-    if(__verbose_level)			std::cout  << "PBA: CPU " << (__cpu_data_precision == 4 ? "single" : "double")
-                                           << "-precision solver; " << __num_cpu_cores << " cores"
-#ifdef CPUPBA_USE_AVX
-                                           << " (AVX)"
-#endif
-                                           << ".\n";
+
     //the following configuration are totally based my personal experience
     //on two computers.. you should adjust them according to your system.
     //try run driver filename -profile --float to see how speed varies
@@ -2391,6 +2386,15 @@ float SparseBundleCPU::GetMeanSquaredError()
 
 int SparseBundleCPU:: RunBundleAdjustment()
 {
+    if(__verbose_level > -2)
+        std::cout  << "PBA: CPU "
+            << (__cpu_data_precision == 4 ? "single" : "double")
+            << "-precision solver; " << __num_cpu_cores << " cores"
+#ifdef CPUPBA_USE_AVX
+            << " (AVX)"
+#endif
+            << ".\n";
+
     ResetBundleStatistics();
     BundleAdjustment();
     if(__num_lm_success > 0) SaveBundleStatistics(_num_camera,  _num_point, _num_imgpt);
