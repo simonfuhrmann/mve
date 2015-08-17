@@ -96,6 +96,7 @@ CameraDatabase::CameraDatabase (void)
     this->add("Canon", "Canon EOS 350D DIGITAL", 22.2f, 14.8f, 3456, 2304);
     this->add("Canon", "Canon EOS 400D DIGITAL", 22.2f, 14.8f, 3888, 2592);
     this->add("Canon", "Canon EOS Kiss Digital X", 22.2f, 14.8f, 3888, 2592);
+    this->add("Canon", "Canon EOS DIGITAL REBEL XTi", 22.2f, 14.8f, 3888, 2592);
     this->add("Canon", "Canon EOS 40D", 22.2f, 14.8f, 3888, 2592);
     this->add("Canon", "Canon EOS 450D", 22.2f, 14.8f, 4272, 2848);
     this->add("Canon", "Canon EOS 500D", 22.3f, 14.9f, 4752, 3168);
