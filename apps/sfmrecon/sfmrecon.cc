@@ -30,6 +30,7 @@
 #include "sfm/bundler_matching.h"
 #include "sfm/bundler_tracks.h"
 #include "sfm/bundler_init_pair.h"
+#include "sfm/bundler_intrinsics.h"
 #include "sfm/bundler_incremental.h"
 
 #define RAND_SEED_MATCHING 0
@@ -50,6 +51,7 @@ struct AppSettings
     bool always_full_ba;
     bool fixed_intrinsics;
     bool shared_intrinsics;
+    bool intrinsics_from_views;
     int video_matching;
     float track_error_thres_factor;
     float new_track_error_thres;
@@ -87,7 +89,6 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     /* Feature computation for the scene. */
     sfm::bundler::Features::Options feature_opts;
     feature_opts.image_embedding = conf.original_name;
-    feature_opts.exif_embedding = conf.exif_name;
     feature_opts.max_image_size = conf.max_image_size;
     feature_opts.feature_options.feature_types = sfm::FeatureSet::FEATURE_ALL;
 
@@ -206,10 +207,17 @@ sfm_reconstruct (AppSettings const& conf)
      * Obtaining EXIF guesses can be moved out of the feature module to here.
      * The following code can become its own module "bundler_intrinsics".
      */
-    //if (conf.intrinsics_from_views)
-    //{
-    //}
-    //else if (conf.intrinsics_from_exif) ...
+    {
+        sfm::bundler::Intrinsics::Options intrinsics_opts;
+        if (conf.intrinsics_from_views)
+        {
+            intrinsics_opts.intrinsics_source
+                = sfm::bundler::Intrinsics::FROM_VIEWS;
+        }
+        std::cout << "Initializing camera intrinsics..." << std::endl;
+        sfm::bundler::Intrinsics intrinsics(intrinsics_opts);
+        intrinsics.compute(scene, &viewports);
+    }
 
     /* Start incremental SfM. */
     log_message(conf, "Starting incremental SfM.");
@@ -474,6 +482,7 @@ main (int argc, char** argv)
     args.add_option('\0', "video-matching", true, "Only match to ARG previous frames [0]");
     args.add_option('\0', "fixed-intrinsics", false, "Do not optimize camera intrinsics");
     args.add_option('\0', "shared-intrinsics", false, "Share intrinsics between all cameras");
+    args.add_option('\0', "intrinsics-from-views", false, "Use intrinsics from MVE views [use EXIF]");
     args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [10]");
     args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [25]");
     args.add_option('\0', "use-2cam-tracks", false, "Triangulate tracks from only two cameras");
@@ -495,6 +504,7 @@ main (int argc, char** argv)
     conf.video_matching = 0;
     conf.fixed_intrinsics = false;
     conf.shared_intrinsics = false;
+    conf.intrinsics_from_views = false;
     conf.track_error_thres_factor = 25.0f;
     conf.new_track_error_thres = 10.0f;
     conf.min_views_per_track = 3;
@@ -531,6 +541,8 @@ main (int argc, char** argv)
             conf.fixed_intrinsics = true;
         else if (i->opt->lopt == "shared-intrinsics")
             conf.shared_intrinsics = true;
+        else if (i->opt->lopt == "intrinsics-from-views")
+            conf.intrinsics_from_views = true;
         else if (i->opt->lopt == "track-error-thres")
             conf.new_track_error_thres = i->get_arg<float>();
         else if (i->opt->lopt == "track-thres-factor")
