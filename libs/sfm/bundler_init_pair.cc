@@ -53,7 +53,7 @@ InitialPair::compute_pair (Result* result)
         if (!found_pose)
             continue;
 
-        /* Test initial pair test quality. */
+        /* Test initial pair quality. */
         // TODO
 
 #pragma omp critical

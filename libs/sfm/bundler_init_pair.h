@@ -16,7 +16,7 @@
 #include "sfm/ransac_fundamental.h"
 #include "sfm/fundamental.h"
 #include "sfm/bundler_common.h"
-#include "sfm/pose.h"
+#include "sfm/camera_pose.h"
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN

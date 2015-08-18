@@ -14,6 +14,7 @@
 
 #include "math/vector.h"
 #include "math/matrix.h"
+#include "math/matrix_tools.h"
 #include "sfm/defines.h"
 #include "sfm/correspondence.h"
 
@@ -34,11 +35,8 @@ SFM_NAMESPACE_BEGIN
  */
 struct CameraPose
 {
+public:
     CameraPose (void);
-
-    math::Matrix<double, 3, 3> K;
-    math::Matrix<double, 3, 3> R;
-    math::Vector<double, 3> t;
 
     /** Initializes R with identity and t with zeros. */
     void init_canonical_form (void);
@@ -52,10 +50,64 @@ struct CameraPose
     void fill_camera_pos (math::Vector<double, 3>* camera_pos) const;
     /** Returns true if K matrix is valid (non-zero focal length). */
     bool is_valid (void) const;
+
+public:
+    math::Matrix<double, 3, 3> K;
+    math::Matrix<double, 3, 3> R;
+    math::Vector<double, 3> t;
 };
 
-/** List of camera poses. */
-typedef std::vector<CameraPose> CameraPoseList;
+/* ------------------------ Implementation ------------------------ */
+
+inline
+CameraPose::CameraPose (void)
+    : K(0.0)
+    , R(0.0)
+    , t(0.0)
+{
+}
+
+inline void
+CameraPose::init_canonical_form (void)
+{
+    math::matrix_set_identity(&this->R);
+    this->t.fill(0.0);
+}
+
+inline void
+CameraPose::fill_p_matrix (math::Matrix<double, 3, 4>* P) const
+{
+    math::Matrix<double, 3, 3> KR = this->K * this->R;
+    math::Matrix<double, 3, 1> Kt(*(this->K * this->t));
+    *P = KR.hstack(Kt);
+}
+
+inline void
+CameraPose::set_k_matrix (double flen, double px, double py)
+{
+    this->K.fill(0.0);
+    this->K[0] = flen; this->K[2] = px;
+    this->K[4] = flen; this->K[5] = py;
+    this->K[8] = 1.0;
+}
+
+inline double
+CameraPose::get_focal_length (void) const
+{
+    return (this->K[0] + this->K[4]) / 2.0;
+}
+
+inline void
+CameraPose::fill_camera_pos (math::Vector<double, 3>* camera_pos) const
+{
+    *camera_pos = -this->R.transposed().mult(this->t);
+}
+
+inline bool
+CameraPose::is_valid (void) const
+{
+    return this->K[0] != 0.0;
+}
 
 SFM_NAMESPACE_END
 

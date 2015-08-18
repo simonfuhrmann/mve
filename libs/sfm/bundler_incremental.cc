@@ -9,6 +9,7 @@
 
 #include <limits>
 #include <iostream>
+#include <utility>
 
 #include "util/timer.h"
 #include "math/matrix_tools.h"
@@ -20,22 +21,18 @@ SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
 void
-Incremental::initialize (ViewportList* viewports, TrackList* tracks,
-    CameraPoseList* cameras)
+Incremental::initialize (ViewportList* viewports, TrackList* tracks)
 {
     this->viewports = viewports;
     this->tracks = tracks;
-    this->cameras = cameras;
 
-    if (this->viewports->empty() || this->cameras->empty())
-        throw std::invalid_argument("No cameras/viewports given");
-    if (this->viewports->size() != this->cameras->size())
-        throw std::invalid_argument("Mismatching cameras/viewports amount");
+    if (this->viewports->empty())
+        throw std::invalid_argument("No viewports given");
 
     /* Check if at least two cameras are initialized. */
     std::size_t num_valid_cameras = 0;
-    for (std::size_t i = 0; i < this->cameras->size(); ++i)
-        if (this->cameras->at(i).is_valid())
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
+        if (this->viewports->at(i).pose.is_valid())
             num_valid_cameras += 1;
     if (num_valid_cameras < 2)
         throw std::invalid_argument("Two or more valid cameras required");
@@ -53,13 +50,10 @@ Incremental::initialize (ViewportList* viewports, TrackList* tracks,
 void
 Incremental::find_next_views (std::vector<int>* next_views)
 {
-    /* Update internal camera vector after viewports are externally updated. */
-    if (this->viewports->size() != this->cameras->size())
-        this->cameras->resize(this->viewports->size());
-
-    std::vector<std::pair<int, int> > valid_tracks(this->cameras->size());
+    /* Create mapping from valid tracks to view ID. */
+    std::vector<std::pair<int, int> > valid_tracks(this->viewports->size());
     for (std::size_t i = 0; i < valid_tracks.size(); ++i)
-        valid_tracks[i] = std::pair<int, int>(0, static_cast<int>(i));
+        valid_tracks[i] = std::make_pair(0, static_cast<int>(i));
 
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
@@ -70,14 +64,16 @@ Incremental::find_next_views (std::vector<int>* next_views)
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             int const view_id = track.features[j].view_id;
-            if (this->cameras->at(view_id).is_valid())
+            if (this->viewports->at(view_id).pose.is_valid())
                 continue;
             valid_tracks[view_id].first += 1;
         }
     }
 
+    /* Sort descending by number of valid tracks. */
     std::sort(valid_tracks.rbegin(), valid_tracks.rend());
 
+    /* Return unreconstructed views with most valid tracks. */
     next_views->clear();
     for (std::size_t i = 0; i < valid_tracks.size(); ++i)
     {
@@ -125,11 +121,13 @@ Incremental::reconstruct_next_view (int view_id)
     temp_camera.set_k_matrix(viewport.focal_length, 0.0, 0.0);
 
     /* Compute pose from 2D-3D correspondences using P3P. */
-    RansacPoseP3P ransac(this->opts.pose_p3p_opts);
     RansacPoseP3P::Result ransac_result;
-    ransac.estimate(corr, temp_camera.K, &ransac_result);
+    {
+        RansacPoseP3P ransac(this->opts.pose_p3p_opts);
+        ransac.estimate(corr, temp_camera.K, &ransac_result);
+    }
 
-    /* Cancel if inliers are below a threshold. */
+    /* Cancel if inliers are below a 33% threshold. */
     if (3 * ransac_result.inliers.size() < corr.size())
     {
         if (this->opts.verbose_output)
@@ -147,8 +145,11 @@ Incremental::reconstruct_next_view (int view_id)
             << "%)." << std::endl;
     }
 
-    /* Remove outliers from tracks and tracks from viewport. */
-    int removed_outliers = 0;
+    /*
+     * Remove outliers from tracks and tracks from viewport.
+     * TODO: Once single cam BA has been performed and parameters for this
+     * camera are optimized, evaluate outlier tracks and try to restore them.
+     */
     for (std::size_t i = 0; i < ransac_result.inliers.size(); ++i)
         track_ids[ransac_result.inliers[i]] = -1;
     for (std::size_t i = 0; i < track_ids.size(); ++i)
@@ -157,20 +158,23 @@ Incremental::reconstruct_next_view (int view_id)
             continue;
         this->tracks->at(track_ids[i]).remove_view(view_id);
         this->viewports->at(view_id).track_ids[feature_ids[i]] = -1;
-        removed_outliers += 1;
     }
     track_ids.clear();
     feature_ids.clear();
 
-    /* In the P3P case, just use the known K and computed R and t. */
-    this->cameras->at(view_id) = temp_camera;
-    this->cameras->at(view_id).R = ransac_result.pose.delete_col(3);
-    this->cameras->at(view_id).t = ransac_result.pose.col(3);
-
-    if (this->opts.verbose_output)
+    /* Commit camera using known K and computed R and t. */
     {
-        std::cout << "Reconstructed new camera with focal length: "
-            << this->cameras->at(view_id).get_focal_length() << std::endl;
+        CameraPose& pose = this->viewports->at(view_id).pose;
+        pose = temp_camera;
+        pose.R = ransac_result.pose.delete_col(3);
+        pose.t = ransac_result.pose.col(3);
+
+        if (this->opts.verbose_output)
+        {
+            std::cout << "Reconstructed camera "
+                << view_id << " with focal length "
+                << pose.get_focal_length() << std::endl;
+        }
     }
 
     return true;
@@ -190,27 +194,26 @@ Incremental::triangulate_new_tracks (int min_num_views)
 
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
-        /* Skip tracks that have already been reconstructed. */
+        /* Skip tracks that have already been triangulated. */
         Track const& track = this->tracks->at(i);
         if (track.is_valid())
             continue;
 
         /*
-         * Triangulate a new track using all cameras.
-         * There can be more than two cameras if the track has been rejected
-         * in previous attempts to triangulate the track.
+         * Triangulate the track using all cameras. There can be more than two
+         * cameras if the track was rejected in previous triangulation attempts.
          */
         std::vector<math::Vec2f> pos;
         std::vector<CameraPose const*> poses;
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             int const view_id = track.features[j].view_id;
-            if (!this->cameras->at(view_id).is_valid())
+            if (!this->viewports->at(view_id).pose.is_valid())
                 continue;
             int const feature_id = track.features[j].feature_id;
             pos.push_back(this->viewports->at(view_id)
                 .features.positions[feature_id]);
-            poses.push_back(&this->cameras->at(view_id));
+            poses.push_back(&this->viewports->at(view_id).pose);
         }
 
         /* Skip tracks with too few valid cameras. */
@@ -278,13 +281,13 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 
     /* Prepare camera data. */
     std::vector<pba::CameraT> pba_cams;
-    std::vector<int> pba_cams_mapping(this->cameras->size(), -1);
-    for (std::size_t i = 0; i < this->cameras->size(); ++i)
+    std::vector<int> pba_cams_mapping(this->viewports->size(), -1);
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
     {
-        if (!this->cameras->at(i).is_valid())
+        if (!this->viewports->at(i).pose.is_valid())
             continue;
 
-        CameraPose const& pose = this->cameras->at(i);
+        CameraPose const& pose = this->viewports->at(i).pose;
         pba::CameraT cam;
         cam.f = pose.get_focal_length();
         std::copy(pose.t.begin(), pose.t.end(), cam.t);
@@ -329,7 +332,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             int const view_id = track.features[j].view_id;
-            if (!this->cameras->at(view_id).is_valid())
+            if (!this->viewports->at(view_id).pose.is_valid())
                 continue;
 
             int const feature_id = track.features[j].feature_id;
@@ -367,16 +370,14 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 
     /* Transfer camera info and track positions back. */
     std::size_t pba_cam_counter = 0;
-    for (std::size_t i = 0; i < this->cameras->size(); ++i)
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
     {
-        if (!this->cameras->at(i).is_valid())
+        if (!this->viewports->at(i).pose.is_valid())
             continue;
 
-        CameraPose& pose = this->cameras->at(i);
         Viewport& view = this->viewports->at(i);
+        CameraPose& pose = view.pose;
         pba::CameraT const& cam = pba_cams[pba_cam_counter];
-        std::copy(cam.t, cam.t + 3, pose.t.begin());
-        std::copy(cam.m[0], cam.m[0] + 9, pose.R.begin());
 
         if (this->opts.verbose_output && single_camera_ba < 0)
         {
@@ -385,8 +386,9 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
                 << ", distortion: " << cam.radial << std::endl;
         }
 
-        pose.K[0] = cam.f;
-        pose.K[4] = cam.f;
+        std::copy(cam.t, cam.t + 3, pose.t.begin());
+        std::copy(cam.m[0], cam.m[0] + 9, pose.R.begin());
+        pose.set_k_matrix(cam.f, 0.0, 0.0);
         view.radial_distortion = cam.radial;
         pba_cam_counter += 1;
     }
@@ -429,14 +431,15 @@ Incremental::invalidate_large_error_tracks (void)
             /* Get pose and 2D position of feature. */
             int view_id = ref[j].view_id;
             int feature_id = ref[j].feature_id;
-            CameraPose const& pose = this->cameras->at(view_id);
+
+            Viewport const& viewport = this->viewports->at(view_id);
+            CameraPose const& pose = viewport.pose;
             if (!pose.is_valid())
                 continue;
 
-            Viewport const& viewport = this->viewports->at(view_id);
             math::Vec2f const& pos2d = viewport.features.positions[feature_id];
 
-            /* Re-project 3D feature and compute error. */
+            /* Project 3D feature and compute reprojection error. */
             math::Vec3d x = pose.K * (pose.R * pos3d + pose.t);
             math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
             total_error += (pos2d - x2d).square_norm();
@@ -489,11 +492,12 @@ Incremental::normalize_scene (void)
     math::Vec3d aabb_max(-std::numeric_limits<double>::max());
     math::Vec3d camera_mean(0.0);
     int num_valid_cameras = 0;
-    for (std::size_t i = 0; i < this->cameras->size(); ++i)
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
     {
-        CameraPose const& pose = this->cameras->at(i);
+        CameraPose const& pose = this->viewports->at(i).pose;
         if (!pose.is_valid())
             continue;
+
         math::Vec3d center = -(pose.R.transposed() * pose.t);
         for (int j = 0; j < 3; ++j)
         {
@@ -518,9 +522,9 @@ Incremental::normalize_scene (void)
     }
 
     /* Transform every camera. */
-    for (std::size_t i = 0; i < this->cameras->size(); ++i)
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
     {
-        CameraPose& pose = this->cameras->at(i);
+        CameraPose& pose = this->viewports->at(i).pose;
         if (!pose.is_valid())
             continue;
         pose.t = pose.t * scale - pose.R * trans * scale;
@@ -537,12 +541,12 @@ Incremental::create_bundle (void) const
     {
         /* Populate the cameras in the bundle. */
         mve::Bundle::Cameras& bundle_cams = bundle->get_cameras();
-        bundle_cams.resize(this->cameras->size());
-        for (std::size_t i = 0; i < this->cameras->size(); ++i)
+        bundle_cams.resize(this->viewports->size());
+        for (std::size_t i = 0; i < this->viewports->size(); ++i)
         {
             mve::CameraInfo& cam = bundle_cams[i];
-            CameraPose const& pose = this->cameras->at(i);
             Viewport const& viewport = this->viewports->at(i);
+            CameraPose const& pose = viewport.pose;
             if (!pose.is_valid())
             {
                 cam.flen = 0.0f;

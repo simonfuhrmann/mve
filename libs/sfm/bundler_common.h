@@ -16,10 +16,11 @@
 #include "math/vector.h"
 #include "util/aligned_memory.h"
 #include "mve/image.h"
+#include "sfm/camera_pose.h"
+#include "sfm/correspondence.h"
+#include "sfm/feature_set.h"
 #include "sfm/sift.h"
 #include "sfm/surf.h"
-#include "sfm/feature_set.h"
-#include "sfm/correspondence.h"
 #include "sfm/defines.h"
 
 #define DESCR_SIGNATURE "MVE_DESCRIPTORS\n"
@@ -45,10 +46,14 @@ struct Viewport
 {
     Viewport (void);
 
-    /** Estimated focal length of the image. */
+    /** Initial focal length estimate for the image. */
     float focal_length;
     /** Radial distortion parameter. */
     float radial_distortion;
+
+    /** Camera pose for the viewport. */
+    CameraPose pose;
+
     /** The actual image data for debugging purposes. Usually NULL! */
     mve::ByteImage::Ptr image;
     /** Per-feature information. */

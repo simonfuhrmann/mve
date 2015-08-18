@@ -15,7 +15,7 @@
 #include "sfm/ransac_fundamental.h"
 #include "sfm/ransac_pose_p3p.h"
 #include "sfm/bundler_common.h"
-#include "sfm/pose.h"
+#include "sfm/camera_pose.h"
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
@@ -52,14 +52,13 @@ public:
 
     /**
      * Initializes the incremental bundler and sets required data.
-     * - viewports: per-viewport colors, positions, track IDs, an initial
-     *   focal length as well as image width and height is required.
-     * - tracks: The positions of the tracks are reconstructed.
-     * - cameras: At least a good initial camera pair is expected so that
-     *   initial tracks can be triangulated for incremental reconstruction.
+     * - viewports: per-viewport colors, positions, track IDs, and initial
+     *   focal length is required. A good initial camera pair is required
+     *   so that initial tracks can be triangulated. Radial distortion and
+     *   the camera pose is regularly updated.
+     * - tracks: The tracks are triangulated and regularly updated.
      */
-    void initialize (ViewportList* viewports, TrackList* tracks,
-        CameraPoseList* cameras);
+    void initialize (ViewportList* viewports, TrackList* tracks);
     /** Returns whether the incremental SfM has been initialized. */
     bool is_initialized (void) const;
 
@@ -88,7 +87,6 @@ private:
     Options opts;
     ViewportList* viewports;
     TrackList* tracks;
-    CameraPoseList* cameras;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -109,7 +107,6 @@ Incremental::Incremental (Options const& options)
     : opts(options)
     , viewports(NULL)
     , tracks(NULL)
-    , cameras(NULL)
 {
 }
 
@@ -117,8 +114,7 @@ inline bool
 Incremental::is_initialized (void) const
 {
     return this->viewports != NULL
-        && this->tracks != NULL
-        && this->cameras != NULL;
+        && this->tracks != NULL;
 }
 
 SFM_BUNDLER_NAMESPACE_END

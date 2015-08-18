@@ -51,7 +51,7 @@
 #include "math/vector.h"
 #include "math/matrix.h"
 #include "sfm/defines.h"
-#include "sfm/pose.h"
+#include "sfm/camera_pose.h"
 #include "sfm/correspondence.h"
 
 SFM_NAMESPACE_BEGIN

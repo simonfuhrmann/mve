@@ -290,16 +290,13 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.ba_shared_intrinsics = conf.shared_intrinsics;
     incremental_opts.verbose_output = true;
 
-    /* Initialize cameras. */
-    sfm::CameraPoseList cameras;
-    cameras.resize(viewports.size());
-    cameras[init_pair_result.view_1_id] = init_pair_result.view_1_pose;
-    cameras[init_pair_result.view_2_id] = init_pair_result.view_2_pose;
+    /* Initialize viewports with initial pair. */
+    viewports[init_pair_result.view_1_id].pose = init_pair_result.view_1_pose;
+    viewports[init_pair_result.view_2_id].pose = init_pair_result.view_2_pose;
 
+    /* Initialize the incremental bundler and reconstruct first tracks. */
     sfm::bundler::Incremental incremental(incremental_opts);
-    incremental.initialize(&viewports, &tracks, &cameras);
-
-    /* Reconstruct track positions for the intial pair. */
+    incremental.initialize(&viewports, &tracks);
     incremental.triangulate_new_tracks(2);
     incremental.invalidate_large_error_tracks();
 
@@ -312,6 +309,7 @@ sfm_reconstruct (AppSettings const& conf)
     int full_ba_num_skipped = 0;
     while (true)
     {
+        /* Find suitable next views for reconstruction. */
         std::vector<int> next_views;
         incremental.find_next_views(&next_views);
 
@@ -321,6 +319,7 @@ sfm_reconstruct (AppSettings const& conf)
             break;
         }
 
+        /* Reconstruct the next view. */
         int next_view_id = -1;
         for (std::size_t i = 0; i < next_views.size(); ++i)
         {
@@ -341,6 +340,7 @@ sfm_reconstruct (AppSettings const& conf)
             break;
         }
 
+        /* Run single-camera bundle adjustment. */
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
         incremental.triangulate_new_tracks(conf.min_views_per_track);

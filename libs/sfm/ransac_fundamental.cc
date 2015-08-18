@@ -15,7 +15,6 @@
 #include "util/system.h"
 #include "math/algo.h"
 #include "sfm/ransac_fundamental.h"
-#include "sfm/pose.h"
 
 SFM_NAMESPACE_BEGIN
 
