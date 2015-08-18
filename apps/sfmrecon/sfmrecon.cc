@@ -506,7 +506,7 @@ main (int argc, char** argv)
     conf.shared_intrinsics = false;
     conf.intrinsics_from_views = false;
     conf.track_error_thres_factor = 25.0f;
-    conf.new_track_error_thres = 10.0f;
+    conf.new_track_error_thres = 0.01f;
     conf.min_views_per_track = 3;
     conf.initial_pair_1 = -1;
     conf.initial_pair_2 = -1;

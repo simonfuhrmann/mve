@@ -99,7 +99,7 @@ private:
 
 inline
 Triangulate::Options::Options (void)
-    : error_threshold(10.0)
+    : error_threshold(0.01)
     , angle_threshold(MATH_DEG2RAD(1.0))
 {
 }
