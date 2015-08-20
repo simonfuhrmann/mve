@@ -58,29 +58,39 @@ TEST(NearestNeighborTest, TestSingnedShort)
     nn.find(query1, &result);
     EXPECT_EQ(0, result.dist_1st_best);
     EXPECT_EQ(32258, result.dist_2nd_best);
+    EXPECT_EQ(0, result.index_1st_best);
+    EXPECT_EQ(3, result.index_2nd_best);
 
     short query2[8] = { -127, 0, 0, 0, 0, 0, 0, 0 };
     nn.find(query2, &result);
     EXPECT_EQ(32258, result.dist_1st_best);
     EXPECT_EQ(32258, result.dist_2nd_best);
+    EXPECT_EQ(3, result.index_1st_best);
+    EXPECT_EQ(2, result.index_2nd_best);
 
     short query3[8] = { 0, 0, 90, 90, 0, 0, 0, 0 };
     nn.find(query3, &result);
     EXPECT_EQ(0, result.dist_1st_best);
     EXPECT_EQ(32258, result.dist_2nd_best);
+    EXPECT_EQ(2, result.index_1st_best);
+    EXPECT_EQ(3, result.index_2nd_best);
 
     short query4[8] = { 0, 0, 90, 0, 0, -90, 0, 0 };
     nn.find(query4, &result);
     EXPECT_EQ(16058, result.dist_1st_best);
     EXPECT_EQ(16058, result.dist_2nd_best);
+    EXPECT_EQ(3, result.index_1st_best);
+    EXPECT_EQ(2, result.index_2nd_best);
 
     short query5[8] = { 0, 0, 90, 0, 0, 90, 0, 0 };
     nn.find(query5, &result);
     EXPECT_EQ(16058, result.dist_1st_best);
     EXPECT_EQ(32258, result.dist_2nd_best);
+    EXPECT_EQ(2, result.index_1st_best);
+    EXPECT_EQ(1, result.index_2nd_best);
 }
 
-TEST(NearestNeighborTest, TestUnsingnedShort)
+TEST(NearestNeighborTest, TestUnsignedShort)
 {
     util::AlignedMemory<unsigned short> elements;
     elements.allocate(8 * 2);
@@ -114,14 +124,76 @@ TEST(NearestNeighborTest, TestUnsingnedShort)
     nn.find(query1, &result);
     EXPECT_EQ(0, result.dist_1st_best);
     EXPECT_EQ(65534, result.dist_2nd_best);
+    EXPECT_EQ(0, result.index_1st_best);
+    EXPECT_EQ(1, result.index_2nd_best);
 
     unsigned short query2[8] = { 0, 0, 255, 0, 0, 0, 0, 0 };
     nn.find(query2, &result);
     EXPECT_EQ(37740, result.dist_1st_best);
     EXPECT_EQ(65534, result.dist_2nd_best);
+    EXPECT_EQ(1, result.index_1st_best);
+    EXPECT_EQ(0, result.index_2nd_best);
 
     unsigned short query3[8] = { 0, 0, 181, 181, 0, 0, 0, 0 };
     nn.find(query3, &result);
     EXPECT_EQ(0, result.dist_1st_best);
     EXPECT_EQ(65534, result.dist_2nd_best);
+    EXPECT_EQ(1, result.index_1st_best);
+    EXPECT_EQ(0, result.index_2nd_best);
+}
+
+TEST(NearestNeighborTest, TestFloat)
+{
+    util::AlignedMemory<float> elements;
+    elements.allocate(4 * 3);
+    float* ptr = elements.begin();
+
+    // Fill elements.
+    (*ptr++) = 1.0f;
+    (*ptr++) = 0.0f;
+    (*ptr++) = 0.0f;
+    (*ptr++) = 0.0f;
+
+    (*ptr++) = 0.0f;
+    (*ptr++) = 1.0f;
+    (*ptr++) = 0.0f;
+    (*ptr++) = 0.0f;
+
+    (*ptr++) = 0.0f;
+    (*ptr++) = 0.0f;
+    (*ptr++) = 1.0f;
+    (*ptr++) = 0.0f;
+
+    sfm::NearestNeighbor<float>::Result result;
+    sfm::NearestNeighbor<float> nn;
+    nn.set_elements(elements.begin(), 3);
+    nn.set_element_dimensions(4);
+
+    float query1[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+    nn.find(query1, &result);
+    EXPECT_EQ(0.0f, result.dist_1st_best);
+    EXPECT_EQ(2.0f, result.dist_2nd_best);
+    EXPECT_EQ(0, result.index_1st_best);
+    EXPECT_EQ(2, result.index_2nd_best);
+
+    float query2[4] = { 0.0f, 1.0f, 0.0f, 0.0f };
+    nn.find(query2, &result);
+    EXPECT_EQ(0.0f, result.dist_1st_best);
+    EXPECT_EQ(2.0f, result.dist_2nd_best);
+    EXPECT_EQ(1, result.index_1st_best);
+    EXPECT_EQ(2, result.index_2nd_best);
+
+    float query3[4] = { 0.0f, 0.0f, 1.0f, 0.0f };
+    nn.find(query3, &result);
+    EXPECT_EQ(0.0f, result.dist_1st_best);
+    EXPECT_EQ(2.0f, result.dist_2nd_best);
+    EXPECT_EQ(2, result.index_1st_best);
+    EXPECT_EQ(1, result.index_2nd_best);
+
+    float query4[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    nn.find(query4, &result);
+    EXPECT_EQ(2.0f, result.dist_1st_best);
+    EXPECT_EQ(2.0f, result.dist_2nd_best);
+    EXPECT_EQ(2, result.index_1st_best);
+    EXPECT_EQ(1, result.index_2nd_best);
 }
