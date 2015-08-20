@@ -9,7 +9,7 @@ all:
 	$(MAKE) -C mesh2pset
 	$(MAKE) -C meshalign
 	$(MAKE) -C meshclean
-	$(MAKE) -C viewupgrade
+	$(MAKE) -C sceneupgrade
 
 clean:
 	$(MAKE) -C bundle2pset $@
@@ -22,7 +22,7 @@ clean:
 	$(MAKE) -C mesh2pset $@
 	$(MAKE) -C meshalign $@
 	$(MAKE) -C meshclean $@
-	$(MAKE) -C viewupgrade $@
+	$(MAKE) -C sceneupgrade $@
 
 links:
 	ln -sir apps/bundle2pset/bundle2pset $(HOME)/bin/
@@ -35,7 +35,7 @@ links:
 	ln -sir apps/mesh2pset/mesh2pset $(HOME)/bin/
 	ln -sir apps/meshalign/meshalign $(HOME)/bin/
 	ln -sir apps/meshclean/meshclean $(HOME)/bin/
-	ln -sir apps/viewupgrade/viewupgrade $(HOME)/bin/
+	ln -sir apps/sceneupgrade/sceneupgrade $(HOME)/bin/
 	ln -sir apps/umve/umve $(HOME)/bin/
 
 .PHONY: all clean links
