@@ -12,7 +12,7 @@
 namespace
 {
     void
-    fill_golden_correspondences(sfm::Correspondences& c,
+    fill_golden_correspondences(sfm::Correspondences2D2D& c,
         sfm::HomographyMatrix& H)
     {
         c[0].p1[0] =  0.214958928935434;  c[0].p1[1] = -0.906610909363408;
@@ -40,7 +40,7 @@ namespace
     }
 
     void
-    add_noise_to_some_correspondences(sfm::Correspondences& c)
+    add_noise_to_some_correspondences(sfm::Correspondences2D2D& c)
     {
         c[8].p1[0] = 0.326288814627068;
         c[8].p1[1] = 0.117213830798614;
@@ -64,7 +64,7 @@ namespace
 
 TEST(HomographyTest, TestHomographyDLT)
 {
-    sfm::Correspondences c(8);
+    sfm::Correspondences2D2D c(8);
     sfm::HomographyMatrix H2;
     fill_golden_correspondences(c, H2);
 
@@ -81,7 +81,7 @@ TEST(HomographyTest, TestHomographyDLT)
 
 TEST(HomographyTest, TestHomographyDLTLeastSquares)
 {
-    sfm::Correspondences c(8);
+    sfm::Correspondences2D2D c(8);
     sfm::HomographyMatrix H2;
     fill_golden_correspondences(c, H2);
 
@@ -95,13 +95,13 @@ TEST(HomographyTest, TestHomographyDLTLeastSquares)
 
 TEST(HomographyTest, TestSymmetricTransferError)
 {
-    sfm::Correspondences c(8);
+    sfm::Correspondences2D2D c(8);
     sfm::HomographyMatrix H2;
     fill_golden_correspondences(c, H2);
 
     for (std::size_t i = 0; i < c.size(); ++i)
     {
-        sfm::Correspondence match = c[i];
+        sfm::Correspondence2D2D match = c[i];
         double error = sfm::symmetric_transfer_error(H2, match);
         EXPECT_NEAR(error, 0.0, 1e-16);
     }
@@ -109,12 +109,11 @@ TEST(HomographyTest, TestSymmetricTransferError)
 
 TEST(RansacHomographyTest, TestEstimate)
 {
-    sfm::Correspondences c(8);
+    sfm::Correspondences2D2D c(8);
     sfm::HomographyMatrix H2;
     fill_golden_correspondences(c, H2);
 
     sfm::RansacHomography::Options options;
-    options.already_normalized = false;
     sfm::RansacHomography ransac(options);
     sfm::RansacHomography::Result result;
     ransac.estimate(c, &result);
@@ -127,7 +126,7 @@ TEST(RansacHomographyTest, TestEstimate)
 #if 0 // not deterministic
 TEST(RansacHomographyTest, TestEstimateNoisy)
 {
-    sfm::Correspondences c(16);
+    sfm::Correspondences2D2D c(16);
     sfm::HomographyMatrix H2;
     fill_golden_correspondences(c, H2);
     add_noise_to_some_correspondences(c);

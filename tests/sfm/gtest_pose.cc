@@ -5,7 +5,7 @@
 
 #include "math/matrix_tools.h"
 #include "math/matrix_svd.h"
-#include "sfm/pose.h"
+#include "sfm/camera_pose.h"
 #include "sfm/fundamental.h"
 #include "sfm/ransac.h"
 #include "sfm/ransac_fundamental.h"
@@ -51,87 +51,8 @@ TEST(PoseTest, PointNormalization2)
     EXPECT_NEAR(trans[8], 1.0, 1e-6);
 }
 
-TEST(PoseTest, CorrespondencesNormalization)
-{
-    sfm::Correspondences c(3);
-    c[0].p1[0] = 1.0; c[0].p1[1] = 1.0;
-    c[1].p1[0] = 3.0; c[1].p1[1] = -2.0;
-    c[2].p1[0] = 2.0; c[2].p1[1] = 4.0;
-
-    c[0].p2[0] = 1.0; c[0].p2[1] = -1.0;
-    c[1].p2[0] = 3.0; c[1].p2[1] = -2.0;
-    c[2].p2[0] = -2.0; c[2].p2[1] = -4.0;
-
-    math::Matrix<double, 3, 3> transform1, transform2;
-    sfm::compute_normalization(c, &transform1, &transform2);
-
-    EXPECT_NEAR(transform1[0], 1.0 / 6.0, 1e-10);
-    EXPECT_NEAR(transform1[1], 0.0, 1e-10);
-    EXPECT_NEAR(transform1[2], -2.0 / 6.0, 1e-10);
-    EXPECT_NEAR(transform1[3], 0.0, 1e-10);
-    EXPECT_NEAR(transform1[4], 1.0 / 6.0, 1e-10);
-    EXPECT_NEAR(transform1[5], -1.0 / 6.0, 1e-10);
-    EXPECT_NEAR(transform1[6], 0.0, 1e-10);
-    EXPECT_NEAR(transform1[7], 0.0, 1e-10);
-    EXPECT_NEAR(transform1[8], 1.0, 1e-10);
-
-    EXPECT_NEAR(transform2[0], 1.0 / 5.0, 1e-10);
-    EXPECT_NEAR(transform2[1], 0.0, 1e-10);
-    EXPECT_NEAR(transform2[2], -2.0/3.0 / 5.0, 1e-10);
-    EXPECT_NEAR(transform2[3], 0.0, 1e-10);
-    EXPECT_NEAR(transform2[4], 1.0 / 5.0, 1e-10);
-    EXPECT_NEAR(transform2[5], 7.0/3.0 / 5.0, 1e-10);
-    EXPECT_NEAR(transform2[6], 0.0, 1e-10);
-    EXPECT_NEAR(transform2[7], 0.0, 1e-10);
-    EXPECT_NEAR(transform2[8], 1.0, 1e-10);
-}
-
-TEST(PoseTest, Correspondences2D3DNormalization)
-{
-    sfm::Correspondences2D3D c(2);
-    c[0].p2d[0] = 1.0f; c[0].p2d[1] = 1.0f;
-    c[1].p2d[0] = 3.0f; c[1].p2d[1] = -1.0f;
-
-    c[0].p3d[0] = -5.0; c[0].p3d[1] = -2.0; c[0].p3d[2] = -2.0;
-    c[1].p3d[0] = -1.0; c[1].p3d[1] = 8.0;  c[1].p3d[2] = 1.0;
-
-    math::Matrix<double, 3, 3> T2D;
-    math::Matrix<double, 4, 4> T3D;
-    sfm::compute_normalization(c, &T2D, &T3D);
-
-    double t2d_scale = 0.5;
-    EXPECT_NEAR(T2D[0], t2d_scale, 1e-10);
-    EXPECT_NEAR(T2D[1], 0.0, 1e-10);
-    EXPECT_NEAR(T2D[2], -2.0 * t2d_scale, 1e-10);
-    EXPECT_NEAR(T2D[3], 0.0, 1e-10);
-    EXPECT_NEAR(T2D[4], t2d_scale, 1e-10);
-    EXPECT_NEAR(T2D[5], -0.0 * t2d_scale, 1e-10);
-    EXPECT_NEAR(T2D[6], 0.0, 1e-10);
-    EXPECT_NEAR(T2D[7], 0.0, 1e-10);
-    EXPECT_NEAR(T2D[8], 1.0, 1e-10);
-
-    double t3d_scale = 0.1;
-    EXPECT_NEAR(T3D[0], t3d_scale, 1e-10);
-    EXPECT_NEAR(T3D[1], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[2], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[3], 3.0 * t3d_scale, 1e-10);
-    EXPECT_NEAR(T3D[4], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[5], t3d_scale, 1e-10);
-    EXPECT_NEAR(T3D[6], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[7], -3.0 * t3d_scale, 1e-10);
-    EXPECT_NEAR(T3D[8], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[9], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[10], t3d_scale, 1e-10);
-    EXPECT_NEAR(T3D[11], 0.5 * t3d_scale, 1e-10);
-    EXPECT_NEAR(T3D[12], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[13], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[14], 0.0, 1e-10);
-    EXPECT_NEAR(T3D[15], 1.0, 1e-10);
-}
-
 namespace
 {
-
     void
     fill_golden_correspondences(sfm::Eight2DPoints& p1,
         sfm::Eight2DPoints& p2, sfm::FundamentalMatrix& F)
@@ -210,7 +131,7 @@ TEST(PoseTest, TestLeastSquaresPose)
     p1 = T1 * p1;
     p2 = T2 * p2;
 
-    sfm::Correspondences points(8);
+    sfm::Correspondences2D2D points(8);
     for (int i = 0; i < 8; ++i)
     {
         points[i].p1[0] = p1(0, i);
@@ -365,7 +286,7 @@ TEST(PostTest, TriangulateTest1)
     math::Vec3d x1 = pose1.K * (pose1.R * x_gt + pose1.t);
     math::Vec3d x2 = pose2.K * (pose2.R * x_gt + pose2.t);
 
-    sfm::Correspondence match;
+    sfm::Correspondence2D2D match;
     match.p1[0] = x1[0] / x1[2];
     match.p1[1] = x1[1] / x1[2];
     match.p2[0] = x2[0] / x2[2];
@@ -376,56 +297,6 @@ TEST(PostTest, TriangulateTest1)
     EXPECT_NEAR(x[1], x_gt[1], 1e-14);
     EXPECT_NEAR(x[2], x_gt[2], 1e-14);
     EXPECT_TRUE(sfm::is_consistent_pose(match, pose1, pose2));
-}
-
-TEST(PoseTest, PoseFrom2D3DCorrespondences)
-{
-    sfm::CameraPose pose;
-    fill_ground_truth_pose(NULL, &pose);
-    math::Matrix<double, 3, 4> groundtruth_p_matrix;
-    pose.fill_p_matrix(&groundtruth_p_matrix);
-
-    // Get "random" points.
-    std::vector<math::Vec3d> points;
-    fill_eight_random_points(&points);
-
-    // Project points to 2d coords and create correspondence.
-    sfm::Correspondences2D3D corresp;
-    for (int i = 0; i < 6; ++i)
-    {
-        math::Vec3f x = pose.K * (pose.R * points[i] + pose.t);
-        x /= x[2];
-        sfm::Correspondence2D3D c;
-        std::copy(*points[i], *points[i] + 3, c.p3d);
-        std::copy(*x, *x + 2, c.p2d);
-        corresp.push_back(c);
-    }
-
-    // Apply normalization to the correspondences.
-    // NOTE: It seems that normalizing the input points does not have a
-    // notable effect on the accuracy of the resulting solution.
-    math::Matrix<double, 3, 3> T2D;
-    math::Matrix<double, 4, 4> T3D;
-    sfm::compute_normalization(corresp, &T2D, &T3D);
-    sfm::apply_normalization(T2D, T3D, &corresp);
-
-    // Compute pose from correspondences.
-    math::Matrix<double, 3, 4> estimated_p_matrix;
-    sfm::pose_from_2d_3d_correspondences(corresp, &estimated_p_matrix);
-
-    // Remove normalization from resulting P-matrix.
-    estimated_p_matrix = math::matrix_inverse(T2D) * estimated_p_matrix * T3D;
-
-    // Obtain camera pose decomposition from P-matrix.
-    sfm::CameraPose new_pose;
-    sfm::pose_from_p_matrix(estimated_p_matrix, &new_pose);
-
-    for (int i = 0; i < 9; ++i)
-        EXPECT_NEAR(new_pose.K[i], pose.K[i], 0.015f) << "for i=" << i;
-    for (int i = 0; i < 9; ++i)
-        EXPECT_NEAR(new_pose.R[i], pose.R[i], 0.001f) << "for i=" << i;
-    for (int i = 0; i < 3; ++i)
-        EXPECT_NEAR(new_pose.t[i], pose.t[i], 0.001f) << "for i=" << i;
 }
 
 TEST(PoseTest, ComputeRANSACIterations)

@@ -305,7 +305,8 @@ TEST(ImageFileTest, MVEISaveLoadByteImage)
 
     img1 = make_byte_image(100, 200, 5);
     mve::image::save_mvei_file(img1, filename);
-    img2 = mve::image::load_mvei_file(filename);
+    img2 = std::dynamic_pointer_cast<mve::ByteImage>
+        (mve::image::load_mvei_file(filename));
     EXPECT_TRUE(compare_exact<uint8_t>(img1, img2));
 }
 
@@ -316,7 +317,8 @@ TEST(ImageFileTest, MVEISaveLoadFloatImage)
 
     img1 = make_float_image(199, 99, 4);
     mve::image::save_mvei_file(img1, filename);
-    img2 = mve::image::load_mvei_file(filename);
+    img2 = std::dynamic_pointer_cast<mve::FloatImage>
+        (mve::image::load_mvei_file(filename));
     EXPECT_TRUE(compare_exact<float>(img1, img2));
 }
 
