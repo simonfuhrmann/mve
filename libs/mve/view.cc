@@ -567,7 +567,7 @@ View::deprecated_format_check (std::string const& path)
     {
         char const* text =
             "The dataset contains views in a deprecated file format.\n"
-            "Please upgrade your datasets using the 'viewupgrade' app.\n"
+            "Please upgrade your datasets using the 'sceneupgrade' app.\n"
             "See the GitHub wiki for more information about this change.";
 
         std::cerr << std::endl << "NOTE: " << text << std::endl << std::endl;
