@@ -967,20 +967,20 @@ namespace ProgramCPU
     }
 
     // forward declare
-    void ComputeProjectionX(size_t nproj, const double* camera, const double* point, const double* ms,
+    void ComputeProjectionX(int nproj, const double* camera, const double* point, const double* ms,
                            const int * jmap, double* pj, int radial, int mt);
 
     DEFINE_THREAD_DATA(ComputeProjectionX)
-            size_t nproj; const double* camera, *point, * ms;
+            int nproj; const double* camera, *point, * ms;
             const int *jmap; double* pj; int radial_distortion;
     BEGIN_THREAD_PROC(ComputeProjectionX)
         ComputeProjectionX( q->nproj, q->camera, q->point, q->ms, q->jmap, q->pj, q->radial_distortion, 0);
     END_THREAD_RPOC(ComputeProjectionX)
 
-    void ComputeProjectionX(size_t nproj, const double* camera, const double* point, const double* ms,
+    void ComputeProjectionX(int nproj, const double* camera, const double* point, const double* ms,
                            const int * jmap, double* pj, int radial, int mt)
     {
-        if (mt > 1 && nproj >= static_cast<std::size_t>(mt))
+        if (mt > 1 && nproj >= mt)
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             const int thread_num = std::min(mt, THREAD_NUM_MAX);
@@ -988,14 +988,14 @@ namespace ProgramCPU
             {
                 int first = nproj * i / thread_num;
                 int last_ = nproj * (i + 1) / thread_num;
-                int last  = std::min(last_, (int)nproj);
+                int last  = std::min(last_, nproj);
                 RUN_THREAD(ComputeProjectionX, threads[i],
                     last - first, camera, point, ms + 2 * first, jmap + 2 * first, pj + 2 * first, radial);
             }
             WAIT_THREAD(threads, thread_num);
         }else
         {
-            for(size_t i = 0; i < nproj; ++i, jmap += 2, ms += 2, pj += 2)
+            for(int i = 0; i < nproj; ++i, jmap += 2, ms += 2, pj += 2)
             {
                 const double* c = camera + jmap[0] * 16;
                 const double* m = point + jmap[1] * POINT_ALIGN;
@@ -1219,13 +1219,13 @@ namespace ProgramCPU
     }
 
     // Forward declare
-    void ComputeJacobian(size_t nproj, size_t ncam, const double* camera, const double* point, double*  jc, double* jp,
+    void ComputeJacobian(int nproj, int ncam, const double* camera, const double* point, double*  jc, double* jp,
                          const int* jmap, const double * sj, const double *  ms, const int * cmlist,
                          bool intrinsic_fixed , int radial_distortion, bool shuffle, double* jct,
                          int mt, int i0);
 
     DEFINE_THREAD_DATA(ComputeJacobian)
-            size_t nproj, ncam; const double* camera, *point; double * jc, *jp;
+            int nproj, ncam; const double* camera, *point; double * jc, *jp;
             const int *jmap; const double* sj, * ms; const int* cmlist;
             bool intrinsic_fixed; int radial_distortion; bool shuffle; double* jct; int i0;
     BEGIN_THREAD_PROC(ComputeJacobian)
@@ -1234,13 +1234,13 @@ namespace ProgramCPU
                     q->radial_distortion, q->shuffle, q->jct, 0, q->i0);
     END_THREAD_RPOC(ComputeJacobian)
 
-    void ComputeJacobian(size_t nproj, size_t ncam, const double* camera, const double* point, double*  jc, double* jp,
+    void ComputeJacobian(int nproj, int ncam, const double* camera, const double* point, double*  jc, double* jp,
                          const int* jmap, const double * sj, const double *  ms, const int * cmlist,
                          bool intrinsic_fixed , int radial_distortion, bool shuffle, double* jct,
                          int mt = 2, int i0 = 0)
     {
 
-        if(mt > 1 && nproj >= static_cast<std::size_t>(mt))
+        if(mt > 1 && nproj >= mt)
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             const int thread_num = std::min(mt, THREAD_NUM_MAX);
@@ -1248,7 +1248,7 @@ namespace ProgramCPU
             {
                 int first = nproj * i / thread_num;
                 int last_ = nproj * (i + 1) / thread_num;
-                int last  = std::min(last_, (int)nproj);
+                int last  = std::min(last_, nproj);
                 RUN_THREAD(ComputeJacobian, threads[i],
                     last, ncam, camera, point, jc, jp, jmap + 2 * first, sj, ms + 2 * first, cmlist + first,
                     intrinsic_fixed, radial_distortion, shuffle, jct, first);
@@ -1259,7 +1259,7 @@ namespace ProgramCPU
             const double* sjc0 = sj;
             const double* sjp0 = sj ?  sj + ncam * 8 : NULL;
 
-            for(size_t i = i0; i < nproj; ++i, jmap += 2, ms += 2, ++cmlist)
+            for(int i = i0; i < nproj; ++i, jmap += 2, ms += 2, ++cmlist)
             {
                 int cidx = jmap[0], pidx = jmap[1];
                 const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
@@ -1290,11 +1290,11 @@ namespace ProgramCPU
     }
 
     // TODO: currently dead code because _num_imgpt_q == 0
-    void ComputeDiagonalAddQ(size_t ncam, const double* qw, double* d, const double* sj = NULL)
+    void ComputeDiagonalAddQ(int ncam, const double* qw, double* d, const double* sj = NULL)
     {
         if(sj)
         {
-            for(size_t i = 0; i < ncam; ++i, qw += 2, d += 8, sj += 8)
+            for(int i = 0; i < ncam; ++i, qw += 2, d += 8, sj += 8)
             {
                 if(qw[0] == 0) continue;
                 double j1 = qw[0] * sj[0];
@@ -1304,7 +1304,7 @@ namespace ProgramCPU
             }
         }else
         {
-            for(size_t i = 0; i < ncam; ++i, qw += 2, d += 8)
+            for(int i = 0; i < ncam; ++i, qw += 2, d += 8)
             {
                 if(qw[0] == 0) continue;
                 d[0] += (qw[0] * qw[0] * 2.0f);
@@ -1321,7 +1321,7 @@ namespace ProgramCPU
         if(jcv.size() == 0 || jpv.size() == 0) return; // not gonna happen
 
 
-        size_t ncam = cmapv.size() - 1, npts = pmapv.size() - 1;
+        int ncam = cmapv.size() - 1, npts = pmapv.size() - 1;
         const int vn = radial? 8 : 7;
         SetVectorZero(jtjdi);
 
@@ -1334,7 +1334,7 @@ namespace ProgramCPU
         double* jji = &jtjdi[0];
 
         ///////compute jc part
-        for(size_t i = 0; i < ncam; ++i, jji += 8, ++cmap, qw += 2)
+        for(int i = 0; i < ncam; ++i, jji += 8, ++cmap, qw += 2)
         {
             int idx1 = cmap[0], idx2 = cmap[1];
             //////////////////////////////////////
@@ -1352,7 +1352,7 @@ namespace ProgramCPU
             }
         }
 
-        for(size_t i = 0; i < npts; ++i, jji += POINT_ALIGN, ++ pmap)
+        for(int i = 0; i < npts; ++i, jji += POINT_ALIGN, ++ pmap)
         {
             int idx1 = pmap[0], idx2 = pmap[1];
             const double* pj = jp + idx1 * POINT_ALIGN2;
@@ -1418,23 +1418,23 @@ namespace ProgramCPU
     }
 
     // Forward declare.
-    void ComputeDiagonalBlockC(size_t ncam,  float lambda1, float lambda2, const double* jc, const int* cmap,
+    void ComputeDiagonalBlockC(int ncam,  float lambda1, float lambda2, const double* jc, const int* cmap,
                 const int* cmlist, double* di, double* bi, int vn, bool jc_transpose, bool use_jq, int mt);
 
     DEFINE_THREAD_DATA(ComputeDiagonalBlockC)
-        size_t ncam; float lambda1, lambda2; const double * jc; const int* cmap,* cmlist;
+        int ncam; float lambda1, lambda2; const double * jc; const int* cmap,* cmlist;
         double * di, * bi; int vn; bool jc_transpose, use_jq;
     BEGIN_THREAD_PROC(ComputeDiagonalBlockC)
         ComputeDiagonalBlockC( q->ncam, q->lambda1, q->lambda2, q->jc, q->cmap,
         q->cmlist, q->di, q->bi, q->vn, q->jc_transpose, q->use_jq, 0);
     END_THREAD_RPOC(ComputeDiagonalBlockC)
 
-    void ComputeDiagonalBlockC(size_t ncam,  float lambda1, float lambda2, const double* jc, const int* cmap,
+    void ComputeDiagonalBlockC(int ncam,  float lambda1, float lambda2, const double* jc, const int* cmap,
                 const int* cmlist, double* di, double* bi, int vn, bool jc_transpose, bool use_jq, int mt)
     {
-        const size_t bc = vn * 8;
+        const int bc = vn * 8;
 
-        if(mt > 1 && ncam >= (size_t) mt)
+        if(mt > 1 && ncam >= mt)
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             const int thread_num = std::min(mt, THREAD_NUM_MAX);
@@ -1442,7 +1442,7 @@ namespace ProgramCPU
             {
                 int first = ncam * i / thread_num;
                 int last_ = ncam * (i + 1) / thread_num;
-                int last  = std::min(last_, (int)ncam);
+                int last  = std::min(last_, ncam);
                 RUN_THREAD(ComputeDiagonalBlockC, threads[i],
                     (last - first), lambda1, lambda2, jc, cmap + first,
                      cmlist, di + 8 * first, bi + bc * first, vn, jc_transpose, use_jq);
@@ -1456,7 +1456,7 @@ namespace ProgramCPU
 
 
             ///////compute jc part
-            for(size_t i = 0; i < ncam; ++i, ++cmap, bi += bc)
+            for(int i = 0; i < ncam; ++i, ++cmap, bi += bc)
             {
                 int idx1 = cmap[0], idx2 = cmap[1];
                 //////////////////////////////////////
@@ -1505,16 +1505,16 @@ namespace ProgramCPU
     }
 
     // Forward declare.
-    void ComputeDiagonalBlockP(size_t npt, float lambda1, float lambda2,
+    void ComputeDiagonalBlockP(int npt, float lambda1, float lambda2,
                         const double*  jp, const int* pmap, double* di, double* bi, int mt);
 
     DEFINE_THREAD_DATA(ComputeDiagonalBlockP)
-        size_t npt; float lambda1, lambda2;  const double * jp; const int* pmap; double* di, *bi;
+        int npt; float lambda1, lambda2;  const double * jp; const int* pmap; double* di, *bi;
     BEGIN_THREAD_PROC(ComputeDiagonalBlockP)
         ComputeDiagonalBlockP( q->npt, q->lambda1, q->lambda2, q->jp, q->pmap, q->di, q->bi, 0);
     END_THREAD_RPOC(ComputeDiagonalBlockP)
 
-    void ComputeDiagonalBlockP(size_t npt, float lambda1, float lambda2,
+    void ComputeDiagonalBlockP(int npt, float lambda1, float lambda2,
                         const double*  jp, const int* pmap, double* di, double* bi, int mt)
     {
         if(mt > 1)
@@ -1525,7 +1525,7 @@ namespace ProgramCPU
             {
                 int first = npt * i / thread_num;
                 int last_ = npt * (i + 1) / thread_num;
-                int last  = std::min(last_, (int)npt);
+                int last  = std::min(last_, npt);
                 RUN_THREAD(ComputeDiagonalBlockP, threads[i],
                     (last - first), lambda1, lambda2, jp, pmap + first,
                     di + POINT_ALIGN * first, bi + 6 * first);
@@ -1533,7 +1533,7 @@ namespace ProgramCPU
             WAIT_THREAD(threads, thread_num);
         }else
         {
-            for(size_t i = 0; i < npt; ++i, ++pmap, di += POINT_ALIGN, bi += 6)
+            for(int i = 0; i < npt; ++i, ++pmap, di += POINT_ALIGN, bi += 6)
             {
                 int idx1 = pmap[0], idx2 = pmap[1];
 
@@ -2048,20 +2048,20 @@ namespace ProgramCPU
 
     // Forward declare.
     template<class Float>
-    void ComputeJtEC(    size_t ncam, const Float* pe, const Float* jc, const int* cmap,
+    void ComputeJtEC(    int ncam, const Float* pe, const Float* jc, const int* cmap,
                         const int* cmlist,  Float* v, bool jc_transpose, int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEC)
-        size_t ncam; const double* pe, * jc; const int* cmap,* cmlist;  double* v;bool jc_transpose;
+        int ncam; const double* pe, * jc; const int* cmap,* cmlist;  double* v;bool jc_transpose;
     BEGIN_THREAD_PROC(ComputeJtEC)
         ComputeJtEC( q->ncam, q->pe, q->jc, q->cmap, q->cmlist, q->v, q->jc_transpose, 0);
     END_THREAD_RPOC(ComputeJtEC)
 
     template<class Float>
-    void ComputeJtEC(    size_t ncam, const Float* pe, const Float* jc, const int* cmap,
+    void ComputeJtEC(    int ncam, const Float* pe, const Float* jc, const int* cmap,
                         const int* cmlist,  Float* v, bool jc_transpose, int mt)
     {
-        if(mt > 1 && ncam >= static_cast<size_t>(mt))
+        if(mt > 1 && ncam >= mt)
         {
             MYTHREAD threads[THREAD_NUM_MAX]; //if(ncam < mt) mt = ncam;
             const int thread_num = std::min(mt, THREAD_NUM_MAX);
@@ -2069,16 +2069,17 @@ namespace ProgramCPU
             {
                 int first = ncam * i / thread_num;
                 int last_ = ncam * (i + 1) / thread_num;
-                int last  = std::min(last_, (int)ncam);
+                int last  = std::min(last_, ncam);
                 RUN_THREAD(ComputeJtEC, threads[i],
                     (last - first), pe, jc, cmap + first, cmlist,
                     v + 8 * first, jc_transpose);
             }
             WAIT_THREAD(threads, thread_num);
-        }else
+        }
+        else
         {
             /////////////////////////////////
-            for(size_t i = 0; i < ncam; ++i, ++cmap, v += 8)
+            for(int i = 0; i < ncam; ++i, ++cmap, v += 8)
             {
                 int idx1 = cmap[0], idx2 = cmap[1];
                 for(int j = idx1; j < idx2; ++j)
@@ -2096,20 +2097,20 @@ namespace ProgramCPU
 
     // Forward declare.
     template<class Float>
-    void ComputeJtEP(   size_t npt, const Float* pe, const Float* jp,
+    void ComputeJtEP(   int npt, const Float* pe, const Float* jp,
                         const int* pmap, Float* v,  int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEP)
-        size_t npt; const double* pe, * jp; const int* pmap; double* v;
+        int npt; const double* pe, * jp; const int* pmap; double* v;
     BEGIN_THREAD_PROC(ComputeJtEP)
         ComputeJtEP( q->npt, q->pe, q->jp, q->pmap, q->v, 0);
     END_THREAD_RPOC(ComputeJtEP)
 
     template<class Float>
-    void ComputeJtEP(   size_t npt, const Float* pe, const Float* jp,
+    void ComputeJtEP(   int npt, const Float* pe, const Float* jp,
                         const int* pmap, Float* v,  int mt)
     {
-        if(mt > 1 && npt >= static_cast<size_t>(mt))
+        if(mt > 1 && npt >= mt)
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             const int thread_num = std::min(mt, THREAD_NUM_MAX);
@@ -2117,14 +2118,14 @@ namespace ProgramCPU
             {
                 int first = npt * i / thread_num;
                 int last_ = npt * (i + 1) / thread_num;
-                int last  = std::min(last_, (int)npt);
+                int last  = std::min(last_, npt);
                 RUN_THREAD(ComputeJtEP, threads[i],
                     (last - first), pe, jp, pmap + first, v + POINT_ALIGN * first);
             }
             WAIT_THREAD(threads, thread_num);
         }else
         {
-            for(size_t i = 0; i < npt; ++i, ++pmap, v += POINT_ALIGN)
+            for(int i = 0; i < npt; ++i, ++pmap, v += POINT_ALIGN)
             {
                 int idx1 = pmap[0], idx2 = pmap[1];
                 const Float* pj = jp + idx1 * POINT_ALIGN2;
@@ -2144,7 +2145,7 @@ namespace ProgramCPU
 
 
     template<class Float>
-    void ComputeJtE(    size_t ncam, size_t npt, const Float* pe, const Float* jc,
+    void ComputeJtE(    int ncam, int npt, const Float* pe, const Float* jc,
                         const int* cmap, const int* cmlist,  const Float* jp,
                         const int* pmap, Float* v, bool jc_transpose, int mode, int mt1, int mt2)
     {
@@ -2161,13 +2162,13 @@ namespace ProgramCPU
 
     // Forward declare.
     template<class Float>
-    void ComputeJtEC_(  size_t ncam, const Float* ee,  Float* jte,
+    void ComputeJtEC_(  int ncam, const Float* ee,  Float* jte,
                         const Float* c, const Float* point, const Float* ms,
                         const int* jmap, const int* cmap, const int * cmlist,
                         bool intrinsic_fixed, int radial_distortion, int mt);
 
     DEFINE_THREAD_DATA(ComputeJtEC_)
-           size_t ncam; const double* ee; double * jte; const double* c, *point,* ms;
+           int ncam; const double* ee; double * jte; const double* c, *point,* ms;
            const int *jmap, *cmap, *cmlist; bool intrinsic_fixed; int radial_distortion;
     BEGIN_THREAD_PROC(ComputeJtEC_)
         ComputeJtEC_(q->ncam, q->ee, q->jte, q->c, q->point, q->ms, q->jmap, q->cmap,
@@ -2176,12 +2177,12 @@ namespace ProgramCPU
 
     // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set.
     template<class Float>
-    void ComputeJtEC_(  size_t ncam, const Float* ee,  Float* jte,
+    void ComputeJtEC_(  int ncam, const Float* ee,  Float* jte,
                         const Float* c, const Float* point, const Float* ms,
                         const int* jmap, const int* cmap, const int * cmlist,
                         bool intrinsic_fixed, int radial_distortion, int mt)
     {
-        if(mt > 1 && ncam >= static_cast<std::size_t>(mt))
+        if(mt > 1 && ncam >= mt)
         {
             MYTHREAD threads[THREAD_NUM_MAX];
             //if(ncam < mt) mt = ncam;
@@ -2190,7 +2191,7 @@ namespace ProgramCPU
             {
                 int first = ncam * i / thread_num;
                 int last_ = ncam * (i + 1) / thread_num;
-                int last  = std::min(last_, (int)ncam);
+                int last  = std::min(last_, ncam);
                 RUN_THREAD(ComputeJtEC_, threads[i],
                     (last - first), ee, jte + 8 * first, c + first * 16, point, ms, jmap,
                     cmap + first, cmlist, intrinsic_fixed, radial_distortion);
@@ -2204,7 +2205,7 @@ namespace ProgramCPU
             //Float* jcx = jcv + ((16 - offset) / sizeof(Float)), * jcy = jcx + 8;
             Float* jcx = (Float*)ALIGN_PTR(jcv), * jcy = jcx + 8;
 
-            for(size_t i = 0; i < ncam; ++i, ++cmap, jte += 8, c += 16)
+            for(int i = 0; i < ncam; ++i, ++cmap, jte += 8, c += 16)
             {
                 int idx1 = cmap[0], idx2 = cmap[1];
 
@@ -2226,7 +2227,7 @@ namespace ProgramCPU
 
     // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set.
     template<class Float>
-    void ComputeJtE_(   size_t /*nproj*/, size_t ncam, size_t npt, const Float* ee,  Float* jte,
+    void ComputeJtE_(   int /*nproj*/, int ncam, int npt, const Float* ee,  Float* jte,
                         const Float* camera, const Float* point, const Float* ms, const int* jmap,
                         const int* cmap, const int* cmlist, const int* pmap, const Float* jp,
                         bool intrinsic_fixed, int radial_distortion, int mode, int mt)
@@ -2244,7 +2245,7 @@ namespace ProgramCPU
 
     // TODO: currently dead code because __no_jacobian_store (memory saving mode) is not set.
     template<class Float>
-    void ComputeJtE_(   size_t nproj, size_t ncam, size_t npt, const Float* ee,  Float* jte,
+    void ComputeJtE_(   int nproj, int ncam, int npt, const Float* ee,  Float* jte,
                         const Float* camera, const Float* point, const Float* ms, const int* jmap,
                         bool intrinsic_fixed, int radial_distortion, int mode)
     {
@@ -2255,7 +2256,7 @@ namespace ProgramCPU
 
         Float* vc0 = jte, *vp0 = jte + ncam * 8;
 
-        for(size_t i = 0 ;i < nproj; ++i, jmap += 2, ms += 2, ee += 2)
+        for(int i = 0 ;i < nproj; ++i, jmap += 2, ms += 2, ee += 2)
         {
             int cidx = jmap[0], pidx = jmap[1];
             const Float* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
