@@ -348,7 +348,7 @@ import_bundle_nvm (AppSettings const& conf)
     util::fs::mkdir(conf.views_path.c_str());
 
     /* Create and write views. */
-    std::cout << "Writing MVE files..." << std::endl;
+    std::cout << "Writing MVE views..." << std::endl;
 #pragma omp parallel for schedule(dynamic, 1)
     for (std::size_t i = 0; i < cameras.size(); ++i)
     {
@@ -373,8 +373,8 @@ import_bundle_nvm (AppSettings const& conf)
         /* Add original image. */
         if (conf.import_orig)
         {
-            if (has_jpeg_extension(fname))
-                view->set_image_ref(fname, "original");
+            if (has_jpeg_extension(nvm_cam.filename))
+                view->set_image_ref(nvm_cam.filename, "original");
             else
                 view->set_image(image, "original");
         }
@@ -393,7 +393,7 @@ import_bundle_nvm (AppSettings const& conf)
 
         /* Save view. */
 #pragma omp critical
-        std::cout << "Writing MVE file: " << fname << "..." << std::endl;
+        std::cout << "Writing MVE view: " << fname << "..." << std::endl;
         view->save_view_as(util::fs::join_path(conf.views_path, fname));
     }
 
@@ -819,7 +819,7 @@ import_images (AppSettings const& conf)
 
         /* Save view to disc. */
         std::string mve_fname = make_image_name(id_cnt);
-        std::cout << "Writing MVE file: " << mve_fname << "..." << std::endl;
+        std::cout << "Writing MVE view: " << mve_fname << "..." << std::endl;
         view->save_view_as(util::fs::join_path(conf.views_path, mve_fname));
 
         /* Advance ID of successfully imported images. */
