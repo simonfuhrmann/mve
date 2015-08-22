@@ -5,6 +5,24 @@
 
 #include "mve/mesh.h"
 
+TEST(TriangleMeshTest, MeshClearTest)
+{
+    mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
+    mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
+    mve::TriangleMesh::FaceList& faces = mesh->get_faces();
+    verts.push_back(math::Vec3f());
+    verts.push_back(math::Vec3f());
+    verts.push_back(math::Vec3f());
+    faces.push_back(0);
+    faces.push_back(1);
+    faces.push_back(2);
+    EXPECT_EQ(3, verts.size());
+    EXPECT_EQ(3, faces.size());
+    mesh->clear();
+    EXPECT_EQ(0, verts.size());
+    EXPECT_EQ(0, faces.size());
+}
+
 TEST(TriangleMeshTest, DeleteVerticesTest)
 {
     mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();

@@ -249,6 +249,7 @@ MeshBase::clear (void)
     this->vertices.clear();
     this->vertex_colors.clear();
     this->vertex_confidences.clear();
+    this->vertex_values.clear();
 }
 
 inline bool
@@ -372,6 +373,7 @@ TriangleMesh::clear_normals (void)
 inline void
 TriangleMesh::clear (void)
 {
+    this->MeshBase::clear();
     this->vertex_normals.clear();
     this->vertex_texcoords.clear();
     this->faces.clear();
