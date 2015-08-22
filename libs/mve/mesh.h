@@ -372,6 +372,7 @@ TriangleMesh::clear_normals (void)
 inline void
 TriangleMesh::clear (void)
 {
+    MeshBase::clear();
     this->vertex_normals.clear();
     this->vertex_texcoords.clear();
     this->faces.clear();
