@@ -687,9 +687,8 @@ IsoSurface::is_isovertex_on_edge (int mc_index, int edge_id)
 }
 
 void
-IsoSurface::compute_isopolygons(Octree::Iterator const& iter,
-    EdgeVertexMap const& edgemap,
-    std::vector<std::vector<int> >* polygons)
+IsoSurface::compute_isopolygons (Octree::Iterator const& iter,
+    EdgeVertexMap const& edgemap, PolygonList* polygons)
 {
     /*
      * Step 1: Collect iso edges for all faces of this node.
@@ -771,8 +770,8 @@ IsoSurface::compute_isopolygons(Octree::Iterator const& iter,
         /* Once joined edges close, issue a new polygon. */
         if (isoedges[i].second == isoedges[poly_start].first)
         {
-            polygons->push_back(std::vector<int>());
-            std::vector<int>& poly = polygons->back();
+            polygons->push_back(std::vector<std::size_t>());
+            std::vector<std::size_t>& poly = polygons->back();
             for (std::size_t j = poly_start; j <= i; ++j)
             {
                 poly.push_back(this->lookup_edge_vertex(edgemap,
@@ -821,7 +820,8 @@ IsoSurface::find_twin_vertex (EdgeInfo const& edge_info,
     int const edge_id = edge_info.edge_id;
     while (iter.current->parent != NULL)
     {
-        int const node_octant = iter.current - iter.current->parent->children;
+        int const node_octant
+            = static_cast<int>(iter.current - iter.current->parent->children);
 
         /* The octant of this node in the parent must be on the same edge. */
         int descend_octant;
@@ -924,8 +924,7 @@ IsoSurface::get_finest_isoedges (Octree::Iterator const& iter,
 
 void
 IsoSurface::compute_triangulation(IsoVertexVector const& isovertices,
-    std::vector<std::vector<int> > const& polygons,
-    mve::TriangleMesh::Ptr mesh)
+    PolygonList const& polygons, mve::TriangleMesh::Ptr mesh)
 {
     /* Populate per-vertex attributes. */
     mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
@@ -949,11 +948,11 @@ IsoSurface::compute_triangulation(IsoVertexVector const& isovertices,
     /* Triangulate isopolygons. */
     mve::TriangleMesh::FaceList& triangles = mesh->get_faces();
     fssr::MinAreaTriangulation tri;
-    for (size_t i = 0; i < polygons.size(); i++)
+    for (std::size_t i = 0; i < polygons.size(); i++)
     {
         std::vector<math::Vector<float, 3> > loop;
         loop.resize(polygons[i].size());
-        for (size_t j = 0; j < polygons[i].size(); ++j)
+        for (std::size_t j = 0; j < polygons[i].size(); ++j)
             loop[j] = verts[polygons[i][j]];
         std::vector<unsigned int> result;
         tri.triangulate(loop, &result);

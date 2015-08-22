@@ -84,8 +84,8 @@ marching_tetrahedra (T& accessor)
     TriangleMesh::ColorList& colors(ret->get_vertex_colors());
 
     typedef std::pair<std::size_t, std::size_t> Edge;
-    typedef std::map<Edge, std::size_t> EdgeMap;
-    typedef std::map<std::size_t, std::size_t> VertexMap;
+    typedef std::map<Edge, unsigned int> EdgeMap;
+    typedef std::map<std::size_t, unsigned int> VertexMap;
     EdgeMap edge_map;
     VertexMap vert_map;
 
@@ -101,10 +101,10 @@ marching_tetrahedra (T& accessor)
             continue;
 
         /* Get unique 6 bit edge configuration. */
-        int edgeconfig = mt_edge_table[tetconfig];
+        int const edgeconfig = mt_edge_table[tetconfig];
 
         /* Iterate of the ISO edges and provide vertex IDs. */
-        std::size_t vid[6];
+        unsigned int vid[6];
         for (int i = 0; i < 6; ++i)
         {
             if (!(edgeconfig & (1 << i)))

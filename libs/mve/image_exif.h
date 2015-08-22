@@ -94,7 +94,7 @@ struct ExifInfo
  * to be true.
  */
 ExifInfo
-exif_extract (char const* data, unsigned int len, bool is_jpeg = false);
+exif_extract (char const* data, std::size_t len, bool is_jpeg = false);
 
 /**
  * Prints the EXIF information to stream.

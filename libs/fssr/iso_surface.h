@@ -71,7 +71,7 @@ private:
     /** Maps and edge to an isovertex ID. */
     typedef std::map<EdgeIndex, std::size_t> EdgeVertexMap;
     /** List of polygons, each indexing vertices. */
-    typedef std::vector<std::vector<int> > PolygonList;
+    typedef std::vector<std::vector<std::size_t> > PolygonList;
     /** List of iso edges connecting vertices on cube edges. */
     typedef std::vector<IsoEdge> IsoEdgeList;
 
@@ -87,11 +87,9 @@ private:
         int face_id, IsoEdgeList* isoedges, bool descend_only);
     void get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex);
     void compute_isopolygons(Octree::Iterator const& iter,
-        EdgeVertexMap const& edgemap,
-        std::vector<std::vector<int> >* polygons);
+        EdgeVertexMap const& edgemap, PolygonList* polygons);
     void compute_triangulation(IsoVertexVector const& isovertices,
-        PolygonList const& polygons,
-        mve::TriangleMesh::Ptr mesh);
+        PolygonList const& polygons, mve::TriangleMesh::Ptr mesh);
     VoxelData const* get_voxel_data (VoxelIndex const& index);
     std::size_t lookup_edge_vertex (EdgeVertexMap const& edgemap,
         EdgeIndex const& edge);

@@ -47,11 +47,11 @@ class FancyProgressPrinter : public util::Thread
 
 public:
     void setBasePath(std::string _basePath);
-    void setNumViews(int _numViews);
+    void setNumViews(std::size_t _numViews);
 
     template<class T>
     void addRefViews(T const& views);
-    void addRefView(int viewID);
+    void addRefView(std::size_t viewID);
 
     virtual void* run();
     void stop();
@@ -67,7 +67,7 @@ private:
     };
 
 private:
-    void setStatus(int refViewNr, ViewStatus status);
+    void setStatus(std::size_t refViewNr, ViewStatus status);
     void insertRecon(mvs::DMRecon const *ptr);
     void eraseRecon(mvs::DMRecon const *ptr);
 
@@ -90,14 +90,14 @@ FancyProgressPrinter::setBasePath(std::string _basePath)
 }
 
 inline void
-FancyProgressPrinter::setNumViews(int numViews)
+FancyProgressPrinter::setNumViews(std::size_t numViews)
 {
     util::MutexLock lock(this->mutex);
     this->viewStatus.resize(numViews, STATUS_IGNORED);
 }
 
 inline void
-FancyProgressPrinter::addRefView(int viewID)
+FancyProgressPrinter::addRefView(std::size_t viewID)
 {
     util::MutexLock lock(this->mutex);
     this->viewStatus.at(viewID) = STATUS_QUEUED;
@@ -137,7 +137,7 @@ FancyProgressPrinter::stop()
 }
 
 inline void
-FancyProgressPrinter::setStatus (int refViewNr, ViewStatus status)
+FancyProgressPrinter::setStatus (std::size_t refViewNr, ViewStatus status)
 {
     viewStatus.at(refViewNr) = status;
 }

@@ -156,7 +156,7 @@ IsoOctree::print_progress (std::size_t voxels_done, std::size_t voxels_total)
 {
     static std::size_t last_voxels_done = 0;
     static util::WallTimer timer;
-    static unsigned int last_elapsed = 0;
+    static std::size_t last_elapsed = 0;
 
     /* Make sure we don't call timer.get_elapsed() too often. */
     if (voxels_done != voxels_total && voxels_done - last_voxels_done < 1000)
@@ -164,20 +164,20 @@ IsoOctree::print_progress (std::size_t voxels_done, std::size_t voxels_total)
     last_voxels_done = voxels_done;
 
     /* Make sure we don't print the progress too often, every 100ms. */
-    unsigned int elapsed = timer.get_elapsed();
+    std::size_t elapsed = timer.get_elapsed();
     if (voxels_done != voxels_total && elapsed - last_elapsed < 100)
         return;
     last_elapsed = elapsed;
 
     /* Compute percentage and nice elapsed and ETA strings. */
-    unsigned int elapsed_mins = elapsed / (1000 * 60);
-    unsigned int elapsed_secs = (elapsed / 1000) % 60;
+    std::size_t elapsed_mins = elapsed / (1000 * 60);
+    std::size_t elapsed_secs = (elapsed / 1000) % 60;
     float percentage = static_cast<float>(voxels_done)
         / static_cast<float>(voxels_total) ;
-    unsigned int total = static_cast<unsigned int>(elapsed / percentage);
-    unsigned int remaining = total - elapsed;
-    unsigned int remaining_mins = remaining / (1000 * 60);
-    unsigned int remaining_secs = (remaining / 1000) % 60;
+    std::size_t total = static_cast<std::size_t>(elapsed / percentage);
+    std::size_t remaining = total - elapsed;
+    std::size_t remaining_mins = remaining / (1000 * 60);
+    std::size_t remaining_secs = (remaining / 1000) % 60;
 
     std::cout << "\rProcessing voxel " << voxels_done
         << " (" << util::string::get_fixed(percentage * 100.0f, 2) << "%, "

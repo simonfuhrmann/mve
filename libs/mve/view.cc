@@ -115,6 +115,7 @@ View::load_view_from_mve_file  (std::string const& filename)
             proxy.name = tokens[1];
             proxy.size = util::string::convert<int>(tokens[2]);
             proxy.is_initialized = true;
+            // FIXME: This limits BLOBs to 2^31 bytes.
             proxy.blob = mve::ByteImage::create(proxy.size, 1, 1);
             this->blobs.push_back(proxy);
             embedding_buffers.push_back(ReadBuffer(
@@ -934,6 +935,7 @@ View::load_blob_intern (BlobProxy* proxy, bool init_only)
 
     /* Read blob payload. */
     //std::cout << "View: Loading BLOB: " << filename << std::endl;
+    // FIXME: This limits BLOBs size to 2^31 bytes.
     ByteImage::Ptr blob = ByteImage::create(size, 1, 1);
     in.read(blob->get_byte_pointer(), blob->get_byte_size());
     if (!in.good())

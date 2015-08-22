@@ -353,7 +353,7 @@ Arguments::get_ids_from_string (std::string const& str, std::vector<int>* ids)
         }
         else
         {
-            ids->push_back(util::string::convert<std::size_t>(t[i]));
+            ids->push_back(util::string::convert<int>(t[i]));
         }
     }
 }

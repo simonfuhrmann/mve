@@ -111,8 +111,8 @@ colAndExactDeriv(mve::ByteImage const& img, PixelCoords const& imgPos,
             throw std::runtime_error("Image position out of bounds");
 
         /* data position pointer */
-        std::size_t p0 = (top * width + left) * 3;
-        std::size_t p1 = ((top+1) * width + left) * 3;
+        int p0 = (top * width + left) * 3;
+        int p1 = ((top+1) * width + left) * 3;
 
         /* bilinear interpolation to determine color value */
         float x0, x1, x2, x3, x4, x5;
@@ -130,7 +130,7 @@ colAndExactDeriv(mve::ByteImage const& img, PixelCoords const& imgPos,
         /* derivative in direction gradDir */
         float u = gradDir[i][0];
         float v = gradDir[i][1];
-        for (std::size_t c = 0; c < 3; ++c)
+        for (int c = 0; c < 3; ++c)
         {
             deriv[i][c] =
                 u * (srgb2lin[img.at(p0+3)] - srgb2lin[img.at(p0)])
@@ -146,7 +146,8 @@ colAndExactDeriv(mve::ByteImage const& img, PixelCoords const& imgPos,
 
 /* ------------------------------------------------------------------ */
 
-void getXYZColorAtPix(mve::ByteImage const& img,
+void
+getXYZColorAtPix(mve::ByteImage const& img,
     std::vector<math::Vec2i> const& imgPos, Samples* color)
 {
     int width = img.width();
@@ -154,7 +155,7 @@ void getXYZColorAtPix(mve::ByteImage const& img,
 
     for (std::size_t i = 0; i < imgPos.size(); ++i)
     {
-        std::size_t idx = imgPos[i][1] * width + imgPos[i][0];
+        int const idx = imgPos[i][1] * width + imgPos[i][0];
         (*itCol)[0] = srgb2lin[img.at(idx,0)];
         (*itCol)[1] = srgb2lin[img.at(idx,1)];
         (*itCol)[2] = srgb2lin[img.at(idx,2)];
@@ -175,14 +176,14 @@ getXYZColorAtPos(mve::ByteImage const& img, PixelCoords const& imgPos,
 
     for (citPos = imgPos.begin(); citPos != imgPos.end(); ++citPos, ++itCol)
     {
-        int i = floor((*citPos)[0]);
-        int j = floor((*citPos)[1]);
+        int const i = floor((*citPos)[0]);
+        int const j = floor((*citPos)[1]);
         assert(i < width-1 && j < height-1);
 
-        float u = (*citPos)[0] - i;
-        float v = (*citPos)[1] - j;
-        size_t p0 = (j * width + i) * 3;
-        size_t p1 = ((j+1) * width + i) * 3;
+        float const u = (*citPos)[0] - i;
+        float const v = (*citPos)[1] - j;
+        int const p0 = (j * width + i) * 3;
+        int const p1 = ((j+1) * width + i) * 3;
         float x0, x1, x2, x3, x4, x5;
         x0 = (1.f-u) * srgb2lin[img.at(p0  )] + u * srgb2lin[img.at(p0+3)];
         x1 = (1.f-u) * srgb2lin[img.at(p0+1)] + u * srgb2lin[img.at(p0+4)];

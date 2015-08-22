@@ -39,7 +39,7 @@ float ico_verts[12][3] =
     { -0.5257311f, -0.8506508f, 0.0f }
 };
 
-int ico_faces[20][3] =
+unsigned int ico_faces[20][3] =
 {
     { 0, 4, 1 },
     { 0, 9, 4 },
@@ -73,7 +73,7 @@ generate_spheres (mve::TriangleMesh::Ptr mesh, AppSettings const& conf)
 
     for (std::size_t i = 0; i < mesh->get_vertices().size(); ++i)
     {
-        std::size_t vertex_base = out_verts.size();
+        unsigned int vertex_base = out_verts.size();
         for (int j = 0; j < 12; ++j)
         {
             out_verts.push_back(mesh->get_vertices()[i] + math::Vec3f(ico_verts[j]) * conf.sphere_radius);

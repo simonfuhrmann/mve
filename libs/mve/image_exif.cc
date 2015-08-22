@@ -141,12 +141,12 @@ namespace
 /* ---------------------------------------------------------------- */
 
 ExifInfo
-exif_extract (char const* data, unsigned int len, bool is_jpeg)
+exif_extract (char const* data, std::size_t len, bool is_jpeg)
 {
     /* Data buffer. */
     unsigned char const* buf = reinterpret_cast<unsigned char const*>(data);
     /* Current offset into data buffer. */
-    unsigned offs = 0;
+    std::size_t offs = 0;
     /* Intel byte alignment. */
     bool align_intel = true;
 
@@ -192,7 +192,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
     offs += 6;
 
     /* Get byte alignment (Intel "little endian" or Motorola "big endian"). */
-    unsigned int tiff_header_offset = offs;
+    std::size_t tiff_header_offset = offs;
     if (std::equal(buf + offs, buf + offs + 2, "II"))
         align_intel = true;
     else if (std::equal(buf + offs, buf + offs + 2, "MM"))
@@ -208,7 +208,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
     offs += 2;
 
     /* Get offset and jump into first IFD (Image File Directory). */
-    unsigned int first_ifd_offset = parse_u32(buf + offs, align_intel);
+    std::size_t first_ifd_offset = parse_u32(buf + offs, align_intel);
     offs += first_ifd_offset - 4;  // Why subtract 4?
 
     /*
@@ -235,7 +235,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
      *
      * While parsing the IFD entries, try to find SubIFD and GPS offsets.
      */
-    unsigned int exif_sub_ifd_offset = 0;
+    std::size_t exif_sub_ifd_offset = 0;
     //unsigned int gps_sub_ifd_offset = 0;
     for (int i = 0; i < num_entries; ++i)
     {
@@ -249,7 +249,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
          * the 'coffs' variable contains the value itself or an offset.
          * In case of an offset, it is relative to the TIFF header.
          */
-        unsigned int buf_off = offs + 8;
+        std::size_t buf_off = offs + 8;
         if (ifd_is_offset(type, ncomp))
             buf_off = tiff_header_offset + coffs;
         if (buf_off + ncomp > len)
@@ -339,7 +339,7 @@ exif_extract (char const* data, unsigned int len, bool is_jpeg)
         unsigned int ncomp = parse_u32(buf + offs + 4, align_intel);
         unsigned int coffs = parse_u32(buf + offs + 8, align_intel);
 
-        unsigned int buf_off = offs + 8;
+        std::size_t buf_off = offs + 8;
         if (ifd_is_offset(type, ncomp))
             buf_off = tiff_header_offset + coffs;
         if (buf_off + ncomp > len)

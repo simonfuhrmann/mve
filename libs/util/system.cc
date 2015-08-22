@@ -36,11 +36,11 @@ print_stack_trace (void)
 #ifdef __GNUC__
     /* Get stack pointers for all frames on the stack. */
     void *array[32];
-    std::size_t size = ::backtrace(array, 32);
+    int const size = ::backtrace(array, 32);
 
     /* Print out all the addresses to stderr. */
     std::cerr << "Obtained " << size << " stack frames:";
-    for (std::size_t i = 0; i < size; ++i)
+    for (int i = 0; i < size; ++i)
         std::cerr << " " << array[i];
     std::cerr << std::endl;
 

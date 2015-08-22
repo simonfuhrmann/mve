@@ -91,14 +91,14 @@ depthmap_cleanup (FloatImage::ConstPtr dm, std::size_t thres)
 {
     FloatImage::Ptr ret(FloatImage::create(*dm));
 
-    std::size_t w = ret->width();
-    std::size_t h = ret->height();
+    int const width = ret->width();
+    int const height = ret->height();
     std::vector<bool> visited;
-    visited.resize(w * h, false);
+    visited.resize(width * height, false);
 
-    std::size_t i = 0;
-    for (std::size_t y = 0; y < h; ++y)
-        for (std::size_t x = 0; x < w; ++x, ++i)
+    int i = 0;
+    for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x, ++i)
         {
             if (dm->at(i, 0) == 0.0f)
                 continue;
@@ -121,8 +121,8 @@ depthmap_confidence_clean (FloatImage::Ptr dm, FloatImage::ConstPtr cm)
     if (dm->width() != cm->width() || dm->height() != cm->height())
         throw std::invalid_argument("Image dimensions do not match");
 
-    std::size_t cnt = dm->get_pixel_amount();
-    for (std::size_t i = 0; i < cnt; ++i)
+    int cnt = dm->get_pixel_amount();
+    for (int i = 0; i < cnt; ++i)
         if (cm->at(i, 0) <= 0.0f)
             dm->at(i, 0) = 0.0f;
 }
@@ -162,16 +162,16 @@ dm_make_triangle (TriangleMesh* mesh, mve::Image<unsigned int>& vidx,
     FloatImage const* dm, math::Matrix3f const& invproj,
     std::size_t i, int* tverts)
 {
-    std::size_t w(vidx.width());
-    //std::size_t h(vidx.height());
+    int const width = vidx.width();
+    //int const height = vidx.height();
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
     mve::TriangleMesh::FaceList& faces(mesh->get_faces());
 
     for (int j = 0; j < 3; ++j)
     {
-        std::size_t iidx = i + (tverts[j] % 2) + w * (tverts[j] / 2);
-        std::size_t x = iidx % w;
-        std::size_t y = iidx / w;
+        int iidx = i + (tverts[j] % 2) + width * (tverts[j] / 2);
+        int x = iidx % width;
+        int y = iidx / width;
         if (vidx.at(iidx) == MATH_MAX_UINT)
         {
             /* Add vertex for depth pixel. */
@@ -214,30 +214,29 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     if (dm == NULL)
         throw std::invalid_argument("NULL depthmap given");
 
-    std::size_t w = dm->width();
-    std::size_t h = dm->height();
+    int const width = dm->width();
+    int const height = dm->height();
 
     /* Prepare triangle mesh. */
     TriangleMesh::Ptr mesh(TriangleMesh::create());
 
     /* Generate image that maps image pixels to vertex IDs. */
-    mve::Image<unsigned int> vidx(w, h, 1);
+    mve::Image<unsigned int> vidx(width, height, 1);
     vidx.fill(MATH_MAX_UINT);
 
     /* Iterate over 2x2-blocks in the depthmap and create triangles. */
-    std::size_t i = 0;
-    for (std::size_t y = 0; y < h - 1; ++y, ++i)
+    int i = 0;
+    for (int y = 0; y < height - 1; ++y, ++i)
     {
-        //std::cout << "Row " << y << std::endl;
-        for (std::size_t x = 0; x < w - 1; ++x, ++i)
+        for (int x = 0; x < width - 1; ++x, ++i)
         {
             /* Cache the four depth values. */
             float depths[4] = { dm->at(i, 0), dm->at(i + 1, 0),
-                dm->at(i + w, 0), dm->at(i + w + 1, 0) };
+                dm->at(i + width, 0), dm->at(i + width + 1, 0) };
 
             /* Create a mask representation of the available depth values. */
             int mask = 0;
-            std::size_t pixels = 0;
+            int pixels = 0;
             for (int j = 0; j < 4; ++j)
                 if (depths[j] > 0.0f)
                 {
@@ -326,10 +325,10 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     if (dm == NULL)
         throw std::invalid_argument("NULL depthmap given");
 
-    int w = dm->width();
-    int h = dm->height();
+    int const width = dm->width();
+    int const height = dm->height();
 
-    if (ci != NULL && (ci->width() != w || ci->height() != h))
+    if (ci != NULL && (ci->width() != width || ci->height() != height))
         throw std::invalid_argument("Color image dimension mismatch");
 
     /* Triangulate depth map. */
@@ -569,7 +568,7 @@ depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
                 for (std::size_t j = 0; j < info.faces.size(); ++j)
                     for (int k = 0; k < 3; ++k)
                     {
-                        int fidx = info.faces[j] * 3 + k;
+                        unsigned int fidx = info.faces[j] * 3 + k;
                         faces[fidx] = 0;
                         delete_list[fidx] = true;
                     }

@@ -30,7 +30,7 @@ MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
     /* Init vertex VBO. */
     {
         VertexBuffer::Ptr vbo = VertexBuffer::create();
-        vbo->set_data(&verts[0][0], verts.size(), 3);
+        vbo->set_data(&verts[0][0], (GLsizei)verts.size(), 3);
         this->set_vertex_vbo(vbo);
     }
 
@@ -38,7 +38,7 @@ MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
     if (!faces.empty())
     {
         VertexBuffer::Ptr vbo = ogl::VertexBuffer::create();
-        vbo->set_indices(&faces[0], faces.size());
+        vbo->set_indices(&faces[0], (GLsizei)faces.size());
         this->set_index_vbo(vbo);
     }
 
@@ -46,7 +46,7 @@ MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
     if (!vnormals.empty())
     {
         VertexBuffer::Ptr vbo = ogl::VertexBuffer::create();
-        vbo->set_data(&vnormals[0][0], vnormals.size(), 3);
+        vbo->set_data(&vnormals[0][0], (GLsizei)vnormals.size(), 3);
         this->add_vbo(vbo, OGL_ATTRIB_NORMAL);
     }
 
@@ -54,7 +54,7 @@ MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
     if (!vcolors.empty())
     {
         VertexBuffer::Ptr vbo = ogl::VertexBuffer::create();
-        vbo->set_data(&vcolors[0][0], vcolors.size(), 4);
+        vbo->set_data(&vcolors[0][0], (GLsizei)vcolors.size(), 4);
         this->add_vbo(vbo, OGL_ATTRIB_COLOR);
     }
 
@@ -62,7 +62,7 @@ MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
     if (!vtexuv.empty())
     {
         VertexBuffer::Ptr vbo = ogl::VertexBuffer::create();
-        vbo->set_data(&vtexuv[0][0], vtexuv.size(), 2);
+        vbo->set_data(&vtexuv[0][0], (GLsizei)vtexuv.size(), 2);
         this->add_vbo(vbo, OGL_ATTRIB_TEXCOORD);
     }
 }

@@ -171,7 +171,7 @@ main (int argc, char** argv)
     while ((arg = args.next_option()))
     {
         if (arg->opt->lopt == "neighbors")
-            conf.mvs.globalVSMax = arg->get_arg<std::size_t>();
+            conf.mvs.globalVSMax = arg->get_arg<int>();
         else if (arg->opt->lopt == "nocolorscale")
             conf.mvs.useColorScale = false;
         else if (arg->opt->lopt == "scale")
@@ -198,7 +198,7 @@ main (int argc, char** argv)
         else if (arg->opt->lopt == "plydest")
             conf.ply_dest = arg->arg;
         else if (arg->opt->lopt == "max-pixels")
-            conf.max_pixels = arg->get_arg<std::size_t>();
+            conf.max_pixels = arg->get_arg<int>();
         else if (arg->opt->lopt == "bounding-box")
             aabb_from_string(arg->arg, &conf.mvs.aabbMin, &conf.mvs.aabbMax);
         else if (arg->opt->lopt == "progress")

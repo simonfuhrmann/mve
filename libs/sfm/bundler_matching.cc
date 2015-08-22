@@ -48,8 +48,8 @@ Matching::compute (ViewportList const& viewports,
                 << num_pairs << " (" << percent << "%)..." << std::flush;
         }
 
-        std::size_t view_1_id = (std::size_t)(0.5 + std::sqrt(0.25 + 2.0 * i));
-        std::size_t view_2_id = i - view_1_id * (view_1_id - 1) / 2;
+        int const view_1_id = (int)(0.5 + std::sqrt(0.25 + 2.0 * i));
+        int const view_2_id = (int)i - view_1_id * (view_1_id - 1) / 2;
         if (this->opts.match_num_previous_frames != 0
             && view_2_id + this->opts.match_num_previous_frames < view_1_id)
             continue;

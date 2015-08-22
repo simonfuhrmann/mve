@@ -26,19 +26,18 @@ enum ReconStatus
 
 struct Progress
 {
-    size_t filled; ///< amount of pixels with reconstructed depth value
-    unsigned int queueSize; ///< current size of MVS pixel queue
     ReconStatus status; ///< current status of MVS algorithm
+    std::size_t filled; ///< amount of pixels with reconstructed depth value
+    std::size_t queueSize; ///< current size of MVS pixel queue
+    std::size_t start_time; ///< start time of MVS reconstruction, or 0
     bool cancelled; ///< set from extern to true to cancel reconstruction
-    size_t start_time; ///< start time of MVS reconstruction, or 0
 
     Progress()
-        :
-        filled(0),
-        queueSize(0),
-        status(RECON_IDLE),
-        cancelled(false),
-        start_time(0)
+        : status(RECON_IDLE)
+        , filled(0)
+        , queueSize(0)
+        , start_time(0)
+        , cancelled(false)
     {
     }
 };

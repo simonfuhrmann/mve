@@ -88,7 +88,7 @@ RansacHomography::evaluate_homography (Correspondences2D2D const& matches,
 {
     double const square_threshold = MATH_POW2(this->opts.threshold);
     inliers->resize(0);
-    for (std::size_t i = 0; i < matches.size(); i++)
+    for (std::size_t i = 0; i < matches.size(); ++i)
     {
         Correspondence2D2D const& match = matches[i];
         double error = sfm::symmetric_transfer_error(homography, match);

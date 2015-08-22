@@ -134,7 +134,7 @@ Tracks::remove_invalid_tracks (ViewportList* viewports, TrackList* tracks)
      * multiple features from a single view.
      */
     std::vector<bool> delete_tracks(tracks->size());
-    std::size_t num_invalid_tracks = 0;
+    int num_invalid_tracks = 0;
     for (std::size_t i = 0; i < tracks->size(); ++i)
     {
         if (tracks->at(i).features.empty())

@@ -68,8 +68,8 @@ public:
 
 private:
     int dimensions;
-    T const* elements;
     int num_elements;
+    T const* elements;
 };
 
 /* ---------------------------------------------------------------- */
@@ -77,10 +77,10 @@ private:
 template <typename T>
 inline
 NearestNeighbor<T>::NearestNeighbor (void)
+    : dimensions(64)
+    , num_elements(0)
+    , elements(NULL)
 {
-    this->dimensions = 64;
-    this->elements = 0;
-    this->num_elements = 0;
 }
 
 template <typename T>

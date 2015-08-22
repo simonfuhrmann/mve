@@ -55,9 +55,9 @@ VolumeMTAccessor::load_new_cube (void)
     int const width = this->vol->width();
     int const height = this->vol->height();
 
-    int const base_x = (iter / 6) % (width - 1);
-    int const base_y = (iter / (6 * (width - 1))) % (height - 1);
-    int const base_z = (iter / (6 * (width - 1) * (height - 1)));
+    int const base_x = (this->iter / 6) % (width - 1);
+    int const base_y = (this->iter / (6 * (width - 1))) % (height - 1);
+    int const base_z = (this->iter / (6 * (width - 1) * (height - 1)));
     int const base = base_z * width * height + base_y * width + base_x;
 
     float spacing = 1.0f / (float)(width - 1);

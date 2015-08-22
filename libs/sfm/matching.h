@@ -71,8 +71,8 @@ public:
     template <typename T>
     static void
     oneway_match (Options const& options,
-        T const* set_1, std::size_t set_1_size,
-        T const* set_2, std::size_t set_2_size,
+        T const* set_1, int set_1_size,
+        T const* set_2, int set_2_size,
         std::vector<int>* result);
 
     /**
@@ -83,8 +83,8 @@ public:
     template <typename T>
     static void
     twoway_match (Options const& options,
-        T const* set_1, std::size_t set_1_size,
-        T const* set_2, std::size_t set_2_size,
+        T const* set_1, int set_1_size,
+        T const* set_2, int set_2_size,
         Result* matches);
 
     /**
@@ -115,8 +115,8 @@ Matching::Options::Options (void)
 template <typename T>
 void
 Matching::oneway_match (Options const& options,
-    T const* set_1, std::size_t set_1_size,
-    T const* set_2, std::size_t set_2_size,
+    T const* set_1, int set_1_size,
+    T const* set_2, int set_2_size,
     std::vector<int>* result)
 {
     result->clear();
@@ -130,7 +130,7 @@ Matching::oneway_match (Options const& options,
     nn.set_elements(set_2, set_2_size);
     nn.set_element_dimensions(options.descriptor_length);
 
-    for (std::size_t i = 0; i < set_1_size; ++i)
+    for (int i = 0; i < set_1_size; ++i)
     {
         typename NearestNeighbor<T>::Result nn_result;
         T const* query_pointer = set_1 + i * options.descriptor_length;
@@ -148,8 +148,8 @@ Matching::oneway_match (Options const& options,
 template <typename T>
 void
 Matching::twoway_match (Options const& options,
-    T const* set_1, std::size_t set_1_size,
-    T const* set_2, std::size_t set_2_size,
+    T const* set_1, int set_1_size,
+    T const* set_2, int set_2_size,
     Result* matches)
 {
     Matching::oneway_match(options, set_1, set_1_size,

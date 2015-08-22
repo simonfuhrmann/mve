@@ -45,8 +45,8 @@ PatchSampler::PatchSampler(std::vector<SingleView::Ptr> const& _views,
     topLeft = midPix - h;
     bottomRight = midPix + h;
     if (topLeft[0] < 0 || topLeft[1] < 0
-        || bottomRight[0] > (int) masterImg->width()-1
-        || bottomRight[1] > (int) masterImg->height()-1)
+        || bottomRight[0] > masterImg->width()-1
+        || bottomRight[1] > masterImg->height()-1)
         return;
 
     /* initialize viewing rays from master view */
@@ -314,7 +314,7 @@ PatchSampler::computeMasterSamples()
 
     masterMeanCol = 0.f;
     for (std::size_t i = 0; i < nrSamples; ++i)
-        for (std::size_t c = 0; c < 3; ++c)
+        for (int c = 0; c < 3; ++c)
         {
             assert(masterColorSamples[i][c] >= 0 &&
                 masterColorSamples[i][c] <= 1);

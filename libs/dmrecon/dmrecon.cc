@@ -287,8 +287,8 @@ DMRecon::processFeatures()
         processed += 1;
 
         math::Vec2f pixPosF = refV->worldToScreenScaled(featPos);
-        int x = math::round(pixPosF[0]);
-        int y = math::round(pixPosF[1]);
+        int const x = math::round(pixPosF[0]);
+        int const y = math::round(pixPosF[1]);
         float initDepth = (featPos - refV->camPos).norm();
         PatchOptimization patch(views, settings, x, y, initDepth,
             0.f, 0.f, neighViews, IndexSet());
@@ -299,7 +299,7 @@ DMRecon::processFeatures()
 
         /* Feature depth optimization was successful. */
         success += 1;
-        size_t index = y * this->width + x;
+        int const index = y * this->width + x;
         float depth = patch.getDepth();
         math::Vec3f normal = patch.getNormal();
         if (refV->confImg->at(index) < conf)

@@ -94,7 +94,7 @@ marching_cubes (T& accessor)
     TriangleMesh::ColorList& colors(ret->get_vertex_colors());
 
     typedef std::pair<std::size_t, std::size_t> Edge;
-    typedef std::map<Edge, std::size_t> EdgeMap;
+    typedef std::map<Edge, unsigned int> EdgeMap;
     EdgeMap vert_ids;
 
     while (accessor.next())
@@ -110,10 +110,10 @@ marching_cubes (T& accessor)
             continue;
 
         /* Get unique 12 bit edge configuration. */
-        int edgeconfig = mc_edge_table[cubeconfig];
+        int const edgeconfig = mc_edge_table[cubeconfig];
 
         /* Iterate over ISO edges and provide vertex IDs. */
-        std::size_t vid[12];
+        unsigned int vid[12];
         for (int i = 0; i < 12; ++i)
         {
             if (!(edgeconfig & (1 << i)))

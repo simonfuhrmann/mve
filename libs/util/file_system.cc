@@ -325,7 +325,7 @@ get_binary_path (void)
 
 #elif defined(__linux)
 
-    int n_chars = ::readlink("/proc/self/exe", path, PATH_MAX);
+    ssize_t n_chars = ::readlink("/proc/self/exe", path, PATH_MAX);
 
 #else
 #   error "Cannot determine binary path: Unsupported OS"
@@ -482,7 +482,8 @@ write_string_to_file (std::string const& data, std::string const& filename)
 }
 
 void
-write_string_to_file (char const* data, int len, std::string const& filename)
+write_string_to_file (char const* data, std::size_t len,
+    std::string const& filename)
 {
     std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())

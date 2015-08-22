@@ -74,7 +74,8 @@ write_string_to_file (std::string const& data, std::string const& filename);
 
 /** Writes the given data into a file. Throws on error. */
 void
-write_string_to_file (char const* data, int len, std::string const& filename);
+write_string_to_file (char const* data, std::size_t len,
+    std::string const& filename);
 
 /*
  * ------------------------- String processing -----------------------

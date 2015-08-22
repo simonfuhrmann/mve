@@ -777,8 +777,8 @@ import_images (AppSettings const& conf)
 
     /* Sort file names, iterate over file names. */
     std::sort(dir.begin(), dir.end());
-    std::size_t id_cnt = static_cast<std::size_t>(max_scene_id + 1);
-    std::size_t num_imported = 0;
+    int id_cnt = max_scene_id + 1;
+    int num_imported = 0;
     for (std::size_t i = 0; i < dir.size(); ++i)
     {
         if (dir[i].is_dir)

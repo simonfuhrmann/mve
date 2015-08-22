@@ -527,7 +527,7 @@ template <typename T>
 inline int
 TypedImageBase<T>::get_value_amount (void) const
 {
-    return this->data.size();
+    return static_cast<int>(this->data.size());
 }
 
 template <typename T>
