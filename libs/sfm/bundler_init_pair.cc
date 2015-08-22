@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include "sfm/ransac_homography.h"
 #include "sfm/triangulate.h"
@@ -41,20 +42,38 @@ InitialPair::compute_pair (Result* result)
         if (found_pair)
             continue;
 
-        /* Employ threshold on homography inliers percentage. */
+        /* Reject pairs with 8 or fewer matches. */
         CandidatePair const& candidate = candidates[i];
-        float const percentage = this->compute_homography_ratio(candidate);
-        if (percentage > this->opts.max_homography_inliers)
+        std::size_t num_matches = candidate.matches.size();
+        if (num_matches < static_cast<std::size_t>(this->opts.min_num_matches))
+        {
+            this->debug_output(candidate);
             continue;
+        }
+
+        /* Reject pairs with too high percentage of homograhy inliers. */
+        std::size_t num_inliers = this->compute_homography_inliers(candidate);
+        float percentage = static_cast<float>(num_inliers) / num_matches;
+        if (percentage > this->opts.max_homography_inliers)
+        {
+            this->debug_output(candidate, num_inliers);
+            continue;
+        }
 
         /* Compute initial pair pose. */
         CameraPose pose1, pose2;
         bool const found_pose = this->compute_pose(candidate, &pose1, &pose2);
         if (!found_pose)
+        {
+            this->debug_output(candidate, num_inliers);
             continue;
+        }
 
-        /* Test initial pair quality. */
-        // TODO
+        /* Rejects pairs with bad triangulation angle. */
+        double const angle = this->angle_for_pose(candidate, pose1, pose2);
+        this->debug_output(candidate, num_inliers, angle);
+        if (angle < this->opts.min_triangulation_angle)
+            continue;
 
 #pragma omp critical
         if (i < found_pair_id)
@@ -157,30 +176,14 @@ InitialPair::compute_candidate_pairs (CandidatePairs* candidates)
     }
 }
 
-float
-InitialPair::compute_homography_ratio (CandidatePair const& candidate)
+std::size_t
+InitialPair::compute_homography_inliers (CandidatePair const& candidate)
 {
     /* Execute homography RANSAC. */
     RansacHomography::Result ransac_result;
     RansacHomography homography_ransac(this->opts.homography_opts);
     homography_ransac.estimate(candidate.matches, &ransac_result);
-
-    float const num_matches = candidate.matches.size();
-    float const num_inliers = ransac_result.inliers.size();
-    float const percentage = num_inliers / num_matches;
-
-#pragma omp critical
-    if (this->opts.verbose_output)
-    {
-        std::cout << "  Pair (" << candidate.view_1_id
-            << "," << candidate.view_2_id << "): "
-            << num_matches << " matches, "
-            << num_inliers << " homography inliers ("
-            << util::string::get_fixed(100.0f * percentage, 2)
-            << "%)." << std::endl;
-    }
-
-    return percentage;
+    return ransac_result.inliers.size();
 }
 
 bool
@@ -222,6 +225,66 @@ InitialPair::compute_pose (CandidatePair const& candidate,
         }
     }
     return found_pose;
+}
+
+double
+InitialPair::angle_for_pose (CandidatePair const& candidate,
+    CameraPose const& pose1, CameraPose const& pose2)
+{
+    /* Compute transformation from image coordinates to viewing direction. */
+    math::Matrix3d T1 = pose1.R.transposed() * math::matrix_inverse(pose1.K);
+    math::Matrix3d T2 = pose2.R.transposed() * math::matrix_inverse(pose2.K);
+
+    /* Compute triangulation angle for each correspondence. */
+    std::vector<double> cos_angles;
+    cos_angles.reserve(candidate.matches.size());
+    for (std::size_t i = 0; i < candidate.matches.size(); ++i)
+    {
+        Correspondence2D2D const& match = candidate.matches[i];
+        math::Vec3d p1(match.p1[0], match.p1[1], 1.0);
+        p1 = T1.mult(p1).normalized();
+        math::Vec3d p2(match.p2[0], match.p2[1], 1.0);
+        p2 = T2.mult(p2).normalized();
+        cos_angles.push_back(p1.dot(p2));
+    }
+
+    /* Return 50% median. */
+    std::size_t median_index = cos_angles.size() / 2;
+    std::nth_element(cos_angles.begin(),
+        cos_angles.begin() + median_index, cos_angles.end());
+    double const cos_angle = math::clamp(cos_angles[median_index], -1.0, 1.0);
+    return std::acos(cos_angle);
+}
+
+void
+InitialPair::debug_output (CandidatePair const& candidate,
+    std::size_t num_inliers, double angle)
+{
+    if (!this->opts.verbose_output)
+        return;
+
+    std::stringstream message;
+    std::size_t num_matches = candidate.matches.size();
+    message << "  Pair " << std::setw(3) << candidate.view_1_id
+        << "," << std::setw(3) << candidate.view_2_id
+        << ": " << std::setw(4) << num_matches << " matches";
+
+    if (num_inliers > 0)
+    {
+        float percentage = static_cast<float>(num_inliers) / num_matches;
+        message << ", " << std::setw(4) << num_inliers
+            << " H-inliers (" << (int)(100.0f * percentage) << "%)";
+    }
+
+    if (angle > 0.0)
+    {
+        message << ", " << std::setw(4)
+            << util::string::get_fixed(MATH_RAD2DEG(angle), 2)
+            << " pair angle";
+    }
+
+#pragma omp critical
+    std::cout << message.str() << std::endl;
 }
 
 SFM_BUNDLER_NAMESPACE_END

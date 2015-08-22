@@ -42,9 +42,19 @@ public:
         RansacHomography::Options homography_opts;
 
         /**
-         * The maximum percentage of homography inliers. Default is 0.6.
+         * The maximum percentage of homography inliers.
          */
         float max_homography_inliers;
+
+        /**
+         * Minimum number of pair matches. Minimum is 8.
+         */
+        int min_num_matches;
+
+        /**
+         * Minimum triangulation angle of tracks (in radians).
+         */
+        double min_triangulation_angle;
 
         /**
          * Produce status messages on the console.
@@ -84,10 +94,14 @@ private:
     typedef std::vector<CandidatePair> CandidatePairs;
 
 private:
-    float compute_homography_ratio (CandidatePair const& candidate);
+    std::size_t compute_homography_inliers (CandidatePair const& candidate);
     bool compute_pose (CandidatePair const& candidate,
         CameraPose* pose1, CameraPose* pose2);
     void compute_candidate_pairs (CandidatePairs* candidates);
+    double angle_for_pose (CandidatePair const& candidate,
+        CameraPose const& pose1, CameraPose const& pose2);
+    void debug_output (CandidatePair const& candidate,
+        std::size_t num_inliers = 0, double angle = 0.0);
 
 private:
     Options opts;
@@ -100,6 +114,8 @@ private:
 inline
 InitialPair::Options::Options (void)
     : max_homography_inliers(0.6f)
+    , min_num_matches(50)
+    , min_triangulation_angle(MATH_DEG2RAD(5.0))
     , verbose_output(false)
 {
 }
