@@ -167,7 +167,6 @@ ViewInspect::create_actions (void)
     this->action_zoom_fit = new QAction(QIcon(":/images/icon_zoom_page.svg"),
         tr("&Fit to Window"), this);
     this->action_zoom_fit->setShortcut(tr("Ctrl+1"));
-    this->action_zoom_fit->setCheckable(true);
     this->connect(this->action_zoom_fit, SIGNAL(triggered()),
         this, SLOT(on_fit_to_window()));
 
@@ -556,8 +555,7 @@ ViewInspect::on_normal_size (void)
 void
 ViewInspect::on_fit_to_window (void)
 {
-    bool fit = this->action_zoom_fit->isChecked();
-    this->scroll_image->set_auto_scale(fit);
+    this->scroll_image->set_auto_scale(true);
     this->update_actions();
 }
 

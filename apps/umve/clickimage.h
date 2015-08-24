@@ -13,6 +13,8 @@
 #include <QLabel>
 #include <QMouseEvent>
 
+#define MOUSE_ZOOM_FACTOR (1.0 / 8.0)
+
 /* Scalable image that features click signals. */
 class ClickImage : public QLabel
 {
@@ -20,17 +22,19 @@ class ClickImage : public QLabel
 
 private:
     double scale_factor;
-    QPoint get_mouse_coordinates (QMouseEvent* event);
+    QPoint get_image_coordinates (QPoint pnt);
 
 protected:
     void mousePressEvent (QMouseEvent* event);
     void mouseMoveEvent (QMouseEvent* event);
     void mouseReleaseEvent (QMouseEvent* event);
+    void wheelEvent (QWheelEvent* event);
 
 signals:
     void mouse_clicked (int x, int y, QMouseEvent* event);
     void mouse_released (int x, int y, QMouseEvent* event);
     void mouse_moved (int x, int y, QMouseEvent* event);
+    void mouse_zoomed (QPoint diff);
 
 public:
     ClickImage (void);
@@ -79,29 +83,41 @@ ClickImage::update_size (void)
 inline void
 ClickImage::mousePressEvent (QMouseEvent* event)
 {
-    QPoint const& pnt = this->get_mouse_coordinates(event);
+    QPoint const& pnt = this->get_image_coordinates(event->pos());
     emit this->mouse_clicked(pnt.x(), pnt.y(), event);
 }
 
 inline void
 ClickImage::mouseReleaseEvent (QMouseEvent* event)
 {
-    QPoint const& pnt = this->get_mouse_coordinates(event);
+    QPoint const& pnt = this->get_image_coordinates(event->pos());
     emit this->mouse_released(pnt.x(), pnt.y(), event);
 }
 
 inline void
 ClickImage::mouseMoveEvent (QMouseEvent* event)
 {
-    QPoint const& pnt = this->get_mouse_coordinates(event);
+    QPoint const& pnt = this->get_image_coordinates(event->pos());
     emit this->mouse_moved(pnt.x(), pnt.y(), event);
 }
 
-inline QPoint
-ClickImage::get_mouse_coordinates (QMouseEvent* event)
+inline void
+ClickImage::wheelEvent (QWheelEvent* event)
 {
-    QPoint pnt(event->pos());
+    QPoint old_pnt = this->get_image_coordinates(event->pos());
 
+    float sign = event->delta() > 0 ? 1.0f : -1.0f;
+    this->set_scale_factor(this->scale_factor
+        + this->scale_factor * MOUSE_ZOOM_FACTOR * sign);
+
+    QPoint new_pnt = this->get_image_coordinates(event->pos());
+    QPoint diff = (old_pnt - new_pnt) * this->scale_factor;
+    emit this->mouse_zoomed(diff);
+}
+
+inline QPoint
+ClickImage::get_image_coordinates (QPoint pnt)
+{
     if (this->hasScaledContents())
     {
         QSize ps(this->pixmap()->size());

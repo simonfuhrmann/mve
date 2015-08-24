@@ -20,16 +20,24 @@
 
 class ScrollImage : public QScrollArea
 {
+    Q_OBJECT
+
 private:
     ClickImage* image;
     double scale_factor;
     bool scale_contents;
+    QPoint mouse_pos;
 
 protected:
     void resizeEvent (QResizeEvent* event);
     void update_image_size (void);
     void max_image_size (void);
     void adjust_scrollbar (QScrollBar* bar, float factor);
+
+private slots:
+    void mouse_moved(int x, int y, QMouseEvent* event);
+    void mouse_clicked(int x, int y, QMouseEvent* event);
+    void mouse_zoomed(QPoint diff);
 
 public:
     ScrollImage (void);
