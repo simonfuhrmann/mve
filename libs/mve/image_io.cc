@@ -687,7 +687,7 @@ save_tiff_file (ByteImage::ConstPtr image, std::string const& filename)
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 
     tdata_t buffer = const_cast<uint8_t*>(image->get_data_pointer());
-    tmsize_t ret = TIFFWriteEncodedStrip(tif, 0, buffer,
+    ssize_t ret = TIFFWriteEncodedStrip(tif, 0, buffer,
         image->get_value_amount());
 
     TIFFClose(tif);
@@ -764,7 +764,7 @@ save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 
     tdata_t buffer = const_cast<uint16_t*>(image->get_data_pointer());
-    tmsize_t ret = TIFFWriteEncodedStrip(tif, 0, buffer,
+    ssize_t ret = TIFFWriteEncodedStrip(tif, 0, buffer,
         image->get_value_amount() * sizeof(uint16_t));
 
     TIFFClose(tif);
