@@ -27,6 +27,7 @@ public:
     ogl::ShaderProgram::Ptr surface_shader;
     ogl::ShaderProgram::Ptr wireframe_shader;
     ogl::ShaderProgram::Ptr texture_shader;
+    ogl::ShaderProgram::Ptr overlay_shader;
     mve::Scene::Ptr scene;
     mve::View::Ptr view;
 

@@ -547,7 +547,7 @@ QMeshList::~QMeshList (void)
 
 void
 QMeshList::add (std::string const& name, mve::TriangleMesh::Ptr mesh,
-    std::string const& filename)
+    std::string const& filename, ogl::Texture::Ptr texture)
 {
     /* Check if mesh by that name is already available. */
     for (std::size_t i = 0; i < this->meshes.size(); ++i)
@@ -556,6 +556,7 @@ QMeshList::add (std::string const& name, mve::TriangleMesh::Ptr mesh,
         if (rep.name == name)
         {
             rep.mesh = mesh;
+            rep.texture = texture;
             rep.renderer.reset();
             return;
         }
@@ -565,6 +566,7 @@ QMeshList::add (std::string const& name, mve::TriangleMesh::Ptr mesh,
     rep.name = name;
     rep.filename = filename;
     rep.mesh = mesh;
+    rep.texture = texture;
     rep.active = true;
     this->meshes.push_back(rep);
     this->update_list();

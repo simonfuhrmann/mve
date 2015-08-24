@@ -91,6 +91,8 @@ AddinState::load_shaders (void)
         this->wireframe_shader = ogl::ShaderProgram::create();
     if (!this->texture_shader)
         this->texture_shader = ogl::ShaderProgram::create();
+    if (!this->overlay_shader)
+        this->overlay_shader = ogl::ShaderProgram::create();
 
     /* Setup search paths for shader files. */
     std::string home_dir = util::fs::get_home_dir();
@@ -104,6 +106,7 @@ AddinState::load_shaders (void)
     bool found_surface = false;
     bool found_wireframe = false;
     bool found_texture = false;
+    bool found_overlay = false;
     for (std::size_t i = 0; i < shader_paths.size(); ++i)
     {
         try
@@ -117,6 +120,9 @@ AddinState::load_shaders (void)
             if (!found_texture)
                 found_texture = this->texture_shader->try_load_all
                     (shader_paths[i] + "texture_330");
+            if (!found_overlay)
+                found_overlay = this->overlay_shader->try_load_all
+                    (shader_paths[i] + "overlay_330");
         }
         catch (util::Exception& e)
         {
@@ -148,6 +154,12 @@ AddinState::load_shaders (void)
         load_shaders_from_resources(this->texture_shader,
             ":/shaders/texture_330");
     }
+    if (!found_overlay)
+    {
+        std::cout << "Using built-in overlay shader." << std::endl;
+        load_shaders_from_resources(this->overlay_shader,
+            ":/shaders/overlay_330");
+    }
 }
 
 void
@@ -167,12 +179,15 @@ AddinState::send_uniform (ogl::Camera const& cam)
     this->texture_shader->bind();
     this->texture_shader->send_uniform("viewmat", cam.view);
     this->texture_shader->send_uniform("projmat", cam.proj);
+
+    /* Setup overlay shader. */
+    this->overlay_shader->bind();
 }
 
 void
 AddinState::init_ui (void)
 {
-    this->gui_renderer = ogl::create_fullscreen_quad(this->texture_shader);
+    this->gui_renderer = ogl::create_fullscreen_quad(this->overlay_shader);
     this->gui_texture = ogl::Texture::create();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Simon Fuhrmann
+ * Copyright (C) 2015, Simon Fuhrmann, Nils Moehrle
  * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
  * All rights reserved.
  *
@@ -17,6 +17,21 @@
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
+
+struct ObjModelPart
+{
+    mve::TriangleMesh::Ptr mesh;
+    std::string texture_filename;
+};
+
+/** Loads a triangle mesh from an OBJ model file. */
+mve::TriangleMesh::Ptr
+load_obj_mesh (std::string const& filename);
+
+/** Loads all groups from an OBJ model file. */
+void
+load_obj_mesh (std::string const& filename,
+    std::vector<ObjModelPart>* obj_model_parts);
 
 /** Saves a triangle mesh to an OBJ model file. */
 void

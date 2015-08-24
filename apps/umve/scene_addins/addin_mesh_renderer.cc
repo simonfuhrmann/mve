@@ -8,13 +8,16 @@
  */
 
 #include "ogl/opengl.h"
+#include "ogl/texture.h"
+#include "ogl/mesh_renderer.h"
 
 #include "math/vector.h"
 #include "util/file_system.h"
 #include "mve/mesh_io.h"
 #include "mve/mesh_io_ply.h"
+#include "mve/mesh_io_obj.h"
 #include "mve/mesh_tools.h"
-#include "ogl/mesh_renderer.h"
+#include "mve/image_io.h"
 
 #include "guihelpers.h"
 #include "scene_addins/addin_mesh_renderer.h"
@@ -55,44 +58,109 @@ AddinMeshesRenderer::get_sidebar_widget (void)
 
 void
 AddinMeshesRenderer::add_mesh (std::string const& name,
-    mve::TriangleMesh::Ptr mesh, std::string const& filename)
+    mve::TriangleMesh::Ptr mesh, std::string const& filename,
+    ogl::Texture::Ptr texture)
 {
-    this->mesh_list->add(name, mesh, filename);
+    this->mesh_list->add(name, mesh, filename, texture);
 }
 
 void
 AddinMeshesRenderer::load_mesh (std::string const& filename)
 {
-    mve::TriangleMesh::Ptr mesh;
-    try
-    {
-        mesh = mve::geom::load_mesh(filename);
-        if (!mesh->get_faces().empty())
-            mesh->ensure_normals();
-    }
-    catch (std::exception& e)
-    {
-        this->show_error_box("Could not load mesh", e.what());
-        return;
-    }
+    std::vector<mve::TriangleMesh::Ptr> meshes;
+    std::vector<ogl::Texture::Ptr> textures;
 
-    /* If there is a corresponding XF file, load it and transform mesh. */
-    std::string xfname = util::fs::replace_extension(filename, "xf");
-    if (util::fs::file_exists(xfname.c_str()))
+    std::string ext = util::string::lowercase(util::string::right(filename, 4));
+    if (ext == ".obj")
     {
+        std::vector<mve::geom::ObjModelPart> obj_model_parts;
+
         try
         {
-            math::Matrix4f ctw;
-            mve::geom::load_xf_file(xfname, *ctw);
-            mve::geom::mesh_transform(mesh, ctw);
+            mve::geom::load_obj_mesh(filename, &obj_model_parts);
         }
         catch (std::exception& e)
         {
-            this->show_error_box("Error loading XF file", e.what());
+            this->show_error_box("Could not load mesh", e.what());
+            return;
+        }
+
+        for (mve::geom::ObjModelPart const & obj_model_part : obj_model_parts)
+        {
+            ogl::Texture::Ptr texture = NULL;
+            if (obj_model_part.mesh->has_vertex_texcoords()
+                && !obj_model_part.texture_filename.empty())
+            {
+                mve::ByteImage::Ptr image;
+                try
+                {
+                    image = mve::image::load_file(
+                        obj_model_part.texture_filename);
+                }
+                catch (std::exception& e)
+                {
+                    this->show_error_box("Could not load texture", e.what());
+                    return;
+                }
+
+                texture = ogl::Texture::create();
+                texture->upload(image);
+                texture->bind();
+            }
+
+            textures.push_back(texture);
+            meshes.push_back(obj_model_part.mesh);
         }
     }
+    else
+    {
+        mve::TriangleMesh::Ptr mesh;
+        try
+        {
+            mesh = mve::geom::load_mesh(filename);
+        }
+        catch (std::exception& e)
+        {
+            this->show_error_box("Could not load mesh", e.what());
+            return;
+        }
+        meshes.push_back(mesh);
+        textures.push_back(NULL);
+    }
 
-    this->add_mesh(util::fs::basename(filename), mesh, filename);
+    for (std::size_t i = 0; i < meshes.size(); ++i)
+    {
+        mve::TriangleMesh::Ptr mesh = meshes[i];
+        if (!mesh->get_faces().empty())
+            mesh->ensure_normals();
+
+        /* If there is a corresponding XF file, load it and transform mesh. */
+        std::string xfname = util::fs::replace_extension(filename, "xf");
+        if (util::fs::file_exists(xfname.c_str()))
+        {
+            try
+            {
+                math::Matrix4f ctw;
+                mve::geom::load_xf_file(xfname, *ctw);
+                mve::geom::mesh_transform(mesh, ctw);
+            }
+            catch (std::exception& e)
+            {
+                this->show_error_box("Error loading XF file", e.what());
+            }
+        }
+
+        std::string name = util::fs::basename(filename);
+        if (textures[i] != NULL)
+        {
+            name += " [part" + util::string::get_filled(i, 2) + "]";
+            this->add_mesh(name, mesh, "", textures[i]);
+        }
+        else
+        {
+            this->add_mesh(name, mesh, filename);
+        }
+    }
 }
 
 void
@@ -118,18 +186,21 @@ AddinMeshesRenderer::paint_impl (void)
                 mr.renderer->set_primitive(GL_POINTS);
         }
 
-        /* Determine shader to use. Use wireframe shader for points
-         * without normals, use surface shader otherwise. */
+        /* Determine shader to use:
+         * - use texture shader if a texture is available
+         * - use wireframe shader for points without normals
+         * - use surface shader otherwise. */
         ogl::ShaderProgram::Ptr mesh_shader;
-        if (mr.mesh->get_vertex_normals().empty())
+        if (mr.texture != NULL)
+            mesh_shader = this->state->texture_shader;
+        else if (!mr.mesh->has_vertex_normals())
             mesh_shader = this->state->wireframe_shader;
         else
             mesh_shader = this->state->surface_shader;
 
-        //static_cast<int>(this->draw_mesh_lighting_cb.isChecked()));
+        mesh_shader->bind();
 
         /* Setup shader to use mesh color or default color. */
-        mesh_shader->bind();
         if (this->render_color_cb->isChecked() && mr.mesh->has_vertex_colors())
         {
             math::Vec4f null_color(0.0f);
@@ -148,6 +219,18 @@ AddinMeshesRenderer::paint_impl (void)
             mr.renderer->set_shader(mesh_shader);
             glPolygonOffset(1.0f, -1.0f);
             glEnable(GL_POLYGON_OFFSET_FILL);
+
+            if (mr.texture != NULL)
+            {
+                mr.texture->bind();
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                    GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+            }
+
             mr.renderer->draw();
             glDisable(GL_POLYGON_OFFSET_FILL);
 

@@ -47,5 +47,7 @@
         <file>shaders/texture_330.vert</file>
         <file>shaders/wireframe_330.frag</file>
         <file>shaders/wireframe_330.vert</file>
+        <file>shaders/overlay_330.frag</file>
+        <file>shaders/overlay_330.vert</file>
     </qresource>
 </RCC>

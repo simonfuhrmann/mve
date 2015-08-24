@@ -35,6 +35,8 @@ load_mesh (std::string const& filename)
         return load_npts_mesh(filename, true);
     else if (util::string::right(filename, 4) == ".smf")
         return load_smf_mesh(filename);
+    else if (util::string::right(filename, 4) == ".obj")
+        return load_obj_mesh(filename);
     else
         throw std::runtime_error("Extension not recognized");
 }

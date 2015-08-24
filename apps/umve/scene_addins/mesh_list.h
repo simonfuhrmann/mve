@@ -18,8 +18,9 @@
 #include "mve/mesh.h"
 
 #include "ogl/mesh_renderer.h"
+#include "ogl/texture.h"
 
-/* Simple mesh representation with name and modelview matrix. */
+/* Simple mesh representation with name, renderer and texture. */
 struct MeshRep
 {
     std::string name;
@@ -27,6 +28,7 @@ struct MeshRep
     bool active;
     mve::TriangleMesh::Ptr mesh;
     ogl::MeshRenderer::Ptr renderer;
+    ogl::Texture::Ptr texture;
 };
 
 /* ---------------------------------------------------------------- */
@@ -61,7 +63,6 @@ private slots:
     void on_colorize_mesh_blue (void);
     void on_colorize_mesh_custom (void);
     void on_colorize_mesh (float red, float green, float blue);
-
 
 public:
     QListWidgetItem* item;
@@ -113,7 +114,7 @@ public:
     ~QMeshList (void);
 
     void add (std::string const& name, mve::TriangleMesh::Ptr mesh,
-        std::string const& filename = "");
+        std::string const& filename = "", ogl::Texture::Ptr texture = NULL);
     void remove (std::string const& name);
 
     MeshList const& get_meshes (void) const;

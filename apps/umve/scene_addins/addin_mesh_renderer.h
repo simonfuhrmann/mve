@@ -31,7 +31,8 @@ public:
 
     void add_mesh (std::string const& name,
         mve::TriangleMesh::Ptr mesh,
-        std::string const& filename = "");
+        std::string const& filename = "",
+        ogl::Texture::Ptr texture = NULL);
 
     void load_mesh (std::string const& filename);
 
