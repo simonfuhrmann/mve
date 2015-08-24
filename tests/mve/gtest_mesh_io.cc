@@ -26,7 +26,7 @@ struct TempFile : public std::string
 namespace
 {
     mve::TriangleMesh::Ptr
-    create_test_mesh(bool with_normals = false)
+    create_test_mesh (bool with_normals = false)
     {
         mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
         mve::TriangleMesh::VertexList& vertices = mesh->get_vertices();
@@ -80,12 +80,12 @@ TEST(MeshFileTest, OBJSaveLoad)
     mve::TriangleMesh::Ptr mesh1 = create_test_mesh(), mesh2;
     try
     {
-        std::vector<mve::geom::ObjPart> obj_parts;
+        std::vector<mve::geom::ObjModelPart> obj_model_parts;
         mve::geom::save_obj_mesh(mesh1, filename);
-        mve::geom::load_obj_mesh(filename, &obj_parts);
-        EXPECT_EQ(obj_parts.size(), 1);
-        EXPECT_EQ(obj_parts[0].texture_filename, "");
-        mesh2 = obj_parts[0].mesh;
+        mve::geom::load_obj_mesh(filename, &obj_model_parts);
+        EXPECT_EQ(obj_model_parts.size(), 1);
+        EXPECT_EQ(obj_model_parts[0].texture_filename, "");
+        mesh2 = obj_model_parts[0].mesh;
     }
     catch (std::exception& e)
     {

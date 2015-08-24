@@ -18,7 +18,7 @@
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
 
-struct ObjPart
+struct ObjModelPart
 {
     mve::TriangleMesh::Ptr mesh;
     std::string texture_filename;
@@ -30,7 +30,8 @@ load_obj_mesh (std::string const& filename);
 
 /** Loads all groups from an OBJ model file. */
 void
-load_obj_mesh (std::string const& filename, std::vector<ObjPart>* obj_parts);
+load_obj_mesh (std::string const& filename,
+    std::vector<ObjModelPart>* obj_model_parts);
 
 /** Saves a triangle mesh to an OBJ model file. */
 void

@@ -12,7 +12,6 @@
 #include <cerrno>
 #include <cstring>
 #include <map>
-#include <cassert>
 
 #include "util/string.h"
 #include "util/tokenizer.h"
@@ -25,18 +24,18 @@ MVE_GEOM_NAMESPACE_BEGIN
 
 namespace
 {
-    struct Vertex
+    struct ObjVertex
     {
         unsigned int vertex_id;
         unsigned int texcoord_id;
         unsigned int normal_id;
 
-        Vertex (void);
-        bool operator< (Vertex const & other) const;
+        ObjVertex (void);
+        bool operator< (ObjVertex const & other) const;
     };
 
     inline
-    Vertex::Vertex (void)
+    ObjVertex::ObjVertex (void)
         : vertex_id(0)
         , texcoord_id(0)
         , normal_id(0)
@@ -44,7 +43,7 @@ namespace
     }
 
     inline bool
-    Vertex::operator< (Vertex const & other) const
+    ObjVertex::operator< (ObjVertex const & other) const
     {
         return std::lexicographical_compare(&vertex_id, &normal_id + 1,
             &other.vertex_id, &other.normal_id + 1);
@@ -55,7 +54,6 @@ void
 load_mtl_file (std::string const& filename,
     std::map<std::string, std::string>* result)
 {
-    /* Precondition checks. */
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 
@@ -79,7 +77,6 @@ load_mtl_file (std::string const& filename,
 
         if (buffer[0] == '#')
         {
-            /* Print all comments to STDOUT and forget data. */
             std::cout << "MTL Loader: " << buffer << std::endl;
             continue;
         }
@@ -120,17 +117,18 @@ load_mtl_file (std::string const& filename,
 mve::TriangleMesh::Ptr
 load_obj_mesh (std::string const& filename)
 {
-    std::vector<ObjPart> obj_parts;
-    load_obj_mesh(filename, &obj_parts);
+    std::vector<ObjModelPart> obj_model_parts;
+    load_obj_mesh(filename, &obj_model_parts);
 
-    if (obj_parts.size() > 1)
+    if (obj_model_parts.size() > 1)
         throw util::Exception("OBJ file contains multiple parts");
 
-    return obj_parts[0].mesh;
+    return obj_model_parts[0].mesh;
 }
 
 void
-load_obj_mesh (std::string const& filename, std::vector<ObjPart>* obj_parts)
+load_obj_mesh (std::string const& filename,
+    std::vector<ObjModelPart>* obj_model_parts)
 {
     /* Precondition checks. */
     if (filename.empty())
@@ -146,14 +144,13 @@ load_obj_mesh (std::string const& filename, std::vector<ObjPart>* obj_parts)
     std::vector<math::Vec2f> global_texcoords;
     std::map<std::string, std::string> materials;
 
-    /* Defines */
     mve::TriangleMesh::Ptr mesh = mve::TriangleMesh::create();
     mve::TriangleMesh::VertexList& vertices = mesh->get_vertices();
     mve::TriangleMesh::NormalList& normals = mesh->get_vertex_normals();
     mve::TriangleMesh::TexCoordList& texcoords = mesh->get_vertex_texcoords();
     mve::TriangleMesh::FaceList& faces = mesh->get_faces();
 
-    typedef std::map<Vertex, unsigned int> VertexIndexMap;
+    typedef std::map<ObjVertex, unsigned int> VertexIndexMap;
     VertexIndexMap vertex_map;
     std::string material_name;
     std::string new_material_name;
@@ -164,7 +161,8 @@ load_obj_mesh (std::string const& filename, std::vector<ObjPart>* obj_parts)
         util::string::clip_newlines(&buffer);
         util::string::clip_whitespaces(&buffer);
 
-        if (input.eof() || !new_material_name.empty()) {
+        if (input.eof() || !new_material_name.empty())
+        {
             if (!texcoords.empty() && texcoords.size() != vertices.size())
                 throw util::Exception("Invalid number of texture coords");
             if (!normals.empty() && normals.size() != vertices.size())
@@ -172,14 +170,14 @@ load_obj_mesh (std::string const& filename, std::vector<ObjPart>* obj_parts)
 
             if (!vertices.empty())
             {
-                ObjPart obj_part;
-                obj_part.mesh = mve::TriangleMesh::create();
-                std::swap(vertices, obj_part.mesh->get_vertices());
-                std::swap(texcoords, obj_part.mesh->get_vertex_texcoords());
-                std::swap(normals, obj_part.mesh->get_vertex_normals());
-                std::swap(faces, obj_part.mesh->get_faces());
-                obj_part.texture_filename = materials[material_name];
-                obj_parts->push_back(obj_part);
+                ObjModelPart obj_model_part;
+                obj_model_part.mesh = mve::TriangleMesh::create();
+                std::swap(vertices, obj_model_part.mesh->get_vertices());
+                std::swap(texcoords, obj_model_part.mesh->get_vertex_texcoords());
+                std::swap(normals, obj_model_part.mesh->get_vertex_normals());
+                std::swap(faces, obj_model_part.mesh->get_faces());
+                obj_model_part.texture_filename = materials[material_name];
+                obj_model_parts->push_back(obj_model_part);
             }
 
             mesh->clear();
@@ -265,11 +263,11 @@ load_obj_mesh (std::string const& filename, std::vector<ObjPart>* obj_parts)
                 if (tok.size() > 3)
                     throw util::Exception("Invalid face specification");
 
-                Vertex v;
+                ObjVertex v;
                 v.vertex_id = util::string::convert<unsigned int>(tok[0]);
-                if (tok.size() > 2 && tok[1] != "")
+                if (tok.size() > 2 && !tok[1].empty())
                     v.texcoord_id = util::string::convert<unsigned int>(tok[1]);
-                if (tok.size() == 3 && tok[2] != "")
+                if (tok.size() == 3 && !tok[2].empty())
                     v.normal_id = util::string::convert<unsigned int>(tok[2]);
 
                 if (v.vertex_id > global_vertices.size()
@@ -339,14 +337,12 @@ save_obj_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
         throw util::FileException(filename, std::strerror(errno));
 
     out << "# Export generated by libmve\n";
-    out << "# Vertices\n";
     for (std::size_t i = 0; i < verts.size(); ++i)
     {
         out << "v " << verts[i][0] << " " << verts[i][1]
             << " "  << verts[i][2] << "\n";
     }
 
-    out << "\n# Faces\n";
     for (std::size_t i = 0; i < faces.size(); i += 3)
     {
         out << "f " << (faces[i + 0] + 1)

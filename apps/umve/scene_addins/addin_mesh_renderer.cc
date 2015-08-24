@@ -73,11 +73,11 @@ AddinMeshesRenderer::load_mesh (std::string const& filename)
     std::string ext = util::string::lowercase(util::string::right(filename, 4));
     if (ext == ".obj")
     {
-        std::vector<mve::geom::ObjPart> obj_parts;
+        std::vector<mve::geom::ObjModelPart> obj_model_parts;
 
         try
         {
-            mve::geom::load_obj_mesh(filename, &obj_parts);
+            mve::geom::load_obj_mesh(filename, &obj_model_parts);
         }
         catch (std::exception& e)
         {
@@ -85,16 +85,17 @@ AddinMeshesRenderer::load_mesh (std::string const& filename)
             return;
         }
 
-        for (mve::geom::ObjPart const & obj_part : obj_parts)
+        for (mve::geom::ObjModelPart const & obj_model_part : obj_model_parts)
         {
             ogl::Texture::Ptr texture = NULL;
-            if (obj_part.mesh->has_vertex_texcoords()
-                && !obj_part.texture_filename.empty())
+            if (obj_model_part.mesh->has_vertex_texcoords()
+                && !obj_model_part.texture_filename.empty())
             {
                 mve::ByteImage::Ptr image;
                 try
                 {
-                    image = mve::image::load_file(obj_part.texture_filename);
+                    image = mve::image::load_file(
+                        obj_model_part.texture_filename);
                 }
                 catch (std::exception& e)
                 {
@@ -108,7 +109,7 @@ AddinMeshesRenderer::load_mesh (std::string const& filename)
             }
 
             textures.push_back(texture);
-            meshes.push_back(obj_part.mesh);
+            meshes.push_back(obj_model_part.mesh);
         }
     }
     else
@@ -219,7 +220,8 @@ AddinMeshesRenderer::paint_impl (void)
             glPolygonOffset(1.0f, -1.0f);
             glEnable(GL_POLYGON_OFFSET_FILL);
 
-            if (mr.texture != NULL) {
+            if (mr.texture != NULL)
+            {
                 mr.texture->bind();
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
