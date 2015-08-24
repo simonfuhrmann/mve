@@ -1,5 +1,5 @@
-file (GLOB HEADERS "*.h" "viewinspect/*.h" "scene_inspect/*.h" "scene_addins/*.h" "sfm_reconstruct/*.h")
-file (GLOB SOURCES "*.cc" "viewinspect/*.cc" "scene_inspect/*.cc" "scene_addins/*.cc" "sfm_reconstruct/*.cc")
+file (GLOB HEADERS "*.h" "viewinspect/*.h" "scene_inspect/*.h" "scene_addins/*.h")
+file (GLOB SOURCES "*.cc" "viewinspect/*.cc" "scene_inspect/*.cc" "scene_addins/*.cc")
 
 set(UMVE_QT_COMPONENTS Core Gui OpenGL Svg Widgets)
 find_package(Qt5 REQUIRED ${UMVE_QT_COMPONENTS})
