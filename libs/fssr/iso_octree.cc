@@ -71,7 +71,11 @@ IsoOctree::compute_all_voxels (void)
     /* Sample the implicit function for every voxel. */
     std::size_t num_processed = 0;
 #pragma omp parallel for schedule(dynamic)
+#if !defined(_MSC_VER)
     for (std::size_t i = 0; i < voxels.size(); ++i)
+#else
+    for (int64_t i = 0; i < voxels.size(); ++i)
+#endif
     {
         VoxelIndex index = this->voxels[i].first;
         math::Vec3d voxel_pos = index.compute_position(
