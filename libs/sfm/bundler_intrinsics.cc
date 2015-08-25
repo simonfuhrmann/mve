@@ -26,6 +26,9 @@ Intrinsics::compute (mve::Scene::Ptr scene, ViewportList* viewports)
     mve::Scene::ViewList const& views = scene->get_views();
     for (std::size_t i = 0; i < views.size(); ++i)
     {
+        if (views[i] == NULL)
+            continue;
+
         switch (this->opts.intrinsics_source)
         {
             case FROM_EXIF:
