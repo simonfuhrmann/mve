@@ -20,7 +20,10 @@ addons:
 before_script:
    - wget https://github.com/google/googletest/archive/master.zip -O /tmp/gtest.zip
    - unzip /tmp/gtest.zip
-   - make -C $PWD/googletest-master/make
-   - export GTEST_PATH=$PWD/googletest-master
+   - make -C $PWD/googletest-master/googletest/make
+   - export GTEST_PATH=$PWD/googletest-master/googletest
 
-script: make && make test && ./tests/test
+script:
+    - make
+    - make test
+    - ./tests/test
