@@ -564,11 +564,23 @@ main (int argc, char** argv)
                 << "," << conf.initial_pair_2 << ")." << std::endl;
         }
         else
-            throw std::invalid_argument("Unexpected option");
+        {
+            std::cerr << "Error: Unexpected option: "
+                << i->opt->lopt << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
     }
 
-    check_prebundle(conf);
-    sfm_reconstruct(conf);
+    try
+    {
+        check_prebundle(conf);
+        sfm_reconstruct(conf);
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 
     return EXIT_SUCCESS;
 }
