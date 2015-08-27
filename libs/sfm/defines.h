@@ -19,6 +19,9 @@
 #define SFM_PBA_NAMESPACE_BEGIN namespace pba {
 #define SFM_PBA_NAMESPACE_END }
 
+#define SFM_BA_NAMESPACE_BEGIN namespace ba {
+#define SFM_BA_NAMESPACE_END }
+
 #ifndef STD_NAMESPACE_BEGIN
 #   define STD_NAMESPACE_BEGIN namespace std {
 #   define STD_NAMESPACE_END }

@@ -82,6 +82,8 @@ public:
 
 private:
     void bundle_adjustment_intern (int single_camera_ba);
+    void pba_bundle_adjustment_intern (int single_camera_ba);
+    void imba_bundle_adjustment_intern (int single_camera_ba);
 
 private:
     Options opts;
