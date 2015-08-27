@@ -15,6 +15,7 @@
 #include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
 #include "sfm/pba_cpu.h"
+#include "sfm/ba_interface.h"
 #include "sfm/bundler_incremental.h"
 
 SFM_NAMESPACE_BEGIN
@@ -248,12 +249,21 @@ Incremental::bundle_adjustment_single_cam (int view_id)
 
 /* ---------------------------------------------------------------- */
 
+void
+Incremental::bundle_adjustment_intern (int single_camera_ba)
+{
+    //this->imba_bundle_adjustment_intern(single_camera_ba);
+    this->pba_bundle_adjustment_intern(single_camera_ba);
+}
+
+/* ---------------------------------------------------------------- */
+
 //#define PBA_DISTORTION_TYPE pba::PROJECTION_DISTORTION
 #define PBA_DISTORTION_TYPE pba::MEASUREMENT_DISTORTION
 //#define PBA_DISTORTION_TYPE pba::NO_DISTORTION
 
 void
-Incremental::bundle_adjustment_intern (int single_camera_ba)
+Incremental::pba_bundle_adjustment_intern (int single_camera_ba)
 {
     /* Configure PBA. */
     pba::SparseBundleCPU pba;
@@ -278,6 +288,8 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     //pba_config->__cg_max_iteration = 300;
     pba_config->__lm_delta_threshold = 1e-16;
     pba_config->__lm_mse_threshold = 1e-8;
+    //pba_config->__focal_normalize = false;
+    //pba_config->__depth_normalize = false;
 
     /* Prepare camera data. */
     std::vector<pba::CameraT> pba_cams;
@@ -405,6 +417,85 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 
         pba_track_counter += 1;
     }
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Incremental::imba_bundle_adjustment_intern (int /*single_camera_ba*/)
+{
+    ba::BundleAdjustment::Options ba_opts;
+    ba_opts.verbose_output = true;
+
+    /* Convert camera to BA data structures. */
+    std::vector<ba::Camera> ba_cameras;
+    std::vector<int> ba_cameras_mapping(this->viewports->size(), -1);
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
+    {
+        CameraPose const& pose = this->viewports->at(i).pose;
+        if (!pose.is_valid())
+            continue;
+
+        ba::Camera cam;
+        cam.focal_length = pose.get_focal_length();
+        std::copy(pose.t.begin(), pose.t.end(), cam.translation);
+        std::copy(pose.R.begin(), pose.R.end(), cam.rotation);
+        ba_cameras_mapping[i] = ba_cameras.size();
+        ba_cameras.push_back(cam);
+    }
+
+    /* Convert tracks to BA data structures. */
+    std::vector<ba::Point3D> ba_tracks;
+    std::vector<int> ba_tracks_mapping(this->tracks->size(), -1);
+    for (std::size_t i = 0; i < this->tracks->size(); ++i)
+    {
+        Track const& track = this->tracks->at(i);
+        if (!track.is_valid())
+            continue;
+
+        ba::Point3D point;
+        std::copy(track.pos.begin(), track.pos.end(), point.pos);
+        ba_tracks_mapping[i] = ba_tracks.size();
+        ba_tracks.push_back(point);
+    }
+
+    /* Convert observations to BA data structures. */
+    std::vector<ba::Point2D> ba_points_2d;
+    for (std::size_t i = 0; i < this->tracks->size(); ++i)
+    {
+        Track const& track = this->tracks->at(i);
+        if (!track.is_valid())
+            continue;
+
+        for (std::size_t j = 0; j < track.features.size(); ++j)
+        {
+            int const view_id = track.features[j].view_id;
+            if (!this->viewports->at(view_id).pose.is_valid())
+                continue;
+
+            int const feature_id = track.features[j].feature_id;
+            Viewport const& view = this->viewports->at(view_id);
+            math::Vec2f const& f2d = view.features.positions[feature_id];
+
+            ba::Point2D point;
+            std::copy(f2d.begin(), f2d.end(), point.pos);
+            point.camera_id = ba_cameras_mapping[view_id];
+            point.point3d_id = ba_tracks_mapping[i];
+            ba_points_2d.push_back(point);
+        }
+    }
+
+    /* Run bundle adjustment. */
+    ba::BundleAdjustment ba(ba_opts);
+    ba.print_options();
+    ba.set_cameras(&ba_cameras);
+    ba.set_points_3d(&ba_tracks);
+    ba.set_points_2d(&ba_points_2d);
+    ba.optimize();
+    ba.print_status();
+
+    /* Transfer cameras and track positions back. */
+    // TODO
 }
 
 /* ---------------------------------------------------------------- */
