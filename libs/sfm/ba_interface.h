@@ -86,6 +86,10 @@ private:
     void compute_reprojection_errors(std::vector<double>* vector_f);
     double compute_mse (std::vector<double> const& vector_f);
     void radial_distort (double* x, double* y, double const* dist);
+    void compute_jacobian (std::vector<double>* matrix_j);
+    void compute_jacobian_entries (Camera const& cam, Point3D const& point,
+        double* cam_x_ptr, double* cam_y_ptr,
+        double* point_x_ptr, double* point_y_ptr);
 
 private:
     Options opts;
