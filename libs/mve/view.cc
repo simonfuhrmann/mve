@@ -135,7 +135,8 @@ View::load_view_from_mve_file  (std::string const& filename)
             this->set_value("camera.translation", tokens.concat(1, 3));
             this->set_value("camera.rotation", tokens.concat(4, 9));
         }
-        else if (tokens[0] == "camera-int" && tokens.size() > 2 && tokens.size() <= 8)
+        else if (tokens[0] == "camera-int"
+            && tokens.size() >= 2 && tokens.size() <= 7)
         {
             this->set_value("camera.focal_length", tokens[1]);
             if (tokens.size() > 4)
