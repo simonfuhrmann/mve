@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "util/system.h"
 #include "util/file_system.h"
 #include "util/arguments.h"
 #include "util/string.h"
@@ -63,6 +64,9 @@ read_and_merge_stanford (std::string const& config, mve::TriangleMesh::Ptr mesh)
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE FSSR Mesh Alignment");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_exit_on_error(true);

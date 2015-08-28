@@ -13,6 +13,7 @@
 #include <limits>
 #include <vector>
 
+#include "util/system.h"
 #include "util/tokenizer.h"
 #include "util/timer.h"
 #include "util/arguments.h"
@@ -77,6 +78,9 @@ struct AppSettings
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE FSSR Mesh to Pointset");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_exit_on_error(true);

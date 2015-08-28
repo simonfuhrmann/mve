@@ -27,6 +27,7 @@
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
 #include "math/algo.h"
+#include "util/system.h"
 #include "util/timer.h"
 #include "util/arguments.h"
 #include "util/string.h"
@@ -836,6 +837,9 @@ import_images (AppSettings const& conf)
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE Makescene");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_usage(argv[0], "[ OPTIONS ] INPUT OUT_SCENE");

@@ -18,6 +18,7 @@
 #include <cstring>
 #include <cerrno>
 
+#include "util/system.h"
 #include "util/arguments.h"
 #include "util/exception.h"
 #include "sfm/bundler_common.h"
@@ -67,6 +68,9 @@ graph_mode (AppSettings const& conf,
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE SfM Prebundle");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_usage(argv[0], "[ MODES ] PREBUNDLE_FILE");

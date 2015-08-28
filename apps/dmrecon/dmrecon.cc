@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <iostream>
 #include <cstdlib>
-#include <csignal>
 
 #include "dmrecon/settings.h"
 #include "dmrecon/dmrecon.h"
@@ -110,8 +109,8 @@ get_scale_from_max_pixels (mve::Scene::Ptr scene,
 int
 main (int argc, char** argv)
 {
-    /* Catch segfaults to print stack traces. */
-    ::signal(SIGSEGV, util::system::signal_segfault_handler);
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE Depth Map Reconstruction");
 
     /* Parse arguments. */
     util::Arguments args;

@@ -17,6 +17,7 @@
 #include <cstdlib>
 
 #include "math/octree_tools.h"
+#include "util/system.h"
 #include "util/arguments.h"
 #include "util/tokenizer.h"
 #include "mve/depthmap.h"
@@ -78,6 +79,9 @@ aabb_from_string (std::string const& str,
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE Scene to Pointset");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_exit_on_error(true);

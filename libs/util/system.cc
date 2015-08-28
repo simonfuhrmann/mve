@@ -20,6 +20,23 @@ UTIL_NAMESPACE_BEGIN
 UTIL_SYSTEM_NAMESPACE_BEGIN
 
 void
+print_build_timestamp (char const* application_name)
+{
+    std::cout << application_name << " (built on "
+        << __DATE__ ", " __TIME__ ")" << std::endl;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+register_segfault_handler (void)
+{
+    std::signal(SIGSEGV, util::system::signal_segfault_handler);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 signal_segfault_handler (int code)
 {
     if (code != SIGSEGV)

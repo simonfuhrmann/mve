@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "util/system.h"
 #include "util/arguments.h"
 #include "mve/bundle.h"
 #include "mve/bundle_io.h"
@@ -93,6 +94,9 @@ generate_spheres (mve::TriangleMesh::Ptr mesh, AppSettings const& conf)
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE Bundle to Pointset");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_usage(argv[0], "[ OPTIONS ] INPUT_BUNDLE OUTPUT_PLY");

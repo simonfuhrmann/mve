@@ -47,8 +47,15 @@ float rand_float (void);
 int rand_int (void);
 
 /*
- * ------------------------- Signal functions ------------------------
+ * ---------------------- Signals / Application ----------------------
  */
+
+/** Prints the application name and time and date of the build. */
+void
+print_build_timestamp (char const* application_name);
+
+/** Registers signal SIGSEGV (segmentation fault) handler. */
+void register_segfault_handler (void);
 
 /** Handles signal SIGSEGV (segmentation fault) printing a stack trace. */
 void signal_segfault_handler (int code);

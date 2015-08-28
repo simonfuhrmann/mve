@@ -22,6 +22,7 @@
 #include "mve/mesh_io_ply.h"
 #include "util/timer.h"
 #include "util/arguments.h"
+#include "util/system.h"
 #include "fssr/sample_io.h"
 #include "fssr/iso_octree.h"
 #include "fssr/iso_surface.h"
@@ -36,8 +37,8 @@ struct AppOptions
 int
 main (int argc, char** argv)
 {
-    std::cout << "Floating Scale Surface Reconstruction "
-        << "(built on " __DATE__ ", " __TIME__ ")." << std::endl;
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("Floating Scale Surface Reconstruction");
 
     /* Setup argument parser. */
     util::Arguments args;

@@ -459,6 +459,9 @@ check_prebundle (AppSettings const& conf)
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE SfM Reconstruction");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_usage(argv[0], "[ OPTIONS ] SCENE");

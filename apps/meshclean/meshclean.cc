@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 
+#include "util/system.h"
 #include "util/timer.h"
 #include "util/arguments.h"
 #include "mve/mesh.h"
@@ -48,6 +49,9 @@ remove_low_conf_vertices (mve::TriangleMesh::Ptr mesh, float const thres)
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE FSSR Mesh Cleaning");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_exit_on_error(true);

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 
+#include "util/system.h"
 #include "util/arguments.h"
 #include "util/string.h"
 #include "mve/mesh_io.h"
@@ -26,6 +27,9 @@ struct AppSettings
 int
 main (int argc, char** argv)
 {
+    util::system::register_segfault_handler();
+    util::system::print_build_timestamp("MVE Mesh Conversion");
+
     /* Setup argument parser. */
     util::Arguments args;
     args.set_exit_on_error(true);
