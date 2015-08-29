@@ -83,13 +83,26 @@ public:
 private:
     void sanity_checks (void);
     void lm_optimize (void);
+
+    /* Helper functions. */
     void compute_reprojection_errors(std::vector<double>* vector_f);
     double compute_mse (std::vector<double> const& vector_f);
     void radial_distort (double* x, double* y, double const* dist);
-    void compute_jacobian (std::vector<double>* matrix_j);
-    void compute_jacobian_entries (Camera const& cam, Point3D const& point,
+    void rodrigues_to_matrix (double const* r, double* rot);
+
+    /* Analytic Jacobian. */
+    void analytic_jacobian (std::vector<double>* matrix_j);
+    void analytic_jacobian_entries (Camera const& cam, Point3D const& point,
         double* cam_x_ptr, double* cam_y_ptr,
         double* point_x_ptr, double* point_y_ptr);
+
+    /* Numeric Jacobian. */
+    void numeric_jacobian (std::vector<double>* matrix_j);
+    void numeric_jacobian_member (double* field, double eps,
+        std::vector<double>* matrix_j, std::size_t col, std::size_t cols);
+    void numeric_jacobian_rotation (double* rot, double eps,
+        std::vector<double>* matrix_j,
+        std::size_t axis, std::size_t col, std::size_t cols);
 
 private:
     Options opts;
@@ -135,7 +148,9 @@ BundleAdjustment::Status::Status (void)
 inline
 BundleAdjustment::BundleAdjustment (Options const& options)
     : opts(options)
-    , log(util::Logging::DEBUG)
+    , log(options.verbose_output
+        ? util::Logging::DEBUG
+        : util::Logging::INFO)
     , cameras(NULL)
     , points_3d(NULL)
     , points_2d(NULL)
