@@ -210,6 +210,17 @@ BundleAdjustment::analytic_jacobian (std::vector<double>* matrix_j)
         this->analytic_jacobian_entries(cam, p3d,
             cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
     }
+
+    /* Print jacobian. */
+    std::cout << "[";
+    for (std::size_t r = 0; r < matrix_rows; ++r)
+    {
+        for (std::size_t c = 0; c < matrix_cols; ++c)
+            std::cout << " " << matrix_j->at(r * matrix_cols + c);
+        std::cout << ";" << std::endl;
+    }
+    std::cout << "]" << std::endl;
+
 }
 
 void
@@ -278,27 +289,41 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
     cam_y_ptr[1] = cam.focal_length * iy * radius2;
     cam_y_ptr[2] = cam.focal_length * iy * radius2 * radius2;
 
-#if 1
+#define JACOBIAN_APPROX_CONST_RD 1
+#if JACOBIAN_APPROX_CONST_RD
     /*
      * Compute approximations of the Jacobian entries for the extrinsics
      * by assuming the distortion coefficent D(ix, iy) is constant.
      */
     cam_x_ptr[3] = fz * rd_factor;
     cam_x_ptr[4] = 0.0;
-    cam_x_ptr[5] = -fz * rd_factor * (px / pz);
-    // TODO 6,7,8
+    cam_x_ptr[5] = -fz * rd_factor * ix;
+    cam_x_ptr[6] = -fz * rd_factor * ry * ix;
+    cam_x_ptr[7] = fz * rd_factor * (rz + rx * ix);
+    cam_x_ptr[8] = -fz * rd_factor * ry;
 
     cam_y_ptr[3] = 0.0;
     cam_y_ptr[4] = fz * rd_factor;
-    cam_y_ptr[5] = -fz * rd_factor * (py / pz);
-    // TODO 6,7,8
-
-#endif
+    cam_y_ptr[5] = -fz * rd_factor * iy;
+    cam_y_ptr[6] = -fz * rd_factor * (rz + ry * iy);
+    cam_y_ptr[7] = fz * rd_factor * rx * iy;
+    cam_y_ptr[8] = fz * rd_factor * rx;
 
     /*
      * Compute point derivatives in x, y, and z.
      */
-    //point_x_ptr[0] =
+    point_x_ptr[0] = fz * rd_factor * p3d[0] * (r[0] - r[6] * ix);
+    point_x_ptr[1] = fz * rd_factor * p3d[1] * (r[1] - r[7] * ix);
+    point_x_ptr[2] = fz * rd_factor * p3d[2] * (r[2] - r[8] * ix);
+
+    point_y_ptr[0] = fz * rd_factor * p3d[0] * (r[3] - r[6] * iy);
+    point_y_ptr[1] = fz * rd_factor * p3d[1] * (r[4] - r[7] * iy);
+    point_y_ptr[2] = fz * rd_factor * p3d[2] * (r[5] - r[8] * iy);
+#elif JACOBIAN_APPROX_PBA
+
+#else
+
+#endif
 }
 
 void
