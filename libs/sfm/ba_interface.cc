@@ -16,6 +16,9 @@
 #define VERBOSE this->log.verbose()
 #define DEBUG this->log.debug()
 
+#define TRUST_REGION_RADIUS_INIT (1000)
+#define TRUST_REGION_RADIUS_FACTOR (3.0)
+
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
@@ -67,27 +70,73 @@ BundleAdjustment::sanity_checks (void)
 void
 BundleAdjustment::lm_optimize (void)
 {
+    /* Setup linear solver. */
+    LinearSolver::Options pcg_opts;
+    pcg_opts = this->opts.linear_opts;
+    pcg_opts.trust_region_radius = TRUST_REGION_RADIUS_INIT;
+
+    /* Compute reprojection error for the first time. */
+    DenseVector F, F_new;
+    this->compute_reprojection_errors(&F);
+    double current_mse = this->compute_mse(F);
+    this->status.initial_mse = current_mse;
+    this->status.final_mse = current_mse;
+
     /* Levenberg-Marquard main loop. */
     for (int lm_iter = 0; ; ++lm_iter)
     {
-        /* Compute reprojection errors and MSE. */
-        std::vector<double> F;
-        this->compute_reprojection_errors(&F);
-        double initial_mse = this->compute_mse(F);
-        if (lm_iter == 0)
-            this->status.initial_mse = initial_mse;
+        if (lm_iter + 1 > this->opts.lm_min_iterations
+            && (current_mse < this->opts.lm_mse_threshold))
+        {
+            INFO << "BA: Satisfied MSE threshold." << std::endl;
+            break;
+        }
 
         /* Compute Jacobian. */
-        std::vector<double> J;
+        SparseMatrix J;
         this->analytic_jacobian(&J);
+        //this->print_jacobian(J, "J=");
+        //this->numeric_jacobian(&J);
+        //this->print_jacobian(J, "K=");
 
-        return; // TMP
+        /* Perform linear step. */
+        DenseVector delta_x;
+        LinearSolver pcg(pcg_opts);
+        pcg.solve(J, F, &delta_x);
 
-        // TODO: Do linear step
+        // TODO: Evaluate norm of -JF and exit on small gradient.
 
         /* Compute MSE after linear step. */
-        double new_mse = this->compute_mse(F);
+        this->compute_reprojection_errors(&F_new, &delta_x);
+        double new_mse = this->compute_mse(F_new);
+        double delta_mse = current_mse - new_mse;
+        bool successful_iteration = delta_mse > 0.0;
 
+        if (successful_iteration)
+        {
+            VERBOSE << "BA: Iteration " << lm_iter << " success."
+                << " MSE " << current_mse << " -> " << new_mse
+                << ", trr = " << pcg_opts.trust_region_radius
+                << std::endl;
+
+            this->status.num_lm_successful_iterations += 1;
+            this->update_parameters(delta_x);
+            pcg_opts.trust_region_radius *= TRUST_REGION_RADIUS_FACTOR;
+            std::swap(F, F_new);
+            current_mse = new_mse;
+        }
+        else
+        {
+            VERBOSE << "BA: Iteration " << lm_iter << " failure."
+                << " MSE " << current_mse << " -> " << current_mse
+                << ", trr = " << pcg_opts.trust_region_radius
+                << std::endl;
+
+            this->status.num_lm_unsuccessful_iterations += 1;
+            pcg_opts.trust_region_radius /= TRUST_REGION_RADIUS_FACTOR;
+        }
+
+        /* Check termination of LM iterations. */
         if (lm_iter + 1 < this->opts.lm_min_iterations)
             continue;
 
@@ -96,21 +145,19 @@ BundleAdjustment::lm_optimize (void)
             INFO << "BA: Reached max LM iterations." << std::endl;
             break;
         }
-        if (new_mse < this->opts.lm_mse_threshold)
-        {
-            INFO << "BA: Satisfied MSE threshold." << std::endl;
-            break;
-        }
-        if (initial_mse - new_mse < this->opts.lm_delta_threshold)
+        if (successful_iteration && delta_mse < this->opts.lm_delta_threshold)
         {
             INFO << "BA: Satisfied MSE delta threshold." << std::endl;
             break;
         }
     }
+
+    this->status.final_mse = current_mse;
 }
 
 void
-BundleAdjustment::compute_reprojection_errors (std::vector<double>* vector_f)
+BundleAdjustment::compute_reprojection_errors (std::vector<double>* vector_f,
+    std::vector<double> const* delta_x)
 {
     if (vector_f->size() != this->points_2d->size() * 2)
     {
@@ -125,24 +172,45 @@ BundleAdjustment::compute_reprojection_errors (std::vector<double>* vector_f)
         Point3D const& p3d = this->points_3d->at(p2d.point3d_id);
         Camera const& cam = this->cameras->at(p2d.camera_id);
 
+        double const* flen = &cam.focal_length;
+        double const* dist = cam.distortion;
+        double const* rot = cam.rotation;
+        double const* trans = cam.translation;
+        double const* point = p3d.pos;
+
+        Point3D new_point;
+        Camera new_camera;
+        if (delta_x != NULL)
+        {
+            std::size_t cam_id = p2d.camera_id * 9;
+            std::size_t pt_id = this->cameras->size() * 9 + p2d.point3d_id * 3;
+            this->update_camera(cam, delta_x->data() + cam_id, &new_camera);
+            this->update_point(p3d, delta_x->data() + pt_id, &new_point);
+            flen = &new_camera.focal_length;
+            dist = new_camera.distortion;
+            rot = new_camera.rotation;
+            trans = new_camera.translation;
+            point = new_point.pos;
+        }
+
         /* Project point onto image plane. */
         double rp[] = { 0.0, 0.0, 0.0 };
         for (int d = 0; d < 3; ++d)
         {
-            rp[0] += cam.rotation[0 + d] * p3d.pos[d];
-            rp[1] += cam.rotation[3 + d] * p3d.pos[d];
-            rp[2] += cam.rotation[6 + d] * p3d.pos[d];
+            rp[0] += rot[0 + d] * point[d];
+            rp[1] += rot[3 + d] * point[d];
+            rp[2] += rot[6 + d] * point[d];
         }
-        rp[2] += cam.translation[2];
-        rp[0] = (rp[0] + cam.translation[0]) / rp[2];
-        rp[1] = (rp[1] + cam.translation[1]) / rp[2];
+        rp[2] = (rp[2] + trans[2]);
+        rp[0] = (rp[0] + trans[0]) / rp[2];
+        rp[1] = (rp[1] + trans[1]) / rp[2];
 
         /* Distort reprojections. */
-        this->radial_distort(rp + 0, rp + 1, cam.distortion);
+        this->radial_distort(rp + 0, rp + 1, dist);
 
         /* Compute reprojection error. */
-        vector_f->at(i * 2 + 0) = p2d.pos[0] - rp[0] * cam.focal_length;
-        vector_f->at(i * 2 + 1) = p2d.pos[1] - rp[1] * cam.focal_length;
+        vector_f->at(i * 2 + 0) = rp[0] * (*flen) - p2d.pos[0];
+        vector_f->at(i * 2 + 1) = rp[1] * (*flen) - p2d.pos[1];
     }
 }
 
@@ -210,17 +278,6 @@ BundleAdjustment::analytic_jacobian (std::vector<double>* matrix_j)
         this->analytic_jacobian_entries(cam, p3d,
             cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
     }
-
-    /* Print jacobian. */
-    std::cout << "[";
-    for (std::size_t r = 0; r < matrix_rows; ++r)
-    {
-        for (std::size_t c = 0; c < matrix_cols; ++c)
-            std::cout << " " << matrix_j->at(r * matrix_cols + c);
-        std::cout << ";" << std::endl;
-    }
-    std::cout << "]" << std::endl;
-
 }
 
 void
@@ -290,6 +347,7 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
     cam_y_ptr[2] = cam.focal_length * iy * radius2 * radius2;
 
 #define JACOBIAN_APPROX_CONST_RD 1
+#define JACOBIAN_APPROX_PBA 0
 #if JACOBIAN_APPROX_CONST_RD
     /*
      * Compute approximations of the Jacobian entries for the extrinsics
@@ -312,13 +370,13 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
     /*
      * Compute point derivatives in x, y, and z.
      */
-    point_x_ptr[0] = fz * rd_factor * p3d[0] * (r[0] - r[6] * ix);
-    point_x_ptr[1] = fz * rd_factor * p3d[1] * (r[1] - r[7] * ix);
-    point_x_ptr[2] = fz * rd_factor * p3d[2] * (r[2] - r[8] * ix);
+    point_x_ptr[0] = fz * rd_factor * (r[0] - r[6] * ix);
+    point_x_ptr[1] = fz * rd_factor * (r[1] - r[7] * ix);
+    point_x_ptr[2] = fz * rd_factor * (r[2] - r[8] * ix);
 
-    point_y_ptr[0] = fz * rd_factor * p3d[0] * (r[3] - r[6] * iy);
-    point_y_ptr[1] = fz * rd_factor * p3d[1] * (r[4] - r[7] * iy);
-    point_y_ptr[2] = fz * rd_factor * p3d[2] * (r[5] - r[8] * iy);
+    point_y_ptr[0] = fz * rd_factor * (r[3] - r[6] * iy);
+    point_y_ptr[1] = fz * rd_factor * (r[4] - r[7] * iy);
+    point_y_ptr[2] = fz * rd_factor * (r[5] - r[8] * iy);
 #elif JACOBIAN_APPROX_PBA
 
 #else
@@ -334,13 +392,16 @@ BundleAdjustment::numeric_jacobian (std::vector<double>* matrix_j)
     std::size_t const rows = this->points_2d->size() * 2;
     std::size_t const cols = num_cam_params + num_point_params;
 
-    matrix_j->clear();
-    matrix_j->resize(rows * cols, 0.0);
+    if (matrix_j->size() != rows * cols)
+    {
+        matrix_j->clear();
+        matrix_j->resize(rows * cols, 0.0);
+    }
 
     /* Numeric differentiation for cameras. */
     for (std::size_t i = 0; i < this->cameras->size(); ++i)
     {
-        std::size_t col = i * 9;
+        std::size_t const col = i * 9;
         Camera& camera = this->cameras->at(i);
         this->numeric_jacobian_member(&camera.focal_length,
             1e-6, matrix_j, col + 0, cols);
@@ -355,17 +416,17 @@ BundleAdjustment::numeric_jacobian (std::vector<double>* matrix_j)
         this->numeric_jacobian_member(camera.translation + 2,
             1e-6, matrix_j, col + 5, cols);
         this->numeric_jacobian_rotation(camera.rotation,
-            1e-3, matrix_j, 0, 6, cols);
+            1e-4, matrix_j, 0, col + 6, cols);
         this->numeric_jacobian_rotation(camera.rotation,
-            1e-3, matrix_j, 1, 7, cols);
+            1e-4, matrix_j, 1, col + 7, cols);
         this->numeric_jacobian_rotation(camera.rotation,
-            1e-3, matrix_j, 2, 8, cols);
+            1e-4, matrix_j, 2, col + 8, cols);
     }
 
     /* Numeric differentiation for points. */
     for (std::size_t i = 0; i < this->points_3d->size(); ++i)
     {
-        std::size_t col = num_cam_params + i * 3;
+        std::size_t const col = num_cam_params + i * 3;
         Point3D& point = this->points_3d->at(i);
         this->numeric_jacobian_member(point.pos + 0,
             1e-6, matrix_j, col + 0, cols);
@@ -388,7 +449,7 @@ BundleAdjustment::numeric_jacobian_member (double* field, double eps,
     this->compute_reprojection_errors(&f2);
     *field = backup;
 
-    for (std::size_t i = 0, j = col; i < matrix_j->size(); i += 1, j += cols)
+    for (std::size_t i = 0, j = col; j < matrix_j->size(); i += 1, j += cols)
         matrix_j->at(j) = (f2[i] - f1[i]) / (2.0 * eps);
 }
 
@@ -405,18 +466,84 @@ BundleAdjustment::numeric_jacobian_rotation (double* rot, double eps,
 
     delta_rot_r[axis] = -eps;
     this->rodrigues_to_matrix(delta_rot_r, delta_rot_m);
-    math::matrix_multiply(backup, 3, 3, delta_rot_m, 3, rot);
+    math::matrix_multiply(delta_rot_m, 3, 3, backup, 3, rot);
     this->compute_reprojection_errors(&f1);
 
     delta_rot_r[axis] = eps;
     this->rodrigues_to_matrix(delta_rot_r, delta_rot_m);
-    math::matrix_multiply(backup, 3, 3, delta_rot_m, 3, rot);
+    math::matrix_multiply(delta_rot_m, 3, 3, backup, 3, rot);
     this->compute_reprojection_errors(&f2);
 
     std::copy(backup, backup + 9, rot);
 
-    for (std::size_t i = 0, j = col; i < matrix_j->size(); i += 1, j += cols)
+    for (std::size_t i = 0, j = col; j < matrix_j->size(); i += 1, j += cols)
         matrix_j->at(j) = (f2[i] - f1[i]) / (2.0 * eps);
+}
+
+void
+BundleAdjustment::print_jacobian (std::vector<double> const& matrix_j,
+    char const* prefix) const
+{
+    std::size_t const num_cam_params = this->cameras->size() * 9;
+    std::size_t const num_point_params = this->points_3d->size() * 3;
+    std::size_t const matrix_rows = this->points_2d->size() * 2;
+    std::size_t const matrix_cols = num_cam_params + num_point_params;
+
+    if (matrix_j.size() != matrix_rows * matrix_cols)
+        throw std::invalid_argument("Invalid Jacobian dimensions");
+
+    /* Print jacobian. */
+    std::cout << prefix << "[";
+    for (std::size_t r = 0; r < matrix_rows; ++r)
+    {
+        for (std::size_t c = 0; c < matrix_cols; ++c)
+            std::cout << " " << matrix_j[r * matrix_cols + c];
+        std::cout << ";" << std::endl;
+    }
+    std::cout << "]" << std::endl;
+}
+
+void
+BundleAdjustment::update_parameters (std::vector<double> const& delta_x)
+{
+    /* Update cameras. */
+    for (std::size_t i = 0; i < this->cameras->size(); ++i)
+        this->update_camera(this->cameras->at(i),
+            delta_x.data() + 9 * i, &this->cameras->at(i));
+
+    /* Update points. */
+    std::size_t num_camera_params = this->cameras->size() * 9;
+    for (std::size_t i = 0; i < this->points_3d->size(); ++i)
+        this->update_point(this->points_3d->at(i),
+            delta_x.data() + num_camera_params + i * 3,
+            &this->points_3d->at(i));
+}
+
+void
+BundleAdjustment::update_camera (Camera const& cam,
+    double const* update, Camera* out)
+{
+    out->focal_length = cam.focal_length + update[0];
+    out->distortion[0] = cam.distortion[0] + update[1];
+    out->distortion[1] = cam.distortion[1] + update[2];
+    out->translation[0] = cam.translation[0] + update[3];
+    out->translation[1] = cam.translation[1] + update[4];
+    out->translation[2] = cam.translation[2] + update[5];
+
+    double rot_orig[9];
+    std::copy(cam.rotation, cam.rotation + 9, rot_orig);
+    double rot_update[9];
+    this->rodrigues_to_matrix(update + 6, rot_update);
+    math::matrix_multiply(rot_update, 3, 3, rot_orig, 3, out->rotation);
+}
+
+void
+BundleAdjustment::update_point (Point3D const& pt,
+    double const* update, Point3D* out)
+{
+    out->pos[0] = pt.pos[0] + update[0];
+    out->pos[1] = pt.pos[1] + update[1];
+    out->pos[2] = pt.pos[2] + update[2];
 }
 
 void

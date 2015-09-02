@@ -6,6 +6,7 @@
 
 #include "util/logging.h"
 #include "sfm/defines.h"
+#include "sfm/ba_linear_solver.h"
 
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
@@ -55,8 +56,7 @@ public:
         int lm_min_iterations;
         double lm_delta_threshold;
         double lm_mse_threshold;
-        //int cg_max_iterations;
-        //int cg_min_iterations;
+        LinearSolver::Options linear_opts;
     };
 
     struct Status
@@ -66,6 +66,8 @@ public:
         double initial_mse;
         double final_mse;
         int num_lm_iterations;
+        int num_lm_successful_iterations;
+        int num_lm_unsuccessful_iterations;
         int num_cg_iterations;
     };
 
@@ -81,28 +83,40 @@ public:
     void print_status (void) const;
 
 private:
+    typedef std::vector<double> SparseMatrix;
+    typedef std::vector<double> DenseVector;
+
+private:
     void sanity_checks (void);
     void lm_optimize (void);
 
     /* Helper functions. */
-    void compute_reprojection_errors(std::vector<double>* vector_f);
-    double compute_mse (std::vector<double> const& vector_f);
+    void compute_reprojection_errors (DenseVector* vector_f,
+        DenseVector const* delta_x = NULL);
+    double compute_mse (DenseVector const& vector_f);
     void radial_distort (double* x, double* y, double const* dist);
     void rodrigues_to_matrix (double const* r, double* rot);
+    void print_jacobian (SparseMatrix const& matrix_j,
+        char const* prefix) const;
 
     /* Analytic Jacobian. */
-    void analytic_jacobian (std::vector<double>* matrix_j);
+    void analytic_jacobian (SparseMatrix* matrix_j);
     void analytic_jacobian_entries (Camera const& cam, Point3D const& point,
         double* cam_x_ptr, double* cam_y_ptr,
         double* point_x_ptr, double* point_y_ptr);
 
     /* Numeric Jacobian. */
-    void numeric_jacobian (std::vector<double>* matrix_j);
+    void numeric_jacobian (SparseMatrix* matrix_j);
     void numeric_jacobian_member (double* field, double eps,
-        std::vector<double>* matrix_j, std::size_t col, std::size_t cols);
+        SparseMatrix* matrix_j, std::size_t col, std::size_t cols);
     void numeric_jacobian_rotation (double* rot, double eps,
-        std::vector<double>* matrix_j,
+        SparseMatrix* matrix_j,
         std::size_t axis, std::size_t col, std::size_t cols);
+
+    /* */
+    void update_parameters (DenseVector const& delta_x);
+    void update_camera (Camera const& cam, double const* update, Camera* out);
+    void update_point (Point3D const& pt, double const* update, Point3D* out);
 
 private:
     Options opts;
@@ -130,8 +144,8 @@ BundleAdjustment::Options::Options (void)
     : verbose_output(false)
     //, bundle_mode(BA_CAMERAS_AND_POINTS)
     , lm_max_iterations(100)
-    , lm_min_iterations(1)
-    , lm_delta_threshold(1e-8)
+    , lm_min_iterations(0)
+    , lm_delta_threshold(1e-12)
     , lm_mse_threshold(1e-16)
 {
 }
@@ -141,6 +155,8 @@ BundleAdjustment::Status::Status (void)
     : initial_mse(0.0)
     , final_mse(0.0)
     , num_lm_iterations(0)
+    , num_lm_successful_iterations(0)
+    , num_lm_unsuccessful_iterations(0)
     , num_cg_iterations(0)
 {
 }
