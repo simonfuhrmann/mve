@@ -57,7 +57,7 @@ namespace
         double* p = px.pos;
         p[0] = +0.0; p[1] = 0.2; p[2] = 1.0;  points->push_back(px);
         p[0] = -0.5; p[1] = 0.4; p[2] = 1.4;  points->push_back(px);
-        //p[0] = +0.5; p[1] = 0.0; p[2] = 1.2;  points->push_back(px);
+        p[0] = +0.5; p[1] = 0.0; p[2] = 1.2;  points->push_back(px);
         //p[0] = -0.3; p[1] = 0.1; p[2] = 1.1;  points->push_back(px);
         //p[0] = +0.4; p[1] = -0.2; p[2] = 0.7;  points->push_back(px);
         //p[0] = -0.1; p[1] = -0.4; p[2] = 0.8;  points->push_back(px);
@@ -67,12 +67,16 @@ namespace
     void
     project (sfm::ba::Camera const& cam, sfm::ba::Point3D const& p3d, double* p2d)
     {
+        double const k1 = 1.0;
+        double const k2 = 2.0;
         math::Matrix3d rot(cam.rotation);
         math::Vec3d trans(cam.translation);
         math::Vec3d p(p3d.pos);
         math::Vec3d x = rot * p + trans;
         x /= x[2];
-        x *= cam.focal_length;
+        double rd_factor = 1.0 + k1 * MATH_POW2(x[0] * x[1])
+            + k2 * MATH_POW4(x[0] * x[1]);
+        x *= cam.focal_length * rd_factor;
         p2d[0] = x[0];
         p2d[1] = x[1];
         std::cout << "Projection: " << x << std::endl;
@@ -95,6 +99,7 @@ main (void)
         obs1.camera_id = 0;
         obs1.point3d_id = i;
         project(cams[0], p3d[i], obs1.pos);
+
 
         sfm::ba::Point2D obs2 = obs1;
         obs2.camera_id = 1;

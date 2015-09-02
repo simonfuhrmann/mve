@@ -252,8 +252,8 @@ Incremental::bundle_adjustment_single_cam (int view_id)
 void
 Incremental::bundle_adjustment_intern (int single_camera_ba)
 {
-    //this->imba_bundle_adjustment_intern(single_camera_ba);
-    this->pba_bundle_adjustment_intern(single_camera_ba);
+    this->imba_bundle_adjustment_intern(single_camera_ba);
+    //this->pba_bundle_adjustment_intern(single_camera_ba);
 }
 
 /* ---------------------------------------------------------------- */
@@ -487,7 +487,7 @@ Incremental::imba_bundle_adjustment_intern (int /*single_camera_ba*/)
 
     /* Run bundle adjustment. */
     ba::BundleAdjustment ba(ba_opts);
-    ba.print_options();
+    //ba.print_options();
     ba.set_cameras(&ba_cameras);
     ba.set_points_3d(&ba_tracks);
     ba.set_points_2d(&ba_points_2d);
