@@ -128,7 +128,8 @@ Intrinsics::init_from_views (mve::View::Ptr view, Viewport* viewport)
      *     needs to be processed elsewhere.
      */
     viewport->focal_length = camera.flen;
-    viewport->radial_distortion = 0.0f;
+    viewport->radial_distortion[0] = 0.0f;
+    viewport->radial_distortion[1] = 0.0f;
 }
 
 void

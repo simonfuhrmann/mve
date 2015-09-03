@@ -304,7 +304,7 @@ Incremental::pba_bundle_adjustment_intern (int single_camera_ba)
         cam.f = pose.get_focal_length();
         std::copy(pose.t.begin(), pose.t.end(), cam.t);
         std::copy(pose.R.begin(), pose.R.end(), cam.m[0]);
-        cam.radial = this->viewports->at(i).radial_distortion;
+        cam.radial = this->viewports->at(i).radial_distortion[0];
         cam.distortion_type = PBA_DISTORTION_TYPE;
         pba_cams_mapping[i] = pba_cams.size();
 
@@ -401,7 +401,8 @@ Incremental::pba_bundle_adjustment_intern (int single_camera_ba)
         std::copy(cam.t, cam.t + 3, pose.t.begin());
         std::copy(cam.m[0], cam.m[0] + 9, pose.R.begin());
         pose.set_k_matrix(cam.f, 0.0, 0.0);
-        view.radial_distortion = cam.radial;
+        view.radial_distortion[0] = cam.radial;
+        view.radial_distortion[1] = 0.0;
         pba_cam_counter += 1;
     }
 
@@ -422,10 +423,16 @@ Incremental::pba_bundle_adjustment_intern (int single_camera_ba)
 /* ---------------------------------------------------------------- */
 
 void
-Incremental::imba_bundle_adjustment_intern (int /*single_camera_ba*/)
+Incremental::imba_bundle_adjustment_intern (int single_camera_ba)
 {
     ba::BundleAdjustment::Options ba_opts;
     ba_opts.verbose_output = true;
+
+    if (single_camera_ba >= 0)
+    {
+        std::cout << "WARNING: Single camera BA not supported." << std::endl;
+        return;
+    }
 
     /* Convert camera to BA data structures. */
     std::vector<ba::Camera> ba_cameras;
@@ -495,7 +502,47 @@ Incremental::imba_bundle_adjustment_intern (int /*single_camera_ba*/)
     ba.print_status();
 
     /* Transfer cameras and track positions back. */
-    // TODO
+    std::size_t ba_cam_counter = 0;
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
+    {
+        if (!this->viewports->at(i).pose.is_valid())
+            continue;
+
+        Viewport& view = this->viewports->at(i);
+        CameraPose& pose = view.pose;
+        ba::Camera const& cam = ba_cameras[ba_cam_counter];
+
+        if (this->opts.verbose_output && single_camera_ba < 0)
+        {
+            std::cout << "Camera " << std::setw(3) << i
+                << ", focal length: "
+                << util::string::get_fixed(pose.get_focal_length(), 5)
+                << " -> "
+                << util::string::get_fixed(cam.focal_length, 5)
+                << ", distortion: "
+                << util::string::get_fixed(cam.distortion[0], 5) << " "
+                << util::string::get_fixed(cam.distortion[1], 5)
+                << std::endl;
+        }
+
+        std::copy(cam.translation, cam.translation + 3, pose.t.begin());
+        std::copy(cam.rotation, cam.rotation + 9, pose.R.begin());
+        std::copy(cam.distortion, cam.distortion + 2, view.radial_distortion);
+        pose.set_k_matrix(cam.focal_length, 0.0, 0.0);
+        ba_cam_counter += 1;
+    }
+
+    std::size_t ba_track_counter = 0;
+    for (std::size_t i = 0; i < this->tracks->size(); ++i)
+    {
+        Track& track = this->tracks->at(i);
+        if (!track.is_valid())
+            continue;
+
+        ba::Point3D const& point = ba_tracks[ba_track_counter];
+        std::copy(point.pos, point.pos + 3, track.pos.begin());
+        ba_track_counter += 1;
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -649,9 +696,10 @@ Incremental::create_bundle (void) const
             cam.ppoint[1] = pose.K[5] + 0.5f;
             std::copy(pose.R.begin(), pose.R.end(), cam.rot);
             std::copy(pose.t.begin(), pose.t.end(), cam.trans);
-            cam.dist[0] = viewport.radial_distortion
+            cam.dist[0] = viewport.radial_distortion[0]
                 * MATH_POW2(pose.get_focal_length());
-            cam.dist[1] = 0.0f;
+            cam.dist[1] = viewport.radial_distortion[1]
+                * MATH_POW2(pose.get_focal_length());
         }
 
         /* Populate the features in the Bundle. */

@@ -40,7 +40,7 @@ struct Viewport
     /** Initial focal length estimate for the image. */
     float focal_length;
     /** Radial distortion parameter. */
-    float radial_distortion;
+    float radial_distortion[2];
 
     /** Camera pose for the viewport. */
     CameraPose pose;
@@ -137,8 +137,8 @@ TwoViewMatching::operator< (TwoViewMatching const& rhs) const
 inline
 Viewport::Viewport (void)
     : focal_length(0.0f)
-    , radial_distortion(0.0f)
 {
+    std::fill(this->radial_distortion, this->radial_distortion + 2, 0.0f);
 }
 
 inline bool
