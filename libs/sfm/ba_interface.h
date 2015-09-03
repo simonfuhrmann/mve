@@ -100,7 +100,7 @@ private:
         char const* prefix) const;
 
     /* Analytic Jacobian. */
-    void analytic_jacobian (SparseMatrix* matrix_j);
+    void analytic_jacobian (SparseMatrix* jac_cam, SparseMatrix* jac_points);
     void analytic_jacobian_entries (Camera const& cam, Point3D const& point,
         double* cam_x_ptr, double* cam_y_ptr,
         double* point_x_ptr, double* point_y_ptr);
@@ -143,9 +143,9 @@ inline
 BundleAdjustment::Options::Options (void)
     : verbose_output(false)
     //, bundle_mode(BA_CAMERAS_AND_POINTS)
-    , lm_max_iterations(100)
+    , lm_max_iterations(20)
     , lm_min_iterations(0)
-    , lm_delta_threshold(1e-12)
+    , lm_delta_threshold(1e-8)
     , lm_mse_threshold(1e-16)
 {
 }

@@ -34,7 +34,13 @@ public:
 
 public:
     LinearSolver (Options const& options);
-    void solve (MatrixType const& jacobian,
+
+    /* Schur-complement solver. */
+    bool solve_schur (MatrixType const& jac_cams, MatrixType const& jac_points,
+        VectorType const& values, VectorType* delta_x);
+
+    /* Conjugate Gradient on H. */
+    bool solve (MatrixType const& jac_cams, MatrixType const& jac_points,
         VectorType const& values, VectorType* delta_x);
 
 private:

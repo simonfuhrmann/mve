@@ -10,14 +10,15 @@
 #include "math/matrix_tools.h"
 #include "sfm/ba_interface.h"
 
-#define ERROR this->log.error()
-#define WARNING this->log.warning()
-#define INFO this->log.info()
-#define VERBOSE this->log.verbose()
-#define DEBUG this->log.debug()
+#define LOG_E this->log.error()
+#define LOG_W this->log.warning()
+#define LOG_I this->log.info()
+#define LOG_V this->log.verbose()
+#define LOG_D this->log.debug()
 
 #define TRUST_REGION_RADIUS_INIT (1000)
-#define TRUST_REGION_RADIUS_FACTOR (3.0)
+#define TRUST_REGION_RADIUS_INCREMENT (1.0 * 3.0)
+#define TRUST_REGION_RADIUS_DECREMENT (1.0 / 2.0)
 
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
@@ -88,52 +89,69 @@ BundleAdjustment::lm_optimize (void)
         if (lm_iter + 1 > this->opts.lm_min_iterations
             && (current_mse < this->opts.lm_mse_threshold))
         {
-            INFO << "BA: Satisfied MSE threshold." << std::endl;
+            LOG_I << "BA: Satisfied MSE threshold." << std::endl;
             break;
         }
 
         /* Compute Jacobian. */
-        SparseMatrix J;
-        this->analytic_jacobian(&J);
+        SparseMatrix J_cam, J_points;
+        this->analytic_jacobian(&J_cam, &J_points);
         //this->print_jacobian(J, "J=");
+
+        //SparseMatrix J;
         //this->numeric_jacobian(&J);
         //this->print_jacobian(J, "K=");
+
+        // TODO: Evaluate norm of -JF and exit on small gradient.
 
         /* Perform linear step. */
         DenseVector delta_x;
         LinearSolver pcg(pcg_opts);
-        pcg.solve(J, F, &delta_x);
+        bool cg_success = pcg.solve(J_cam, J_points, F, &delta_x);
 
-        // TODO: Evaluate norm of -JF and exit on small gradient.
-
-        /* Compute MSE after linear step. */
-        this->compute_reprojection_errors(&F_new, &delta_x);
-        double new_mse = this->compute_mse(F_new);
-        double delta_mse = current_mse - new_mse;
+        /* Update reprojection errors and MSE after linear step. */
+        double new_mse, delta_mse;
+        if (cg_success)
+        {
+            this->compute_reprojection_errors(&F_new, &delta_x);
+            new_mse = this->compute_mse(F_new);
+            delta_mse = current_mse - new_mse;
+        }
+        else
+        {
+            new_mse = current_mse;
+            delta_mse = 0.0;
+        }
         bool successful_iteration = delta_mse > 0.0;
 
+        /*
+         * Apply delta to parameters after successful step.
+         * Adjust the trust region to increase/decrease regulariztion.
+         */
         if (successful_iteration)
         {
-            VERBOSE << "BA: Iteration " << lm_iter << " success."
+            LOG_V << "BA: Iteration " << lm_iter << " success."
                 << " MSE " << current_mse << " -> " << new_mse
                 << ", trr = " << pcg_opts.trust_region_radius
                 << std::endl;
 
+            this->status.num_lm_iterations += 1;
             this->status.num_lm_successful_iterations += 1;
             this->update_parameters(delta_x);
-            pcg_opts.trust_region_radius *= TRUST_REGION_RADIUS_FACTOR;
+            pcg_opts.trust_region_radius *= TRUST_REGION_RADIUS_INCREMENT;
             std::swap(F, F_new);
             current_mse = new_mse;
         }
         else
         {
-            VERBOSE << "BA: Iteration " << lm_iter << " failure."
-                << " MSE " << current_mse << " -> " << current_mse
+            LOG_V << "BA: Iteration " << lm_iter << " failure."
+                << " MSE " << current_mse
                 << ", trr = " << pcg_opts.trust_region_radius
                 << std::endl;
 
+            this->status.num_lm_iterations += 1;
             this->status.num_lm_unsuccessful_iterations += 1;
-            pcg_opts.trust_region_radius /= TRUST_REGION_RADIUS_FACTOR;
+            pcg_opts.trust_region_radius *= TRUST_REGION_RADIUS_DECREMENT;
         }
 
         /* Check termination of LM iterations. */
@@ -142,12 +160,12 @@ BundleAdjustment::lm_optimize (void)
 
         if (lm_iter + 1 >= this->opts.lm_max_iterations)
         {
-            INFO << "BA: Reached max LM iterations." << std::endl;
+            LOG_I << "BA: Reached max LM iterations." << std::endl;
             break;
         }
         if (successful_iteration && delta_mse < this->opts.lm_delta_threshold)
         {
-            INFO << "BA: Satisfied MSE delta threshold." << std::endl;
+            LOG_I << "BA: Satisfied MSE delta threshold." << std::endl;
             break;
         }
     }
@@ -253,15 +271,20 @@ BundleAdjustment::rodrigues_to_matrix (double const* r, double* m)
 }
 
 void
-BundleAdjustment::analytic_jacobian (std::vector<double>* matrix_j)
+BundleAdjustment::analytic_jacobian (SparseMatrix* jac_cam,
+    SparseMatrix* jac_points)
 {
-    std::size_t const camera_off = this->cameras->size() * 9;
-    std::size_t const matrix_rows = this->points_2d->size() * 2;
-    std::size_t const matrix_cols = camera_off + this->points_3d->size() * 3;
+    std::size_t const camera_cols = this->cameras->size() * 9;
+    std::size_t const point_cols = this->points_3d->size() * 3;
+    std::size_t const jacobi_rows = this->points_2d->size() * 2;
 
-    matrix_j->clear();
-    matrix_j->resize(matrix_rows * matrix_cols, 0.0);
-    double* base_ptr = &matrix_j->at(0);
+    jac_cam->clear();
+    jac_cam->resize(camera_cols * jacobi_rows);
+    jac_points->clear();
+    jac_points->resize(point_cols * jacobi_rows);
+
+    double* cam_base_ptr = jac_cam->data();
+    double* point_base_ptr = jac_points->data();
 
 //#pragma omp parallel for
     for (std::size_t i = 0; i < this->points_2d->size(); ++i)
@@ -269,12 +292,15 @@ BundleAdjustment::analytic_jacobian (std::vector<double>* matrix_j)
         Point2D const& p2d = this->points_2d->at(i);
         Point3D const& p3d = this->points_3d->at(p2d.point3d_id);
         Camera const& cam = this->cameras->at(p2d.camera_id);
-        double* row_x_ptr = base_ptr + matrix_cols * (i * 2 + 0);
-        double* row_y_ptr = base_ptr + matrix_cols * (i * 2 + 1);
-        double* cam_x_ptr = row_x_ptr + p2d.camera_id * 9;
-        double* cam_y_ptr = row_y_ptr + p2d.camera_id * 9;
-        double* point_x_ptr = row_x_ptr + camera_off + p2d.point3d_id * 3;
-        double* point_y_ptr = row_y_ptr + camera_off + p2d.point3d_id * 3;
+
+        double* cam_row_x_ptr = cam_base_ptr + camera_cols * (i * 2 + 0);
+        double* cam_row_y_ptr = cam_base_ptr + camera_cols * (i * 2 + 1);
+        double* cam_x_ptr = cam_row_x_ptr + p2d.camera_id * 9;
+        double* cam_y_ptr = cam_row_y_ptr + p2d.camera_id * 9;
+        double* point_row_x_ptr = point_base_ptr + point_cols * (i * 2 + 0);
+        double* point_row_y_ptr = point_base_ptr + point_cols * (i * 2 + 1);
+        double* point_x_ptr = point_row_x_ptr + p2d.point3d_id * 3;
+        double* point_y_ptr = point_row_y_ptr + p2d.point3d_id * 3;
         this->analytic_jacobian_entries(cam, p3d,
             cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
     }
@@ -549,22 +575,25 @@ BundleAdjustment::update_point (Point3D const& pt,
 void
 BundleAdjustment::print_options (void) const
 {
-    VERBOSE << "Bundle Adjustment Options:" << std::endl;
-    VERBOSE << "  Verbose output: "
+    std::cout << "Bundle Adjustment Options:" << std::endl;
+    std::cout << "  Verbose output: "
         << this->opts.verbose_output << std::endl;
 }
 
 void
 BundleAdjustment::print_status (void) const
 {
-    VERBOSE << "Bundle Adjustment Status:" << std::endl;
-    VERBOSE << "  Initial MSE: "
+    std::cout << "Bundle Adjustment Status:" << std::endl;
+    std::cout << "  Initial MSE: "
         << this->status.initial_mse << std::endl;
-    VERBOSE << "  Final MSE: "
+    std::cout << "  Final MSE: "
         << this->status.final_mse << std::endl;
-    VERBOSE << "  LM iterations: "
-        << this->status.num_lm_iterations << std::endl;
-    VERBOSE << "  CG iterations: "
+    std::cout << "  LM iterations: "
+        << this->status.num_lm_iterations << " ("
+        << this->status.num_lm_successful_iterations << " successful, "
+        << this->status.num_lm_unsuccessful_iterations << " unsuccessful)"
+        << std::endl;
+    std::cout << "  CG iterations: "
         << this->status.num_cg_iterations << std::endl;
 }
 
