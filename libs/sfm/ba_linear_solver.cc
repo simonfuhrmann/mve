@@ -20,8 +20,7 @@
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
-
-bool
+LinearSolver::Status
 LinearSolver::solve_schur (MatrixType const& jac_cams,
     MatrixType const& jac_points,
     VectorType const& values, VectorType* delta_x)
@@ -34,17 +33,20 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
 
     typedef std::vector<Eigen::Triplet<double> > TripletsType;
     typedef Eigen::SparseMatrix<double> SparseMatrixType;
+    typedef Eigen::Map<Eigen::VectorXd const> MappedVectorType;
     typedef Eigen::Matrix<double, Eigen::Dynamic, 1> DenseVectorType;
 
-    std::size_t jac_rows = values.size();
-    std::size_t jac_cam_cols = jac_cams.size() / jac_rows;
-    std::size_t jac_point_cols = jac_points.size() / jac_rows;
-    std::size_t jac_cols = jac_cam_cols + jac_point_cols;
+    std::size_t const jac_rows = values.size();
+    std::size_t const jac_cam_cols = jac_cams.size() / jac_rows;
+    std::size_t const jac_point_cols = jac_points.size() / jac_rows;
+    std::size_t const jac_cols = jac_cam_cols + jac_point_cols;
 
     /* Assemble sparse matrices for the camera Jacobian. */
     SparseMatrixType Jc(jac_rows, jac_cam_cols);
     {
         TripletsType triplets;
+        triplets.reserve(jac_cam_cols * 2);
+        Jc.reserve(jac_cam_cols * 2);
         for (std::size_t i = 0; i < jac_cams.size(); ++i)
         {
             if (jac_cams[i] == 0.0)
@@ -60,6 +62,8 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
     SparseMatrixType Jp(jac_rows, jac_point_cols);
     {
         TripletsType triplets;
+        triplets.reserve(jac_point_cols * 2);
+        Jp.reserve(jac_point_cols * 2);
         for (std::size_t i = 0; i < jac_points.size(); ++i)
         {
             if (jac_points[i] == 0.0)
@@ -72,12 +76,9 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
     }
 
     /* Assemble two values vectors. */
-    DenseVectorType v(jac_cam_cols);
-    for (std::size_t i = 0; i < jac_cam_cols; ++i)
-        v[i] = values[i];
-    DenseVectorType w(jac_point_cols);
-    for (std::size_t i = 0; i < jac_point_cols; ++i)
-        w[i] = values[jac_cam_cols + i];
+    MappedVectorType F(values.data(), values.size());
+    DenseVectorType v = -Jc.transpose() * F;
+    DenseVectorType w = -Jp.transpose() * F;
 
     /* Compute the blocks of the Hessian. */
     SparseMatrixType B = Jc.transpose() * Jc;
@@ -88,17 +89,16 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
     if (this->opts.trust_region_radius != 0.0)
     {
         TripletsType triplets;
-        for (std::size_t i = 0; i < C.cols(); ++i)
+        triplets.reserve(C.cols());
+        for (int i = 0; i < C.cols(); ++i)
             triplets.emplace_back(i, i, C.diagonal()[i] / this->opts.trust_region_radius);
         SparseMatrixType C_diag(C.cols(), C.cols());
         C_diag.setFromTriplets(triplets.begin(), triplets.end());
         C = C + C_diag;
-    }
 
-    if (this->opts.trust_region_radius != 0.0)
-    {
-        TripletsType triplets;
-        for (std::size_t i = 0; i < B.cols(); ++i)
+        triplets.clear();
+        triplets.reserve(B.cols());
+        for (int i = 0; i < B.cols(); ++i)
             triplets.emplace_back(i, i, B.diagonal()[i] / this->opts.trust_region_radius);
         SparseMatrixType B_diag(B.cols(), B.cols());
         B_diag.setFromTriplets(triplets.begin(), triplets.end());
@@ -128,30 +128,45 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
 
     /* Solve linear system. */
     Eigen::ConjugateGradient<SparseMatrixType> cg;
+    cg.setMaxIterations(this->opts.cg_max_iterations);
+    //cg.setTolerance(this->opts.cg_tolerance);
     cg.compute(S);
     DenseVectorType delta_y = cg.solve(rhs);
 
+    Status status;
+    status.num_cg_iterations = cg.iterations();
     switch (cg.info())
     {
         case Eigen::Success:
-            std::cout << "BA: CG converged." << std::endl;
+            status.cg_success = true;
             break;
         case Eigen::NumericalIssue:
             std::cout << "BA: CG failed (data prerequisites)" << std::endl;
-            return false;
+            status.cg_success = false;
+            return status;
         case Eigen::NoConvergence:
             std::cout << "BA: CG failed (not converged)" << std::endl;
-            return false;
+            status.cg_success = false;
+            return status;
         case Eigen::InvalidInput:
             std::cout << "BA: CG failed (invalid input)" << std::endl;
-            return false;
+            status.cg_success = false;
+            return status;
         default:
             std::cout << "BA: CG failed (unknown error)" << std::endl;
-            return false;
+            status.cg_success = false;
+            return status;
     }
 
     /* Substitute back to obtain delta z. */
     DenseVectorType delta_z = C_inv * (w - E.transpose() * delta_y);
+
+    /* Compute predicted error decrease */
+    status.predicted_error_decrease = 0;
+    status.predicted_error_decrease += delta_y.dot(
+        ((1.0 / this->opts.trust_region_radius * delta_y) + v));
+    status.predicted_error_decrease  += delta_z.dot(
+        ((1.0 / this->opts.trust_region_radius * delta_z) + w));
 
     /* Fill output vector. */
     if (delta_x->size() != jac_cols)
@@ -164,10 +179,10 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
     for (std::size_t i = 0; i < jac_point_cols; ++i)
         delta_x->at(jac_cam_cols + i) = delta_z[i];
 
-    return true;
+    return status;
 }
 
-bool
+LinearSolver::Status
 LinearSolver::solve (MatrixType const& jac_cams, MatrixType const& jac_points,
     VectorType const& values, VectorType* delta_x)
 {
@@ -184,6 +199,8 @@ LinearSolver::solve (MatrixType const& jac_cams, MatrixType const& jac_points,
     SparseMatrixType J(jac_rows, jac_cols);
     {
         TripletsType triplets;
+        triplets.reserve(jac_cols * 2);
+        J.reserve(jac_cols * 2);
         for (std::size_t i = 0; i < jac_cams.size(); ++i)
         {
             if (jac_cams[i] == 0.0)
@@ -204,8 +221,6 @@ LinearSolver::solve (MatrixType const& jac_cams, MatrixType const& jac_points,
         J.setFromTriplets(triplets.begin(), triplets.end());
     }
 
-    //std::cout << J << std::endl;
-
     MappedVectorType F(values.data(), values.size());
     SparseMatrixType H = J.transpose() * J;
     DenseVectorType g = -J.transpose() * F;
@@ -222,6 +237,7 @@ LinearSolver::solve (MatrixType const& jac_cams, MatrixType const& jac_points,
     }
 
     Eigen::ConjugateGradient<SparseMatrixType> cg;
+    cg.setMaxIterations(this->opts.cg_max_iterations);
     cg.compute(H);
     DenseVectorType x = cg.solve(g);
 
@@ -237,24 +253,34 @@ LinearSolver::solve (MatrixType const& jac_cams, MatrixType const& jac_points,
             delta_x->at(i) = x[i];
     }
 
+    Status status;
+    status.num_cg_iterations = cg.iterations();
+    status.predicted_error_decrease
+        = x.dot((1.0 / this->opts.trust_region_radius) * x + g);
     switch (cg.info())
     {
         case Eigen::Success:
-            std::cout << "BA: CG converged." << std::endl;
-            return true;
+            status.cg_success = true;
+            break;
         case Eigen::NumericalIssue:
             std::cout << "BA: CG failed (data prerequisites)" << std::endl;
-            return false;
+            status.cg_success = false;
+            break;
         case Eigen::NoConvergence:
             std::cout << "BA: CG failed (not converged)" << std::endl;
-            return false;
+            status.cg_success = false;
+            break;
         case Eigen::InvalidInput:
             std::cout << "BA: CG failed (invalid input)" << std::endl;
-            return false;
+            status.cg_success = false;
+            break;
         default:
             std::cout << "BA: CG failed (unknown error)" << std::endl;
-            return false;
+            status.cg_success = false;
+            break;
     }
+
+    return status;
 }
 
 SFM_BA_NAMESPACE_END

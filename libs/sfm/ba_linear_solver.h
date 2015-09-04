@@ -26,7 +26,15 @@ public:
 
         double trust_region_radius;
         int cg_max_iterations;
-        int cg_min_iterations;
+    };
+
+    struct Status
+    {
+        Status (void);
+
+        double predicted_error_decrease;
+        int num_cg_iterations;
+        bool cg_success;
     };
 
     typedef std::vector<double> MatrixType;
@@ -36,11 +44,13 @@ public:
     LinearSolver (Options const& options);
 
     /* Schur-complement solver. */
-    bool solve_schur (MatrixType const& jac_cams, MatrixType const& jac_points,
+    Status solve_schur (MatrixType const& jac_cams,
+        MatrixType const& jac_points,
         VectorType const& values, VectorType* delta_x);
 
     /* Conjugate Gradient on H. */
-    bool solve (MatrixType const& jac_cams, MatrixType const& jac_points,
+    Status solve (MatrixType const& jac_cams,
+        MatrixType const& jac_points,
         VectorType const& values, VectorType* delta_x);
 
 private:
@@ -52,8 +62,15 @@ private:
 inline
 LinearSolver::Options::Options (void)
     : trust_region_radius(1.0)
-    , cg_max_iterations(50)
-    , cg_min_iterations(1)
+    , cg_max_iterations(1000)
+{
+}
+
+inline
+LinearSolver::Status::Status (void)
+    : predicted_error_decrease(0.0)
+    , num_cg_iterations(0)
+    , cg_success(false)
 {
 }
 

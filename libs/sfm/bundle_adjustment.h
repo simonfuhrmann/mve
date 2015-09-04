@@ -1,5 +1,5 @@
-#ifndef SFM_BA_INTERFACE_HEADER
-#define SFM_BA_INTERFACE_HEADER
+#ifndef SFM_BUNDLE_ADJUSTMENT_HEADER
+#define SFM_BUNDLE_ADJUSTMENT_HEADER
 
 #include <algorithm>
 #include <vector>
@@ -79,7 +79,6 @@ public:
     void set_points_2d (std::vector<Point2D>* points_2d);
 
     Status optimize (void);
-    void print_options (void) const;
     void print_status (void) const;
 
 private:
@@ -194,5 +193,4 @@ BundleAdjustment::set_points_2d (std::vector<Point2D>* points_2d)
 SFM_BA_NAMESPACE_END
 SFM_NAMESPACE_END
 
-#endif /* SFM_BA_INTERFACE_HEADER */
-
+#endif /* SFM_BUNDLE_ADJUSTMENT_HEADER */
