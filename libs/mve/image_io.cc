@@ -542,6 +542,9 @@ load_jpg_file_headers (std::string const& filename)
         headers.height = cinfo.image_height;
         headers.channels = (cinfo.out_color_space == JCS_RGB ? 3 : 1);
         headers.type = IMAGE_TYPE_UINT8;
+
+        jpeg_destroy_decompress(&cinfo);
+        std::fclose(fp);
     }
     catch (...)
     {
