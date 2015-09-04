@@ -15,7 +15,7 @@
 #include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
 #include "sfm/pba_cpu.h"
-#include "sfm/ba_interface.h"
+#include "sfm/bundle_adjustment.h"
 #include "sfm/bundler_incremental.h"
 
 SFM_NAMESPACE_BEGIN

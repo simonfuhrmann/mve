@@ -1,6 +1,6 @@
 #include "math/matrix.h"
 #include "math/vector.h"
-#include "sfm/ba_interface.h"
+#include "sfm/bundle_adjustment.h"
 
 namespace
 {
@@ -116,7 +116,6 @@ main (void)
     ba.set_points_3d(&p3d);
     ba.set_points_2d(&p2d);
     ba.optimize();
-    ba.print_options();
     ba.print_status();
 
     return 0;

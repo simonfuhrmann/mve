@@ -8,7 +8,7 @@
  */
 
 #include "math/matrix_tools.h"
-#include "sfm/ba_interface.h"
+#include "sfm/bundle_adjustment.h"
 
 #define LOG_E this->log.error()
 #define LOG_W this->log.warning()
@@ -17,7 +17,6 @@
 #define LOG_D this->log.debug()
 
 #define TRUST_REGION_RADIUS_INIT (1000)
-#define TRUST_REGION_RADIUS_INCREMENT (1.0 * 3.0)
 #define TRUST_REGION_RADIUS_DECREMENT (1.0 / 2.0)
 
 SFM_NAMESPACE_BEGIN
@@ -107,15 +106,17 @@ BundleAdjustment::lm_optimize (void)
         /* Perform linear step. */
         DenseVector delta_x;
         LinearSolver pcg(pcg_opts);
-        bool cg_success = pcg.solve(J_cam, J_points, F, &delta_x);
+        LinearSolver::Status cg_status
+            = pcg.solve_schur(J_cam, J_points, F, &delta_x);
 
         /* Update reprojection errors and MSE after linear step. */
         double new_mse, delta_mse;
-        if (cg_success)
+        if (cg_status.cg_success)
         {
             this->compute_reprojection_errors(&F_new, &delta_x);
             new_mse = this->compute_mse(F_new);
             delta_mse = current_mse - new_mse;
+            this->status.num_cg_iterations += cg_status.num_cg_iterations;
         }
         else
         {
@@ -138,9 +139,15 @@ BundleAdjustment::lm_optimize (void)
             this->status.num_lm_iterations += 1;
             this->status.num_lm_successful_iterations += 1;
             this->update_parameters(delta_x);
-            pcg_opts.trust_region_radius *= TRUST_REGION_RADIUS_INCREMENT;
             std::swap(F, F_new);
             current_mse = new_mse;
+
+            /* Compute trust region update. */
+            double const gain_ratio = delta_mse * (F.size() / 2)
+                / cg_status.predicted_error_decrease;
+            double const trust_region_update = std::min(3.0,
+                1.0 / (1.0 - MATH_POW3(2.0 * gain_ratio - 1.0)));
+            pcg_opts.trust_region_radius *= trust_region_update;
         }
         else
         {
@@ -570,14 +577,6 @@ BundleAdjustment::update_point (Point3D const& pt,
     out->pos[0] = pt.pos[0] + update[0];
     out->pos[1] = pt.pos[1] + update[1];
     out->pos[2] = pt.pos[2] + update[2];
-}
-
-void
-BundleAdjustment::print_options (void) const
-{
-    std::cout << "Bundle Adjustment Options:" << std::endl;
-    std::cout << "  Verbose output: "
-        << this->opts.verbose_output << std::endl;
 }
 
 void
