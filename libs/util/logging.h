@@ -31,6 +31,8 @@ public:
 
     struct NullStream : public std::ostream
     {
+        NullStream (void) : std::ostream(NULL) {}
+        NullStream (NullStream const&) =delete;
         template <typename T>
         NullStream& operator<< (T const& arg);
     };
