@@ -36,8 +36,10 @@ LinearSolver::solve_schur2 (SparseMatrixType const& jac_cams,
     SparseMatrixType const& Jp = jac_points;
 
     /* Assemble two values vectors. */
-    DenseVectorType v = Jc.transpose().multiply(F).negate_self();
-    DenseVectorType w = Jp.transpose().multiply(F).negate_self();
+    DenseVectorType v = Jc.transpose().multiply(F);
+    DenseVectorType w = Jp.transpose().multiply(F);
+    v.negate_self();
+    w.negate_self();
 
     /* Compute the blocks of the Hessian. */
     SparseMatrixType B = Jc.transpose().multiply(Jc);
@@ -62,12 +64,12 @@ LinearSolver::solve_schur2 (SparseMatrixType const& jac_cams,
     }
 
     /* Compute the Schur complement matrix S. */
-    SparseMatrixType ET = E.transpose().change_layout();
-    SparseMatrixType S = B.subtract(E.multiply(C.multiply(ET)));
+    SparseMatrixType ET = E.transpose();
+    SparseMatrixType S = B.subtract(E.multiply(C.transpose()).multiply(ET));
     DenseVectorType rhs = v.subtract(E.multiply(C.multiply(w)));
 
     /* Solve linear system. */
-    DenseVectorType delta_y;
+    DenseVectorType delta_y(Jc.num_cols());
     // TODO Conjugate gradient: S * delta_y = rhs;
     Status status;
     status.num_cg_iterations = 100; // cg.iterations();

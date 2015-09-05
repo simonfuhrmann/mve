@@ -290,7 +290,6 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
     std::size_t const jacobi_rows = this->points_2d->size() * 2;
 
 #if USE_SPARSE_MATRIX
-
     SparseMatrixType::Triplets cam_triplets, point_triplets;
     cam_triplets.reserve(this->points_2d->size() * 9 * 2);
     point_triplets.reserve(this->points_2d->size() * 3 * 2);
@@ -319,10 +318,10 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
         }
     }
 
-    jac_cam->allocate(camera_cols, jacobi_rows,
+    jac_cam->allocate(jacobi_rows, camera_cols,
         SparseMatrixType::COLUMN_MAJOR);
     jac_cam->set_from_triplets(&cam_triplets);
-    jac_points->allocate(point_cols, jacobi_rows,
+    jac_points->allocate(jacobi_rows, point_cols,
         SparseMatrixType::COLUMN_MAJOR);
     jac_points->set_from_triplets(&point_triplets);
 
@@ -462,7 +461,7 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
 
 #if !USE_SPARSE_MATRIX
 void
-BundleAdjustment::numeric_jacobian (DenseMatrixType* matrix_j)
+BundleAdjustment::numeric_jacobian (SparseMatrixType* matrix_j)
 {
     std::size_t const num_cam_params = this->cameras->size() * 9;
     std::size_t const num_point_params = this->points_3d->size() * 3;
