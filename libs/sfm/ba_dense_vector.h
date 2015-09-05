@@ -27,16 +27,23 @@ public:
     void resize (std::size_t size, T const& value = T(0));
     std::size_t size (void) const;
 
+    T* data (void);
+    T const* data (void) const;
     T* begin (void);
     T* end (void);
 
-    bool operator== (DenseVector const& rhs);
+    DenseVector operator- (void) const;
+    bool operator== (DenseVector const& rhs) const;
     T& operator[] (std::size_t index);
     T const& operator[] (std::size_t index) const;
     T& at (std::size_t index);
     T const& at (std::size_t index) const;
 
+    T dot (DenseVector const& rhs) const;
+    DenseVector add (DenseVector const& rhs) const;
     DenseVector subtract (DenseVector const& rhs) const;
+    DenseVector multiply (T const& factor) const;
+    void multiply_self (T const& factor);
 
 private:
     std::vector<T> values;
@@ -67,6 +74,20 @@ DenseVector<T>::size (void) const
 
 template <typename T>
 T*
+DenseVector<T>::data (void)
+{
+    return this->values.data();
+}
+
+template <typename T>
+T const*
+DenseVector<T>::data (void) const
+{
+    return this->values.data();
+}
+
+template <typename T>
+T*
 DenseVector<T>::begin (void)
 {
     return this->values.data();
@@ -80,8 +101,18 @@ DenseVector<T>::end (void)
 }
 
 template <typename T>
+DenseVector<T>
+DenseVector<T>::operator- (void) const
+{
+    DenseVector ret(this->size());
+    for (std::size_t i = 0; i < this->size(); ++i)
+        ret[i] = -this->at(i);
+    return ret;
+}
+
+template <typename T>
 bool
-DenseVector<T>::operator== (DenseVector const& rhs)
+DenseVector<T>::operator== (DenseVector const& rhs) const
 {
     if (this->size() != rhs.size())
         return false;
@@ -120,6 +151,19 @@ DenseVector<T>::at (std::size_t index) const
 }
 
 template <typename T>
+T
+DenseVector<T>::dot (DenseVector<T> const& rhs) const
+{
+    if (this->size() != rhs.size())
+        throw std::invalid_argument("Incompatible vector dimensions");
+
+    T ret(0);
+    for (std::size_t i = 0; i < this->size(); ++i)
+        ret += this->values[i] * rhs.values[i];
+    return ret;
+}
+
+template <typename T>
 DenseVector<T>
 DenseVector<T>::subtract (DenseVector<T> const& rhs) const
 {
@@ -129,6 +173,37 @@ DenseVector<T>::subtract (DenseVector<T> const& rhs) const
     DenseVector<T> ret(this->size(), T(0));
     for (std::size_t i = 0; i < this->size(); ++i)
         ret.values[i] = this->values[i] - rhs.values[i];
+    return ret;
+}
+
+template <typename T>
+DenseVector<T>
+DenseVector<T>::add (DenseVector<T> const& rhs) const
+{
+    if (this->size() != rhs.size())
+        throw std::invalid_argument("Incompatible vector dimensions");
+
+    DenseVector<T> ret(this->size(), T(0));
+    for (std::size_t i = 0; i < this->size(); ++i)
+        ret.values[i] = this->values[i] + rhs.values[i];
+    return ret;
+}
+
+template <typename T>
+void
+DenseVector<T>::multiply_self (T const& factor)
+{
+    for (std::size_t i = 0; i < this->size(); ++i)
+        this->at(i) *= factor;
+}
+
+template <typename T>
+DenseVector<T>
+DenseVector<T>::multiply (T const& factor) const
+{
+    DenseVector<T> ret(this->size(), T(0));
+    for (std::size_t i = 0; i < this->size(); ++i)
+        ret[i] = this->at(i) * factor;
     return ret;
 }
 
