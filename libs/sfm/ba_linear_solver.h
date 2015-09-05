@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "sfm/defines.h"
+#include "sfm/ba_sparse_matrix.h"
+#include "sfm/ba_dense_vector.h"
 
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
@@ -39,9 +41,16 @@ public:
 
     typedef std::vector<double> MatrixType;
     typedef std::vector<double> VectorType;
+    typedef SparseMatrix<double> SparseMatrixType;
+    typedef DenseVector<double> DenseVectorType;
 
 public:
     LinearSolver (Options const& options);
+
+    /* Schur-complement solver. */
+    Status solve_schur2 (SparseMatrixType const& jac_cams,
+        SparseMatrixType const& jac_points,
+        DenseVectorType const& values, DenseVectorType* delta_x);
 
     /* Schur-complement solver. */
     Status solve_schur (MatrixType const& jac_cams,

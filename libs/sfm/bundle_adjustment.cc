@@ -8,6 +8,8 @@
  */
 
 #include "math/matrix_tools.h"
+#include "sfm/ba_sparse_matrix.h"
+#include "sfm/ba_dense_vector.h"
 #include "sfm/bundle_adjustment.h"
 
 #define LOG_E this->log.error()
@@ -76,7 +78,7 @@ BundleAdjustment::lm_optimize (void)
     pcg_opts.trust_region_radius = TRUST_REGION_RADIUS_INIT;
 
     /* Compute reprojection error for the first time. */
-    DenseVector F, F_new;
+    DenseVectorType F, F_new;
     this->compute_reprojection_errors(&F);
     double current_mse = this->compute_mse(F);
     this->status.initial_mse = current_mse;
@@ -93,21 +95,26 @@ BundleAdjustment::lm_optimize (void)
         }
 
         /* Compute Jacobian. */
-        SparseMatrix J_cam, J_points;
+        SparseMatrixType J_cam, J_points;
         this->analytic_jacobian(&J_cam, &J_points);
         //this->print_jacobian(J, "J=");
 
-        //SparseMatrix J;
+        //SparseMatrixType J;
         //this->numeric_jacobian(&J);
         //this->print_jacobian(J, "K=");
 
         // TODO: Evaluate norm of -JF and exit on small gradient.
 
         /* Perform linear step. */
-        DenseVector delta_x;
+        DenseVectorType delta_x;
         LinearSolver pcg(pcg_opts);
+
         LinearSolver::Status cg_status
+#if USE_SPARSE_MATRIX
+            = pcg.solve_schur2(J_cam, J_points, F, &delta_x);
+#else
             = pcg.solve_schur(J_cam, J_points, F, &delta_x);
+#endif
 
         /* Update reprojection errors and MSE after linear step. */
         double new_mse, delta_mse;
@@ -181,14 +188,11 @@ BundleAdjustment::lm_optimize (void)
 }
 
 void
-BundleAdjustment::compute_reprojection_errors (std::vector<double>* vector_f,
-    std::vector<double> const* delta_x)
+BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
+    DenseVectorType const* delta_x)
 {
     if (vector_f->size() != this->points_2d->size() * 2)
-    {
-        vector_f->clear();
         vector_f->resize(this->points_2d->size() * 2);
-    }
 
 //#pragma omp parallel for
     for (std::size_t i = 0; i < this->points_2d->size(); ++i)
@@ -240,7 +244,7 @@ BundleAdjustment::compute_reprojection_errors (std::vector<double>* vector_f,
 }
 
 double
-BundleAdjustment::compute_mse (std::vector<double> const& vector_f)
+BundleAdjustment::compute_mse (DenseVectorType const& vector_f)
 {
     double mse = 0.0;
     for (std::size_t i = 0; i < vector_f.size(); ++i)
@@ -278,13 +282,51 @@ BundleAdjustment::rodrigues_to_matrix (double const* r, double* m)
 }
 
 void
-BundleAdjustment::analytic_jacobian (SparseMatrix* jac_cam,
-    SparseMatrix* jac_points)
+BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
+    SparseMatrixType* jac_points)
 {
     std::size_t const camera_cols = this->cameras->size() * 9;
     std::size_t const point_cols = this->points_3d->size() * 3;
     std::size_t const jacobi_rows = this->points_2d->size() * 2;
 
+#if USE_SPARSE_MATRIX
+
+    SparseMatrixType::Triplets cam_triplets, point_triplets;
+    cam_triplets.reserve(this->points_2d->size() * 9 * 2);
+    point_triplets.reserve(this->points_2d->size() * 3 * 2);
+
+    double cam_x_ptr[9], cam_y_ptr[9], point_x_ptr[3], point_y_ptr[3];
+    for (std::size_t i = 0; i < this->points_2d->size(); ++i)
+    {
+        Point2D const& p2d = this->points_2d->at(i);
+        Point3D const& p3d = this->points_3d->at(p2d.point3d_id);
+        Camera const& cam = this->cameras->at(p2d.camera_id);
+        this->analytic_jacobian_entries(cam, p3d,
+            cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
+
+        std::size_t row_x = i * 2, row_y = row_x + 1;
+        std::size_t cam_col = p2d.camera_id * 9;
+        std::size_t point_col = p2d.point3d_id * 3;
+        for (int j = 0; j < 9; ++j)
+        {
+            cam_triplets.emplace_back(cam_col + j, row_x, cam_x_ptr[j]);
+            cam_triplets.emplace_back(cam_col + j, row_y, cam_y_ptr[j]);
+        }
+        for (int j = 0; j < 3; ++j)
+        {
+            point_triplets.emplace_back(point_col + j, row_x, point_x_ptr[j]);
+            point_triplets.emplace_back(point_col + j, row_y, point_y_ptr[j]);
+        }
+    }
+
+    jac_cam->allocate(camera_cols, jacobi_rows,
+        SparseMatrixType::COLUMN_MAJOR);
+    jac_cam->set_from_triplets(&cam_triplets);
+    jac_points->allocate(point_cols, jacobi_rows,
+        SparseMatrixType::COLUMN_MAJOR);
+    jac_points->set_from_triplets(&point_triplets);
+
+#else
     jac_cam->clear();
     jac_cam->resize(camera_cols * jacobi_rows);
     jac_points->clear();
@@ -311,6 +353,7 @@ BundleAdjustment::analytic_jacobian (SparseMatrix* jac_cam,
         this->analytic_jacobian_entries(cam, p3d,
             cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
     }
+#endif
 }
 
 void
@@ -417,8 +460,9 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
 #endif
 }
 
+#if !USE_SPARSE_MATRIX
 void
-BundleAdjustment::numeric_jacobian (std::vector<double>* matrix_j)
+BundleAdjustment::numeric_jacobian (DenseMatrixType* matrix_j)
 {
     std::size_t const num_cam_params = this->cameras->size() * 9;
     std::size_t const num_point_params = this->points_3d->size() * 3;
@@ -426,10 +470,7 @@ BundleAdjustment::numeric_jacobian (std::vector<double>* matrix_j)
     std::size_t const cols = num_cam_params + num_point_params;
 
     if (matrix_j->size() != rows * cols)
-    {
-        matrix_j->clear();
         matrix_j->resize(rows * cols, 0.0);
-    }
 
     /* Numeric differentiation for cameras. */
     for (std::size_t i = 0; i < this->cameras->size(); ++i)
@@ -535,9 +576,10 @@ BundleAdjustment::print_jacobian (std::vector<double> const& matrix_j,
     }
     std::cout << "]" << std::endl;
 }
+#endif
 
 void
-BundleAdjustment::update_parameters (std::vector<double> const& delta_x)
+BundleAdjustment::update_parameters (DenseVectorType const& delta_x)
 {
     /* Update cameras. */
     for (std::size_t i = 0; i < this->cameras->size(); ++i)
