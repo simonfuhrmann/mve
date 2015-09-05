@@ -30,7 +30,9 @@ public:
     T* data (void);
     T const* data (void) const;
     T* begin (void);
+    T const* begin (void) const;
     T* end (void);
+    T const* end (void) const;
 
     DenseVector operator- (void) const;
     bool operator== (DenseVector const& rhs) const;
@@ -44,6 +46,7 @@ public:
     DenseVector subtract (DenseVector const& rhs) const;
     DenseVector multiply (T const& factor) const;
     void multiply_self (T const& factor);
+    void negate_self (void);
 
 private:
     std::vector<T> values;
@@ -94,8 +97,22 @@ DenseVector<T>::begin (void)
 }
 
 template <typename T>
+T const*
+DenseVector<T>::begin (void) const
+{
+    return this->values.data();
+}
+
+template <typename T>
 T*
 DenseVector<T>::end (void)
+{
+    return this->values.data() + this->values.size();
+}
+
+template <typename T>
+T const*
+DenseVector<T>::end (void) const
 {
     return this->values.data() + this->values.size();
 }
@@ -190,6 +207,16 @@ DenseVector<T>::add (DenseVector<T> const& rhs) const
 }
 
 template <typename T>
+DenseVector<T>
+DenseVector<T>::multiply (T const& factor) const
+{
+    DenseVector<T> ret(this->size(), T(0));
+    for (std::size_t i = 0; i < this->size(); ++i)
+        ret[i] = this->at(i) * factor;
+    return ret;
+}
+
+template <typename T>
 void
 DenseVector<T>::multiply_self (T const& factor)
 {
@@ -198,13 +225,11 @@ DenseVector<T>::multiply_self (T const& factor)
 }
 
 template <typename T>
-DenseVector<T>
-DenseVector<T>::multiply (T const& factor) const
+void
+DenseVector<T>::negate_self (void)
 {
-    DenseVector<T> ret(this->size(), T(0));
     for (std::size_t i = 0; i < this->size(); ++i)
-        ret[i] = this->at(i) * factor;
-    return ret;
+        this->at(i) = -this->at(i);
 }
 
 SFM_BA_NAMESPACE_END
