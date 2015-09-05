@@ -389,22 +389,32 @@ template<typename T>
 DenseVector<T>
 SparseMatrix<T>::multiply (DenseVector<T> const& rhs) const
 {
-    if (this->layout != ROW_MAJOR)
-        throw std::invalid_argument("LHS must be in row-major");
     if (rhs.size() != this->cols)
         throw std::invalid_argument("Incompatible dimensions");
 
     DenseVector<T> ret(this->rows, T(0));
-    for (std::size_t i = 0; i < this->rows; ++i)
+    if (this->layout == ROW_MAJOR)
     {
-        std::size_t const i1 = this->data->outer[i];
-        std::size_t const i2 = this->data->outer[i + 1];
-        for (std::size_t id = i1; id < i2; ++id)
-            ret[i] += this->data->values[id] * rhs[this->data->inner[id]];
+        for (std::size_t i = 0; i < this->rows; ++i)
+        {
+            std::size_t const i1 = this->data->outer[i];
+            std::size_t const i2 = this->data->outer[i + 1];
+            for (std::size_t id = i1; id < i2; ++id)
+                ret[i] += this->data->values[id] * rhs[this->data->inner[id]];
+        }
+    }
+    else // COLUMN_MAJOR
+    {
+        for (std::size_t i = 0; i < this->cols; ++i)
+        {
+            std::size_t const i1 = this->data->outer[i];
+            std::size_t const i2 = this->data->outer[i + 1];
+            for (std::size_t id = i1; id < i2; ++id)
+                ret[this->data->inner[id]] += this->data->values[id] * rhs[i];
+        }
     }
     return ret;
 }
-
 
 template<typename T>
 void

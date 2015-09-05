@@ -289,12 +289,12 @@ TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorFormats)
     SparseMatrix m4(4, 3, SparseMatrix::COLUMN_MAJOR);
     DenseVector v1(4, 0);
     EXPECT_NO_THROW(m1.multiply(v1));
-    EXPECT_THROW(m2.multiply(v1), std::exception);
+    EXPECT_NO_THROW(m2.multiply(v1));
     EXPECT_THROW(m3.multiply(v1), std::exception);
     EXPECT_THROW(m4.multiply(v1), std::exception);
 }
 
-TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorMultiply)
+TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorMultiplyRM)
 {
     typedef sfm::ba::SparseMatrix<int> SparseMatrix;
     typedef sfm::ba::DenseVector<int> DenseVector;
@@ -306,6 +306,32 @@ TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorMultiply)
         triplets.emplace_back(0, 3, 1);
         triplets.emplace_back(1, 2, 3);
         triplets.emplace_back(2, 0, 4);
+        m1.set_from_triplets(&triplets);
+    }
+
+    DenseVector v1(4, 0);
+    v1[1] = 1;
+    v1[2] = 2;
+
+    DenseVector ret = m1.multiply(v1);
+    EXPECT_EQ(3, ret.size());
+    EXPECT_EQ(1, ret[0]);
+    EXPECT_EQ(6, ret[1]);
+    EXPECT_EQ(0, ret[2]);
+}
+
+TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorMultiplyCM)
+{
+    typedef sfm::ba::SparseMatrix<int> SparseMatrix;
+    typedef sfm::ba::DenseVector<int> DenseVector;
+
+    SparseMatrix m1(3, 4, SparseMatrix::COLUMN_MAJOR);
+    {
+        SparseMatrix::Triplets triplets;
+        triplets.emplace_back(1, 0, 1);
+        triplets.emplace_back(3, 0, 1);
+        triplets.emplace_back(2, 1, 3);
+        triplets.emplace_back(0, 2, 4);
         m1.set_from_triplets(&triplets);
     }
 
