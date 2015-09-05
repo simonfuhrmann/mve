@@ -465,7 +465,7 @@ SparseMatrix<T>::end (void)
     return this->data->values.data() + this->data->values.size();
 }
 
-#if 1
+#if 0
 template<typename T>
 void
 SparseMatrix<T>::debug (void) const
