@@ -36,7 +36,7 @@ struct JobQueueEntry
     QListWidgetItem* item;
     int finished;
 
-    JobQueueEntry (void) : progress(NULL), item(NULL), finished(0) {}
+    JobQueueEntry (void) : progress(nullptr), item(nullptr), finished(0) {}
 };
 
 /* ---------------------------------------------------------------- */

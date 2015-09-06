@@ -32,7 +32,7 @@ public:
     void add_mesh (std::string const& name,
         mve::TriangleMesh::Ptr mesh,
         std::string const& filename = "",
-        ogl::Texture::Ptr texture = NULL);
+        ogl::Texture::Ptr texture = nullptr);
 
     void load_mesh (std::string const& filename);
 

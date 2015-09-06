@@ -77,7 +77,7 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
 {
     /* Pass code to OpenGL. */
     char const* data[1] = { code.c_str() };
-    glShaderSource(shader_id, 1, data, NULL);
+    glShaderSource(shader_id, 1, data, nullptr);
     check_gl_error();
 
     /* Compile shader. */
@@ -91,7 +91,7 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
 
         std::string log;
         log.append(log_size + 1, '\0');
-        glGetShaderInfoLog(shader_id, log_size + 1, NULL, &log[0]);
+        glGetShaderInfoLog(shader_id, log_size + 1, nullptr, &log[0]);
         throw util::Exception(log);
     }
 }

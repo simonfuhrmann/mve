@@ -59,7 +59,7 @@ main (int argc, char** argv)
     util::ArgResult const* arg;
     while ((arg = args.next_result()))
     {
-        if (arg->opt == NULL)
+        if (arg->opt == nullptr)
         {
             conf.filenames.push_back(arg->arg);
             continue;

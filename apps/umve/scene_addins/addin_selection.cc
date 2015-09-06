@@ -22,7 +22,7 @@ size_t const MAX_POINTS_SHOWN = 100;
 
 AddinSelection::AddinSelection (void)
     : selection_active(false)
-    , camera(NULL)
+    , camera(nullptr)
 {
 }
 
@@ -124,7 +124,7 @@ AddinSelection::show_selection_info (float left, float right, float top, float b
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene == NULL)
+    if (scene == nullptr)
         return;
 
     /* Create a text representation of cameras and points in the region. */
@@ -137,7 +137,7 @@ AddinSelection::show_selection_info (float left, float right, float top, float b
         mve::Scene::ViewList const& views(scene->get_views());
         for (std::size_t i = 0; i < views.size(); ++i)
         {
-            if (views[i] == NULL || !views[i]->is_camera_valid())
+            if (views[i] == nullptr || !views[i]->is_camera_valid())
                 continue;
 
             math::Vec4f campos(1.0f);
@@ -164,7 +164,7 @@ AddinSelection::show_selection_info (float left, float right, float top, float b
     mve::Bundle::ConstPtr bundle;
     try { bundle = scene->get_bundle(); }
     catch (std::exception&) { }
-    if (bundle != NULL)
+    if (bundle != nullptr)
     {
         std::size_t num_points = 0;
 
@@ -194,7 +194,7 @@ AddinSelection::show_selection_info (float left, float right, float top, float b
             for (std::size_t j = 0; j < features[i].refs.size(); ++j)
             {
                 mve::View::ConstPtr ref = views[features[i].refs[j].view_id];
-                if (ref == NULL)
+                if (ref == nullptr)
                     continue;
                 str_points << "&nbsp;&nbsp;View ID ";
                 str_points << ref->get_id() << ", " << ref->get_name();

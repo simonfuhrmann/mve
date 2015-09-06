@@ -105,16 +105,16 @@ Incremental::Options::Options (void)
 inline
 Incremental::Incremental (Options const& options)
     : opts(options)
-    , viewports(NULL)
-    , tracks(NULL)
+    , viewports(nullptr)
+    , tracks(nullptr)
 {
 }
 
 inline bool
 Incremental::is_initialized (void) const
 {
-    return this->viewports != NULL
-        && this->tracks != NULL;
+    return this->viewports != nullptr
+        && this->tracks != nullptr;
 }
 
 SFM_BUNDLER_NAMESPACE_END

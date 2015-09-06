@@ -89,7 +89,7 @@ set_qt_style (char const* style_name)
 #endif
 
     QStyle* style = QStyleFactory::create(style_name);
-    if (style != NULL)
+    if (style != nullptr)
         QApplication::setStyle(style);
 }
 

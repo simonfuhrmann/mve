@@ -26,7 +26,7 @@ GlobalViewSelection::GlobalViewSelection(
     available.resize(views.size(), true);
     available[settings.refViewNr] = false;
     for (std::size_t i = 0; i < views.size(); ++i)
-        if (views[i] == NULL)
+        if (views[i] == nullptr)
             available[i] = false;
 }
 

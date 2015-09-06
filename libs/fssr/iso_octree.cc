@@ -47,7 +47,7 @@ IsoOctree::compute_all_voxels (void)
 
         /* Add voxels for all leaf nodes. */
         Octree::Iterator iter = this->get_iterator_for_root();
-        for (iter.first_leaf(); iter.current != NULL; iter.next_leaf())
+        for (iter.first_leaf(); iter.current != nullptr; iter.next_leaf())
         {
             for (int i = 0; i < 8; ++i)
             {

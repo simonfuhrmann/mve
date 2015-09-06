@@ -137,7 +137,7 @@ namespace
 
         /* Test shortest to second-shortest edge ratio. */
         float const square_ratio = edges[0].first / edges[1].first;
-        if (shortest_edge_v1 != NULL && shortest_edge_v2 != NULL)
+        if (shortest_edge_v1 != nullptr && shortest_edge_v2 != nullptr)
         {
             *shortest_edge_v1 = vid[edges[0].second];
             *shortest_edge_v2 = vid[(edges[0].second + 1) % 3];

@@ -87,7 +87,7 @@ sleep_sec (float secs)
 inline void
 rand_init (void)
 {
-    std::srand(std::time(NULL));
+    std::srand(std::time(nullptr));
 }
 
 inline void

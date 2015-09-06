@@ -42,7 +42,7 @@ SelectedView::SelectedView (void)
 void
 SelectedView::set_view (mve::View::Ptr view)
 {
-    if (view == NULL)
+    if (view == nullptr)
     {
         this->reset_view();
         return;
@@ -56,7 +56,7 @@ SelectedView::set_view (mve::View::Ptr view)
     this->viewinfo->setText(ss.str().c_str());
 
     mve::ByteImage::Ptr img(view->get_byte_image("thumbnail"));
-    if (img != NULL)
+    if (img != nullptr)
     {
         std::size_t iw(img->width());
         std::size_t ih(img->height());
@@ -83,7 +83,7 @@ void
 SelectedView::fill_embeddings (QComboBox& cb, mve::ImageType type,
     std::string const& default_name) const
 {
-    if (this->view == NULL)
+    if (this->view == nullptr)
         return;
 
     cb.clear();

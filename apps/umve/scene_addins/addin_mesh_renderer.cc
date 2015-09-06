@@ -87,7 +87,7 @@ AddinMeshesRenderer::load_mesh (std::string const& filename)
 
         for (mve::geom::ObjModelPart const & obj_model_part : obj_model_parts)
         {
-            ogl::Texture::Ptr texture = NULL;
+            ogl::Texture::Ptr texture = nullptr;
             if (obj_model_part.mesh->has_vertex_texcoords()
                 && !obj_model_part.texture_filename.empty())
             {
@@ -125,7 +125,7 @@ AddinMeshesRenderer::load_mesh (std::string const& filename)
             return;
         }
         meshes.push_back(mesh);
-        textures.push_back(NULL);
+        textures.push_back(nullptr);
     }
 
     for (std::size_t i = 0; i < meshes.size(); ++i)
@@ -151,7 +151,7 @@ AddinMeshesRenderer::load_mesh (std::string const& filename)
         }
 
         std::string name = util::fs::basename(filename);
-        if (textures[i] != NULL)
+        if (textures[i] != nullptr)
         {
             name += " [part" + util::string::get_filled(i, 2) + "]";
             this->add_mesh(name, mesh, "", textures[i]);
@@ -175,11 +175,11 @@ AddinMeshesRenderer::paint_impl (void)
     for (std::size_t i = 0; i < ml.size(); ++i)
     {
         MeshRep& mr(ml[i]);
-        if (!mr.active || mr.mesh == NULL)
+        if (!mr.active || mr.mesh == nullptr)
             continue;
 
         /* If the renderer is not yet created, do it now! */
-        if (mr.renderer == NULL)
+        if (mr.renderer == nullptr)
         {
             mr.renderer = ogl::MeshRenderer::create(mr.mesh);
             if (mr.mesh->get_faces().empty())
@@ -191,7 +191,7 @@ AddinMeshesRenderer::paint_impl (void)
          * - use wireframe shader for points without normals
          * - use surface shader otherwise. */
         ogl::ShaderProgram::Ptr mesh_shader;
-        if (mr.texture != NULL)
+        if (mr.texture != nullptr)
             mesh_shader = this->state->texture_shader;
         else if (!mr.mesh->has_vertex_normals())
             mesh_shader = this->state->wireframe_shader;
@@ -214,13 +214,13 @@ AddinMeshesRenderer::paint_impl (void)
         }
 
         /* If we have a valid renderer, draw it. */
-        if (mr.renderer != NULL)
+        if (mr.renderer != nullptr)
         {
             mr.renderer->set_shader(mesh_shader);
             glPolygonOffset(1.0f, -1.0f);
             glEnable(GL_POLYGON_OFFSET_FILL);
 
-            if (mr.texture != NULL)
+            if (mr.texture != nullptr)
             {
                 mr.texture->bind();
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);

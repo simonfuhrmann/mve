@@ -23,7 +23,7 @@ class ExamplePlugin : public MainWindowTab
     Q_INTERFACES(MainWindowTab)
 
 public:
-    ExamplePlugin (QWidget* parent = NULL);
+    ExamplePlugin (QWidget* parent = nullptr);
     virtual ~ExamplePlugin (void);
     virtual QString get_title (void);
 };

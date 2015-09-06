@@ -117,7 +117,7 @@ main (int argc, char** argv)
 
     /* Read arguments. */
     for (util::ArgResult const* i = args.next_option();
-        i != NULL; i = args.next_option())
+        i != nullptr; i = args.next_option())
     {
         if (i->opt->lopt == "spheres")
             conf.sphere_radius = i->get_arg<float>();

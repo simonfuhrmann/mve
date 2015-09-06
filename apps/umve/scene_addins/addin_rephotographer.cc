@@ -75,7 +75,7 @@ AddinRephotographer::on_rephoto (void)
 void
 AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
 {
-    if (view == NULL)
+    if (view == nullptr)
     {
         this->show_error_box("Error", "No view selected!");
         return;
@@ -210,7 +210,7 @@ AddinRephotographer::on_rephoto_all (void)
     for (size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view = views[i];
-        if (view == NULL)
+        if (view == nullptr)
             continue;
         if (!view->has_image(source_embedding_name))
             continue;

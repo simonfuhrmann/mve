@@ -156,11 +156,11 @@ inline void
 Thread::pt_create (void)
 {
     this->cleanup = true;
-    this->cancel_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-    this->handle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)
-        Thread::stub, (void*)this, 0, NULL);
+    this->cancel_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    this->handle = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)
+        Thread::stub, (void*)this, 0, nullptr);
 
-    if (this->handle == NULL)
+    if (this->handle == nullptr)
       std::cerr << "ERROR: CreateThread(): " << GetLastError() << std::endl;
 }
 
@@ -193,7 +193,7 @@ Thread::pt_create (void)
 //Thread::pt_create (pthread_attr_t const* p = 0)
 {
     this->cleanup = true;
-    pthread_create(&this->handle, NULL, Thread::stub, (void*)this);
+    pthread_create(&this->handle, nullptr, Thread::stub, (void*)this);
     //pthread_create(&this->handle, p, Thread::stub, (void*)this);
 }
 
@@ -207,7 +207,7 @@ inline void
 Thread::pt_join (void)
 {
     this->cleanup = false;
-    pthread_join(this->handle, NULL);
+    pthread_join(this->handle, nullptr);
 }
 
 #endif /* OS check */
@@ -259,7 +259,7 @@ Mutex::unlock (void)
 inline
 Mutex::Mutex (void)
 {
-    pthread_mutex_init(&this->mutex, NULL);
+    pthread_mutex_init(&this->mutex, nullptr);
 }
 
 inline

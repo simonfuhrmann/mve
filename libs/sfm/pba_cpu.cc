@@ -467,7 +467,7 @@ namespace ProgramCPU
 
     double ComputeVectorNormW(const avec& vec, const avec& weight)
     {
-        if(weight.begin() != NULL)
+        if(weight.begin() != nullptr)
         {
              SSE_T sse = SSE_ZERO;
              const size_t step =sse_step<double>();
@@ -707,7 +707,7 @@ namespace ProgramCPU
 #else
 #define MYTHREAD HANDLE
 #define RUN_THREAD(X, t, ...)       DECLEAR_THREAD_DATA(X, __VA_ARGS__);\
-                                    t = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)X##_PROC <double>, newdata, 0, 0)
+                                    t = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)X##_PROC <double>, newdata, 0, 0)
 #define WAIT_THREAD(tv, n)    {     WaitForMultipleObjects((DWORD)n, tv, TRUE, INFINITE); \
                                     for(size_t i = 0; i < size_t(n); ++i) CloseHandle(tv[i]); }
 #endif
@@ -727,8 +727,8 @@ namespace ProgramCPU
 #define MYTHREAD  pthread_t
 
 #define RUN_THREAD(X, t, ...)       DECLEAR_THREAD_DATA(X, __VA_ARGS__);\
-                                    pthread_create(&t, NULL, (void* (*)(void*))X##_FUNCTOR <double> :: get(), newdata)
-#define WAIT_THREAD(tv, n)      {   for(size_t i = 0; i < size_t(n); ++i) pthread_join(tv[i], NULL) ;}
+                                    pthread_create(&t, nullptr, (void* (*)(void*))X##_FUNCTOR <double> :: get(), newdata)
+#define WAIT_THREAD(tv, n)      {   for(size_t i = 0; i < size_t(n); ++i) pthread_join(tv[i], nullptr) ;}
 #endif
     inline void MemoryCopyB(const double* p, const double* pe, double* d)
     {
@@ -764,7 +764,7 @@ namespace ProgramCPU
 
     void   ComputeSXYPZ(double a, const avec& vec1, const avec& vec2, const avec& vec3, avec& result)
     {
-        if(vec1.begin() != NULL)
+        if(vec1.begin() != nullptr)
         {
             const double * p1 = &vec1[0], * p2 = &vec2[0], * p3 = &vec3[0];
             double * p4 = &result[0], * pe = p4 + result.size();
@@ -1257,14 +1257,14 @@ namespace ProgramCPU
         }else
         {
             const double* sjc0 = sj;
-            const double* sjp0 = sj ?  sj + ncam * 8 : NULL;
+            const double* sjp0 = sj ?  sj + ncam * 8 : nullptr;
 
             for(int i = i0; i < nproj; ++i, jmap += 2, ms += 2, ++cmlist)
             {
                 int cidx = jmap[0], pidx = jmap[1];
                 const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
-                double* jci = jc ? (jc + (shuffle? cmlist[0] : i)* 16)  : NULL;
-                double* jpi = jp ? (jp + i * POINT_ALIGN2) : NULL;
+                double* jci = jc ? (jc + (shuffle? cmlist[0] : i)* 16)  : nullptr;
+                double* jpi = jp ? (jp + i * POINT_ALIGN2) : nullptr;
 
                 /////////////////////////////////////////////////////
                 JacobianOne(c, pt, ms, jci, jci + 8, jpi, jpi + POINT_ALIGN, intrinsic_fixed, radial_distortion);
@@ -1290,7 +1290,7 @@ namespace ProgramCPU
     }
 
     // TODO: currently dead code because _num_imgpt_q == 0
-    void ComputeDiagonalAddQ(int ncam, const double* qw, double* d, const double* sj = NULL)
+    void ComputeDiagonalAddQ(int ncam, const double* qw, double* d, const double* sj = nullptr)
     {
         if(sj)
         {
@@ -1591,7 +1591,7 @@ namespace ProgramCPU
         {
             const size_t bsz = bc * ncam + npts * 6;
             const size_t dsz = 8 * ncam + npts * POINT_ALIGN;
-            bool  use_jq = wq != NULL;
+            bool  use_jq = wq != nullptr;
             ///////////////////////////////////////////
             SetVectorZero(blocks, blocks + bsz);
             SetVectorZero(diag, diag + dsz);
@@ -1604,7 +1604,7 @@ namespace ProgramCPU
         {
             const size_t bsz = bc * ncam;
             const size_t dsz = 8 * ncam;
-            bool  use_jq = wq != NULL;
+            bool  use_jq = wq != nullptr;
             ///////////////////////////////////////////
             SetVectorZero(blocks, blocks + bsz);
             SetVectorZero(diag, diag + dsz);
@@ -1656,8 +1656,8 @@ namespace ProgramCPU
         const double* camera = &camerav[0];
         const double* point = &pointv[0];
         const double* ms = &meas[0];
-        const double* sjc0 = sjv.size() ?  &sjv[0] : NULL;
-        const double* sjp0 = sjv.size() ?  &sjv[sz_jcd] : NULL;
+        const double* sjc0 = sjv.size() ?  &sjv[0] : nullptr;
+        const double* sjp0 = sjv.size() ?  &sjv[sz_jcd] : nullptr;
         //////////////////////////////////////////////
         double* blockpc = &blockpv[0], * blockpp = &blockpv[sz_jcb];
         double* bo = blockpc, *bi = &blocks[0], *di = &diag[0];
@@ -1974,7 +1974,7 @@ namespace ProgramCPU
             double* jc = (double*)ALIGN_PTR(jcv), *jp = jc + 16;
             ////////////////////////////////////////
             const double* sjc = sj;
-            const double* sjp = sjc? (sjc + ncam * 8) : NULL;
+            const double* sjp = sjc? (sjc + ncam * 8) : nullptr;
             const double* xc0 = x, *xp0 = x + ncam * 8;
 
             /////////////////////////////////
@@ -2009,7 +2009,7 @@ namespace ProgramCPU
                 const int cidx = jmap[0], pidx = jmap[1];
                 const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
                 /////////////////////////////////////////////////////
-                JacobianOne(c, pt, ms, jc, jc + 8, (double*) NULL, (double*)NULL, intrinsic_fixed, radial_distortion);
+                JacobianOne(c, pt, ms, jc, jc + 8, (double*) nullptr, (double*)nullptr, intrinsic_fixed, radial_distortion);
                 if(sjc)ScaleJ8(jc, jc + 8, sjc + cidx * 8);
                 const double* xc = xc0 + cidx * 8;
                 jx[0] = DotProduct8(jc, xc)   ;
@@ -2020,7 +2020,7 @@ namespace ProgramCPU
             double jp[8];
 
             ////////////////////////////////////////
-            const double* sjp = sj? (sj + ncam * 8) : NULL;
+            const double* sjp = sj? (sj + ncam * 8) : nullptr;
             const double* xp0 = x + ncam * 8;
 
             /////////////////////////////////
@@ -2029,7 +2029,7 @@ namespace ProgramCPU
                 const int cidx = jmap[0], pidx = jmap[1];
                 const double* c = camera + cidx * 16, * pt = point + pidx * POINT_ALIGN;
                 /////////////////////////////////////////////////////
-                JacobianOne(c, pt, ms, (double*) NULL, (double*) NULL, jp, jp + POINT_ALIGN, intrinsic_fixed, radial_distortion);
+                JacobianOne(c, pt, ms, (double*) nullptr, (double*) nullptr, jp, jp + POINT_ALIGN, intrinsic_fixed, radial_distortion);
 
                 const double* xp = xp0 + pidx * POINT_ALIGN;
                 if(sjp)
@@ -2215,7 +2215,7 @@ namespace ProgramCPU
                     const Float* pt = point + jmap[2 * index + 1] * POINT_ALIGN;
                     const Float* e  = ee + index * 2;
 
-                    JacobianOne(c, pt, ms + index * 2, jcx, jcy, (Float*)NULL, (Float*)NULL, intrinsic_fixed, radial_distortion);
+                    JacobianOne(c, pt, ms + index * 2, jcx, jcy, (Float*)nullptr, (Float*)nullptr, intrinsic_fixed, radial_distortion);
 
                     //////////////////////////////
                     AddScaledVec8(e[0], jcx, jte);
@@ -2276,7 +2276,7 @@ namespace ProgramCPU
             }else if(mode == 1)
             {
                 /////////////////////////////////////////////////////
-                JacobianOne(c, pt, ms, jc, jc + 8, (Float*) NULL, (Float*) NULL, intrinsic_fixed, radial_distortion);
+                JacobianOne(c, pt, ms, jc, jc + 8, (Float*) nullptr, (Float*) nullptr, intrinsic_fixed, radial_distortion);
 
                 ////////////////////////////////////////////
                 Float* vc = vc0 + cidx * 8;
@@ -2285,7 +2285,7 @@ namespace ProgramCPU
             }else
             {
                /////////////////////////////////////////////////////
-                JacobianOne(c, pt, ms, (Float*) NULL, (Float*) NULL, pj, pj + POINT_ALIGN, intrinsic_fixed, radial_distortion);
+                JacobianOne(c, pt, ms, (Float*) nullptr, (Float*) nullptr, pj, pj + POINT_ALIGN, intrinsic_fixed, radial_distortion);
 
                 ////////////////////////////////////////////
                 Float *vp = vp0 + pidx * POINT_ALIGN;
@@ -2303,11 +2303,11 @@ SparseBundleCPU:: SparseBundleCPU()
     : _num_camera(0)
     , _num_point(0)
     , _num_imgpt(0)
-    , _camera_data(NULL)
-    , _point_data(NULL)
-    , _imgpt_data(NULL)
-    , _camera_idx(NULL)
-    , _point_idx(NULL)
+    , _camera_data(nullptr)
+    , _point_data(nullptr)
+    , _imgpt_data(nullptr)
+    , _camera_idx(nullptr)
+    , _point_idx(nullptr)
     , _projection_sse(0)
     , _num_imgpt_q(0)
 {
@@ -2356,7 +2356,7 @@ void SparseBundleCPU:: SetCameraData(size_t ncam,  CameraT* cams)
     if(sizeof(CameraT) != 16 * sizeof(float)) return;  //never gonna happen...?
      _num_camera = (int) ncam;
     _camera_data = cams;
-    _focal_mask  = NULL;
+    _focal_mask  = nullptr;
 }
 
 // TODO: currently dead code
@@ -2406,10 +2406,10 @@ int SparseBundleCPU:: RunBundleAdjustment()
 
 int SparseBundleCPU:: ValidateInputData()
 {
-    if(_camera_data == NULL) return STATUS_CAMERA_MISSING;
-    if(_point_data == NULL)  return STATUS_POINT_MISSING;
-    if(_imgpt_data == NULL)  return STATUS_MEASURMENT_MISSING;
-    if(_camera_idx == NULL || _point_idx == NULL) return STATUS_PROJECTION_MISSING;
+    if(_camera_data == nullptr) return STATUS_CAMERA_MISSING;
+    if(_point_data == nullptr)  return STATUS_POINT_MISSING;
+    if(_imgpt_data == nullptr)  return STATUS_MEASURMENT_MISSING;
+    if(_camera_idx == nullptr || _point_idx == nullptr) return STATUS_PROJECTION_MISSING;
     return STATUS_SUCCESS;
 }
 
@@ -2586,9 +2586,9 @@ bool SparseBundleCPU::ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int
     qmap.resize(0);
     _num_imgpt_q = 0;
 
-    if(_camera_idx == NULL) return true;
-    if(_point_idx == NULL) return true;
-    if(_focal_mask == NULL) return true;
+    if(_camera_idx == nullptr) return true;
+    if(_point_idx == nullptr) return true;
+    if(_focal_mask == nullptr) return true;
     if(_num_camera == 0) return true;
     if(_weight_q <= 0) return true;
 
@@ -2632,7 +2632,7 @@ bool SparseBundleCPU::ProcessIndexCameraQ(std::vector<int>&qmap, std::vector<int
     if(error)
     {
         std::cout << "PBA error: incorrect constraints\n";
-        _focal_mask = NULL;
+        _focal_mask = nullptr;
         return false;
     }
 
@@ -2752,7 +2752,7 @@ void SparseBundleCPU::EvaluateJacobians()
         int fid = __jc_store_original ? (__jc_store_transpose ? FUNC_JJ_JCO_JCT_JP : FUNC_JJ_JCO_JP) : FUNC_JJ_JP;
         ComputeJacobian(_num_imgpt, _num_camera, _cuCameraData.begin(), _cuPointData.begin(), _cuJacobianCamera.begin(),
             _cuJacobianPoint.begin(), &_cuProjectionMap.front(), _cuVectorSJ.begin(),
-            _cuMeasurements.begin(),  __jc_store_transpose? &_cuCameraMeasurementListT.front() : NULL,
+            _cuMeasurements.begin(),  __jc_store_transpose? &_cuCameraMeasurementListT.front() : nullptr,
             __fixed_intrinsics, __use_radial_distortion, false, _cuJacobianCameraT.begin(),
             __num_cpu_thread[fid]);
     }else

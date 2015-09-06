@@ -20,7 +20,7 @@
 
 GLWidget::GLWidget (QWidget *parent)
     : QGLWidget(parent)
-    , context(NULL)
+    , context(nullptr)
     , gl_width(0)
     , gl_height(0)
     , cx_init(false)
@@ -59,7 +59,7 @@ GLWidget::resizeGL(int width, int height)
 
     this->gl_width = width;
     this->gl_height = height;
-    if (this->context != NULL)
+    if (this->context != nullptr)
         this->context->resize(width, height);
 }
 

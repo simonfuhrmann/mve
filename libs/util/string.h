@@ -332,7 +332,7 @@ clipped_newlines (std::string const& str)
 inline std::string
 wordwrap (char const* str, int width)
 {
-    if (str == NULL)
+    if (str == nullptr)
         return std::string();
     if (width <= 0)
         return str;

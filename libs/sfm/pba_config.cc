@@ -72,7 +72,7 @@ ConfigBA::ConfigBA()
     __verbose_allocation = false;
     __verbose_sse = false;
     __save_gradient_norm = false;
-    __stat_filename = NULL;
+    __stat_filename = nullptr;
     __matlab_format_stat = true;
 
     /////////////////////////////
@@ -106,7 +106,7 @@ ConfigBA::ConfigBA()
     __warmup_device = false;
 
     ///////////////////////
-    __driver_output = NULL;
+    __driver_output = nullptr;
 
     //////////////////////////
     ResetBundleStatistics();
@@ -147,7 +147,7 @@ void ConfigBA::ResetTemporarySetting()
     __bundle_time_budget = 0;
     __bundle_mode_next= 0;
     __bundle_current_mode = 0;
-    __stat_filename = NULL;
+    __stat_filename = nullptr;
     if(__lm_damping_auto_switch > 0 && !__lm_use_diagonal_damp) __lm_use_diagonal_damp = true;
 }
 
@@ -160,7 +160,7 @@ void ConfigBA::SaveBundleStatistics(int ncam, int npt, int nproj)
         char filenamebuf[1024];
         char *ret = strchr(__stat_filename, '\r');  if(ret) ret[0] = 0;
         char *dot  = strrchr(__stat_filename, '.');
-        if(dot && strchr(dot, '/') == NULL && strchr(dot, '\\') == NULL)
+        if(dot && strchr(dot, '/') == nullptr && strchr(dot, '\\') == nullptr)
             strcpy(filenamebuf, __stat_filename); //if filename has extension, use it
         else
             sprintf(filenamebuf, "%s%s%s%s%s%s%s%s%s.%s",
@@ -256,13 +256,13 @@ double ConfigBA::MyClock()
     static struct timeval tstart;
     if(started == 0)
     {
-        gettimeofday(&tstart, NULL);
+        gettimeofday(&tstart, nullptr);
         started = 1;
         return 0;
     }else
     {
         struct timeval now;
-        gettimeofday(&now, NULL) ;
+        gettimeofday(&now, nullptr) ;
         return ((now.tv_usec - tstart.tv_usec) /1000000.0  + (now.tv_sec - tstart.tv_sec))  ;
     }
 #endif
@@ -366,7 +366,7 @@ void ConfigBA::ParseParam(int argc, char** argv)
     for(int i = 0; i < argc; i++)
     {
         arg = argv[i];
-        if(arg == NULL || arg[0] != '-' || !arg[1])continue;
+        if(arg == nullptr || arg[0] != '-' || !arg[1])continue;
         opt = arg+1;
         opti = STRING_TO_INT(opt);
         param = argv[i+1];
@@ -517,10 +517,10 @@ void ConfigBA::ParseParam(int argc, char** argv)
             __lm_max_iteration = 100;
             __warmup_device = true;
         case MAKEINT4(s, t, a, t):
-            __stat_filename = (i + 1 < argc && param[0] != '-')? param : NULL;
+            __stat_filename = (i + 1 < argc && param[0] != '-')? param : nullptr;
             break;
         case MAKEINT3(o, u, t):
-            __driver_output = (i + 1 < argc && param[0] != '-')? param : NULL;
+            __driver_output = (i + 1 < argc && param[0] != '-')? param : nullptr;
             break;
         case MAKEINT4(w, a, r, m):
             __warmup_device = true;

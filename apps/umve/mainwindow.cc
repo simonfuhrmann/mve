@@ -327,7 +327,7 @@ MainWindow::perform_close_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene == NULL)
+    if (scene == nullptr)
         return true;
 
     if (!this->jobqueue->is_empty())
@@ -422,7 +422,7 @@ MainWindow::on_reload_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene == NULL || scene->get_path().empty())
+    if (scene == nullptr || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error reloading scene!",
             "There is nothing to reload, rookie.");
@@ -443,7 +443,7 @@ MainWindow::on_save_scene (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
 
-    if (scene == NULL || scene->get_path().empty())
+    if (scene == nullptr || scene->get_path().empty())
     {
         QMessageBox::information(this, "Error saving scene!",
             "There is nothing to save, rookie.");
@@ -494,7 +494,7 @@ MainWindow::on_update_memory (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
     std::size_t mem = 0;
-    if (scene != NULL)
+    if (scene != nullptr)
         mem = scene->get_total_mem_usage();
 
     std::string memstr = util::string::get_size_string(mem);
@@ -507,7 +507,7 @@ void
 MainWindow::on_import_images (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
+    if (scene == nullptr)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -529,7 +529,7 @@ void
 MainWindow::on_recon_export (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
+    if (scene == nullptr)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -548,7 +548,7 @@ void
 MainWindow::on_batch_delete (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
+    if (scene == nullptr)
     {
         QMessageBox::information(this, "Error exporting!",
             "No scene is loaded, rookie.");
@@ -567,7 +567,7 @@ void
 MainWindow::on_generate_thumbs (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
+    if (scene == nullptr)
     {
         QMessageBox::information(this, "Error generating thumbnails!",
             "No scene is loaded, rookie.");
@@ -586,7 +586,7 @@ void
 MainWindow::on_cache_cleanup (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
+    if (scene == nullptr)
         return;
 
     scene->cache_cleanup();

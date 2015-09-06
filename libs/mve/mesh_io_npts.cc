@@ -66,7 +66,7 @@ void
 save_npts_mesh (TriangleMesh::ConstPtr mesh,
     std::string const& filename, bool format_binary)
 {
-    if (mesh == NULL || mesh->get_vertices().empty())
+    if (mesh == nullptr || mesh->get_vertices().empty())
         throw std::invalid_argument("Input mesh is empty");
     if (filename.empty())
         throw std::invalid_argument("No filename given");

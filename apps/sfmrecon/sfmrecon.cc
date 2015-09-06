@@ -401,7 +401,7 @@ sfm_reconstruct (AppSettings const& conf)
     {
         mve::View::Ptr view = views[i];
         mve::CameraInfo const& cam = bundle_cams[i];
-        if (view == NULL)
+        if (view == nullptr)
             continue;
         if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
             continue;
@@ -413,7 +413,7 @@ sfm_reconstruct (AppSettings const& conf)
         {
             mve::ByteImage::Ptr original
                 = view->get_byte_image(conf.original_name);
-            if (original == NULL)
+            if (original == nullptr)
                 continue;
             mve::ByteImage::Ptr undist
                 = mve::image::image_undistort_vsfm<uint8_t>
@@ -516,7 +516,7 @@ main (int argc, char** argv)
 
     /* Read arguments. */
     for (util::ArgResult const* i = args.next_option();
-        i != NULL; i = args.next_option())
+        i != nullptr; i = args.next_option())
     {
         if (i->opt->lopt == "original")
             conf.original_name = i->arg;

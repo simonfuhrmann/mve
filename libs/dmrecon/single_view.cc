@@ -30,10 +30,10 @@ SingleView::SingleView(mve::Scene::Ptr _scene,
     , minLevel(std::numeric_limits<int>::max())
 {
     /* Argument sanity checks. */
-    if (scene == NULL)
-        throw std::invalid_argument("NULL scene");
-    if (view == NULL || !view->is_camera_valid())
-        throw std::invalid_argument("NULL view");
+    if (scene == nullptr)
+        throw std::invalid_argument("nullptr scene");
+    if (view == nullptr || !view->is_camera_valid())
+        throw std::invalid_argument("nullptr view");
     if (embedding.empty())
         throw std::invalid_argument("Empty embedding name");
 
@@ -44,7 +44,7 @@ SingleView::SingleView(mve::Scene::Ptr _scene,
 
     /* Initialize view source level (original image size). */
     mve::View::ImageProxy const* proxy = view->get_image_proxy(_embedding);
-    if (proxy == NULL)
+    if (proxy == nullptr)
         throw std::invalid_argument("No color image found");
     this->source_level = ImagePyramidLevel(cam, proxy->width, proxy->height);
 }

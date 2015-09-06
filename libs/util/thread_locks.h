@@ -33,7 +33,7 @@ public:
     { if (this->m) this->m->unlock(); }
 
     void unlock (void)
-    { this->m->unlock(); this->m = NULL; }
+    { this->m->unlock(); this->m = nullptr; }
 
 private:
     Mutex* m;

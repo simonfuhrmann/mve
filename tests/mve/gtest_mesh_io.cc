@@ -11,7 +11,7 @@
 struct TempFile : public std::string
 {
     TempFile (std::string const& postfix)
-        : std::string(std::tmpnam(NULL))
+        : std::string(std::tmpnam(nullptr))
     {
         this->append(postfix);
     }

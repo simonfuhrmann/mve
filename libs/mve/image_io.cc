@@ -215,7 +215,7 @@ namespace
         }
 
         /* Initialize PNG structures. */
-        *png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        *png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
         if (!*png)
         {
             std::fclose(fp);
@@ -225,7 +225,7 @@ namespace
         *png_info = png_create_info_struct(*png);
         if (!*png_info)
         {
-            png_destroy_read_struct(png, NULL, NULL);
+            png_destroy_read_struct(png, nullptr, nullptr);
             std::fclose(fp);
             throw util::Exception("Out of memory");
         }
@@ -248,7 +248,7 @@ namespace
             headers->type = IMAGE_TYPE_UINT16;
         else
         {
-            png_destroy_read_struct(png, png_info, NULL);
+            png_destroy_read_struct(png, png_info, nullptr);
             std::fclose(fp);
             throw util::Exception("PNG with unknown bit depth");
         }
@@ -260,20 +260,20 @@ load_png_file (std::string const& filename)
 {
     // TODO: use throw-safe FILE* wrapper
     FILE* fp = std::fopen(filename.c_str(), "rb");
-    if (fp == NULL)
+    if (fp == nullptr)
         throw util::FileException(filename, std::strerror(errno));
 
     /* Read PNG header info. */
     ImageHeaders headers;
-    png_structp png = NULL;
-    png_infop png_info = NULL;
+    png_structp png = nullptr;
+    png_infop png_info = nullptr;
     load_png_headers_intern(fp, &headers, &png, &png_info);
 
     /* Check if bit depth is valid. */
     int const bit_depth = png_get_bit_depth(png, png_info);
     if (bit_depth > 8)
     {
-        png_destroy_read_struct(&png, &png_info, NULL);
+        png_destroy_read_struct(&png, &png_info, nullptr);
         std::fclose(fp);
         throw util::Exception("PNG with more than 8 bit");
     }
@@ -305,7 +305,7 @@ load_png_file (std::string const& filename)
     png_read_image(png, &row_pointers[0]);
 
     /* Clean up. */
-    png_destroy_read_struct(&png, &png_info, NULL);
+    png_destroy_read_struct(&png, &png_info, nullptr);
     std::fclose(fp);
 
     return image;
@@ -315,17 +315,17 @@ ImageHeaders
 load_png_file_headers (std::string const& filename)
 {
     FILE* fp = std::fopen(filename.c_str(), "rb");
-    if (fp == NULL)
+    if (fp == nullptr)
         throw util::FileException(filename, std::strerror(errno));
 
     /* Read PNG header info. */
     ImageHeaders headers;
-    png_structp png = NULL;
-    png_infop png_info = NULL;
+    png_structp png = nullptr;
+    png_infop png_info = nullptr;
     load_png_headers_intern(fp, &headers, &png, &png_info);
 
     /* Clean up. */
-    png_destroy_read_struct(&png, &png_info, NULL);
+    png_destroy_read_struct(&png, &png_info, nullptr);
     std::fclose(fp);
 
     return headers;
@@ -335,8 +335,8 @@ void
 save_png_file (ByteImage::ConstPtr image,
     std::string const& filename, int compression_level)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     FILE *fp = std::fopen(filename.c_str(), "wb");
     if (!fp)
@@ -345,7 +345,7 @@ save_png_file (ByteImage::ConstPtr image,
     //png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
     //    (png_voidp)user_error_ptr, user_error_fn, user_warning_fn);
     png_structp png_ptr = png_create_write_struct
-        (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        (PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
 
     if (!png_ptr)
     {
@@ -356,7 +356,7 @@ save_png_file (ByteImage::ConstPtr image,
     png_infop info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr)
     {
-        png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+        png_destroy_write_struct(&png_ptr, (png_infopp)nullptr);
         std::fclose(fp);
         throw util::Exception("Out of memory");
     }
@@ -404,7 +404,7 @@ save_png_file (ByteImage::ConstPtr image,
 
     /* Write to file. */
     png_set_rows(png_ptr, info_ptr, &row_pointers[0]);
-    png_write_png(png_ptr, info_ptr, png_transforms, NULL);
+    png_write_png(png_ptr, info_ptr, png_transforms, nullptr);
     png_write_end(png_ptr, info_ptr);
 
     /* Cleanup. */
@@ -435,7 +435,7 @@ ByteImage::Ptr
 load_jpg_file (std::string const& filename, std::string* exif)
 {
     FILE* fp = std::fopen(filename.c_str(), "rb");
-    if (fp == NULL)
+    if (fp == nullptr)
         throw util::FileException(filename, std::strerror(errno));
 
     jpeg_decompress_struct cinfo;
@@ -465,7 +465,7 @@ load_jpg_file (std::string const& filename, std::string* exif)
         if (exif)
         {
             jpeg_saved_marker_ptr marker = cinfo.marker_list;
-            if (marker != NULL && marker->marker == JPEG_APP0 + 1
+            if (marker != nullptr && marker->marker == JPEG_APP0 + 1
                 && marker->data_length > 6
                 && std::equal(marker->data, marker->data + 6, "Exif\0\0"))
             {
@@ -514,7 +514,7 @@ ImageHeaders
 load_jpg_file_headers (std::string const& filename)
 {
     FILE* fp = std::fopen(filename.c_str(), "rb");
-    if (fp == NULL)
+    if (fp == nullptr)
         throw util::FileException(filename, std::strerror(errno));
 
     jpeg_decompress_struct cinfo;
@@ -560,8 +560,8 @@ load_jpg_file_headers (std::string const& filename)
 void
 save_jpg_file (ByteImage::ConstPtr image, std::string const& filename, int quality)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     if (image->channels() != 1 && image->channels() != 3)
         throw util::Exception("Invalid image color space");
@@ -629,7 +629,7 @@ tiff_error_handler (char const* /*module*/, char const* fmt, va_list ap)
 ByteImage::Ptr
 load_tiff_file (std::string const& filename)
 {
-    TIFFSetWarningHandler(NULL);
+    TIFFSetWarningHandler(nullptr);
     TIFFSetErrorHandler(tiff_error_handler);
 
     TIFF* tif = TIFFOpen(filename.c_str(), "r");
@@ -671,8 +671,8 @@ load_tiff_file (std::string const& filename)
 void
 save_tiff_file (ByteImage::ConstPtr image, std::string const& filename)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     TIFF* tif = TIFFOpen(filename.c_str(), "w");
     if (!tif)
@@ -705,7 +705,7 @@ load_tiff_16_file (std::string const& filename)
     if (sizeof(uint16_t) != 2)
         throw util::Exception("Need 16bit data type for TIFF image.");
 
-    TIFFSetWarningHandler(NULL);
+    TIFFSetWarningHandler(nullptr);
     TIFFSetErrorHandler(tiff_error_handler);
 
     TIFF* tif = TIFFOpen(filename.c_str(), "r");
@@ -748,8 +748,8 @@ load_tiff_16_file (std::string const& filename)
 void
 save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     TIFF* tif = TIFFOpen(filename.c_str(), "w");
     if (!tif)
@@ -859,8 +859,8 @@ load_pfm_file (std::string const& filename)
 void
 save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     std::string magic_number;
     if (image->channels() == 1)
@@ -984,8 +984,8 @@ load_ppm_file (std::string const& filename)
 void
 save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     std::string magic_number;
     if (image->channels() == 1)
@@ -1109,8 +1109,8 @@ load_mvei_file_headers (std::string const& filename)
 void
 save_mvei_file (ImageBase::ConstPtr image, std::string const& filename)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     int32_t width = image->width();
     int32_t height = image->height();

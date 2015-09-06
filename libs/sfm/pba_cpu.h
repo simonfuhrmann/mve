@@ -47,7 +47,7 @@ public:
     avec()
     {
         _owner = true;
-        _last = _data = NULL;
+        _last = _data = nullptr;
         _size = _capacity = 0;
     }
     avec(size_t count)
@@ -66,7 +66,7 @@ public:
     {
         if(!_owner)
         {
-            _data = _last = NULL;
+            _data = _last = nullptr;
             _capacity = _size = 0;
             _owner = true;
         }
@@ -114,12 +114,12 @@ public:
 
     }
 
-    inline operator double* () {return _size? _data : NULL;}
+    inline operator double* () {return _size? _data : nullptr;}
     inline operator const double* () const {return _data; }
-    inline double* begin() {return _size? _data : NULL;}
-    inline double* data() {return _size? _data : NULL;}
+    inline double* begin() {return _size? _data : nullptr;}
+    inline double* data() {return _size? _data : nullptr;}
     inline double* end() {return _last;}
-    inline const double* begin() const {return _size? _data : NULL;}
+    inline const double* begin() const {return _size? _data : nullptr;}
     inline const double* end() const {return _last;}
     inline size_t size() const {return _size;}
     inline size_t IsValid() const {return _size;}

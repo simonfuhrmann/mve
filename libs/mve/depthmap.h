@@ -97,13 +97,13 @@ pixel_3dpos (std::size_t x, std::size_t y, float depth,
  * no depth discontinuity detection is performed. The depthmap is
  * triangulated in the local camera coordinate system.
  *
- * If 'vids' is not NULL, image content is replaced with vertex indices for
+ * If 'vids' is not nullptr, image content is replaced with vertex indices for
  * each pixel that generated the vertex. Index MATH_MAX_UINT corresponds to
  * a pixel that did not generate a vertex.
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
-    float dd_factor = 5.0f, mve::Image<unsigned int>* vids = NULL);
+    float dd_factor = 5.0f, mve::Image<unsigned int>* vids = nullptr);
 
 /**
  * A helper function that triangulates the given depth map with optional

@@ -84,17 +84,17 @@ TEST(ViewTest, CacheCleanupTest)
     mve::View::ImageProxy const* image_proxy = view.get_image_proxy("image");
     mve::View::BlobProxy const* blob_proxy = view.get_blob_proxy("blob");
 
-    EXPECT_TRUE(image_proxy->image != NULL);
-    EXPECT_TRUE(blob_proxy->blob != NULL);
+    EXPECT_TRUE(image_proxy->image != nullptr);
+    EXPECT_TRUE(blob_proxy->blob != nullptr);
     EXPECT_EQ(0, view.cache_cleanup());
-    EXPECT_TRUE(image_proxy->image != NULL);
-    EXPECT_TRUE(blob_proxy->blob != NULL);
+    EXPECT_TRUE(image_proxy->image != nullptr);
+    EXPECT_TRUE(blob_proxy->blob != nullptr);
     image.reset();
     blob.reset();
     /* It is not cleaning anything because image and blob are dirty. */
     EXPECT_EQ(0, view.cache_cleanup());
-    EXPECT_TRUE(image_proxy->image != NULL);
-    EXPECT_TRUE(blob_proxy->blob != NULL);
+    EXPECT_TRUE(image_proxy->image != nullptr);
+    EXPECT_TRUE(blob_proxy->blob != nullptr);
 }
 
 TEST(ViewTest, KeyValueTest)
@@ -121,23 +121,23 @@ TEST(ViewTest, GetByTypeTest)
     mve::FloatImage::Ptr image = mve::FloatImage::create(10, 12, 1);
     mve::View view;
 
-    EXPECT_TRUE(view.get_image_proxy("image") == NULL);
-    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_FLOAT) == NULL);
+    EXPECT_TRUE(view.get_image_proxy("image") == nullptr);
+    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_FLOAT) == nullptr);
     EXPECT_FALSE(view.has_image("image"));
     EXPECT_FALSE(view.has_image("image", mve::IMAGE_TYPE_UNKNOWN));
     EXPECT_FALSE(view.has_image("image", mve::IMAGE_TYPE_FLOAT));
 
     view.set_image(image, "image");
 
-    EXPECT_TRUE(view.get_image("image", mve::IMAGE_TYPE_UINT8) == NULL);
+    EXPECT_TRUE(view.get_image("image", mve::IMAGE_TYPE_UINT8) == nullptr);
     EXPECT_EQ(image, view.get_image("image", mve::IMAGE_TYPE_FLOAT));
     EXPECT_EQ(image, view.get_image("image", mve::IMAGE_TYPE_UNKNOWN));
     EXPECT_EQ(image, view.get_image("image"));
 
-    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_FLOAT) != NULL);
-    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_UINT8) == NULL);
-    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_UNKNOWN) != NULL);
-    EXPECT_TRUE(view.get_image_proxy("image") != NULL);
+    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_FLOAT) != nullptr);
+    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_UINT8) == nullptr);
+    EXPECT_TRUE(view.get_image_proxy("image", mve::IMAGE_TYPE_UNKNOWN) != nullptr);
+    EXPECT_TRUE(view.get_image_proxy("image") != nullptr);
 
     EXPECT_TRUE(view.has_image("image", mve::IMAGE_TYPE_UNKNOWN));
     EXPECT_TRUE(view.has_image("image", mve::IMAGE_TYPE_FLOAT));

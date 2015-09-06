@@ -76,8 +76,8 @@ load_smf_mesh (std::string const& filename)
 void
 save_smf_mesh (mve::TriangleMesh::ConstPtr mesh, std::string const& filename)
 {
-    if (mesh == NULL)
-        throw std::invalid_argument("NULL mesh given");
+    if (mesh == nullptr)
+        throw std::invalid_argument("nullptr mesh given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 

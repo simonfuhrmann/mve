@@ -160,7 +160,7 @@ create_for_type (ImageType type, int width, int height, int channels)
             break;
     }
 
-    return ImageBase::Ptr(NULL);
+    return ImageBase::Ptr(nullptr);
 }
 
 MVE_IMAGE_NAMESPACE_END

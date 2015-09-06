@@ -16,14 +16,14 @@
 #include "scene_addins/addin_state.h"
 
 AddinState::AddinState (void)
-    : gl_widget(NULL)
+    : gl_widget(nullptr)
 {
 }
 
 void
 AddinState::repaint (void)
 {
-    if (this->gl_widget == NULL)
+    if (this->gl_widget == nullptr)
         return;
 
     this->gl_widget->repaint();
@@ -32,7 +32,7 @@ AddinState::repaint (void)
 void
 AddinState::make_current_context (void)
 {
-    if (this->gl_widget == NULL)
+    if (this->gl_widget == nullptr)
         return;
 
     this->gl_widget->makeCurrent();

@@ -32,14 +32,14 @@ evaluate (math::Vec3f const& pos, Sample const& sample,
     (*value) = fssr_basis<double>(sample.scale, tpos, value_deriv);
     (*weight) = fssr_weight<double>(sample.scale, tpos, weight_deriv);
 
-    if (value_deriv == NULL && weight_deriv == NULL)
+    if (value_deriv == nullptr && weight_deriv == nullptr)
         return;
 
     /* Rotate derivative back to original coordinate system. */
     math::Matrix3f irot = rot.transposed();
-    if (value_deriv != NULL)
+    if (value_deriv != nullptr)
         *value_deriv = irot.mult(*value_deriv);
-    if (weight_deriv != NULL)
+    if (weight_deriv != nullptr)
         *weight_deriv = irot.mult(*weight_deriv);
 }
 

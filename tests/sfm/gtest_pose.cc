@@ -160,7 +160,7 @@ namespace
     {
         // Calibration with focal lenght 1 and 800x600 image.
         // The first camera looks straight along the z axis.
-        if (pose1 != NULL)
+        if (pose1 != nullptr)
         {
             pose1->set_k_matrix(800, 800 / 2, 600 / 2);
             math::matrix_set_identity(*pose1->R, 3);
@@ -168,7 +168,7 @@ namespace
         }
 
         // The second camera is at (1,0,0) and rotated 45deg to the left.
-        if (pose2 != NULL)
+        if (pose2 != nullptr)
         {
             pose2->set_k_matrix(800, 800 / 2, 600 / 2);
             pose2->R.fill(0.0);

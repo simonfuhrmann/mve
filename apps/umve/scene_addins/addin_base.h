@@ -64,7 +64,7 @@ protected:
 inline
 AddinBase::AddinBase (void)
 {
-    this->state = NULL;
+    this->state = nullptr;
 }
 
 inline
@@ -81,7 +81,7 @@ AddinBase::set_state (AddinState* state)
 inline QWidget*
 AddinBase::get_sidebar_widget()
 {
-    return NULL;
+    return nullptr;
 }
 
 inline void

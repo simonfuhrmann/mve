@@ -66,7 +66,7 @@ main (int argc, char** argv)
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
-        if (arg->opt == NULL)
+        if (arg->opt == nullptr)
         {
             app_opts.in_files.push_back(arg->arg);
             continue;

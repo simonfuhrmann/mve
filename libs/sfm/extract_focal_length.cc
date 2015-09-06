@@ -27,7 +27,7 @@ extract_focal_length (mve::image::ExifInfo const& exif)
     {
         CameraDatabase const* db = CameraDatabase::get();
         CameraModel const* model = db->lookup(camera_maker, camera_model);
-        if (model != NULL)
+        if (model != nullptr)
             sensor_size = model->sensor_width_mm;
     }
     if (focal_length > 0.0f && sensor_size > 0.0f)

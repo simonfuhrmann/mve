@@ -89,8 +89,8 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
 void
 save_ply_view (std::string const& filename, CameraInfo const& camera,
     FloatImage::ConstPtr depth_map,
-    FloatImage::ConstPtr confidence_map = FloatImage::ConstPtr(NULL),
-    ByteImage::ConstPtr color_image = ByteImage::ConstPtr(NULL));
+    FloatImage::ConstPtr confidence_map = FloatImage::ConstPtr(nullptr),
+    ByteImage::ConstPtr color_image = ByteImage::ConstPtr(nullptr));
 
 /**
  * Stores a scanalize-compatible PLY file from a view. It selects

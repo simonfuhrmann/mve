@@ -39,7 +39,7 @@ TEST(OctreeIteratorTest, NextLeafTest)
     fssr::Octree::Iterator iter;
     iter.root = root;
     std::vector<int> ordering;
-    for (iter.first_leaf(); iter.current != NULL; iter.next_leaf())
+    for (iter.first_leaf(); iter.current != nullptr; iter.next_leaf())
         ordering.push_back(iter.current->mc_index);
     delete root;
 
@@ -67,7 +67,7 @@ TEST(OctreeIteratorTest, NextNodeTest)
     fssr::Octree::Iterator iter;
     iter.root = root;
     std::vector<int> ordering;
-    for (iter.first_node(); iter.current != NULL; iter.next_node())
+    for (iter.first_node(); iter.current != nullptr; iter.next_node())
         ordering.push_back(iter.current->mc_index);
     delete root;
 
@@ -100,7 +100,7 @@ TEST(OctreeIteratorTest, NextBranchTest)
     iter.current = root->children;
 
     std::vector<int> ordering;
-    for (; iter.current != NULL; iter.next_branch())
+    for (; iter.current != nullptr; iter.next_branch())
         ordering.push_back(iter.current->mc_index);
     delete root;
 

@@ -141,7 +141,7 @@ struct JobDMRecon : public JobProgress
     mvs::Progress* progress;
     bool thread_started;
 
-    JobDMRecon (void) : progress(NULL), thread_started(false) {}
+    JobDMRecon (void) : progress(nullptr), thread_started(false) {}
     char const* get_name (void) { return name.c_str(); }
     bool is_completed (void) { return future.isFinished(); }
     bool has_progress (void) { return false; }
@@ -151,7 +151,7 @@ struct JobDMRecon : public JobProgress
         if (!this->thread_started)
             return "Waiting for slot";
 
-        if (this->progress == NULL)
+        if (this->progress == nullptr)
         {
             if (!this->message.empty())
                 return this->message.c_str();
@@ -181,7 +181,7 @@ struct JobDMRecon : public JobProgress
     void cancel_job (void)
     {
         /* don't cancel twice */
-        if (this->progress == NULL)
+        if (this->progress == nullptr)
             return;
 
         this->progress->cancelled = true;
@@ -201,13 +201,13 @@ void
 ImageOperationsWidget::start_dmrecon_job (mve::View::Ptr view)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
+    if (scene == nullptr)
     {
         std::cout << "No scene set!" << std::endl;
         return;
     }
 
-    if (view == NULL)
+    if (view == nullptr)
     {
         std::cout << "No view set!" << std::endl;
         return;
@@ -271,13 +271,13 @@ ImageOperationsWidget::threaded_dmrecon (JobDMRecon* job)
             job->message = "Cancelled!";
         else
             job->message = "Finished.";
-        job->progress = NULL;
+        job->progress = nullptr;
         std::cout << "Reconstruction finished!" << std::endl;
 
     }
     catch (std::exception& e)
     {
-        job->progress = NULL;
+        job->progress = nullptr;
         job->message = "Failed!";
         std::cout << "Reconstruction failed: " << e.what() << std::endl;
         return;
@@ -307,7 +307,7 @@ void
 ImageOperationsWidget::exec_dmrecon_batch (void)
 {
     mve::Scene::Ptr scene = SceneManager::get().get_scene();
-    if (scene == NULL)
+    if (scene == nullptr)
     {
         QMessageBox::warning(this, tr("MVS reconstruct"),
             tr("No scene is loaded!"));
@@ -348,7 +348,7 @@ ImageOperationsWidget::exec_dmrecon_batch (void)
     mve::Scene::ViewList& views(scene->get_views());
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-        if (views[i] == NULL || !views[i]->is_camera_valid())
+        if (views[i] == nullptr || !views[i]->is_camera_valid())
             continue;
         if (views[i]->has_image(dmname))
             continue;
@@ -369,7 +369,7 @@ void
 ImageOperationsWidget::exec_dmclean (void)
 {
     mve::View::Ptr view = SceneManager::get().get_view();
-    if (view == NULL)
+    if (view == nullptr)
     {
         std::cout << "No view set!" << std::endl;
         return;
@@ -386,7 +386,7 @@ ImageOperationsWidget::exec_dmclean (void)
     }
 
     mve::FloatImage::Ptr img = view->get_float_image(src_img);
-    if (img == NULL)
+    if (img == nullptr)
     {
         std::cout << "Cannot request image: " << src_img << std::endl;
         return;

@@ -44,7 +44,7 @@ VertexArray::assign_attrib (BoundVBO const& bound_vbo)
 
     vbo->bind();
     glVertexAttribPointer(location, vbo->get_values_per_vertex(),
-        vbo->get_data_type(), GL_TRUE, 0, NULL);
+        vbo->get_data_type(), GL_TRUE, 0, nullptr);
     check_gl_error();
     glEnableVertexAttribArray(location);
     check_gl_error();
@@ -55,10 +55,10 @@ VertexArray::assign_attrib (BoundVBO const& bound_vbo)
 void
 VertexArray::draw (void)
 {
-    if (this->vert_vbo == NULL)
+    if (this->vert_vbo == nullptr)
         throw std::runtime_error("No vertex VBO set!");
 
-    if (this->shader == NULL)
+    if (this->shader == nullptr)
         throw std::runtime_error("No shader program set!");
 
     /* Make current vertex array active. */
@@ -76,11 +76,11 @@ VertexArray::draw (void)
         this->assign_attrib(this->vbo_list[i]);
 
     /* Draw triangles if indices are given, draw points otherwise. */
-    if (this->index_vbo != NULL)
+    if (this->index_vbo != nullptr)
     {
         this->index_vbo->bind();
         glDrawElements(this->primitive, this->index_vbo->get_element_amount(),
-            GL_UNSIGNED_INT, NULL);
+            GL_UNSIGNED_INT, nullptr);
         check_gl_error();
     }
     else

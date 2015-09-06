@@ -114,7 +114,7 @@ main (int argc, char** argv)
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
-        if (arg->opt == NULL)
+        if (arg->opt == nullptr)
             continue;
 
         switch (arg->opt->sopt)

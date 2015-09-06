@@ -91,7 +91,7 @@ private:
     void display_byte_image (mve::ByteImage::ConstPtr img);
 
 public:
-    ViewInspect (QWidget* parent = NULL);
+    ViewInspect (QWidget* parent = nullptr);
 
     void set_image (mve::ImageBase::ConstPtr img);
     void show_details (bool show);

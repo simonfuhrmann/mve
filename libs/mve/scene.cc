@@ -41,7 +41,7 @@ Scene::save_scene (void)
 void
 Scene::save_bundle (void)
 {
-    if (this->bundle == NULL || !this->bundle_dirty)
+    if (this->bundle == nullptr || !this->bundle_dirty)
         return;
     std::string filename = util::fs::join_path(this->basedir, "synth_0.out");
     save_mve_bundle(this->bundle, filename);
@@ -55,7 +55,7 @@ Scene::save_views (void)
 {
     std::cout << "Saving views to MVE files..." << std::flush;
     for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i] != NULL && this->views[i]->is_dirty())
+        if (this->views[i] != nullptr && this->views[i]->is_dirty())
             this->views[i]->save_view();
     std::cout << " done." << std::endl;
 }
@@ -69,7 +69,7 @@ Scene::is_dirty (void) const
         return true;
 
     for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i] != NULL && this->views[i]->is_dirty())
+        if (this->views[i] != nullptr && this->views[i]->is_dirty())
             return true;
 
     return false;
@@ -88,7 +88,7 @@ Scene::cache_cleanup (void)
     std::size_t total_views = 0;
     for (std::size_t i = 0; i < this->views.size(); ++i)
     {
-        if (this->views[i] == NULL)
+        if (this->views[i] == nullptr)
             continue;
 
         total_views += 1;
@@ -122,7 +122,7 @@ Scene::get_view_mem_usage (void)
 {
     std::size_t ret = 0;
     for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i] != NULL)
+        if (this->views[i] != nullptr)
             ret += this->views[i]->get_byte_size();
     return ret;
 }
@@ -132,7 +132,7 @@ Scene::get_view_mem_usage (void)
 std::size_t
 Scene::get_bundle_mem_usage (void)
 {
-    return (this->bundle != NULL ? this->bundle->get_byte_size() : 0);
+    return (this->bundle != nullptr ? this->bundle->get_byte_size() : 0);
 }
 
 /* ---------------------------------------------------------------- */
@@ -186,7 +186,7 @@ Scene::init_views (void)
     {
         std::size_t id = temp_list[i]->get_id();
 
-        if (this->views[id] != NULL)
+        if (this->views[id] != nullptr)
         {
             std::cout << "Warning loading MVE file "
                 << this->views[id]->get_directory() << std::endl
@@ -209,7 +209,7 @@ Scene::init_views (void)
 Bundle::ConstPtr
 Scene::get_bundle (void)
 {
-    if (this->bundle == NULL)
+    if (this->bundle == nullptr)
     {
         std::string filename = util::fs::join_path(this->basedir,
             MVE_SCENE_BUNDLE_FILE);

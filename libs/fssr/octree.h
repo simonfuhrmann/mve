@@ -31,8 +31,8 @@ class Octree
 public:
     /**
      * Simple recursive octree node that stores samples in a vector.
-     * The node is a leaf if children is NULL, otherwise eight children exist.
-     * The node is the root node if parent is NULL. In FSSR, samples are
+     * The node is a leaf if children is nullptr, otherwise eight children exist.
+     * The node is the root node if parent is nullptr. In FSSR, samples are
      * inserted according to scale, thus inner nodes may contain samples.
      */
     struct Node
@@ -205,7 +205,7 @@ private:
 
 inline
 Octree::Node::Node (void)
-    : children(NULL), parent(NULL)
+    : children(nullptr), parent(nullptr)
 {
 }
 
@@ -219,8 +219,8 @@ Octree::Node::~Node (void)
 
 inline
 Octree::Iterator::Iterator (void)
-    : current(NULL)
-    , root(NULL)
+    : current(nullptr)
+    , root(nullptr)
     , path(0)
     , level(0)
 {
@@ -230,7 +230,7 @@ Octree::Iterator::Iterator (void)
 
 inline
 Octree::Octree (void)
-    : root(NULL)
+    : root(nullptr)
 {
     this->clear();
 }
@@ -245,7 +245,7 @@ inline void
 Octree::clear (void)
 {
     delete this->root;
-    this->root = NULL;
+    this->root = nullptr;
     this->root_size = 0.0;
     this->root_center = math::Vec3d(0.0);
     this->num_samples = 0;
@@ -257,7 +257,7 @@ inline void
 Octree::clear_samples (void)
 {
     Iterator iter = this->get_iterator_for_root();
-    for (iter.first_node(); iter.current != NULL; iter.next_node())
+    for (iter.first_node(); iter.current != nullptr; iter.next_node())
         iter.current->samples.clear();
     this->num_samples = 0;
 }

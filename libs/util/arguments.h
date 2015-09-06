@@ -37,7 +37,7 @@ struct ArgOption
  */
 struct ArgResult
 {
-    ArgOption const* opt; ///< NULL for non-options
+    ArgOption const* opt; ///< nullptr for non-options
     std::string arg; ///< Empty for options without arguments
 
     /** Returns argument converted to type T. */
@@ -129,16 +129,16 @@ public:
         throw(util::Exception);
 
     /**
-     * Iterator for the results. If opt is NULL, the argument is a
+     * Iterator for the results. If opt is nullptr, the argument is a
      * non-option. Otherwise opt points to one of the given argument
-     * options. The method returns NULL if there are no more arguments.
+     * options. The method returns nullptr if there are no more arguments.
      */
     ArgResult const* next_result (void);
 
     /**
      * Iterator for the options. It does not return arguments that
-     * are non-options, i.e. opt is never NULL. The method returns
-     * NULL if there are no more non-option arguments.
+     * are non-options, i.e. opt is never nullptr. The method returns
+     * nullptr if there are no more non-option arguments.
      */
     ArgResult const* next_option (void);
 
