@@ -45,7 +45,7 @@ struct Viewport
     /** Camera pose for the viewport. */
     CameraPose pose;
 
-    /** The actual image data for debugging purposes. Usually NULL! */
+    /** The actual image data for debugging purposes. Usually nullptr! */
     mve::ByteImage::Ptr image;
     /** Per-feature information. */
     FeatureSet features;

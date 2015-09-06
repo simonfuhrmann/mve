@@ -181,15 +181,15 @@ mve::ImageBase::Ptr
 load_any_image (std::string const& fname, std::string* exif)
 {
     mve::ByteImage::Ptr img_8 = load_8bit_image(fname, exif);
-    if (img_8 != NULL)
+    if (img_8 != nullptr)
         return img_8;
 
     mve::RawImage::Ptr img_16 = load_16bit_image(fname);
-    if (img_16 != NULL)
+    if (img_16 != nullptr)
         return img_16;
 
     mve::FloatImage::Ptr img_float = load_float_image(fname);
-    if (img_float != NULL)
+    if (img_float != nullptr)
         return img_float;
 
     std::cerr << "Skipping file " << util::fs::basename(fname)
@@ -364,7 +364,7 @@ import_bundle_nvm (AppSettings const& conf)
         /* Load original image. */
         std::string exif;
         mve::ByteImage::Ptr image = load_8bit_image(nvm_cam.filename, &exif);
-        if (image == NULL)
+        if (image == nullptr)
         {
             std::cout << "Error loading: " << nvm_cam.filename
                 << " (skipping " << fname << ")" << std::endl;
@@ -672,20 +672,20 @@ import_bundle (AppSettings const& conf)
         }
 
         /* Add images to view. */
-        if (thumb != NULL)
+        if (thumb != nullptr)
             view->set_image(thumb, "thumbnail");
 
-        if (undist != NULL)
+        if (undist != nullptr)
         {
             undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
             view->set_image(undist, "undistorted");
         }
-        else if (cam.flen != 0.0f && undist == NULL)
+        else if (cam.flen != 0.0f && undist == nullptr)
             std::cerr << "Warning: Undistorted image missing!" << std::endl;
 
-        if (original != NULL)
+        if (original != nullptr)
             view->set_image(original, "original");
-        if (original == NULL && import_original)
+        if (original == nullptr && import_original)
             std::cerr << "Warning: Original image missing!" << std::endl;
 
         /* Add EXIF data to view if available. */
@@ -696,7 +696,7 @@ import_bundle (AppSettings const& conf)
 
         if (cam.flen != 0.0f)
             num_valid_cams += 1;
-        if (undist != NULL)
+        if (undist != nullptr)
             undist_imported += 1;
     }
 
@@ -794,7 +794,7 @@ import_images (AppSettings const& conf)
         std::cout << "Importing image " << fname << "..." << std::endl;
         std::string exif;
         mve::ImageBase::Ptr image = load_any_image(afname, &exif);
-        if (image == NULL)
+        if (image == nullptr)
             continue;
 
         /* Create view, set headers, add image. */
@@ -812,7 +812,7 @@ import_images (AppSettings const& conf)
 
         /* Add thumbnail for byte images. */
         mve::ByteImage::Ptr thumb = create_thumbnail(image);
-        if (thumb != NULL)
+        if (thumb != nullptr)
             view->set_image(thumb, "thumbnail");
 
         /* Add EXIF data to view if available. */
@@ -887,7 +887,7 @@ main (int argc, char** argv)
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();
-        i != NULL; i = args.next_option())
+        i != nullptr; i = args.next_option())
     {
         if (i->opt->lopt == "original")
             conf.import_orig = true;

@@ -53,7 +53,7 @@ homography_dlt (Correspondences2D2D const& points, HomographyMatrix* result)
     /* Compute homography matrix using SVD. */
     math::Matrix<double, 9, 9> V;
     math::matrix_svd<double>(&A[0], 2 * points.size(),
-        9, NULL, NULL, V.begin());
+        9, nullptr, nullptr, V.begin());
 
     /* Only consider the last column of V as the solution. */
     for (int i = 0; i < 9; ++i)

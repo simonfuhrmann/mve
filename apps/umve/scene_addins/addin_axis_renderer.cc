@@ -30,7 +30,7 @@ AddinAxisRenderer::paint_impl (void)
 {
     if (this->render_cb->isChecked())
     {
-        if (this->axis_renderer == NULL)
+        if (this->axis_renderer == nullptr)
             this->axis_renderer = ogl::create_axis_renderer
                 (this->state->wireframe_shader);
 

@@ -65,7 +65,7 @@ fundamental_least_squares (Correspondences2D2D const& points,
 
     /* Compute fundamental matrix using SVD. */
     std::vector<double> V(9 * 9);
-    math::matrix_svd<double>(&A[0], points.size(), 9, NULL, NULL, &V[0]);
+    math::matrix_svd<double>(&A[0], points.size(), 9, nullptr, nullptr, &V[0]);
 
     /* Use last column of V as solution. */
     for (int i = 0; i < 9; ++i)
@@ -102,7 +102,7 @@ fundamental_8_point (Eight2DPoints const& points_view_1,
      * vector corresponding to the smallest eigenvalue of A.
      */
     math::Matrix<double, 9, 9> V;
-    math::matrix_svd<double, 8, 9>(A, NULL, NULL, &V);
+    math::matrix_svd<double, 8, 9>(A, nullptr, nullptr, &V);
     math::Vector<double, 9> f = V.col(8);
     std::copy(*f, *f + 9, **result);
 

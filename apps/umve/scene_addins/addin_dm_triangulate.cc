@@ -57,7 +57,7 @@ AddinDMTriangulate::set_selected_view (SelectedView* view)
 void
 AddinDMTriangulate::on_triangulate_clicked (void)
 {
-    if (this->view == NULL)
+    if (this->view == nullptr)
         return;
 
     float dd_factor = this->dm_depth_disc->value();
@@ -70,7 +70,7 @@ AddinDMTriangulate::on_triangulate_clicked (void)
     }
 
     mve::View::Ptr view(this->view->get_view());
-    if (view == NULL)
+    if (view == nullptr)
     {
         this->show_error_box("Error triangulating", "No view available");
         return;
@@ -78,7 +78,7 @@ AddinDMTriangulate::on_triangulate_clicked (void)
 
     /* Fetch depthmap and color image. */
     mve::FloatImage::Ptr dm(view->get_float_image(embedding));
-    if (dm == NULL)
+    if (dm == nullptr)
     {
         this->show_error_box("Error triangulating",
             "Depthmap not available: " + embedding);
@@ -106,7 +106,7 @@ AddinDMTriangulate::on_triangulate_clicked (void)
 void
 AddinDMTriangulate::on_select_colorimage (QString name)
 {
-    if (this->view == NULL || this->view->get_view() == NULL)
+    if (this->view == nullptr || this->view->get_view() == nullptr)
         return;
 
     std::string const depth_str("depth-");

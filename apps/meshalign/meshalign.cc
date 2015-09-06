@@ -88,7 +88,7 @@ main (int argc, char** argv)
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
-        if (arg->opt == NULL)
+        if (arg->opt == nullptr)
         {
             conf.input.push_back(arg->arg);
             continue;

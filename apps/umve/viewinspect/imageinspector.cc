@@ -82,7 +82,7 @@ ImageInspectorWidget::set_image (mve::ByteImage::ConstPtr byte_image,
 void
 ImageInspectorWidget::magnify (int x, int y)
 {
-    if (this->byte_image == NULL || this->orig_image == NULL)
+    if (this->byte_image == nullptr || this->orig_image == nullptr)
         return;
 
     int const iw = this->byte_image->width();
@@ -290,7 +290,7 @@ ImageInspectorWidget::image_click (int x, int y,
 {
     if (this->inspect_x < 0 || this->inspect_y < 0)
         return;
-    if (this->byte_image == NULL || this->orig_image == NULL)
+    if (this->byte_image == nullptr || this->orig_image == nullptr)
         return;
 
     //std::cout << "Click at " << x << "," << y << std::endl;

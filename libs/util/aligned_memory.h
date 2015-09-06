@@ -61,14 +61,14 @@ private:
 template <typename T, uintptr_t MODULO>
 inline
 AlignedMemory<T, MODULO>::AlignedMemory (void)
-    : raw(NULL), aligned(NULL), size(0)
+    : raw(nullptr), aligned(nullptr), size(0)
 {
 }
 
 template <typename T, uintptr_t MODULO>
 inline
 AlignedMemory<T, MODULO>::AlignedMemory (std::size_t size)
-    : raw(NULL), aligned(NULL), size(0)
+    : raw(nullptr), aligned(nullptr), size(0)
 {
     this->allocate(size);
 }
@@ -76,9 +76,9 @@ AlignedMemory<T, MODULO>::AlignedMemory (std::size_t size)
 template <typename T, uintptr_t MODULO>
 inline
 AlignedMemory<T, MODULO>::AlignedMemory (AlignedMemory const& other)
-    : raw(NULL), aligned(NULL), size(0)
+    : raw(nullptr), aligned(nullptr), size(0)
 {
-    if (other.raw == NULL)
+    if (other.raw == nullptr)
         return;
     this->allocate(other.size);
     std::copy(other.begin(), other.end(), this->aligned);
@@ -109,8 +109,8 @@ inline void
 AlignedMemory<T, MODULO>::deallocate (void)
 {
     delete [] this->raw;
-    this->raw = NULL;
-    this->aligned = NULL;
+    this->raw = nullptr;
+    this->aligned = nullptr;
     this->size = 0;
 }
 
@@ -119,7 +119,7 @@ inline void
 AlignedMemory<T, MODULO>::operator= (AlignedMemory const& rhs)
 {
     this->deallocate();
-    if (rhs.raw == NULL)
+    if (rhs.raw == nullptr)
         return;
     this->allocate(rhs.size);
     std::copy(rhs.begin(), rhs.end(), this->aligned);
@@ -171,14 +171,14 @@ template <typename T, uintptr_t MODULO>
 inline T const*
 AlignedMemory<T, MODULO>::end (void) const
 {
-    return this->aligned ? this->aligned + this->size : NULL;
+    return this->aligned ? this->aligned + this->size : nullptr;
 }
 
 template <typename T, uintptr_t MODULO>
 inline T*
 AlignedMemory<T, MODULO>::end (void)
 {
-    return this->aligned ? this->aligned + this->size : NULL;
+    return this->aligned ? this->aligned + this->size : nullptr;
 }
 
 UTIL_NAMESPACE_END

@@ -210,7 +210,7 @@ get_home_dir (void)
 #else // _WIN32
     uid_t user_id = ::geteuid();
     struct passwd* user_info = ::getpwuid(user_id);
-    if (user_info == NULL || user_info->pw_dir == NULL)
+    if (user_info == nullptr || user_info->pw_dir == nullptr)
         throw util::Exception("Cannot determine home directory");
     std::strncpy(home_path, user_info->pw_dir, PATH_MAX);
 #endif // _WIN32
@@ -299,7 +299,7 @@ get_binary_path (void)
 #   endif
 
     TCHAR omgwtf[PATH_MAX];
-    int n_chars = GetModuleFileName(NULL, omgwtf, PATH_MAX);
+    int n_chars = GetModuleFileName(nullptr, omgwtf, PATH_MAX);
     std::copy(omgwtf, omgwtf + n_chars, path);
 
 #elif defined(__APPLE__)
@@ -317,7 +317,7 @@ get_binary_path (void)
     else
     {
         char real[PATH_MAX];
-        if (::realpath(path, real) == NULL)
+        if (::realpath(path, real) == nullptr)
             throw std::runtime_error(
                 "Could not determine binary path: realpath failed!");
         ::strncpy(path, real, PATH_MAX);
@@ -563,7 +563,7 @@ Directory::scan (std::string const& path)
     FindClose(hf);
 #else
     DIR *dp = ::opendir(path.c_str());
-    if (dp == NULL)
+    if (dp == nullptr)
         throw Exception("Cannot open directory: ", std::strerror(errno));
 
     struct dirent *ep;

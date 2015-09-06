@@ -77,5 +77,5 @@ FancyProgressPrinter::run()
         }
     }
 
-    return NULL;
+    return nullptr;
 }

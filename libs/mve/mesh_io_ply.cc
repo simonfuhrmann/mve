@@ -687,8 +687,8 @@ void
 save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
     SavePLYOptions const& options)
 {
-    if (mesh == NULL)
-        throw std::invalid_argument("NULL mesh given");
+    if (mesh == nullptr)
+        throw std::invalid_argument("nullptr mesh given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 
@@ -886,10 +886,10 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     ByteImage::ConstPtr color_image)
 {
     /* Some error and inconsistency checking. */
-    if (depth_map == NULL)
-        throw std::invalid_argument("NULL depth map given");
-    //if (confidence_map == NULL)
-    //    throw std::invalid_argument("NULL confidence map given");
+    if (depth_map == nullptr)
+        throw std::invalid_argument("nullptr depth map given");
+    //if (confidence_map == nullptr)
+    //    throw std::invalid_argument("nullptr confidence map given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 
@@ -898,11 +898,11 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     math::Matrix3f invproj;
     camera.fill_inverse_calibration(*invproj, width, height);
 
-    if (confidence_map != NULL && (confidence_map->height() != height
+    if (confidence_map != nullptr && (confidence_map->height() != height
         || confidence_map->width() != width))
         throw std::invalid_argument("Confidence map dimension does not match");
 
-    if (color_image != NULL && (color_image->width() != width
+    if (color_image != nullptr && (color_image->width() != width
         || color_image->height() != height))
         throw std::invalid_argument("Color image dimension does not match");
 
@@ -919,7 +919,7 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     /* Count valid depth values. */
     int num_verts = 0;
     int num_pixels = width * height;
-    if (confidence_map != NULL)
+    if (confidence_map != nullptr)
     {
         for (int i = 0; i < num_pixels; ++i)
             if (confidence_map->at(i, 0) > 0.0f)
@@ -945,14 +945,14 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
     out << "property float y" << std::endl;
     out << "property float z" << std::endl;
 
-    if (color_image != NULL)
+    if (color_image != nullptr)
     {
         out << "property uchar red" << std::endl;
         out << "property uchar green" << std::endl;
         out << "property uchar blue" << std::endl;
     }
 
-    if (confidence_map != NULL)
+    if (confidence_map != nullptr)
     {
         out << "property float confidence" << std::endl;
     }
@@ -970,7 +970,7 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
         int const yinv = height - y - 1;
 
         float confidence = 0.0f;
-        if (confidence_map != NULL)
+        if (confidence_map != nullptr)
         {
             confidence = confidence_map->at(x, yinv, 0);
             if (confidence <= 0.0f)
@@ -986,13 +986,13 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
 
         /* Convert vertex to world coords and write to file. */
         out.write((char const*)pos.begin(), 3 * sizeof(float));
-        if (color_image != NULL)
+        if (color_image != nullptr)
         {
             unsigned char const* c_off = &color_image->at(x, yinv, 0);
             out.write((char const*)c_off, 3);
         }
 
-        if (confidence_map != NULL)
+        if (confidence_map != nullptr)
             out.write((char const*)&confidence, sizeof(float));
     }
 
@@ -1007,7 +1007,7 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
         int const yinv = height - y - 1;
 
         bool valid = true;
-        if (confidence_map != NULL && confidence_map->at(x, yinv, 0) <= 0.0f)
+        if (confidence_map != nullptr && confidence_map->at(x, yinv, 0) <= 0.0f)
             valid = false;
         if (valid && depth_map->at(x, yinv, 0) <= 0.0f)
             valid = false;
@@ -1040,8 +1040,8 @@ save_ply_view (View::Ptr view, std::string const& filename,
     std::string const& depthmap, std::string const& confidence,
     std::string const& color_image)
 {
-    if (view == NULL)
-        throw std::invalid_argument("NULL view given");
+    if (view == nullptr)
+        throw std::invalid_argument("nullptr view given");
 
     CameraInfo const& cam(view->get_camera());
     FloatImage::Ptr dm = view->get_float_image(depthmap);

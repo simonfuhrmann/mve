@@ -86,10 +86,10 @@ AlignedAllocator<T, alignment>::allocate (size_type n)
     if (n > this->max_size())
       throw std::bad_alloc();
     size_t size = n * sizeof(T);
-    pointer p = NULL;
+    pointer p = nullptr;
 #ifdef _MSC_VER
     p = reinterpret_cast<pointer>(::_aligned_malloc(size, alignment));
-    if (p == NULL)
+    if (p == nullptr)
         throw std::bad_alloc();
 #else
     if (::posix_memalign(&reinterpret_cast<void*&>(p), alignment, size))

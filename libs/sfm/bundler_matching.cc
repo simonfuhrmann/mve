@@ -28,7 +28,7 @@ Matching::compute (ViewportList const& viewports,
     std::size_t num_pairs = viewports.size() * (viewports.size() - 1) / 2;
     std::size_t num_done = 0;
 
-    if (this->progress != NULL)
+    if (this->progress != nullptr)
     {
         this->progress->num_total = num_pairs;
         this->progress->num_done = 0;
@@ -40,7 +40,7 @@ Matching::compute (ViewportList const& viewports,
 #pragma omp critical
         {
             num_done += 1;
-            if (this->progress != NULL)
+            if (this->progress != nullptr)
                 this->progress->num_done += 1;
 
             float percent = (num_done * 1000 / num_pairs) / 10.0f;

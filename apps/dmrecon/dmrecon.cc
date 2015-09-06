@@ -86,11 +86,11 @@ get_scale_from_max_pixels (mve::Scene::Ptr scene,
     AppSettings const& app_settings, mvs::Settings const& mvs_settings)
 {
     mve::View::Ptr view = scene->get_view_by_id(mvs_settings.refViewNr);
-    if (view == NULL)
+    if (view == nullptr)
         return 0;
 
     mve::View::ImageProxy const* proxy = view->get_image_proxy(mvs_settings.imageEmbedding);
-    if (proxy == NULL)
+    if (proxy == nullptr)
         return 0;
 
     int const width = proxy->width;
@@ -298,7 +298,7 @@ main (int argc, char** argv)
                 continue;
             }
 
-            if (views[id] == NULL || !views[id]->is_camera_valid())
+            if (views[id] == nullptr || !views[id]->is_camera_valid())
                 continue;
 
             /* Setup MVS. */

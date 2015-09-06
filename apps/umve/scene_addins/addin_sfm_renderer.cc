@@ -28,12 +28,12 @@ AddinSfmRenderer::paint_impl (void)
     if (this->render_cb->isChecked())
     {
         /* Try to create renderer. */
-        if (this->sfm_renderer == NULL)
+        if (this->sfm_renderer == nullptr)
             this->create_renderer(!this->first_create_renderer);
         this->first_create_renderer = false;
 
         /* Try to render. */
-        if (this->sfm_renderer != NULL)
+        if (this->sfm_renderer != nullptr)
         {
             this->state->wireframe_shader->bind();
             this->state->wireframe_shader->send_uniform("ccolor", math::Vec4f(0.0f));
@@ -45,7 +45,7 @@ AddinSfmRenderer::paint_impl (void)
 void
 AddinSfmRenderer::create_renderer (bool raise_error_on_failure)
 {
-    if  (this->state->scene == NULL)
+    if  (this->state->scene == nullptr)
         return;
 
     try

@@ -168,7 +168,7 @@ ProgressHandle::~ProgressHandle()
         this->progress_printer.setStatus(settings.refViewNr,
             FancyProgressPrinter::STATUS_FAILED);
 
-    if (recon != NULL)
+    if (recon != nullptr)
         this->progress_printer.eraseRecon(recon);
 }
 

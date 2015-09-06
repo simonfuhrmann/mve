@@ -122,7 +122,7 @@ main (int argc, char** argv)
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
-        if (arg->opt == NULL)
+        if (arg->opt == nullptr)
             continue;
 
         switch (arg->opt->sopt)
@@ -195,7 +195,7 @@ main (int argc, char** argv)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view = views[i];
-        if (view == NULL)
+        if (view == nullptr)
             continue;
 
         std::size_t view_id = view->get_id();
@@ -204,7 +204,7 @@ main (int argc, char** argv)
             continue;
 
         mve::FloatImage::Ptr dm = view->get_float_image(conf.dmname);
-        if (dm == NULL)
+        if (dm == nullptr)
             continue;
 
         if (conf.min_valid_fraction > 0.0f)
@@ -230,7 +230,7 @@ main (int argc, char** argv)
 
 #pragma omp critical
         std::cout << "Processing view \"" << view->get_name()
-            << "\"" << (ci != NULL ? " (with colors)" : "")
+            << "\"" << (ci != nullptr ? " (with colors)" : "")
             << "..." << std::endl;
 
         /* Triangulate depth map. */
@@ -335,10 +335,10 @@ main (int argc, char** argv)
         for (std::size_t i = 0; i < views.size(); ++i)
         {
             mve::View::Ptr view = views[i];
-            if (view == NULL || view->get_camera().flen == 0.0f)
+            if (view == nullptr || view->get_camera().flen == 0.0f)
                 continue;
             mve::ByteImage::Ptr mask = view->get_byte_image(conf.mask);
-            if (mask == NULL)
+            if (mask == nullptr)
             {
                 std::cout << "Mask not found for image \""
                     << view->get_name() << "\", skipping." << std::endl;

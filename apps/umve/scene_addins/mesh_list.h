@@ -110,11 +110,11 @@ private:
     MeshRep* mesh_by_name (std::string const& name);
 
 public:
-    QMeshList (QWidget* parent = NULL);
+    QMeshList (QWidget* parent = nullptr);
     ~QMeshList (void);
 
     void add (std::string const& name, mve::TriangleMesh::Ptr mesh,
-        std::string const& filename = "", ogl::Texture::Ptr texture = NULL);
+        std::string const& filename = "", ogl::Texture::Ptr texture = nullptr);
     void remove (std::string const& name);
 
     MeshList const& get_meshes (void) const;

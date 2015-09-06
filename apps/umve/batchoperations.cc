@@ -50,7 +50,7 @@ void
 BatchOperations::get_embedding_names (mve::ImageType type,
         std::vector<std::string>* result)
 {
-    if (this->scene == NULL)
+    if (this->scene == nullptr)
         return;
 
     typedef std::set<std::string> StringSet;
@@ -59,7 +59,7 @@ BatchOperations::get_embedding_names (mve::ImageType type,
     mve::Scene::ViewList const& views(this->scene->get_views());
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-        if (views[i] == NULL)
+        if (views[i] == nullptr)
             continue;
 
         mve::View::ImageProxies const& image_proxies = views[i]->get_images();
@@ -114,7 +114,7 @@ BatchDelete::setup_gui (void)
 {
     this->embeddings_list->clear();
 
-    if (this->scene == NULL)
+    if (this->scene == nullptr)
         return;
 
     std::vector<std::string> names;
@@ -146,7 +146,7 @@ BatchDelete::on_batchdel_exec (void)
     for (std::size_t i = 0; i < vl.size(); ++i)
     {
         mve::View::Ptr view = vl[i];
-        if (view == NULL)
+        if (view == nullptr)
             continue;
 
         for (StringSet::iterator j = names.begin(); j != names.end(); ++j)
@@ -208,7 +208,7 @@ BatchExport::BatchExport (QWidget *parent)
 void
 BatchExport::setup_gui (void)
 {
-    if (this->scene == NULL)
+    if (this->scene == nullptr)
         return;
 
     std::vector<std::string> float_names;
@@ -244,7 +244,7 @@ export_view_intern (mve::View::Ptr view, std::string const& basename,
     std::string const& depthmap_name, std::string const& confmap_name,
     std::string const& colorimage_name)
 {
-    if (view->get_float_image(depthmap_name) == NULL)
+    if (view->get_float_image(depthmap_name) == nullptr)
         return;
 
     try
@@ -310,7 +310,7 @@ BatchExport::on_export_exec (void)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view(views[i]);
-        if (view == NULL)
+        if (view == nullptr)
             continue;
 
         std::stringstream ss;
@@ -429,7 +429,7 @@ BatchImportImages::on_import_images (void)
 
         try
         {
-            if (image == NULL)
+            if (image == nullptr)
                 image = mve::image::load_file(filename);
         }
         catch (std::exception& e)
@@ -446,7 +446,7 @@ BatchImportImages::on_import_images (void)
         {
             for (; last_reused_id < views.size(); ++last_reused_id)
             {
-                if (views[last_reused_id] == NULL)
+                if (views[last_reused_id] == nullptr)
                 {
                     view_id = last_reused_id;
                     break;
@@ -545,7 +545,7 @@ BatchGenerateThumbs::setup_gui (void)
 void
 BatchGenerateThumbs::on_generate (void)
 {
-    if (this->scene == NULL)
+    if (this->scene == nullptr)
         return;
 
     this->setDisabled(true);
@@ -558,11 +558,11 @@ BatchGenerateThumbs::on_generate (void)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
         mve::View::Ptr view(views[i]);
-        if (view == NULL)
+        if (view == nullptr)
             continue;
 
         mve::ByteImage::Ptr img = view->get_byte_image(embedding_name);
-        if (img == NULL)
+        if (img == nullptr)
             continue;
 
         img = mve::image::create_thumbnail<uint8_t>(img, 50, 50);

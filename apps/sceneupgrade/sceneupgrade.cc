@@ -308,7 +308,7 @@ main (int argc, char** argv)
 
     /* Assign options. */
     for (util::ArgResult const* i = args.next_option();
-        i != NULL; i = args.next_option())
+        i != nullptr; i = args.next_option())
     {
         if (i->opt->lopt == "keep-original")
             conf.keep_original = true;

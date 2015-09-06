@@ -203,7 +203,7 @@ load_nvm_bundle (std::string const& filename,
             << " strange points not seem by any camera!" << std::endl;
     }
 
-    if (camera_info != NULL)
+    if (camera_info != nullptr)
         std::swap(*camera_info, nvm_cams);
 
     return bundle;

@@ -72,17 +72,17 @@ AddinFrustaSceneRenderer::paint_impl (void)
 {
     if (this->render_frusta_cb->isChecked())
     {
-        if (this->frusta_renderer == NULL)
+        if (this->frusta_renderer == nullptr)
             this->create_frusta_renderer();
-        if (this->frusta_renderer != NULL)
+        if (this->frusta_renderer != nullptr)
             this->frusta_renderer->draw();
     }
 
     if (this->render_viewdir_cb->isChecked())
     {
-        if (this->viewdir_renderer == NULL)
+        if (this->viewdir_renderer == nullptr)
             this->create_viewdir_renderer();
-        if (this->viewdir_renderer != NULL)
+        if (this->viewdir_renderer != nullptr)
             this->viewdir_renderer->draw();
     }
 }
@@ -90,7 +90,7 @@ AddinFrustaSceneRenderer::paint_impl (void)
 void
 AddinFrustaSceneRenderer::create_frusta_renderer (void)
 {
-    if (this->state->scene == NULL)
+    if (this->state->scene == nullptr)
         return;
 
     float size = this->frusta_size_slider->value() / 100.0f;
@@ -98,7 +98,7 @@ AddinFrustaSceneRenderer::create_frusta_renderer (void)
     mve::Scene::ViewList const& views(this->state->scene->get_views());
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-        if (views[i].get() == NULL)
+        if (views[i].get() == nullptr)
             continue;
 
         mve::CameraInfo const& cam = views[i]->get_camera();
@@ -116,7 +116,7 @@ AddinFrustaSceneRenderer::create_frusta_renderer (void)
 void
 AddinFrustaSceneRenderer::create_viewdir_renderer (void)
 {
-    if (this->state->view == NULL)
+    if (this->state->view == nullptr)
         return;
 
     math::Vec3f campos, viewdir;

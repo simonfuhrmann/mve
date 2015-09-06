@@ -983,7 +983,7 @@ crop (typename Image<T>::ConstPtr image, int width, int height,
     int left, int top, T const* fill_color)
 {
     if (width < 0 || height < 0 || !image.get())
-        throw std::invalid_argument("Invalid width/height or NULL image given");
+        throw std::invalid_argument("Invalid width/height or nullptr image given");
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(width, height, image->channels());
@@ -1021,8 +1021,8 @@ template <typename T>
 typename Image<T>::Ptr
 blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
 {
-    if (in == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (in == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     /* Small sigmas result in literally no change. */
     if (MATH_EPSILON_EQ(sigma, 0.0f, 0.1f))
@@ -1105,8 +1105,8 @@ template <typename T>
 typename Image<T>::Ptr
 blur_boxfilter (typename Image<T>::ConstPtr in, int ks)
 {
-    if (in == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (in == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     int w(in->width());
     int h(in->height());
@@ -1198,8 +1198,8 @@ template <typename T>
 typename Image<T>::Ptr
 rotate (typename Image<T>::ConstPtr image, RotateType type)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     int iw = image->width();
     int ih = image->height();
@@ -1239,8 +1239,8 @@ template <typename T>
 typename Image<T>::Ptr
 rotate (typename Image<T>::ConstPtr image, float angle, T const* fill_color)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     int const w = image->width();
     int const h = image->height();
@@ -1274,8 +1274,8 @@ flip (typename Image<T>::Ptr image, FlipType type)
 {
     if (type == FLIP_NONE)
         return;
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     bool const fh = type & FLIP_HORIZONTAL;
     bool const fv = type & FLIP_VERTICAL;
@@ -1342,8 +1342,8 @@ template <typename T>
 typename Image<T>::Ptr
 desaturate (typename Image<T>::ConstPtr img, DesaturateType type)
 {
-    if (img == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (img == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     int ic = img->channels();
     if (ic != 3 && ic != 4)
@@ -1390,8 +1390,8 @@ template <typename T>
 typename Image<T>::Ptr
 expand_grayscale (typename Image<T>::ConstPtr image)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     int const ic = image->channels();
     if (ic != 1 && ic != 2)
@@ -1486,8 +1486,8 @@ subtract (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
     int const ih = i1->height();
     int const ic = i1->channels();
 
-    if (i1 == NULL || i2 == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (i1 == nullptr || i2 == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     if (iw != i2->width() || ih != i2->height() || ic != i2->channels())
         throw std::invalid_argument("Image dimensions do not match");
@@ -1512,8 +1512,8 @@ difference (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
     int const ih = i1->height();
     int const ic = i1->channels();
 
-    if (i1 == NULL || i2 == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (i1 == nullptr || i2 == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     if (iw != i2->width() || ih != i2->height() || ic != i2->channels())
         throw std::invalid_argument("Image dimensions do not match");
@@ -1586,8 +1586,8 @@ template <typename T_IN, typename T_OUT>
 typename Image<T_OUT>::Ptr
 integral_image (typename Image<T_IN>::ConstPtr image)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     int const width = image->width();
     int const height = image->height();
@@ -1674,7 +1674,7 @@ create_thumbnail (typename Image<T>::ConstPtr image,
     typename mve::Image<T>::Ptr thumb = mve::image::rescale<T>(image,
         mve::image::RESCALE_LINEAR, rescale_width, rescale_height);
     thumb = mve::image::crop<T>(thumb, thumb_width, thumb_height,
-        crop_left, crop_top, NULL);
+        crop_left, crop_top, nullptr);
 
     return thumb;
 }
@@ -1723,8 +1723,8 @@ typename Image<T>::Ptr
 image_undistort_bundler (typename Image<T>::ConstPtr img,
     double focal_length, double k0, double k1)
 {
-    if (img == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (img == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     if (k0 == 0.0 && k1 == 0.0)
         return img->duplicate();
@@ -1767,8 +1767,8 @@ typename Image<T>::Ptr
 image_undistort_vsfm (typename Image<T>::ConstPtr img,
     double focal_length, double k1)
 {
-    if (img == NULL)
-        throw std::invalid_argument("NULL image given");
+    if (img == nullptr)
+        throw std::invalid_argument("nullptr image given");
 
     if (k1 == 0.0)
         return img->duplicate();

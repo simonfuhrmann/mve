@@ -77,7 +77,7 @@ SceneInspect::reset (void)
 void
 SceneInspect::on_tab_activated (void)
 {
-    if (this->next_view != NULL)
+    if (this->next_view != nullptr)
         this->on_view_selected(this->next_view);
 }
 
@@ -173,7 +173,7 @@ SceneInspect::on_view_selected (mve::View::Ptr view)
     }
 
     this->addin_manager->set_view(view);
-    this->next_view = NULL;
+    this->next_view = nullptr;
 }
 
 /* ---------------------------------------------------------------- */

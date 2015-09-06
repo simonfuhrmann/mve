@@ -159,7 +159,7 @@ TEST(ImageToolsTest, ImageCropInside)
     mve::ByteImage::Ptr img = mve::ByteImage::create(4, 4, 2);
     for (int i = 0; i < img->get_value_amount(); ++i)
         img->at(i) = i;
-    img = mve::image::crop<uint8_t>(img, 2, 2, 1, 1, NULL);
+    img = mve::image::crop<uint8_t>(img, 2, 2, 1, 1, nullptr);
     EXPECT_EQ(2, img->width());
     EXPECT_EQ(2, img->height());
     EXPECT_EQ(2, img->channels());

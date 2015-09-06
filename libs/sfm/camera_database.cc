@@ -13,7 +13,7 @@
 
 SFM_NAMESPACE_BEGIN
 
-CameraDatabase* CameraDatabase::instance = NULL;
+CameraDatabase* CameraDatabase::instance = nullptr;
 
 namespace
 {
@@ -72,7 +72,7 @@ CameraDatabase::lookup (std::string const& maker,
     for (std::size_t i = 0; i < this->data.size(); ++i)
         if (this->data[i].maker == s_maker && this->data[i].model == s_model)
             return &this->data[i];
-    return NULL;
+    return nullptr;
 }
 
 CameraDatabase::CameraDatabase (void)

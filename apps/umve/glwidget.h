@@ -22,7 +22,7 @@ class GLWidget : public QGLWidget
     Q_OBJECT
 
 public:
-    GLWidget(QWidget* parent = NULL);
+    GLWidget(QWidget* parent = nullptr);
     ~GLWidget();
 
     void set_context (ogl::Context* context);

@@ -21,8 +21,8 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 void
 InitialPair::compute_pair (Result* result)
 {
-    if (this->viewports == NULL || this->tracks == NULL)
-        throw std::invalid_argument("NULL viewports or tracks");
+    if (this->viewports == nullptr || this->tracks == nullptr)
+        throw std::invalid_argument("nullptr viewports or tracks");
 
     std::cout << "Searching for initial pair..." << std::endl;
 
@@ -105,14 +105,14 @@ InitialPair::compute_pair (int view_1_id, int view_2_id, Result* result)
     this->compute_candidate_pairs(&candidates);
 
     /* Find candidate pair. */
-    CandidatePair* candidate = NULL;
-    for (std::size_t i = 0; candidate == NULL && i < candidates.size(); ++i)
+    CandidatePair* candidate = nullptr;
+    for (std::size_t i = 0; candidate == nullptr && i < candidates.size(); ++i)
     {
         if (view_1_id == candidates[i].view_1_id
             && view_2_id == candidates[i].view_2_id)
             candidate = &candidates[i];
     }
-    if (candidate == NULL)
+    if (candidate == nullptr)
         throw std::runtime_error("No matches for initial pair");
 
     /* Compute initial pair pose. */

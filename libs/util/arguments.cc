@@ -111,7 +111,7 @@ Arguments::parse_long_opt (std::string const& tok)
         throw util::Exception("Invalid option: ", tok);
 
     ArgOption const* option = this->find_opt(opt);
-    if (option == NULL)
+    if (option == nullptr)
         throw util::Exception("Invalid option: ", tok);
 
     if (option->argument && arg.empty())
@@ -139,7 +139,7 @@ Arguments::parse_short_opt (std::string const& tok1, std::string const& tok2)
     bool retval = false;
     ArgOption const* option = this->find_opt(opt);
 
-    if (option == NULL)
+    if (option == nullptr)
         throw util::Exception("Invalid option: ", tok1);
 
     /* If multiple options are given, recurse. */
@@ -186,7 +186,7 @@ Arguments::find_opt (char sopt)
         if (this->options[i].sopt == sopt)
             return &this->options[i];
 
-    return NULL;
+    return nullptr;
 }
 
 /* ---------------------------------------------------------------- */
@@ -198,7 +198,7 @@ Arguments::find_opt (std::string const& lopt)
         if (this->options[i].lopt == lopt)
             return &this->options[i];
 
-    return NULL;
+    return nullptr;
 }
 
 /* ---------------------------------------------------------------- */
@@ -257,7 +257,7 @@ Arguments::parse_intern (std::vector<std::string> const& args)
         {
             /* Regular non-option. */
             ArgResult res;
-            res.opt = NULL;
+            res.opt = nullptr;
             res.arg = tok;
             this->results.push_back(res);
         }
@@ -267,7 +267,7 @@ Arguments::parse_intern (std::vector<std::string> const& args)
     std::size_t num_nonopt = 0;
     for (std::size_t i = 0; i < this->results.size(); ++i)
     {
-        if (this->results[i].opt == NULL)
+        if (this->results[i].opt == nullptr)
             num_nonopt += 1;
     }
 
@@ -286,7 +286,7 @@ Arguments::next_result (void)
     if (this->cur_result >= this->results.size())
     {
         this->cur_result = (std::size_t)(-1);
-        return NULL;
+        return nullptr;
     }
 
     return &this->results[this->cur_result];
@@ -303,12 +303,12 @@ Arguments::next_option (void)
         if (this->cur_result >= this->results.size())
             break;
         ArgResult const* ret = &this->results[this->cur_result];
-        if (ret->opt == NULL)
+        if (ret->opt == nullptr)
             continue;
         return ret;
     }
     this->cur_result = (std::size_t)(-1); // Reset iterator
-    return NULL;
+    return nullptr;
 }
 
 /* ---------------------------------------------------------------- */

@@ -178,8 +178,8 @@ AddinManager::load_shaders (void)
 void
 AddinManager::reset_scene (void)
 {
-    this->state.scene = NULL;
-    this->state.view = NULL;
+    this->state.scene = nullptr;
+    this->state.view = nullptr;
     this->selected_view_1->set_view(mve::View::Ptr());
     this->selected_view_2->set_view(mve::View::Ptr());
     this->state.repaint();

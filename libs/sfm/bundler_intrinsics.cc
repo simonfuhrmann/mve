@@ -16,9 +16,9 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 void
 Intrinsics::compute (mve::Scene::Ptr scene, ViewportList* viewports)
 {
-    if (scene == NULL)
-        throw std::invalid_argument("NULL scene given");
-    if (viewports == NULL)
+    if (scene == nullptr)
+        throw std::invalid_argument("nullptr scene given");
+    if (viewports == nullptr)
         throw std::invalid_argument("No viewports given");
     if (viewports->size() != scene->get_views().size())
         throw std::invalid_argument("Viewports/scene size mismatch");
@@ -26,7 +26,7 @@ Intrinsics::compute (mve::Scene::Ptr scene, ViewportList* viewports)
     mve::Scene::ViewList const& views = scene->get_views();
     for (std::size_t i = 0; i < views.size(); ++i)
     {
-        if (views[i] == NULL)
+        if (views[i] == nullptr)
             continue;
 
         switch (this->opts.intrinsics_source)
@@ -64,7 +64,7 @@ Intrinsics::init_from_exif (mve::View::Ptr view, Viewport* viewport)
     }
 
     mve::ByteImage::Ptr exif_data = view->get_blob(this->opts.exif_embedding);
-    if (exif_data == NULL)
+    if (exif_data == nullptr)
     {
         std::cout << "Warning: No EXIF embedding for view "
             << view->get_id() << ", using fallback!" << std::endl;

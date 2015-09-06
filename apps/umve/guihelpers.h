@@ -45,7 +45,7 @@ public:
     QComboBox colorimage_cb;
 
 public:
-    PlyExportDialog (mve::View::Ptr view, QWidget* parent = NULL);
+    PlyExportDialog (mve::View::Ptr view, QWidget* parent = nullptr);
     void accept (void);
 };
 
@@ -88,7 +88,7 @@ private slots:
     void on_clicked (void);
 
 public:
-    FileSelector (QWidget* parent = NULL);
+    FileSelector (QWidget* parent = nullptr);
     void set_directory_mode (void);
     void set_ellipsize (std::size_t chars);
     std::string const& get_filename (void) const;

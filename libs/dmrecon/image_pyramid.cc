@@ -27,7 +27,7 @@ namespace
         mve::View::ImageProxy const* proxy = view->get_image_proxy(embeddingName);
         mve::CameraInfo cam = view->get_camera();
 
-        assert(proxy != NULL);
+        assert(proxy != nullptr);
 
         int curr_width = proxy->width;
         int curr_height = proxy->height;
@@ -56,7 +56,7 @@ namespace
     ensureImages(ImagePyramid& levels, mve::View::Ptr view,
         std::string embeddingName, int minLevel)
     {
-        if (levels[minLevel].image != NULL)
+        if (levels[minLevel].image != nullptr)
             return;
 
         mve::ByteImage::Ptr img = view->get_byte_image(embeddingName);
@@ -77,7 +77,7 @@ namespace
         int curr_height = img->height();
         for (int i = 0; std::min(curr_width, curr_height) >= MIN_IMAGE_DIM; ++i)
         {
-            if (levels[i].image != NULL)
+            if (levels[i].image != nullptr)
                 break;
 
             if (i > 0)
@@ -102,7 +102,7 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
     util::MutexLock lock(ImagePyramidCache::metadataMutex);
 
     /* Initialize on first access. */
-    if (ImagePyramidCache::cachedScene == NULL)
+    if (ImagePyramidCache::cachedScene == nullptr)
     {
         ImagePyramidCache::cachedScene = scene;
         ImagePyramidCache::cachedEmbedding = embeddingName;
@@ -120,7 +120,7 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
     {
         /* Either re-recreate or use cached entry. */
         pyramid = ImagePyramidCache::entries[view->get_id()];
-        if (pyramid == NULL)
+        if (pyramid == nullptr)
         {
             pyramid = buildPyramid(view, embeddingName);
             ImagePyramidCache::entries[view->get_id()] = pyramid;
@@ -136,13 +136,13 @@ ImagePyramidCache::cleanup()
 {
     util::MutexLock lock(ImagePyramidCache::metadataMutex);
 
-    if (ImagePyramidCache::cachedScene == NULL)
+    if (ImagePyramidCache::cachedScene == nullptr)
         return;
 
     for (std::map<int, ImagePyramid::Ptr>::iterator it = ImagePyramidCache::entries.begin();
          it != ImagePyramidCache::entries.end(); ++it)
     {
-        if (it->second == NULL)
+        if (it->second == nullptr)
             continue;
 
         if (it->second.use_count() == 1)

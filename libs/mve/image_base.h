@@ -251,13 +251,13 @@ ImageBase::get_byte_size (void) const
 inline char const*
 ImageBase::get_byte_pointer (void) const
 {
-    return NULL;
+    return nullptr;
 }
 
 inline char*
 ImageBase::get_byte_pointer (void)
 {
-    return NULL;
+    return nullptr;
 }
 
 inline ImageType
@@ -475,7 +475,7 @@ inline T const*
 TypedImageBase<T>::get_data_pointer (void) const
 {
     if (this->data.empty())
-        return NULL;
+        return nullptr;
     return &this->data[0];
 }
 
@@ -484,7 +484,7 @@ inline T*
 TypedImageBase<T>::get_data_pointer (void)
 {
     if (this->data.empty())
-        return NULL;
+        return nullptr;
     return &this->data[0];
 }
 
@@ -492,28 +492,28 @@ template <typename T>
 inline T*
 TypedImageBase<T>::begin (void)
 {
-    return this->data.empty() ? NULL : &this->data[0];
+    return this->data.empty() ? nullptr : &this->data[0];
 }
 
 template <typename T>
 inline T const*
 TypedImageBase<T>::begin (void) const
 {
-    return this->data.empty() ? NULL : &this->data[0];
+    return this->data.empty() ? nullptr : &this->data[0];
 }
 
 template <typename T>
 inline T*
 TypedImageBase<T>::end (void)
 {
-    return this->data.empty() ? NULL : this->begin() + this->data.size();
+    return this->data.empty() ? nullptr : this->begin() + this->data.size();
 }
 
 template <typename T>
 inline T const*
 TypedImageBase<T>::end (void) const
 {
-    return this->data.empty() ? NULL : this->begin() + this->data.size();
+    return this->data.empty() ? nullptr : this->begin() + this->data.size();
 }
 
 template <typename T>

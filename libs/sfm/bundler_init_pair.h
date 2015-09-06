@@ -123,8 +123,8 @@ InitialPair::Options::Options (void)
 inline
 InitialPair::InitialPair (Options const& options)
     : opts(options)
-    , viewports(NULL)
-    , tracks(NULL)
+    , viewports(nullptr)
+    , tracks(nullptr)
 {
 }
 

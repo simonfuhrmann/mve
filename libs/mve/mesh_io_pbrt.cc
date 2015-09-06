@@ -22,8 +22,8 @@ MVE_GEOM_NAMESPACE_BEGIN
 void
 save_pbrt_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
 {
-    if (mesh == NULL)
-        throw std::invalid_argument("NULL mesh given");
+    if (mesh == nullptr)
+        throw std::invalid_argument("nullptr mesh given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 

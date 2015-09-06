@@ -32,7 +32,7 @@ class SceneInspect : public MainWindowTab
     Q_OBJECT
 
 public:
-    SceneInspect (QWidget* parent = NULL);
+    SceneInspect (QWidget* parent = nullptr);
 
     /* Loads a mesh from file and adds to mesh list. */
     void load_file (std::string const& filename);

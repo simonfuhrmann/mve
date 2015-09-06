@@ -74,7 +74,7 @@ public:
     };
 
 public:
-    Matching (Options const& options, Progress* progress = NULL);
+    Matching (Options const& options, Progress* progress = nullptr);
 
     /**
      * Computes the pairwise matching between all pairs of views.

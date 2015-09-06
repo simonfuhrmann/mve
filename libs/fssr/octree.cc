@@ -30,7 +30,7 @@ Octree::Node*
 Octree::Iterator::first_leaf (void)
 {
     this->first_node();
-    while (this->current->children != NULL)
+    while (this->current->children != nullptr)
     {
         this->current = this->current->children;
         this->level = this->level + 1;
@@ -42,7 +42,7 @@ Octree::Iterator::first_leaf (void)
 Octree::Node*
 Octree::Iterator::next_node (void)
 {
-    if (this->current->children == NULL)
+    if (this->current->children == nullptr)
         return this->next_branch();
 
     this->current = this->current->children;
@@ -54,10 +54,10 @@ Octree::Iterator::next_node (void)
 Octree::Node*
 Octree::Iterator::next_branch (void)
 {
-    if (this->current->parent == NULL)
+    if (this->current->parent == nullptr)
     {
-        this->current = NULL;
-        return NULL;
+        this->current = nullptr;
+        return nullptr;
     }
 
     if (this->current - this->current->parent->children == 7)
@@ -76,9 +76,9 @@ Octree::Iterator::next_branch (void)
 Octree::Node*
 Octree::Iterator::next_leaf (void)
 {
-    if (this->current->children != NULL)
+    if (this->current->children != nullptr)
     {
-        while (this->current->children != NULL)
+        while (this->current->children != nullptr)
         {
             this->current = this->current->children;
             this->level = this->level + 1;
@@ -88,9 +88,9 @@ Octree::Iterator::next_leaf (void)
     }
 
     this->next_branch();
-    if (this->current == NULL)
-        return NULL;
-    while (this->current->children != NULL)
+    if (this->current == nullptr)
+        return nullptr;
+    while (this->current->children != nullptr)
     {
         this->current = this->current->children;
         this->level = this->level + 1;
@@ -119,9 +119,9 @@ Octree::Iterator::descend (uint8_t level, uint64_t path) const
     iter.level = 0;
     for (int i = 0; i < level; ++i)
     {
-        if (iter.current->children == NULL)
+        if (iter.current->children == nullptr)
         {
-            iter.current = NULL;
+            iter.current = nullptr;
             return iter;
         }
 
@@ -158,7 +158,7 @@ Octree::insert_samples (SampleList const& samples)
 void
 Octree::insert_sample (Sample const& sample)
 {
-    if (this->root == NULL)
+    if (this->root == nullptr)
     {
         this->root = new Node();
         this->root_center = sample.pos;
@@ -171,7 +171,7 @@ Octree::insert_sample (Sample const& sample)
         this->expand_root_for_point(sample.pos);
 
     /* Find node by expanding the root or descending the tree. */
-    Node* node = NULL;
+    Node* node = nullptr;
     if (sample.scale >= this->root_size * 2.0)
         node = this->find_node_expand(sample);
     else
@@ -184,7 +184,7 @@ Octree::insert_sample (Sample const& sample)
 void
 Octree::create_children (Node* node)
 {
-    if (node->children != NULL)
+    if (node->children != nullptr)
         throw std::runtime_error("create_children(): Children exist!");
     node->children = new Node[8];
     this->num_nodes += 8;
@@ -229,7 +229,7 @@ Octree::expand_root_for_point (math::Vec3d const& pos)
     this->root = new_root;
 
     /* Fix parent pointers of old child nodes. */
-    if (this->root->children[octant].children != NULL)
+    if (this->root->children[octant].children != nullptr)
     {
         Node* children = this->root->children[octant].children;
         for (int i = 0; i < 8; ++i)
@@ -261,7 +261,7 @@ Octree::find_node_descend (Sample const& sample, Iterator const& iter)
     for (int i = 0; i < 3; ++i)
         if (sample.pos[i] > node_center[i])
             octant |= (1 << i);
-    if (iter.current->children == NULL)
+    if (iter.current->children == nullptr)
         this->create_children(iter.current);
     return this->find_node_descend(sample, iter.descend(octant));
 }
@@ -287,9 +287,9 @@ Octree::find_node_expand (Sample const& sample)
 int
 Octree::get_num_levels (Node const* node) const
 {
-    if (node == NULL)
+    if (node == nullptr)
         return 0;
-    if (node->children == NULL)
+    if (node->children == nullptr)
         return 1;
     int depth = 0;
     for (int i = 0; i < 8; ++i)
@@ -301,14 +301,14 @@ void
 Octree::get_samples_per_level (std::vector<std::size_t>* stats,
     Node const* node, std::size_t level) const
 {
-    if (node == NULL)
+    if (node == nullptr)
         return;
     if (stats->size() <= level)
         stats->resize(level + 1, 0);
     stats->at(level) += node->samples.size();
 
     /* Descend into octree. */
-    if (node->children == NULL)
+    if (node->children == nullptr)
         return;
     for (int i = 0; i < 8; ++i)
         this->get_samples_per_level(stats, node->children + i, level + 1);
@@ -334,7 +334,7 @@ void
 Octree::influence_query (math::Vec3d const& pos, double factor,
     std::vector<Sample const*>* result, Iterator const& iter) const
 {
-    if (iter.current == NULL)
+    if (iter.current == nullptr)
         return;
 
     /*
@@ -372,7 +372,7 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
     }
 
     /* Descend into octree. */
-    if (iter.current->children == NULL)
+    if (iter.current->children == nullptr)
         return;
     for (int i = 0; i < 8; ++i)
         this->influence_query(pos, factor, result, iter.descend(i));
@@ -381,7 +381,7 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
 void
 Octree::refine_octree (void)
 {
-    if (this->root == NULL)
+    if (this->root == nullptr)
         return;
 
     std::list<Node*> queue;
@@ -391,7 +391,7 @@ Octree::refine_octree (void)
         Node* node = queue.front();
         queue.pop_front();
 
-        if (node->children == NULL)
+        if (node->children == nullptr)
             this->create_children(node);
         else
             for (int i = 0; i < 8; ++i)
@@ -405,9 +405,9 @@ Octree::limit_octree_level (void)
     std::cout << "Limiting octree to "
         << this->max_level << " levels..." << std::endl;
 
-    if (this->root == NULL)
+    if (this->root == nullptr)
         return;
-    this->limit_octree_level(this->root, NULL, 0);
+    this->limit_octree_level(this->root, nullptr, 0);
 }
 
 void
@@ -423,7 +423,7 @@ Octree::limit_octree_level (Node* node, Node* parent, int level)
         node->samples.clear();
     }
 
-    if (node->children != NULL)
+    if (node->children != nullptr)
         for (int i = 0; i < 8; ++i)
             this->limit_octree_level(node->children + i, parent, level + 1);
 
@@ -433,7 +433,7 @@ Octree::limit_octree_level (Node* node, Node* parent, int level)
     if (level == this->max_level)
     {
         delete [] node->children;
-        node->children = NULL;
+        node->children = nullptr;
     }
 }
 

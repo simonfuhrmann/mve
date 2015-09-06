@@ -150,21 +150,21 @@ TEST(AlgoTest, SortValues)
 TEST(AlgoTest, BinarySearch)
 {
     std::vector<std::pair<int, int> > vector;
-    EXPECT_EQ(NULL, math::algo::binary_search(vector, 0));
+    EXPECT_EQ(nullptr, math::algo::binary_search(vector, 0));
 
     vector.clear();
     vector.push_back(std::make_pair(1, 101));
-    EXPECT_EQ(NULL, math::algo::binary_search(vector, 0));
+    EXPECT_EQ(nullptr, math::algo::binary_search(vector, 0));
     EXPECT_EQ(&vector[0].second, math::algo::binary_search(vector, 1));
-    EXPECT_EQ(NULL, math::algo::binary_search(vector, 2));
+    EXPECT_EQ(nullptr, math::algo::binary_search(vector, 2));
 
     vector.clear();
     vector.push_back(std::make_pair(1, 101));
     vector.push_back(std::make_pair(2, 102));
-    EXPECT_EQ(NULL, math::algo::binary_search(vector, 0));
+    EXPECT_EQ(nullptr, math::algo::binary_search(vector, 0));
     EXPECT_EQ(&vector[0].second, math::algo::binary_search(vector, 1));
     EXPECT_EQ(&vector[1].second, math::algo::binary_search(vector, 2));
-    EXPECT_EQ(NULL, math::algo::binary_search(vector, 3));
+    EXPECT_EQ(nullptr, math::algo::binary_search(vector, 3));
 
     vector.clear();
     vector.push_back(std::make_pair(0, 100));
@@ -172,11 +172,11 @@ TEST(AlgoTest, BinarySearch)
     vector.push_back(std::make_pair(2, 102));
     vector.push_back(std::make_pair(3, 103));
     vector.push_back(std::make_pair(4, 104));
-    EXPECT_EQ(NULL, math::algo::binary_search(vector, -1));
+    EXPECT_EQ(nullptr, math::algo::binary_search(vector, -1));
     EXPECT_EQ(&vector[0].second, math::algo::binary_search(vector, 0));
     EXPECT_EQ(&vector[1].second, math::algo::binary_search(vector, 1));
     EXPECT_EQ(&vector[2].second, math::algo::binary_search(vector, 2));
     EXPECT_EQ(&vector[3].second, math::algo::binary_search(vector, 3));
     EXPECT_EQ(&vector[4].second, math::algo::binary_search(vector, 4));
-    EXPECT_EQ(NULL, math::algo::binary_search(vector, 5));
+    EXPECT_EQ(nullptr, math::algo::binary_search(vector, 5));
 }

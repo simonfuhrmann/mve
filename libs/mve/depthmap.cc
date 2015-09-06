@@ -115,8 +115,8 @@ depthmap_cleanup (FloatImage::ConstPtr dm, std::size_t thres)
 void
 depthmap_confidence_clean (FloatImage::Ptr dm, FloatImage::ConstPtr cm)
 {
-    if (dm == NULL || cm == NULL)
-        throw std::invalid_argument("NULL depth or confidence map");
+    if (dm == nullptr || cm == nullptr)
+        throw std::invalid_argument("nullptr depth or confidence map");
 
     if (dm->width() != cm->width() || dm->height() != cm->height())
         throw std::invalid_argument("Image dimensions do not match");
@@ -211,8 +211,8 @@ TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     float dd_factor, mve::Image<unsigned int>* vids)
 {
-    if (dm == NULL)
-        throw std::invalid_argument("NULL depthmap given");
+    if (dm == nullptr)
+        throw std::invalid_argument("nullptr depthmap given");
 
     int const width = dm->width();
     int const height = dm->height();
@@ -311,7 +311,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     }
 
     /* Provide the vertex ID mapping if requested. */
-    if (vids != NULL)
+    if (vids != nullptr)
         std::swap(vidx, *vids);
 
     return mesh;
@@ -322,13 +322,13 @@ TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     math::Matrix3f const& invproj, float dd_factor)
 {
-    if (dm == NULL)
-        throw std::invalid_argument("NULL depthmap given");
+    if (dm == nullptr)
+        throw std::invalid_argument("nullptr depthmap given");
 
     int const width = dm->width();
     int const height = dm->height();
 
-    if (ci != NULL && (ci->width() != width || ci->height() != height))
+    if (ci != nullptr && (ci->width() != width || ci->height() != height))
         throw std::invalid_argument("Color image dimension mismatch");
 
     /* Triangulate depth map. */
@@ -336,7 +336,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     mve::TriangleMesh::Ptr mesh;
     mesh = mve::geom::depthmap_triangulate(dm, invproj, dd_factor, &vids);
 
-    if (ci == NULL)
+    if (ci == nullptr)
         return mesh;
 
     /* Use vertex index mapping to color the mesh. */
@@ -372,8 +372,8 @@ TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     CameraInfo const& cam, float dd_factor)
 {
-    if (dm == NULL)
-        throw std::invalid_argument("NULL depthmap given");
+    if (dm == nullptr)
+        throw std::invalid_argument("nullptr depthmap given");
     if (cam.flen == 0.0f)
         throw std::invalid_argument("Invalid camera given");
 
@@ -413,8 +413,8 @@ dm_is_depth_disc (math::Vec3f const& v1,
 void
 rangegrid_triangulate (Image<unsigned int> const& grid, TriangleMesh::Ptr mesh)
 {
-    if (mesh == NULL)
-        throw std::invalid_argument("NULL mesh given");
+    if (mesh == nullptr)
+        throw std::invalid_argument("nullptr mesh given");
 
     int w = grid.width();
     int h = grid.height();
@@ -490,8 +490,8 @@ rangegrid_triangulate (Image<unsigned int> const& grid, TriangleMesh::Ptr mesh)
 void
 depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
 {
-    if (mesh == NULL)
-        throw std::invalid_argument("NULL mesh given");
+    if (mesh == nullptr)
+        throw std::invalid_argument("nullptr mesh given");
 
     if (iterations < 0)
         throw std::invalid_argument("Invalid amount of iterations");
@@ -544,8 +544,8 @@ depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
 void
 depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
 {
-    if (mesh == NULL)
-        throw std::invalid_argument("NULL mesh given");
+    if (mesh == nullptr)
+        throw std::invalid_argument("nullptr mesh given");
 
     if (iterations < 0)
         throw std::invalid_argument("Invalid amount of iterations");

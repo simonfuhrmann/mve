@@ -41,7 +41,7 @@ struct CameraModel
 /**
  * Camera database which, given a maker and model string, will look for
  * a camera model in the database and return the model on successful lookup.
- * If the lookup fails, a NULL pointer is returned.
+ * If the lookup fails, a nullptr pointer is returned.
  */
 class CameraDatabase
 {
@@ -49,7 +49,7 @@ public:
     /** Access to the singleton object. */
     static CameraDatabase* get (void);
 
-    /** Lookup of a camera model. Returns NULL on failure. */
+    /** Lookup of a camera model. Returns nullptr on failure. */
     CameraModel const* lookup (std::string const& maker,
         std::string const& model) const;
 
@@ -69,7 +69,7 @@ private:
 inline CameraDatabase*
 CameraDatabase::get (void)
 {
-    if (CameraDatabase::instance == NULL)
+    if (CameraDatabase::instance == nullptr)
         CameraDatabase::instance = new CameraDatabase();
     return CameraDatabase::instance;
 }

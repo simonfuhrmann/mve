@@ -21,9 +21,9 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 void
 Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
 {
-    if (scene == NULL)
-        throw std::invalid_argument("NULL scene given");
-    if (viewports == NULL)
+    if (scene == nullptr)
+        throw std::invalid_argument("nullptr scene given");
+    if (viewports == nullptr)
         throw std::invalid_argument("No viewports given");
 
     mve::Scene::ViewList const& views = scene->get_views();
@@ -48,13 +48,13 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
                 << num_views << " (" << percent << "%)..." << std::flush;
         }
 
-        if (views[i] == NULL)
+        if (views[i] == nullptr)
             continue;
 
         mve::View::Ptr view = views[i];
         mve::ByteImage::Ptr image = view->get_byte_image
             (this->opts.image_embedding);
-        if (image == NULL)
+        if (image == nullptr)
             continue;
 
         /* Rescale image until maximum image size is met. */

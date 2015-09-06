@@ -130,7 +130,7 @@ save_png_file (ByteImage::ConstPtr image,
  * May throw util::FileException and util::Exception.
  */
 ByteImage::Ptr
-load_jpg_file (std::string const& filename, std::string* exif = NULL);
+load_jpg_file (std::string const& filename, std::string* exif = nullptr);
 
 /**
  * Loads JPEG file headers only.

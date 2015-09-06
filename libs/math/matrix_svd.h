@@ -33,7 +33,7 @@ MATH_NAMESPACE_BEGIN
  * SVD for dynamic-size matrices A of size MxN (M rows, N columns).
  * The function decomposes input matrix A such that A = USV^T where
  * A is MxN, U is MxN, S is a N-vector and V is NxN.
- * Any of U, S or V can be NULL, however, this does not save operations.
+ * Any of U, S or V can be nullptr, however, this does not save operations.
  *
  * Usually, M >= N, i.e. the input matrix has more rows than columns.
  * If M > 5/3 N, QR decomposition is used to do an economy SVD after Chan
@@ -52,7 +52,7 @@ matrix_svd (T const* mat_a, int rows, int cols,
 /**
  * SVD for compile-time fixed-size matrices. The implementation of this
  * function uses the dynamic-size matrices interface in the background.
- * Any of the results can be NULL, however, this does not save operations.
+ * Any of the results can be nullptr, however, this does not save operations.
  */
 template <typename T, int M, int N>
 void
@@ -695,16 +695,16 @@ void
 matrix_svd (T const* mat_a, int rows, int cols,
     T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
 {
-    /* Allow for NULL result matrices. */
+    /* Allow for nullptr result matrices. */
     std::vector<T> mat_u_tmp;
     std::vector<T> vec_s_tmp;
-    if (vec_s == NULL)
+    if (vec_s == nullptr)
     {
         vec_s_tmp.resize(cols);
         vec_s = &vec_s_tmp[0];
     }
     std::vector<T> mat_v_tmp;
-    if (mat_v == NULL)
+    if (mat_v == nullptr)
     {
         mat_v_tmp.resize(cols * cols);
         mat_v = &mat_v_tmp[0];
@@ -717,8 +717,8 @@ matrix_svd (T const* mat_a, int rows, int cols,
      */
     if (rows >= cols)
     {
-        /* Allow for NULL result U matrix. */
-        if (mat_u == NULL)
+        /* Allow for nullptr result U matrix. */
+        if (mat_u == nullptr)
         {
             mat_u_tmp.resize(rows * cols);
             mat_u = &mat_u_tmp[0];
@@ -742,13 +742,13 @@ matrix_svd (T const* mat_a, int rows, int cols,
         std::vector<T> mat_a_tmp(cols * cols, T(0));
         std::copy(mat_a, mat_a + cols * rows, &mat_a_tmp[0]);
 
-        /* Temporarily resize U, allow for NULL result matrices. */
+        /* Temporarily resize U, allow for nullptr result matrices. */
         mat_u_tmp.resize(cols * cols);
         internal::matrix_gk_svd(&mat_a_tmp[0], cols, cols,
             &mat_u_tmp[0], vec_s, mat_v, epsilon);
 
         /* Copy the result back to U leaving out the last rows. */
-        if (mat_u != NULL)
+        if (mat_u != nullptr)
             std::copy(&mat_u_tmp[0], &mat_u_tmp[0] + rows * cols, mat_u);
         else
             mat_u = &mat_u_tmp[0];
@@ -774,21 +774,21 @@ void
 matrix_svd (T const* mat_a, int rows, int cols,
     T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
 {
-    /* Allow for NULL result matrices. */
+    /* Allow for nullptr result matrices. */
     std::vector<T> mat_u_tmp;
     std::vector<T> vec_s_tmp;
     std::vector<T> mat_v_tmp;
-    if (mat_u == NULL)
+    if (mat_u == nullptr)
     {
         mat_u_tmp.resize(rows * cols);
         mat_u = &mat_u_tmp[0];
     }
-    if (vec_s == NULL)
+    if (vec_s == nullptr)
     {
         vec_s_tmp.resize(cols);
         vec_s = &vec_s_tmp[0];
     }
-    if (mat_v == NULL)
+    if (mat_v == nullptr)
     {
         mat_v_tmp.resize(cols * cols);
         mat_v = &mat_v_tmp[0];
@@ -877,9 +877,9 @@ void
 matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
     Matrix<T, N, N>* mat_s, Matrix<T, N, N>* mat_v, T const& epsilon)
 {
-    T* mat_u_ptr = mat_u ? mat_u->begin() : NULL;
-    T* mat_s_ptr = mat_s ? mat_s->begin() : NULL;
-    T* mat_v_ptr = mat_v ? mat_v->begin() : NULL;
+    T* mat_u_ptr = mat_u ? mat_u->begin() : nullptr;
+    T* mat_s_ptr = mat_s ? mat_s->begin() : nullptr;
+    T* mat_v_ptr = mat_v ? mat_v->begin() : nullptr;
 
     matrix_svd<T>(mat_a.begin(), M, N,
         mat_u_ptr, mat_s_ptr, mat_v_ptr, epsilon);

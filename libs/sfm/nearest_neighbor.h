@@ -79,7 +79,7 @@ inline
 NearestNeighbor<T>::NearestNeighbor (void)
     : dimensions(64)
     , num_elements(0)
-    , elements(NULL)
+    , elements(nullptr)
 {
 }
 

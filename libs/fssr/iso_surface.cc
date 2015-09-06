@@ -457,7 +457,7 @@ IsoSurface::extract_mesh (void)
      */
     std::cout << "  Computing Marching Cubes indices..." << std::flush;
     Octree::Iterator iter = this->octree->get_iterator_for_root();
-    for (iter.first_node(); iter.current != NULL; iter.next_node())
+    for (iter.first_node(); iter.current != nullptr; iter.next_node())
         this->compute_mc_index(iter);
     std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
 
@@ -471,7 +471,7 @@ IsoSurface::extract_mesh (void)
     timer.reset();
     EdgeVertexMap edgemap;
     IsoVertexVector isovertices;
-    for (iter.first_leaf(); iter.current != NULL; iter.next_leaf())
+    for (iter.first_leaf(); iter.current != nullptr; iter.next_leaf())
         this->compute_isovertices(iter, &edgemap, &isovertices);
     std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
 
@@ -484,7 +484,7 @@ IsoSurface::extract_mesh (void)
     std::cout << "  Computing isopolygons..." << std::flush;
     timer.reset();
     PolygonList polygons;
-    for (iter.first_leaf(); iter.current != NULL; iter.next_leaf())
+    for (iter.first_leaf(); iter.current != nullptr; iter.next_leaf())
         this->compute_isopolygons(iter, edgemap, &polygons);
     std::cout << " took " << timer.get_elapsed() << " ms." << std::endl;
 
@@ -504,17 +504,17 @@ IsoSurface::extract_mesh (void)
 void
 IsoSurface::sanity_checks (void)
 {
-    if (this->voxels == NULL || this->octree == NULL)
-        throw std::runtime_error("sanity_checks(): NULL octree/voxels");
+    if (this->voxels == nullptr || this->octree == nullptr)
+        throw std::runtime_error("sanity_checks(): nullptr octree/voxels");
     for (std::size_t i = 1; i < this->voxels->size(); ++i)
         if (this->voxels->at(i).first < this->voxels->at(i - 1).first)
             throw std::runtime_error("sanity_checks(): Voxels unsorted");
 
     Octree::Iterator iter = this->octree->get_iterator_for_root();
-    for (iter.first_node(); iter.current != NULL; iter.next_node())
+    for (iter.first_node(); iter.current != nullptr; iter.next_node())
     {
         /* Check if parent pointer of children is correct. */
-        if (iter.current->children == NULL)
+        if (iter.current->children == nullptr)
             continue;
         for (int i = 0; i < CUBE_CORNERS; ++i)
         {
@@ -543,7 +543,7 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
     EdgeVertexMap* edgemap, IsoVertexVector* isovertices)
 {
     /* This should always be a leaf node. */
-    if (iter.current == NULL || iter.current->children != NULL)
+    if (iter.current == nullptr || iter.current->children != nullptr)
         throw std::runtime_error("compute_isovertices(): Invalid node");
 
     /* Check if cube contains an isosurface. */
@@ -558,7 +558,7 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
 
         /* Get the finest edge that contains an isovertex. */
         EdgeIndex edge_index;
-        this->get_finest_cube_edge(iter, i, &edge_index, NULL);
+        this->get_finest_cube_edge(iter, i, &edge_index, nullptr);
         if (edgemap->find(edge_index) != edgemap->end())
             continue;
 
@@ -586,7 +586,7 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
     bool found_node = false;
 
     /* Check if the current node has children. */
-    if (iter.current->children != NULL)
+    if (iter.current->children != nullptr)
         found_node = true;
 
     /* Check if the two face-adjacent nodes have children. */
@@ -594,7 +594,7 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
     {
         Octree::Iterator temp_iter;
         temp_iter = modify_iterator(edge_neighbors[edge_id][i], iter);
-        if (temp_iter.current != NULL && temp_iter.current->children != NULL)
+        if (temp_iter.current != nullptr && temp_iter.current->children != nullptr)
         {
             found_node = true;
             finest_iter = temp_iter;
@@ -607,7 +607,7 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
     {
         Octree::Iterator temp_iter = modify_iterator(
             edge_neighbors[edge_id][0], edge_neighbors[edge_id][1], iter);
-        if (temp_iter.current != NULL && temp_iter.current->children != NULL)
+        if (temp_iter.current != nullptr && temp_iter.current->children != nullptr)
         {
             found_node = true;
             finest_iter = temp_iter;
@@ -615,13 +615,13 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
         }
     }
 
-    if (finest_iter.current == NULL)
+    if (finest_iter.current == nullptr)
         throw std::runtime_error("get_finest_cube_edge(): Error finding edge");
 
     /* If the node has no children, we found the finest node. */
-    if (finest_iter.current->children == NULL)
+    if (finest_iter.current->children == nullptr)
     {
-        if (edge_index != NULL)
+        if (edge_index != nullptr)
         {
             VoxelIndex vi1, vi2;
             vi1.from_path_and_corner(finest_iter.level, finest_iter.path,
@@ -631,7 +631,7 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
             edge_index->first = std::min(vi1.index, vi2.index);
             edge_index->second = std::max(vi1.index, vi2.index);
         }
-        if (edge_info != NULL)
+        if (edge_info != nullptr)
         {
             edge_info->iter = finest_iter;
             edge_info->edge_id = finest_edge_id;
@@ -818,7 +818,7 @@ IsoSurface::find_twin_vertex (EdgeInfo const& edge_info,
      */
     Octree::Iterator iter = edge_info.iter;
     int const edge_id = edge_info.edge_id;
-    while (iter.current->parent != NULL)
+    while (iter.current->parent != nullptr)
     {
         int const node_octant
             = static_cast<int>(iter.current - iter.current->parent->children);
@@ -853,7 +853,7 @@ IsoSurface::get_finest_isoedges (Octree::Iterator const& iter,
     /* If descend only is set, face-neighboring nodes are not considered. */
     if (descend_only)
     {
-        if (iter.current->children != NULL)
+        if (iter.current->children != nullptr)
         {
             /* Recursively descend to obtain iso edges for this face. */
             this->get_finest_isoedges(iter.descend(face_corners[face_id][0]),
@@ -900,7 +900,7 @@ IsoSurface::get_finest_isoedges (Octree::Iterator const& iter,
 
     /* Check if face-neighboring node has finer subdivision. */
     Octree::Iterator niter = modify_iterator((CubeFace)face_id, iter);
-    if (niter.current != NULL && niter.current->children != NULL)
+    if (niter.current != nullptr && niter.current->children != nullptr)
     {
         /* Face-neighboring node has finer subdivision. */
         CubeFace const opposite_face_id = face_opposite[face_id];

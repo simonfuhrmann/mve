@@ -62,7 +62,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     views.resize(mve_views.size());
     for (std::size_t i = 0; i < mve_views.size(); ++i)
     {
-        if (mve_views[i] == NULL || !mve_views[i]->is_camera_valid() ||
+        if (mve_views[i] == nullptr || !mve_views[i]->is_camera_valid() ||
             !mve_views[i]->has_image(this->settings.imageEmbedding,
             mve::IMAGE_TYPE_UINT8))
             continue;
@@ -71,7 +71,7 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
     }
 
     SingleView::Ptr refV = views[settings.refViewNr];
-    if (refV == NULL)
+    if (refV == nullptr)
         throw std::invalid_argument("Invalid master view");
 
     /* Prepare reconstruction */
@@ -91,7 +91,7 @@ DMRecon::start()
 {
     try
     {
-        progress.start_time = std::time(NULL);
+        progress.start_time = std::time(nullptr);
 
         analyzeFeatures();
         globalViewSelection();
@@ -157,7 +157,7 @@ DMRecon::start()
         }
 
         /* Output required time to process the image */
-        size_t mvs_time = std::time(NULL) - progress.start_time;
+        size_t mvs_time = std::time(nullptr) - progress.start_time;
         if (!settings.quiet)
             std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
     }
@@ -199,7 +199,7 @@ DMRecon::analyzeFeatures()
         {
             int view_id = features[i].refs[j].view_id;
             if (view_id < 0 || view_id >= static_cast<int>(views.size())
-                || views[view_id] == NULL)
+                || views[view_id] == nullptr)
                 continue;
             if (views[view_id]->pointInFrustum(featurePos))
                 views[view_id]->addFeature(i);

@@ -332,10 +332,10 @@ View::get_byte_size (void) const
 {
     std::size_t ret = 0;
     for (std::size_t i = 0; i < this->images.size(); ++i)
-        if (this->images[i].image != NULL)
+        if (this->images[i].image != nullptr)
             ret += this->images[i].image->get_byte_size();
     for (std::size_t i = 0; i < this->blobs.size(); ++i)
-        if (this->blobs[i].blob != NULL)
+        if (this->blobs[i].blob != nullptr)
             ret += this->blobs[i].blob->get_byte_size();
     return ret;
 }
@@ -397,7 +397,7 @@ ImageBase::Ptr
 View::get_image (std::string const& name, ImageType type)
 {
     View::ImageProxy* proxy = this->find_image_intern(name);
-    if (proxy != NULL)
+    if (proxy != nullptr)
     {
         if (type == IMAGE_TYPE_UNKNOWN)
             return this->load_image(proxy, false);
@@ -412,20 +412,20 @@ View::ImageProxy const*
 View::get_image_proxy (std::string const& name, ImageType type)
 {
     View::ImageProxy* proxy = this->find_image_intern(name);
-    if (proxy != NULL)
+    if (proxy != nullptr)
     {
         this->initialize_image(proxy, false);
         if (type == IMAGE_TYPE_UNKNOWN || proxy->type == type)
             return proxy;
     }
-    return NULL;
+    return nullptr;
 }
 
 bool
 View::has_image (std::string const& name, ImageType type)
 {
     View::ImageProxy* proxy = this->find_image_intern(name);
-    if (proxy == NULL)
+    if (proxy == nullptr)
         return false;
     if (type == IMAGE_TYPE_UNKNOWN)
         return true;
@@ -436,8 +436,8 @@ View::has_image (std::string const& name, ImageType type)
 void
 View::set_image (ImageBase::Ptr image, std::string const& name)
 {
-    if (image == NULL)
-        throw std::invalid_argument("NULL image");
+    if (image == nullptr)
+        throw std::invalid_argument("nullptr image");
 
     ImageProxy proxy;
     proxy.is_dirty = true;
@@ -501,7 +501,7 @@ ByteImage::Ptr
 View::get_blob (std::string const& name)
 {
     BlobProxy* proxy = this->find_blob_intern(name);
-    if (proxy != NULL)
+    if (proxy != nullptr)
         return this->load_blob(proxy, false);
     return ByteImage::Ptr();
 }
@@ -510,7 +510,7 @@ View::BlobProxy const*
 View::get_blob_proxy (std::string const& name)
 {
     BlobProxy* proxy = this->find_blob_intern(name);
-    if (proxy != NULL)
+    if (proxy != nullptr)
         this->initialize_blob(proxy, false);
     return proxy;
 }
@@ -518,14 +518,14 @@ View::get_blob_proxy (std::string const& name)
 bool
 View::has_blob (std::string const& name)
 {
-    return this->find_blob_intern(name) != NULL;
+    return this->find_blob_intern(name) != nullptr;
 }
 
 void
 View::set_blob (ByteImage::Ptr blob, std::string const& name)
 {
-    if (blob == NULL)
-        throw std::invalid_argument("NULL blob");
+    if (blob == nullptr)
+        throw std::invalid_argument("nullptr blob");
 
     BlobProxy proxy;
     proxy.is_dirty = true;
@@ -721,7 +721,7 @@ View::find_image_intern (std::string const& name)
     for (std::size_t i = 0; i < this->images.size(); ++i)
         if (this->images[i].name == name)
             return &this->images[i];
-    return NULL;
+    return nullptr;
 }
 
 void
@@ -735,7 +735,7 @@ View::initialize_image (ImageProxy* proxy, bool update)
 ImageBase::Ptr
 View::load_image (ImageProxy* proxy, bool update)
 {
-    if (proxy->image != NULL && !update)
+    if (proxy->image != nullptr && !update)
         return proxy->image;
     this->load_image_intern(proxy, false);
     return proxy->image;
@@ -808,8 +808,8 @@ View::save_image_intern (ImageProxy* proxy)
 {
     if (this->path.empty())
         throw std::runtime_error("View not initialized");
-    if (proxy == NULL)
-        throw std::runtime_error("NULL proxy");
+    if (proxy == nullptr)
+        throw std::runtime_error("nullptr proxy");
 
     /* An absolute filename indicates an image reference. Copy file. */
     if (util::fs::is_absolute(proxy->filename))
@@ -824,7 +824,7 @@ View::save_image_intern (ImageProxy* proxy)
         return;
     }
 
-    if (proxy->image == NULL || proxy->width != proxy->image->width()
+    if (proxy->image == nullptr || proxy->width != proxy->image->width()
         || proxy->height != proxy->image->height()
         || proxy->channels != proxy->image->channels()
         || proxy->type != proxy->image->get_type())
@@ -879,7 +879,7 @@ View::find_blob_intern (std::string const& name)
     for (std::size_t i = 0; i < this->blobs.size(); ++i)
         if (this->blobs[i].name == name)
             return &this->blobs[i];
-    return NULL;
+    return nullptr;
 }
 
 void
@@ -893,7 +893,7 @@ View::initialize_blob (BlobProxy* proxy, bool update)
 ByteImage::Ptr
 View::load_blob (BlobProxy* proxy, bool update)
 {
-    if (proxy->blob != NULL && !update)
+    if (proxy->blob != nullptr && !update)
         return proxy->blob;
     this->load_blob_intern(proxy, false);
     return proxy->blob;
@@ -952,8 +952,8 @@ View::save_blob_intern (BlobProxy* proxy)
 {
     if (this->path.empty())
         throw std::runtime_error("View not initialized");
-    if (proxy == NULL || proxy->blob == NULL)
-        throw std::runtime_error("NULL proxy or data");
+    if (proxy == nullptr || proxy->blob == nullptr)
+        throw std::runtime_error("nullptr proxy or data");
     if (proxy->blob->get_byte_size() != proxy->size)
         throw std::runtime_error("BLOB size mismatch");
 
@@ -1014,7 +1014,7 @@ View::debug_print (void)
         std::cout << "  " << proxy.name << " (" << proxy.filename << ")"
             << ", size " << proxy.width << "x" << proxy.height << "x" << proxy.channels
             << ", type " << proxy.type
-            << (proxy.image != NULL ? " (in memory)" : "") << std::endl;
+            << (proxy.image != nullptr ? " (in memory)" : "") << std::endl;
     }
 
     std::cout << "View BLOBs:" << std::endl;

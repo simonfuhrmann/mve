@@ -76,7 +76,7 @@ max_element_id (FwdIter first, FwdIter last)
 
 /**
  * Algorithm that finds the value corresponding to a key in sorted vector
- * of key-value pairs. If the key does not exist, NULL is returned.
+ * of key-value pairs. If the key does not exist, nullptr is returned.
  */
 template <typename Key, typename Value>
 Value const*
@@ -95,7 +95,7 @@ binary_search (std::vector<std::pair<Key, Value> > const& vec, Key const& key)
             return &vec[pos].second;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /* ---------------------- Generator functors ---------------------- */

@@ -42,7 +42,7 @@ gaussian_normalized (T const& sigma, math::Vector<T, 3> const& x);
 template <typename T>
 T
 fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
-    math::Vector<T, 3>* deriv = NULL);
+    math::Vector<T, 3>* deriv = nullptr);
 
 /* --------------------- FSSR weight function --------------------- */
 
@@ -55,7 +55,7 @@ fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
 template <typename T>
 T
 fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
-    math::Vector<T, 3>* deriv = NULL);
+    math::Vector<T, 3>* deriv = nullptr);
 
 /* -------------------------- Helper functions --------------------------- */
 
@@ -114,7 +114,7 @@ fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
     double const gaussian_value = gaussian(scale, pos);
     double const value_norm = T(2) * MATH_PI * MATH_POW4(scale);
 
-    if (deriv != NULL)
+    if (deriv != nullptr)
     {
         double const deriv_norm = value_norm * T(2) * MATH_POW2(scale);
         (*deriv)[0] = T(2) * (MATH_POW2(scale) - MATH_POW2(pos[0]))
@@ -133,17 +133,17 @@ fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
 template <typename T>
 T
 fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
-    math::Vector<T, 3>* deriv = NULL)
+    math::Vector<T, 3>* deriv = nullptr)
 {
     T const square_radius = pos.square_norm() / MATH_POW2(scale);
     if (square_radius >= T(9))
     {
-        if (deriv != NULL)
+        if (deriv != nullptr)
             deriv->fill(T(0));
         return T(0);
     }
 
-    if (deriv != NULL)
+    if (deriv != nullptr)
     {
         T const deriv_factor = -T(4) / T(3)
             + T(48) / T(54) * std::sqrt(square_radius)
@@ -204,7 +204,7 @@ fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
             + T(2) / T(27) * std::pow(square_radius, T(1.5));
     }
 
-    if (deriv != NULL)
+    if (deriv != nullptr)
     {
         /*
          * wx'(x < 0) = 2.0/9.0 * x / s^2 + 2.0/3.0 / s

@@ -35,7 +35,7 @@ triangulate_match (Correspondence2D2D const& match,
     }
 
     math::Matrix<double, 4, 4> V;
-    math::matrix_svd<double, 4, 4>(A, NULL, NULL, &V);
+    math::matrix_svd<double, 4, 4>(A, nullptr, nullptr, &V);
     math::Vector<double, 4> x = V.col(3);
     return math::Vector<double, 3>(x[0] / x[3], x[1] / x[3], x[2] / x[3]);
 }
@@ -65,7 +65,7 @@ triangulate_track (std::vector<math::Vec2f> const& pos,
     /* Compute SVD. */
     math::Matrix<double, 4, 4> mat_v;
     math::matrix_svd<double>(&A[0], 2 * poses.size(), 4,
-        NULL, NULL, mat_v.begin());
+        nullptr, nullptr, mat_v.begin());
 
     /* Consider the last column of V and extract 3D point. */
     math::Vector<double, 4> x = mat_v.col(3);
@@ -119,7 +119,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
 
         if (smallest_cos_angle > this->cos_angle_thres)
         {
-            if (stats != NULL)
+            if (stats != nullptr)
                 stats->num_too_small_angle += 1;
             return false;
         }
@@ -134,7 +134,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
         /* Reject track if it appears behind the camera. */
         if (x[2] < 0.0)
         {
-            if (stats != NULL)
+            if (stats != nullptr)
                 stats->num_behind_camera += 1;
             return false;
         }
@@ -148,12 +148,12 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
     /* Reject track if the reprojection error is too large. */
     if (average_error > this->opts.error_threshold)
     {
-        if (stats != NULL)
+        if (stats != nullptr)
             stats->num_large_error += 1;
         return false;
     }
 
-    if (stats != NULL)
+    if (stats != nullptr)
         stats->num_new_tracks += 1;
 
     return true;
