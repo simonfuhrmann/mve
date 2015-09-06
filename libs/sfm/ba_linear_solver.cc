@@ -16,6 +16,7 @@
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
 #include "sfm/ba_linear_solver.h"
+#include "sfm/ba_conjugate_gradient.h"
 
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
@@ -57,7 +58,7 @@ LinearSolver::solve_schur2 (SparseMatrixType const& jac_cams,
         math::Matrix<double, 3, 3> rot;
         for (int i = 0; i < 9; ++i)
             rot[i] = *(iter++);
-        math::matrix_inverse(rot);
+        rot = math::matrix_inverse(rot);
         iter = iter_backup;
         for (int i = 0; i < 9; ++i)
             *(iter++) = rot[i];
@@ -70,9 +71,32 @@ LinearSolver::solve_schur2 (SparseMatrixType const& jac_cams,
 
     /* Solve linear system. */
     DenseVectorType delta_y(Jc.num_cols());
-    // TODO Conjugate gradient: S * delta_y = rhs;
+    typedef sfm::ba::ConjugateGradientSolver<double> CGSolver;
+    CGSolver::Options cg_opts;
+    cg_opts.max_iterations = this->opts.cg_max_iterations;
+    cg_opts.tolerance = 1e-20;
+    CGSolver solver (cg_opts);
+    CGSolver::Status cg_status;
+    cg_status = solver.solve(S, rhs, &delta_y);
+
     Status status;
-    status.num_cg_iterations = 100; // cg.iterations();
+    status.num_cg_iterations = cg_status.num_iterations;
+    switch (cg_status.info)
+    {
+        case CGSolver::CONVERGENCE:
+            status.cg_success = true;
+            break;
+        case CGSolver::MAX_ITERATIONS:
+            status.cg_success = true;
+            break;
+        case CGSolver::INVALID_INPUT:
+            std::cout << "BA: CG failed (invalid input)" << std::endl;
+            status.cg_success = false;
+            return status;
+            break;
+        default:
+            break;
+    }
 
     /* Substitute back to obtain delta z. */
     DenseVectorType delta_z = C.multiply(w.subtract(ET.multiply(delta_y)));
