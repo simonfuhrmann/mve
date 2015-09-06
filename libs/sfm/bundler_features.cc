@@ -22,7 +22,7 @@ void
 Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
 {
     if (scene == nullptr)
-        throw std::invalid_argument("nullptr scene given");
+        throw std::invalid_argument("Null scene given");
     if (viewports == nullptr)
         throw std::invalid_argument("No viewports given");
 

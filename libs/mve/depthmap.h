@@ -97,7 +97,7 @@ pixel_3dpos (std::size_t x, std::size_t y, float depth,
  * no depth discontinuity detection is performed. The depthmap is
  * triangulated in the local camera coordinate system.
  *
- * If 'vids' is not nullptr, image content is replaced with vertex indices for
+ * If 'vids' is not null, image content is replaced with vertex indices for
  * each pixel that generated the vertex. Index MATH_MAX_UINT corresponds to
  * a pixel that did not generate a vertex.
  */

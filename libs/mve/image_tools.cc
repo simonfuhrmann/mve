@@ -23,7 +23,7 @@ FloatImage::Ptr
 byte_to_float_image (ByteImage::ConstPtr image)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     FloatImage::Ptr img = FloatImage::create();
     img->allocate(image->width(), image->height(), image->channels());
@@ -41,7 +41,7 @@ DoubleImage::Ptr
 byte_to_double_image (ByteImage::ConstPtr image)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     DoubleImage::Ptr img = DoubleImage::create();
     img->allocate(image->width(), image->height(), image->channels());
@@ -59,7 +59,7 @@ ByteImage::Ptr
 float_to_byte_image (FloatImage::ConstPtr image, float vmin, float vmax)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
@@ -78,7 +78,7 @@ ByteImage::Ptr
 double_to_byte_image (DoubleImage::ConstPtr image, double vmin, double vmax)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
@@ -97,7 +97,7 @@ ByteImage::Ptr
 int_to_byte_image (IntImage::ConstPtr image)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
@@ -114,7 +114,7 @@ ByteImage::Ptr
 raw_to_byte_image (RawImage::ConstPtr image, uint16_t vmin, uint16_t vmax)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
@@ -134,7 +134,7 @@ FloatImage::Ptr
 raw_to_float_image (RawImage::ConstPtr image)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     FloatImage::Ptr img = FloatImage::create();
     img->allocate(image->width(), image->height(), image->channels());
@@ -152,7 +152,7 @@ void
 float_image_normalize (FloatImage::Ptr image)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     float vmin, vmax;
     find_min_max_value<float>(image, &vmin, &vmax);
@@ -171,7 +171,7 @@ void
 gamma_correct (ByteImage::Ptr image, float power)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     uint8_t lookup[256];
     for (int i = 0; i < 256; ++i)

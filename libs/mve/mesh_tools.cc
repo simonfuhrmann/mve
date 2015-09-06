@@ -46,7 +46,7 @@ void
 mesh_transform (mve::TriangleMesh::Ptr mesh, math::Matrix3f const& rot)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
     mve::TriangleMesh::NormalList& vnorm(mesh->get_vertex_normals());
@@ -64,7 +64,7 @@ void
 mesh_transform (TriangleMesh::Ptr mesh, math::Matrix4f const& trans)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
     mve::TriangleMesh::NormalList& vnorm(mesh->get_vertex_normals());
@@ -179,7 +179,7 @@ void
 mesh_scale_and_center (TriangleMesh::Ptr mesh, bool scale, bool center)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     TriangleMesh::VertexList& verts(mesh->get_vertices());
 
@@ -226,7 +226,7 @@ void
 mesh_invert_faces (TriangleMesh::Ptr mesh)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     TriangleMesh::FaceList& faces(mesh->get_faces());
 
@@ -242,7 +242,7 @@ mesh_find_aabb (TriangleMesh::ConstPtr mesh,
     math::Vec3f& aabb_min, math::Vec3f& aabb_max)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     TriangleMesh::VertexList const& verts(mesh->get_vertices());
     if (verts.empty())
@@ -266,7 +266,7 @@ std::size_t
 mesh_delete_unreferenced (TriangleMesh::Ptr mesh)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     VertexInfoList vinfos(mesh);
     TriangleMesh::DeleteList dlist(vinfos.size(), false);

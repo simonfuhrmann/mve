@@ -116,7 +116,7 @@ void
 depthmap_confidence_clean (FloatImage::Ptr dm, FloatImage::ConstPtr cm)
 {
     if (dm == nullptr || cm == nullptr)
-        throw std::invalid_argument("nullptr depth or confidence map");
+        throw std::invalid_argument("Null depth or confidence map");
 
     if (dm->width() != cm->width() || dm->height() != cm->height())
         throw std::invalid_argument("Image dimensions do not match");
@@ -212,7 +212,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     float dd_factor, mve::Image<unsigned int>* vids)
 {
     if (dm == nullptr)
-        throw std::invalid_argument("nullptr depthmap given");
+        throw std::invalid_argument("Null depthmap given");
 
     int const width = dm->width();
     int const height = dm->height();
@@ -323,7 +323,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     math::Matrix3f const& invproj, float dd_factor)
 {
     if (dm == nullptr)
-        throw std::invalid_argument("nullptr depthmap given");
+        throw std::invalid_argument("Null depthmap given");
 
     int const width = dm->width();
     int const height = dm->height();
@@ -373,7 +373,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     CameraInfo const& cam, float dd_factor)
 {
     if (dm == nullptr)
-        throw std::invalid_argument("nullptr depthmap given");
+        throw std::invalid_argument("Null depthmap given");
     if (cam.flen == 0.0f)
         throw std::invalid_argument("Invalid camera given");
 
@@ -414,7 +414,7 @@ void
 rangegrid_triangulate (Image<unsigned int> const& grid, TriangleMesh::Ptr mesh)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     int w = grid.width();
     int h = grid.height();
@@ -491,7 +491,7 @@ void
 depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     if (iterations < 0)
         throw std::invalid_argument("Invalid amount of iterations");
@@ -545,7 +545,7 @@ void
 depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
 
     if (iterations < 0)
         throw std::invalid_argument("Invalid amount of iterations");

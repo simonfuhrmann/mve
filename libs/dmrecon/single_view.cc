@@ -31,9 +31,9 @@ SingleView::SingleView(mve::Scene::Ptr _scene,
 {
     /* Argument sanity checks. */
     if (scene == nullptr)
-        throw std::invalid_argument("nullptr scene");
+        throw std::invalid_argument("Null scene given");
     if (view == nullptr || !view->is_camera_valid())
-        throw std::invalid_argument("nullptr view");
+        throw std::invalid_argument("Null view given");
     if (embedding.empty())
         throw std::invalid_argument("Empty embedding name");
 

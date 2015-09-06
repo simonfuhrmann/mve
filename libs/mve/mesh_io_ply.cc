@@ -688,7 +688,7 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
     SavePLYOptions const& options)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("nullptr mesh given");
+        throw std::invalid_argument("Null mesh given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 
@@ -887,9 +887,9 @@ save_ply_view (std::string const& filename, CameraInfo const& camera,
 {
     /* Some error and inconsistency checking. */
     if (depth_map == nullptr)
-        throw std::invalid_argument("nullptr depth map given");
+        throw std::invalid_argument("Null depth map given");
     //if (confidence_map == nullptr)
-    //    throw std::invalid_argument("nullptr confidence map given");
+    //    throw std::invalid_argument("Null confidence map given");
     if (filename.empty())
         throw std::invalid_argument("No filename given");
 
@@ -1041,7 +1041,7 @@ save_ply_view (View::Ptr view, std::string const& filename,
     std::string const& color_image)
 {
     if (view == nullptr)
-        throw std::invalid_argument("nullptr view given");
+        throw std::invalid_argument("Null view given");
 
     CameraInfo const& cam(view->get_camera());
     FloatImage::Ptr dm = view->get_float_image(depthmap);

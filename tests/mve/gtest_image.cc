@@ -67,7 +67,7 @@ TEST(ImageTest, TypedImageBaseInitialization)
     EXPECT_EQ(0, img.channels());
     EXPECT_FALSE(img.valid());
 
-    // Funfact: &data[0] returns nullptr if vector data is empty.
+    // Funfact: &data[0] returns null if vector data is empty.
     EXPECT_EQ(0, img.get_data_pointer());
     EXPECT_EQ(0, img.get_byte_pointer());
     EXPECT_EQ(0, img.begin());

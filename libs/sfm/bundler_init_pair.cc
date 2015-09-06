@@ -22,7 +22,7 @@ void
 InitialPair::compute_pair (Result* result)
 {
     if (this->viewports == nullptr || this->tracks == nullptr)
-        throw std::invalid_argument("nullptr viewports or tracks");
+        throw std::invalid_argument("Null viewports or tracks");
 
     std::cout << "Searching for initial pair..." << std::endl;
 

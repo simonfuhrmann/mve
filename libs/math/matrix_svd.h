@@ -33,7 +33,7 @@ MATH_NAMESPACE_BEGIN
  * SVD for dynamic-size matrices A of size MxN (M rows, N columns).
  * The function decomposes input matrix A such that A = USV^T where
  * A is MxN, U is MxN, S is a N-vector and V is NxN.
- * Any of U, S or V can be nullptr, however, this does not save operations.
+ * Any of U, S or V can be null, however, this does not save operations.
  *
  * Usually, M >= N, i.e. the input matrix has more rows than columns.
  * If M > 5/3 N, QR decomposition is used to do an economy SVD after Chan
@@ -52,7 +52,7 @@ matrix_svd (T const* mat_a, int rows, int cols,
 /**
  * SVD for compile-time fixed-size matrices. The implementation of this
  * function uses the dynamic-size matrices interface in the background.
- * Any of the results can be nullptr, however, this does not save operations.
+ * Any of the results can be null, however, this does not save operations.
  */
 template <typename T, int M, int N>
 void
@@ -695,7 +695,7 @@ void
 matrix_svd (T const* mat_a, int rows, int cols,
     T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
 {
-    /* Allow for nullptr result matrices. */
+    /* Allow for null result matrices. */
     std::vector<T> mat_u_tmp;
     std::vector<T> vec_s_tmp;
     if (vec_s == nullptr)
@@ -717,7 +717,7 @@ matrix_svd (T const* mat_a, int rows, int cols,
      */
     if (rows >= cols)
     {
-        /* Allow for nullptr result U matrix. */
+        /* Allow for null result U matrix. */
         if (mat_u == nullptr)
         {
             mat_u_tmp.resize(rows * cols);
@@ -742,7 +742,7 @@ matrix_svd (T const* mat_a, int rows, int cols,
         std::vector<T> mat_a_tmp(cols * cols, T(0));
         std::copy(mat_a, mat_a + cols * rows, &mat_a_tmp[0]);
 
-        /* Temporarily resize U, allow for nullptr result matrices. */
+        /* Temporarily resize U, allow for null result matrices. */
         mat_u_tmp.resize(cols * cols);
         internal::matrix_gk_svd(&mat_a_tmp[0], cols, cols,
             &mat_u_tmp[0], vec_s, mat_v, epsilon);
@@ -774,7 +774,7 @@ void
 matrix_svd (T const* mat_a, int rows, int cols,
     T* mat_u, T* vec_s, T* mat_v, T const& epsilon)
 {
-    /* Allow for nullptr result matrices. */
+    /* Allow for null result matrices. */
     std::vector<T> mat_u_tmp;
     std::vector<T> vec_s_tmp;
     std::vector<T> mat_v_tmp;

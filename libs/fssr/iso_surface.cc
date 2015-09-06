@@ -505,7 +505,7 @@ void
 IsoSurface::sanity_checks (void)
 {
     if (this->voxels == nullptr || this->octree == nullptr)
-        throw std::runtime_error("sanity_checks(): nullptr octree/voxels");
+        throw std::runtime_error("sanity_checks(): Null octree/voxels");
     for (std::size_t i = 1; i < this->voxels->size(); ++i)
         if (this->voxels->at(i).first < this->voxels->at(i - 1).first)
             throw std::runtime_error("sanity_checks(): Voxels unsorted");

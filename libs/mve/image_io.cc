@@ -215,7 +215,8 @@ namespace
         }
 
         /* Initialize PNG structures. */
-        *png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+        *png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
+            nullptr, nullptr, nullptr);
         if (!*png)
         {
             std::fclose(fp);
@@ -336,7 +337,7 @@ save_png_file (ByteImage::ConstPtr image,
     std::string const& filename, int compression_level)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     FILE *fp = std::fopen(filename.c_str(), "wb");
     if (!fp)
@@ -561,7 +562,7 @@ void
 save_jpg_file (ByteImage::ConstPtr image, std::string const& filename, int quality)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     if (image->channels() != 1 && image->channels() != 3)
         throw util::Exception("Invalid image color space");
@@ -672,7 +673,7 @@ void
 save_tiff_file (ByteImage::ConstPtr image, std::string const& filename)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     TIFF* tif = TIFFOpen(filename.c_str(), "w");
     if (!tif)
@@ -749,7 +750,7 @@ void
 save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     TIFF* tif = TIFFOpen(filename.c_str(), "w");
     if (!tif)
@@ -860,7 +861,7 @@ void
 save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     std::string magic_number;
     if (image->channels() == 1)
@@ -985,7 +986,7 @@ void
 save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     std::string magic_number;
     if (image->channels() == 1)
@@ -1110,7 +1111,7 @@ void
 save_mvei_file (ImageBase::ConstPtr image, std::string const& filename)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image given");
+        throw std::invalid_argument("Null image given");
 
     int32_t width = image->width();
     int32_t height = image->height();

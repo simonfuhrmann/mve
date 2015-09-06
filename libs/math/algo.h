@@ -76,7 +76,7 @@ max_element_id (FwdIter first, FwdIter last)
 
 /**
  * Algorithm that finds the value corresponding to a key in sorted vector
- * of key-value pairs. If the key does not exist, nullptr is returned.
+ * of key-value pairs. If the key does not exist, null is returned.
  */
 template <typename Key, typename Value>
 Value const*

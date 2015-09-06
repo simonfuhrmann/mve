@@ -31,8 +31,8 @@ class Octree
 public:
     /**
      * Simple recursive octree node that stores samples in a vector.
-     * The node is a leaf if children is nullptr, otherwise eight children exist.
-     * The node is the root node if parent is nullptr. In FSSR, samples are
+     * The node is a leaf if children is null, otherwise eight children exist.
+     * The node is the root node if parent is null. In FSSR, samples are
      * inserted according to scale, thus inner nodes may contain samples.
      */
     struct Node

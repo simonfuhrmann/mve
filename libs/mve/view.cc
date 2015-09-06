@@ -437,7 +437,7 @@ void
 View::set_image (ImageBase::Ptr image, std::string const& name)
 {
     if (image == nullptr)
-        throw std::invalid_argument("nullptr image");
+        throw std::invalid_argument("Null image");
 
     ImageProxy proxy;
     proxy.is_dirty = true;
@@ -525,7 +525,7 @@ void
 View::set_blob (ByteImage::Ptr blob, std::string const& name)
 {
     if (blob == nullptr)
-        throw std::invalid_argument("nullptr blob");
+        throw std::invalid_argument("Null blob");
 
     BlobProxy proxy;
     proxy.is_dirty = true;
@@ -809,7 +809,7 @@ View::save_image_intern (ImageProxy* proxy)
     if (this->path.empty())
         throw std::runtime_error("View not initialized");
     if (proxy == nullptr)
-        throw std::runtime_error("nullptr proxy");
+        throw std::runtime_error("Null proxy");
 
     /* An absolute filename indicates an image reference. Copy file. */
     if (util::fs::is_absolute(proxy->filename))
@@ -953,7 +953,7 @@ View::save_blob_intern (BlobProxy* proxy)
     if (this->path.empty())
         throw std::runtime_error("View not initialized");
     if (proxy == nullptr || proxy->blob == nullptr)
-        throw std::runtime_error("nullptr proxy or data");
+        throw std::runtime_error("Null proxy or data");
     if (proxy->blob->get_byte_size() != proxy->size)
         throw std::runtime_error("BLOB size mismatch");
 

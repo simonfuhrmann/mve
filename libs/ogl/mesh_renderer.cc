@@ -16,7 +16,7 @@ void
 MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
 {
     if (mesh == nullptr)
-        throw std::invalid_argument("Got nullptr mesh");
+        throw std::invalid_argument("Got null mesh");
 
     /* Clean previous content. */
     this->reset_vertex_array();
