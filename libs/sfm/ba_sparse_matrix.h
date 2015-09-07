@@ -33,7 +33,7 @@ public:
     struct Triplet
     {
         Triplet (void) = default;
-        Triplet (std::size_t outer, std::size_t inner, T const& value);
+        Triplet (std::size_t col, std::size_t row, T const& value);
         bool operator< (Triplet const& other) const;
 
         std::size_t row;
@@ -99,8 +99,8 @@ SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
 template <typename T>
-SparseMatrix<T>::Triplet::Triplet (std::size_t row,
-    std::size_t col, T const& value)
+SparseMatrix<T>::Triplet::Triplet (std::size_t col,
+    std::size_t row, T const& value)
     : row(row), col(col), value(value)
 {
 }
@@ -380,7 +380,7 @@ SparseMatrix<T>::debug (void) const
 {
     std::cout << "SparseMatrix ("
         << this->rows << " rows, " << this->cols << " cols, "
-        << this->num_non_zero << " values)" << std::endl;
+        << this->num_non_zero() << " values)" << std::endl;
     std::cout << "  Values:";
     for (std::size_t i = 0; i < this->values.size(); ++i)
         std::cout << " " << this->values[i];
