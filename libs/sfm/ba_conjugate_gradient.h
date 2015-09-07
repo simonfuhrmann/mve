@@ -21,6 +21,9 @@ template<typename T>
 class ConjugateGradientSolver
 {
 public:
+    typedef SparseMatrix<T> Matrix;
+    typedef DenseVector<T> Vector;
+
     enum ReturnInfo
     {
         CONVERGENCE,
@@ -42,13 +45,45 @@ public:
         ReturnInfo info;
     };
 
+    class Functor
+    {
+    public:
+        virtual Vector operator() (Vector const& x) const = 0;
+        virtual std::size_t input_size (void) const = 0;
+        virtual std::size_t output_size (void) const = 0;
+    };
+
+    class BasicMatrixFunctor : public Functor
+    {
+    public:
+        BasicMatrixFunctor(Matrix const* A)
+        : A(A) {}
+
+        Vector operator()(Vector const& x) const
+        {
+            return this->A->multiply(x);
+        }
+        std::size_t input_size (void) const
+        {
+            return A->num_cols();
+        }
+        std::size_t output_size (void) const
+        {
+            return A->num_rows();
+        }
+
+    private:
+        Matrix const* A;
+    };
+
+
 public:
     ConjugateGradientSolver(Options const& opts);
 
-    typedef SparseMatrix<T> Matrix;
-    typedef DenseVector<T> Vector;
-
     Status solve (Matrix const& A, Vector const& b, Vector* x,
+        Matrix const* P = nullptr);
+
+    Status solve (Functor const& A, Vector const& b, Vector* x,
         Matrix const* P = nullptr);
 
 private:
@@ -87,14 +122,23 @@ inline typename ConjugateGradientSolver<T>::Status
 ConjugateGradientSolver<T>::solve(Matrix const& A, Vector const& b, Vector* x,
     Matrix const* P)
 {
-    if (A.num_rows() != b.size())
+    BasicMatrixFunctor A_functor(&A);
+    return this->solve(A_functor, b, x, P);
+}
+
+template<typename T>
+inline typename ConjugateGradientSolver<T>::Status
+ConjugateGradientSolver<T>::solve(ConjugateGradientSolver<T>::Functor const& A,
+    Vector const& b, Vector* x, Matrix const* P)
+{
+    if (A.output_size() != b.size())
     {
         this->status.info = INVALID_INPUT;
         return this->status;
     }
 
     /* Set intial x = 0 */
-    x->resize(A.num_cols(), 0);
+    x->resize(A.input_size(), 0);
     /* Initial residual is b */
     Vector r = b;
     /* Regular search direction */
@@ -122,7 +166,7 @@ ConjugateGradientSolver<T>::solve(Matrix const& A, Vector const& b, Vector* x,
         ++this->status.num_iterations)
     {
         /* Compute step size in search direction */
-        Vector Ad = A.multiply(d);
+        Vector Ad = A(d);
         T alpha = r_dot_r / d.dot(Ad);
 
         /* Update parameter vector */

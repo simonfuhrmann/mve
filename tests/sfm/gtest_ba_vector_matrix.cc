@@ -47,6 +47,52 @@ TEST(BundleAdjustmentVectorMatrixTest, VectorSubtractTest)
     EXPECT_TRUE(e == f);
 }
 
+TEST(BundleAdjustmentVectorMatrixTest, VectorAddTest)
+{
+    sfm::ba::DenseVector<double> a(10, 0.0);
+    sfm::ba::DenseVector<double> b(10, 0.0);
+    sfm::ba::DenseVector<double> c(11, 0.0);
+    for (std::size_t i = 0; i < a.size(); ++i)
+    {
+        a[i] = static_cast<double>(i);
+        b[i] = static_cast<double>(i) * 2.0;
+    }
+    EXPECT_THROW(a.add(c), std::exception);
+    EXPECT_THROW(c.add(a), std::exception);
+
+    sfm::ba::DenseVector<double> d = a.add(b);
+    for (std::size_t i = 0; i < a.size(); ++i)
+        EXPECT_EQ(static_cast<double>(i) * 3.0, d[i]);
+}
+
+TEST(BundleAdjustmentVectorMatrixTest, VectorMultScalarTest)
+{
+    sfm::ba::DenseVector<double> a(10, 0.0);
+    sfm::ba::DenseVector<double> b(10, 0.0);
+    for (std::size_t i = 0; i < a.size(); ++i)
+    {
+        a[i] = static_cast<double>(i);
+        b[i] = static_cast<double>(i) * 2.0;
+    }
+
+    sfm::ba::DenseVector<double> c = a.multiply(2.0);
+
+   EXPECT_TRUE(b == c);
+}
+
+TEST(BundleAdjustmentVectorMatrixTest, VectorDotProductTest)
+{
+    sfm::ba::DenseVector<double> a(10, 0.0);
+    double dot_product = 0;
+    for (std::size_t i = 0; i < a.size(); ++i)
+    {
+        a[i] = static_cast<double>(i);
+        dot_product += static_cast<double>(i) * static_cast<double>(i);
+    }
+
+   EXPECT_EQ(dot_product, a.dot(a));
+}
+
 TEST(BundleAdjustmentVectorMatrixTest, VectorEqualityTest)
 {
     sfm::ba::DenseVector<int> a(10);
@@ -238,10 +284,10 @@ TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorMultiplyTest)
     SparseMatrix m1(3, 4);
     {
         SparseMatrix::Triplets triplets;
-        triplets.emplace_back(0, 1, 1);
-        triplets.emplace_back(0, 3, 1);
-        triplets.emplace_back(1, 2, 3);
-        triplets.emplace_back(2, 0, 4);
+        triplets.emplace_back(1, 0, 1);
+        triplets.emplace_back(3, 0, 1);
+        triplets.emplace_back(2, 1, 3);
+        triplets.emplace_back(0, 2, 4);
         m1.set_from_triplets(&triplets);
     }
 
@@ -263,7 +309,7 @@ TEST(BundleAdjustmentVectorMatrixTest, MatrixMultiplyDiagonalTest)
     {
         SparseMatrix::Triplets triplets;
         triplets.emplace_back(1, 1, 2);
-        triplets.emplace_back(0, 2, 4);
+        triplets.emplace_back(2, 0, 4);
         m1.set_from_triplets(&triplets);
     }
 
@@ -277,7 +323,7 @@ TEST(BundleAdjustmentVectorMatrixTest, MatrixMultiplyDiagonalTest)
     {
         SparseMatrix::Triplets triplets;
         triplets.emplace_back(1, 1, 2);
-        triplets.emplace_back(0, 2, 4);
+        triplets.emplace_back(2, 0, 4);
         m2.set_from_triplets(&triplets);
     }
 
