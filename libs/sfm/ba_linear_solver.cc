@@ -7,12 +7,16 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Sparse>
-#include <eigen3/Eigen/QR>
+#define USE_EIGEN_LINEAR_ALGEBRA 0
+#ifdef USE_EIGEN_LINEAR_ALGEBRA
+#   include <eigen3/Eigen/Core>
+#   include <eigen3/Eigen/Sparse>
+#   include <eigen3/Eigen/QR>
+#endif
 
 #include <iostream>
 
+#include "util/timer.h"
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
 #include "sfm/ba_linear_solver.h"
@@ -22,30 +26,32 @@ SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
 LinearSolver::Status
-LinearSolver::solve_schur2 (SparseMatrixType const& jac_cams,
+LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     SparseMatrixType const& jac_points,
     DenseVectorType const& values, DenseVectorType* delta_x)
 {
+#if !USE_EIGEN_LINEAR_ALGEBRA
     /*
      * Jacobian J = [ Jc Jp ] with Jc camera block, Jp point block.
      * Hessian H = [ B E; E^T C ] = J^T J = [ Jc^T; Jp^T ] * [ Jc Jp ]
      * with  B = Jc^T * Jc  and  E = Jc^T * Jp  and  C = Jp^T Jp
      */
-
     DenseVectorType const& F = values;
     SparseMatrixType const& Jc = jac_cams;
     SparseMatrixType const& Jp = jac_points;
-
-    /* Assemble two values vectors. */
-    DenseVectorType v = Jc.transpose().multiply(F);
-    DenseVectorType w = Jp.transpose().multiply(F);
-    v.negate_self();
-    w.negate_self();
+    SparseMatrixType JcT = Jc.transpose();
+    SparseMatrixType JpT = Jp.transpose();
 
     /* Compute the blocks of the Hessian. */
-    SparseMatrixType B = Jc.transpose().multiply(Jc);
-    SparseMatrixType E = Jc.transpose().multiply(Jp);
-    SparseMatrixType C = Jp.transpose().multiply(Jp);
+    SparseMatrixType B = JcT.multiply(Jc);
+    SparseMatrixType E = JcT.multiply(Jp);
+    SparseMatrixType C = JpT.multiply(Jp);
+
+    /* Assemble two values vectors. */
+    DenseVectorType v = JcT.multiply(F);
+    DenseVectorType w = JpT.multiply(F);
+    v.negate_self();
+    w.negate_self();
 
     /* Add regularization to C and B. */
     C.mult_diagonal(1.0 + 1.0 / this->opts.trust_region_radius);
@@ -66,7 +72,7 @@ LinearSolver::solve_schur2 (SparseMatrixType const& jac_cams,
 
     /* Compute the Schur complement matrix S. */
     SparseMatrixType ET = E.transpose();
-    SparseMatrixType S = B.subtract(E.multiply(C.transpose()).multiply(ET));
+    SparseMatrixType S = B.subtract(E.multiply(C).multiply(ET));
     DenseVectorType rhs = v.subtract(E.multiply(C.multiply(w)));
 
     /* Solve linear system. */
@@ -121,18 +127,8 @@ LinearSolver::solve_schur2 (SparseMatrixType const& jac_cams,
         (delta_z.multiply(1.0 / this->opts.trust_region_radius).add(w)));
 
     return status;
-}
 
-LinearSolver::Status
-LinearSolver::solve_schur (MatrixType const& jac_cams,
-    MatrixType const& jac_points,
-    VectorType const& values, VectorType* delta_x)
-{
-    /*
-     * Jacobian J = [ Jc Jp ] with Jc camera block, Jp point block.
-     * Hessian H = [ B E; E^T C ] = J^T J = [ Jc^T; Jp^T ] * [ Jc Jp ]
-     * with  B = Jc^T * Jc  and  E = Jc^T * Jp  and  C = Jp^T Jp
-     */
+#else // !USE_EIGEN_LINEAR_ALGEBRA
 
     typedef std::vector<Eigen::Triplet<double> > TripletsType;
     typedef Eigen::SparseMatrix<double> SparseMatrixType;
@@ -178,15 +174,15 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
         Jp.setFromTriplets(triplets.begin(), triplets.end());
     }
 
-    /* Assemble two values vectors. */
-    MappedVectorType F(values.data(), values.size());
-    DenseVectorType v = -Jc.transpose() * F;
-    DenseVectorType w = -Jp.transpose() * F;
-
     /* Compute the blocks of the Hessian. */
     SparseMatrixType B = Jc.transpose() * Jc;
     SparseMatrixType E = Jc.transpose() * Jp;
     SparseMatrixType C = Jp.transpose() * Jp;
+
+    /* Assemble two values vectors. */
+    MappedVectorType F(values.data(), values.size());
+    DenseVectorType v = -Jc.transpose() * F;
+    DenseVectorType w = -Jp.transpose() * F;
 
     /* Add regularization to C and B. */
     if (this->opts.trust_region_radius != 0.0)
@@ -283,12 +279,23 @@ LinearSolver::solve_schur (MatrixType const& jac_cams,
         delta_x->at(jac_cam_cols + i) = delta_z[i];
 
     return status;
+#endif // !USE_EIGEN_LINEAR_ALGEBRA
 }
 
+#if 0
 LinearSolver::Status
-LinearSolver::solve (MatrixType const& jac_cams, MatrixType const& jac_points,
-    VectorType const& values, VectorType* delta_x)
+LinearSolver::solve (SparseMatrixType const& jac_cams,
+    SparseMatrixType const& jac_points,
+    DenseVectorType const& values,
+    DenseVectorType* delta_x)
 {
+#if !USE_EIGEN_LINEAR_ALGEBRA
+
+    // TODO
+    throw std::runtime_error("Not implemented");
+
+#else // !USE_EIGEN_LINEAR_ALGEBRA
+
     std::size_t jac_rows = values.size();
     std::size_t jac_cam_cols = jac_cams.size() / jac_rows;
     std::size_t jac_point_cols = jac_points.size() / jac_rows;
@@ -384,7 +391,10 @@ LinearSolver::solve (MatrixType const& jac_cams, MatrixType const& jac_points,
     }
 
     return status;
+
+#endif // !USE_EIGEN_LINEAR_ALGEBRA
 }
+#endif
 
 SFM_BA_NAMESPACE_END
 SFM_NAMESPACE_END
