@@ -39,28 +39,21 @@ public:
         bool cg_success;
     };
 
-    typedef std::vector<double> MatrixType;
-    typedef std::vector<double> VectorType;
     typedef SparseMatrix<double> SparseMatrixType;
     typedef DenseVector<double> DenseVectorType;
 
 public:
     LinearSolver (Options const& options);
 
-    /* Schur-complement solver. */
-    Status solve_schur2 (SparseMatrixType const& jac_cams,
+    /* Conjugate Gradient on Schur-complement. */
+    Status solve_schur (SparseMatrixType const& jac_cams,
         SparseMatrixType const& jac_points,
         DenseVectorType const& values, DenseVectorType* delta_x);
 
-    /* Schur-complement solver. */
-    Status solve_schur (MatrixType const& jac_cams,
-        MatrixType const& jac_points,
-        VectorType const& values, VectorType* delta_x);
-
-    /* Conjugate Gradient on H. */
-    Status solve (MatrixType const& jac_cams,
-        MatrixType const& jac_points,
-        VectorType const& values, VectorType* delta_x);
+    /* Conjugate Gradient on H = J^T * J. */
+    //Status solve (SparseMatrixType const& jac_cams,
+    //    SparseMatrixType const& jac_points,
+    //    DenseVectorType const& values, DenseVectorType* delta_x);
 
 private:
     Options opts;

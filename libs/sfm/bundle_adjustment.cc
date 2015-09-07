@@ -29,6 +29,7 @@ SFM_BA_NAMESPACE_BEGIN
  *
  * - PBA normalizes focal length and depth values before LM optimization,
  *   and denormalizes afterwards. Is this necessary with double?
+ * - PBA exits the LM main loop if norm of -JF is small. Useful?
  */
 
 BundleAdjustment::Status
@@ -95,26 +96,13 @@ BundleAdjustment::lm_optimize (void)
         }
 
         /* Compute Jacobian. */
-        SparseMatrixType J_cam, J_points;
-        this->analytic_jacobian(&J_cam, &J_points);
-        //this->print_jacobian(J, "J=");
-
-        //SparseMatrixType J;
-        //this->numeric_jacobian(&J);
-        //this->print_jacobian(J, "K=");
-
-        // TODO: Evaluate norm of -JF and exit on small gradient.
+        SparseMatrixType Jc, Jp;
+        this->analytic_jacobian(&Jc, &Jp);
 
         /* Perform linear step. */
         DenseVectorType delta_x;
         LinearSolver pcg(pcg_opts);
-
-        LinearSolver::Status cg_status
-#if USE_SPARSE_MATRIX
-            = pcg.solve_schur2(J_cam, J_points, F, &delta_x);
-#else
-            = pcg.solve_schur(J_cam, J_points, F, &delta_x);
-#endif
+        LinearSolver::Status cg_status = pcg.solve_schur(Jc, Jp, F, &delta_x);
 
         /* Update reprojection errors and MSE after linear step. */
         double new_mse, delta_mse;
@@ -289,7 +277,6 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
     std::size_t const point_cols = this->points_3d->size() * 3;
     std::size_t const jacobi_rows = this->points_2d->size() * 2;
 
-#if USE_SPARSE_MATRIX
     SparseMatrixType::Triplets cam_triplets, point_triplets;
     cam_triplets.reserve(this->points_2d->size() * 9 * 2);
     point_triplets.reserve(this->points_2d->size() * 3 * 2);
@@ -308,51 +295,20 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
         std::size_t point_col = p2d.point3d_id * 3;
         for (int j = 0; j < 9; ++j)
         {
-            cam_triplets.emplace_back(cam_col + j, row_x, cam_x_ptr[j]);
-            cam_triplets.emplace_back(cam_col + j, row_y, cam_y_ptr[j]);
+            cam_triplets.emplace_back(row_x, cam_col + j, cam_x_ptr[j]);
+            cam_triplets.emplace_back(row_y, cam_col + j, cam_y_ptr[j]);
         }
         for (int j = 0; j < 3; ++j)
         {
-            point_triplets.emplace_back(point_col + j, row_x, point_x_ptr[j]);
-            point_triplets.emplace_back(point_col + j, row_y, point_y_ptr[j]);
+            point_triplets.emplace_back(row_x, point_col + j, point_x_ptr[j]);
+            point_triplets.emplace_back(row_y, point_col + j, point_y_ptr[j]);
         }
     }
 
-    jac_cam->allocate(jacobi_rows, camera_cols,
-        SparseMatrixType::COLUMN_MAJOR);
+    jac_cam->allocate(jacobi_rows, camera_cols);
     jac_cam->set_from_triplets(&cam_triplets);
-    jac_points->allocate(jacobi_rows, point_cols,
-        SparseMatrixType::COLUMN_MAJOR);
+    jac_points->allocate(jacobi_rows, point_cols);
     jac_points->set_from_triplets(&point_triplets);
-
-#else
-    jac_cam->clear();
-    jac_cam->resize(camera_cols * jacobi_rows);
-    jac_points->clear();
-    jac_points->resize(point_cols * jacobi_rows);
-
-    double* cam_base_ptr = jac_cam->data();
-    double* point_base_ptr = jac_points->data();
-
-//#pragma omp parallel for
-    for (std::size_t i = 0; i < this->points_2d->size(); ++i)
-    {
-        Point2D const& p2d = this->points_2d->at(i);
-        Point3D const& p3d = this->points_3d->at(p2d.point3d_id);
-        Camera const& cam = this->cameras->at(p2d.camera_id);
-
-        double* cam_row_x_ptr = cam_base_ptr + camera_cols * (i * 2 + 0);
-        double* cam_row_y_ptr = cam_base_ptr + camera_cols * (i * 2 + 1);
-        double* cam_x_ptr = cam_row_x_ptr + p2d.camera_id * 9;
-        double* cam_y_ptr = cam_row_y_ptr + p2d.camera_id * 9;
-        double* point_row_x_ptr = point_base_ptr + point_cols * (i * 2 + 0);
-        double* point_row_y_ptr = point_base_ptr + point_cols * (i * 2 + 1);
-        double* point_x_ptr = point_row_x_ptr + p2d.point3d_id * 3;
-        double* point_y_ptr = point_row_y_ptr + p2d.point3d_id * 3;
-        this->analytic_jacobian_entries(cam, p3d,
-            cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
-    }
-#endif
 }
 
 void
@@ -453,129 +409,13 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
     point_y_ptr[1] = fz * rd_factor * (r[4] - r[7] * iy);
     point_y_ptr[2] = fz * rd_factor * (r[5] - r[8] * iy);
 #elif JACOBIAN_APPROX_PBA
-
+    /* Computation of Jacobian approximation with one distortion argument. */
+    // TODO
 #else
-
+    /* Computation of the full Jacobian. */
+    // TODO
 #endif
 }
-
-#if !USE_SPARSE_MATRIX
-void
-BundleAdjustment::numeric_jacobian (SparseMatrixType* matrix_j)
-{
-    std::size_t const num_cam_params = this->cameras->size() * 9;
-    std::size_t const num_point_params = this->points_3d->size() * 3;
-    std::size_t const rows = this->points_2d->size() * 2;
-    std::size_t const cols = num_cam_params + num_point_params;
-
-    if (matrix_j->size() != rows * cols)
-        matrix_j->resize(rows * cols, 0.0);
-
-    /* Numeric differentiation for cameras. */
-    for (std::size_t i = 0; i < this->cameras->size(); ++i)
-    {
-        std::size_t const col = i * 9;
-        Camera& camera = this->cameras->at(i);
-        this->numeric_jacobian_member(&camera.focal_length,
-            1e-6, matrix_j, col + 0, cols);
-        this->numeric_jacobian_member(camera.distortion + 0,
-            1e-6, matrix_j, col + 1, cols);
-        this->numeric_jacobian_member(camera.distortion + 1,
-            1e-6, matrix_j, col + 2, cols);
-        this->numeric_jacobian_member(camera.translation + 0,
-            1e-6, matrix_j, col + 3, cols);
-        this->numeric_jacobian_member(camera.translation + 1,
-            1e-6, matrix_j, col + 4, cols);
-        this->numeric_jacobian_member(camera.translation + 2,
-            1e-6, matrix_j, col + 5, cols);
-        this->numeric_jacobian_rotation(camera.rotation,
-            1e-4, matrix_j, 0, col + 6, cols);
-        this->numeric_jacobian_rotation(camera.rotation,
-            1e-4, matrix_j, 1, col + 7, cols);
-        this->numeric_jacobian_rotation(camera.rotation,
-            1e-4, matrix_j, 2, col + 8, cols);
-    }
-
-    /* Numeric differentiation for points. */
-    for (std::size_t i = 0; i < this->points_3d->size(); ++i)
-    {
-        std::size_t const col = num_cam_params + i * 3;
-        Point3D& point = this->points_3d->at(i);
-        this->numeric_jacobian_member(point.pos + 0,
-            1e-6, matrix_j, col + 0, cols);
-        this->numeric_jacobian_member(point.pos + 1,
-            1e-6, matrix_j, col + 1, cols);
-        this->numeric_jacobian_member(point.pos + 2,
-            1e-6, matrix_j, col + 2, cols);
-    }
-}
-
-void
-BundleAdjustment::numeric_jacobian_member (double* field, double eps,
-    std::vector<double>* matrix_j, std::size_t col, std::size_t cols)
-{
-    std::vector<double> f1, f2;
-    double backup = *field;
-    *field = backup - eps;
-    this->compute_reprojection_errors(&f1);
-    *field = backup + eps;
-    this->compute_reprojection_errors(&f2);
-    *field = backup;
-
-    for (std::size_t i = 0, j = col; j < matrix_j->size(); i += 1, j += cols)
-        matrix_j->at(j) = (f2[i] - f1[i]) / (2.0 * eps);
-}
-
-void
-BundleAdjustment::numeric_jacobian_rotation (double* rot, double eps,
-    std::vector<double>* matrix_j,
-    std::size_t axis, std::size_t col, std::size_t cols)
-{
-    double backup[9];
-    std::copy(rot, rot + 9, backup);
-    double delta_rot_m[9];
-    double delta_rot_r[] = { 0.0, 0.0, 0.0 };
-    std::vector<double> f1, f2;
-
-    delta_rot_r[axis] = -eps;
-    this->rodrigues_to_matrix(delta_rot_r, delta_rot_m);
-    math::matrix_multiply(delta_rot_m, 3, 3, backup, 3, rot);
-    this->compute_reprojection_errors(&f1);
-
-    delta_rot_r[axis] = eps;
-    this->rodrigues_to_matrix(delta_rot_r, delta_rot_m);
-    math::matrix_multiply(delta_rot_m, 3, 3, backup, 3, rot);
-    this->compute_reprojection_errors(&f2);
-
-    std::copy(backup, backup + 9, rot);
-
-    for (std::size_t i = 0, j = col; j < matrix_j->size(); i += 1, j += cols)
-        matrix_j->at(j) = (f2[i] - f1[i]) / (2.0 * eps);
-}
-
-void
-BundleAdjustment::print_jacobian (std::vector<double> const& matrix_j,
-    char const* prefix) const
-{
-    std::size_t const num_cam_params = this->cameras->size() * 9;
-    std::size_t const num_point_params = this->points_3d->size() * 3;
-    std::size_t const matrix_rows = this->points_2d->size() * 2;
-    std::size_t const matrix_cols = num_cam_params + num_point_params;
-
-    if (matrix_j.size() != matrix_rows * matrix_cols)
-        throw std::invalid_argument("Invalid Jacobian dimensions");
-
-    /* Print jacobian. */
-    std::cout << prefix << "[";
-    for (std::size_t r = 0; r < matrix_rows; ++r)
-    {
-        for (std::size_t c = 0; c < matrix_cols; ++c)
-            std::cout << " " << matrix_j[r * matrix_cols + c];
-        std::cout << ";" << std::endl;
-    }
-    std::cout << "]" << std::endl;
-}
-#endif
 
 void
 BundleAdjustment::update_parameters (DenseVectorType const& delta_x)

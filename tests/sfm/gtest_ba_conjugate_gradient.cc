@@ -15,7 +15,7 @@ TEST(ConjugateGradientTest, CGInvalidInputTest)
     opts.max_iterations = 4;
     CGSolver solver(opts);
 
-    SparseMatrix A(4,4, SparseMatrix::ROW_MAJOR);
+    SparseMatrix A(4, 4);
     DenseVector b(3);
     DenseVector x;
 
@@ -35,7 +35,7 @@ TEST(ConjugateGradientTest, CGSolverTest)
     opts.max_iterations = 4;
     CGSolver solver(opts);
 
-    SparseMatrix A(4,4, SparseMatrix::ROW_MAJOR);
+    SparseMatrix A(4, 4);
     SparseMatrix::Triplets triplets;
     triplets.emplace_back(0, 0, 1.0);
     triplets.emplace_back(1, 1, 2.0);
@@ -70,7 +70,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
     opts.max_iterations = 4;
     CGSolver solver(opts);
 
-    SparseMatrix A(4,4, SparseMatrix::ROW_MAJOR);
+    SparseMatrix A(4, 4);
     SparseMatrix::Triplets tripletsA;
     tripletsA.emplace_back(0, 0, 1.0);
     tripletsA.emplace_back(1, 1, 2.0);
@@ -78,7 +78,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
     tripletsA.emplace_back(3, 3, 4.0);
     A.set_from_triplets(&tripletsA);
 
-    SparseMatrix P(4,4, SparseMatrix::ROW_MAJOR);
+    SparseMatrix P(4, 4);
     SparseMatrix::Triplets tripletsP;
     tripletsP.emplace_back(0, 0, 1.0 / 1.0);
     tripletsP.emplace_back(1, 1, 1.0 / 2.0);
@@ -113,7 +113,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverApproximateTest)
     opts.max_iterations = 4;
     CGSolver solver(opts);
 
-    SparseMatrix A(4,4, SparseMatrix::ROW_MAJOR);
+    SparseMatrix A(4, 4);
     SparseMatrix::Triplets tripletsA;
     tripletsA.emplace_back(0, 0, 1.0);
     tripletsA.emplace_back(1, 1, 2.0);
@@ -121,7 +121,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverApproximateTest)
     tripletsA.emplace_back(3, 3, 4.0);
     A.set_from_triplets(&tripletsA);
 
-    SparseMatrix P(4,4, SparseMatrix::ROW_MAJOR);
+    SparseMatrix P(4, 4);
     SparseMatrix::Triplets tripletsP;
     tripletsP.emplace_back(0, 0, 1.0 / 1.0);
     tripletsP.emplace_back(1, 1, 1.0 / 1.0);
