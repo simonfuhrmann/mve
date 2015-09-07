@@ -34,6 +34,100 @@ struct AppOptions
     int refine_octree;
 };
 
+void
+fssrecon (AppOptions const& app_opts, fssr::SampleIO::Options const& pset_opts)
+{
+    /* Load input point set and insert samples in the octree. */
+    fssr::IsoOctree octree;
+    for (std::size_t i = 0; i < app_opts.in_files.size(); ++i)
+    {
+        std::cout << "Loading: " << app_opts.in_files[i] << "..." << std::endl;
+        util::WallTimer timer;
+
+        fssr::SampleIO loader(pset_opts);
+        loader.open_file(app_opts.in_files[i]);
+        fssr::Sample sample;
+        while (loader.next_sample(&sample))
+            octree.insert_sample(sample);
+
+        std::cout << "Loading samples took "
+            << timer.get_elapsed() << "ms." << std::endl;
+    }
+
+    /* Exit if no samples have been inserted. */
+    if (octree.get_num_samples() == 0)
+    {
+        std::cerr << "Octree does not contain any samples, exiting."
+            << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    /* Refine octree if requested. Each iteration adds one level. */
+    if (app_opts.refine_octree > 0)
+    {
+        std::cout << "Refining octree..." << std::flush;
+        util::WallTimer timer;
+        for (int i = 0; i < app_opts.refine_octree; ++i)
+            octree.refine_octree();
+        std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
+    }
+
+    /* Compute voxels. */
+    octree.limit_octree_level();
+    octree.print_stats(std::cout);
+    octree.compute_voxels();
+    octree.clear_samples();
+
+    /* Extract isosurface. */
+    mve::TriangleMesh::Ptr mesh;
+    {
+        std::cout << "Extracting isosurface..." << std::endl;
+        util::WallTimer timer;
+        fssr::IsoSurface iso_surface(&octree, octree.get_voxels());
+        mesh = iso_surface.extract_mesh();
+        std::cout << "  Done. Surface extraction took "
+            << timer.get_elapsed() << "ms." << std::endl;
+    }
+    octree.clear();
+
+    /* Check if anything has been extracted. */
+    if (mesh->get_vertices().empty())
+    {
+        std::cerr << "Isosurface does not contain any vertices, exiting."
+            << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    /* Surfaces between voxels with zero confidence are ghosts. */
+    {
+        std::cout << "Deleting zero confidence vertices..." << std::flush;
+        util::WallTimer timer;
+        std::size_t num_vertices = mesh->get_vertices().size();
+        mve::TriangleMesh::DeleteList delete_verts(num_vertices, false);
+        for (std::size_t i = 0; i < num_vertices; ++i)
+            if (mesh->get_vertex_confidences()[i] == 0.0f)
+                delete_verts[i] = true;
+        mesh->delete_vertices_fix_faces(delete_verts);
+        std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
+    }
+
+    /* Check for color and delete if not existing. */
+    mve::TriangleMesh::ColorList& colors = mesh->get_vertex_colors();
+    if (!colors.empty() && colors[0].minimum() < 0.0f)
+    {
+        std::cout << "Removing dummy mesh coloring..." << std::endl;
+        colors.clear();
+    }
+
+    /* Write output mesh. */
+    mve::geom::SavePLYOptions ply_opts;
+    ply_opts.write_vertex_colors = true;
+    ply_opts.write_vertex_confidences = true;
+    ply_opts.write_vertex_values = true;
+    std::cout << "Mesh output file: " << app_opts.out_mesh << std::endl;
+    mve::geom::save_ply_mesh(mesh, app_opts.out_mesh, ply_opts);
+}
+
 int
 main (int argc, char** argv)
 {
@@ -102,94 +196,15 @@ main (int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    /* Load input point set and insert samples in the octree. */
-    fssr::IsoOctree octree;
-    for (std::size_t i = 0; i < app_opts.in_files.size(); ++i)
+    try
     {
-        std::cout << "Loading: " << app_opts.in_files[i] << "..." << std::endl;
-        util::WallTimer timer;
-
-        try
-        {
-            fssr::SampleIO loader(pset_opts);
-            loader.open_file(app_opts.in_files[i]);
-            fssr::Sample sample;
-            while (loader.next_sample(&sample))
-                octree.insert_sample(sample);
-        }
-        catch (std::exception& e)
-        {
-            std::cerr << "Error: " << e.what() << std::endl;
-            return EXIT_FAILURE;
-        }
-
-        std::cout << "Loading samples took "
-            << timer.get_elapsed() << "ms." << std::endl;
+        fssrecon(app_opts, pset_opts);
     }
-
-    /* Refine octree if requested. Each iteration adds one level. */
-    if (app_opts.refine_octree > 0)
+    catch (std::exception& e)
     {
-        std::cout << "Refining octree..." << std::flush;
-        util::WallTimer timer;
-        for (int i = 0; i < app_opts.refine_octree; ++i)
-            octree.refine_octree();
-        std::cout << " took " << timer.get_elapsed() << "ms" << std::endl;
-    }
-
-    /* Compute voxels. */
-    octree.limit_octree_level();
-    octree.print_stats(std::cout);
-    octree.compute_voxels();
-    octree.clear_samples();
-
-    /* Extract isosurface. */
-    mve::TriangleMesh::Ptr mesh;
-    {
-        std::cout << "Extracting isosurface..." << std::endl;
-        util::WallTimer timer;
-        fssr::IsoSurface iso_surface(&octree, octree.get_voxels());
-        mesh = iso_surface.extract_mesh();
-        std::cout << "  Done. Surface extraction took "
-            << timer.get_elapsed() << "ms." << std::endl;
-    }
-    octree.clear();
-
-    /* Check if anything has been extracted. */
-    if (mesh->get_vertices().empty())
-    {
-        std::cerr << "Isosurface does not contain any vertices." << std::endl;
+        std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-
-    /* Surfaces between voxels with zero confidence are ghosts. */
-    {
-        std::cout << "Deleting zero confidence vertices..." << std::flush;
-        util::WallTimer timer;
-        std::size_t num_vertices = mesh->get_vertices().size();
-        mve::TriangleMesh::DeleteList delete_verts(num_vertices, false);
-        for (std::size_t i = 0; i < num_vertices; ++i)
-            if (mesh->get_vertex_confidences()[i] == 0.0f)
-                delete_verts[i] = true;
-        mesh->delete_vertices_fix_faces(delete_verts);
-        std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
-    }
-
-    /* Check for color and delete if not existing. */
-    mve::TriangleMesh::ColorList& colors = mesh->get_vertex_colors();
-    if (!colors.empty() && colors[0].minimum() < 0.0f)
-    {
-        std::cout << "Removing dummy mesh coloring..." << std::endl;
-        colors.clear();
-    }
-
-    /* Write output mesh. */
-    mve::geom::SavePLYOptions ply_opts;
-    ply_opts.write_vertex_colors = true;
-    ply_opts.write_vertex_confidences = true;
-    ply_opts.write_vertex_values = true;
-    std::cout << "Mesh output file: " << app_opts.out_mesh << std::endl;
-    mve::geom::save_ply_mesh(mesh, app_opts.out_mesh, ply_opts);
 
     std::cout << "All done. Remember to clean the output mesh." << std::endl;
 

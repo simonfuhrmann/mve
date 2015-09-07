@@ -313,15 +313,6 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
     this->influence_query(pos, factor, result, this->get_iterator_for_root());
 }
 
-inline Octree::Iterator
-Octree::get_iterator_for_root (void) const
-{
-    Iterator iter;
-    iter.root = this->root;
-    iter.first_node();
-    return iter;
-}
-
 inline void
 Octree::set_max_level (int max_level)
 {

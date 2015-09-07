@@ -7,6 +7,7 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
+#include <stdexcept>
 #include <list>
 #include <iostream>
 #include <algorithm>
@@ -328,6 +329,18 @@ Octree::node_center_and_size (Iterator const& iter,
             (*center)[j] += ((octant & (1 << j)) ? offset : -offset);
         *size /= 2.0;
     }
+}
+
+Octree::Iterator
+Octree::get_iterator_for_root (void) const
+{
+    if (this->root == nullptr)
+        throw std::logic_error("Iterator request on empty octree");
+
+    Iterator iter;
+    iter.root = this->root;
+    iter.first_node();
+    return iter;
 }
 
 void
