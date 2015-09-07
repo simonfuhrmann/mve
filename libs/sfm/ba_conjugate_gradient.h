@@ -18,10 +18,11 @@ SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
 template<typename T>
-class ConjugateGradientSolver {
-
+class ConjugateGradientSolver
+{
 public:
-    enum ReturnInfo {
+    enum ReturnInfo
+    {
         CONVERGENCE,
         MAX_ITERATIONS,
         INVALID_INPUT
@@ -41,7 +42,6 @@ public:
         ReturnInfo info;
     };
 
-
 public:
     ConjugateGradientSolver(Options const& opts);
 
@@ -49,8 +49,8 @@ public:
     typedef DenseVector<T> Vector;
 
     Status solve (Matrix const& A, Vector const& b, Vector* x,
-        Matrix const* P = NULL);
-    
+        Matrix const* P = nullptr);
+
 private:
     Options opts;
     Status status;
@@ -74,7 +74,6 @@ ConjugateGradientSolver<T>::Status::Status (void)
 {
 }
 
-
 template<typename T>
 inline
 ConjugateGradientSolver<T>::ConjugateGradientSolver
@@ -82,7 +81,6 @@ ConjugateGradientSolver<T>::ConjugateGradientSolver
     : opts(options)
 {
 }
-
 
 template<typename T>
 inline typename ConjugateGradientSolver<T>::Status
@@ -112,7 +110,8 @@ ConjugateGradientSolver<T>::solve(Matrix const& A, Vector const& b, Vector* x,
         z = (*P).multiply(r);
         r_dot_r = z.dot(r);
         d = z;
-    } else
+    }
+    else
     {
         r_dot_r = r.dot(r);
         d = b;
@@ -141,16 +140,16 @@ ConjugateGradientSolver<T>::solve(Matrix const& A, Vector const& b, Vector* x,
         }
 
         /* Precondition residual if necessary */
-        if(P)
+        if (P)
         {
             z = (*P).multiply(r);
             new_r_dot_r = z.dot(r);
         }
 
-        /* Update search direction s.t. the next residual will be 
+        /* Update search direction s.t. the next residual will be
            orthogonal to new Krylov space */
         T beta = new_r_dot_r / r_dot_r;
-        if(P)
+        if (P)
             d = z.add(d.multiply(beta));
         else
             d = r.add(d.multiply(beta));

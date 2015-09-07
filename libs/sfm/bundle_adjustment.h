@@ -1,18 +1,13 @@
 #ifndef SFM_BUNDLE_ADJUSTMENT_HEADER
 #define SFM_BUNDLE_ADJUSTMENT_HEADER
 
-#include <algorithm>
 #include <vector>
 
 #include "util/logging.h"
 #include "sfm/defines.h"
+#include "sfm/ba_sparse_matrix.h"
+#include "sfm/ba_dense_vector.h"
 #include "sfm/ba_linear_solver.h"
-
-#define USE_SPARSE_MATRIX 1
-#if USE_SPARSE_MATRIX
-#  include "sfm/ba_sparse_matrix.h"
-#  include "sfm/ba_dense_vector.h"
-#endif
 
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
@@ -88,13 +83,8 @@ public:
     void print_status (void) const;
 
 private:
-#if USE_SPARSE_MATRIX
     typedef SparseMatrix<double> SparseMatrixType;
     typedef DenseVector<double> DenseVectorType;
-#else
-    typedef std::vector<double> SparseMatrixType;
-    typedef std::vector<double> DenseVectorType;
-#endif
 
 private:
     void sanity_checks (void);
@@ -106,8 +96,6 @@ private:
     double compute_mse (DenseVectorType const& vector_f);
     void radial_distort (double* x, double* y, double const* dist);
     void rodrigues_to_matrix (double const* r, double* rot);
-    void print_jacobian (SparseMatrixType const& matrix_j,
-        char const* prefix) const;
 
     /* Analytic Jacobian. */
     void analytic_jacobian (SparseMatrixType* jac_cam,
@@ -116,17 +104,7 @@ private:
         double* cam_x_ptr, double* cam_y_ptr,
         double* point_x_ptr, double* point_y_ptr);
 
-#if !USE_SPARSE_MATRIX
-    /* Numeric Jacobian. */
-    void numeric_jacobian (SparseMatrixType* matrix_j);
-    void numeric_jacobian_member (double* field, double eps,
-        SparseMatrixType* matrix_j, std::size_t col, std::size_t cols);
-    void numeric_jacobian_rotation (double* rot, double eps,
-        SparseMatrixType* matrix_j,
-        std::size_t axis, std::size_t col, std::size_t cols);
-#endif
-
-    /* */
+    /* Update of camera/point parameters. */
     void update_parameters (DenseVectorType const& delta_x);
     void update_camera (Camera const& cam, double const* update, Camera* out);
     void update_point (Point3D const& pt, double const* update, Point3D* out);
@@ -140,7 +118,15 @@ private:
     std::vector<Point2D>* points_2d;
 };
 
+SFM_BA_NAMESPACE_END
+SFM_NAMESPACE_END
+
 /* ------------------------ Implementation ------------------------ */
+
+#include <algorithm>
+
+SFM_NAMESPACE_BEGIN
+SFM_BA_NAMESPACE_BEGIN
 
 inline
 Camera::Camera (void)
