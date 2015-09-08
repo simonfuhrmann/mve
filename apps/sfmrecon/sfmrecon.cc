@@ -259,6 +259,7 @@ sfm_reconstruct (AppSettings const& conf)
     }
     else
     {
+        std::cout << "Reconstructing initial pair..." << std::endl;
         sfm::bundler::InitialPair init_pair(init_pair_opts);
         init_pair.initialize(viewports, tracks);
         init_pair.compute_pair(conf.initial_pair_1, conf.initial_pair_2,
