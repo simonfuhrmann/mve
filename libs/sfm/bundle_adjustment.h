@@ -164,8 +164,8 @@ inline
 BundleAdjustment::BundleAdjustment (Options const& options)
     : opts(options)
     , log(options.verbose_output
-        ? util::Logging::DEBUG
-        : util::Logging::INFO)
+        ? util::Logging::LOG_DEBUG
+        : util::Logging::LOG_INFO)
     , cameras(nullptr)
     , points_3d(nullptr)
     , points_2d(nullptr)
