@@ -92,7 +92,7 @@ private:
 
     /* Helper functions. */
     void compute_reprojection_errors (DenseVectorType* vector_f,
-        DenseVectorType const* delta_x = NULL);
+        DenseVectorType const* delta_x = nullptr);
     double compute_mse (DenseVectorType const& vector_f);
     void radial_distort (double* x, double* y, double const* dist);
     void rodrigues_to_matrix (double const* r, double* rot);
@@ -166,9 +166,9 @@ BundleAdjustment::BundleAdjustment (Options const& options)
     , log(options.verbose_output
         ? util::Logging::DEBUG
         : util::Logging::INFO)
-    , cameras(NULL)
-    , points_3d(NULL)
-    , points_2d(NULL)
+    , cameras(nullptr)
+    , points_3d(nullptr)
+    , points_2d(nullptr)
 {
 }
 
