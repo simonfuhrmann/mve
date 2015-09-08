@@ -306,9 +306,9 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
     }
 
     jac_cam->allocate(jacobi_rows, camera_cols);
-    jac_cam->set_from_triplets(&cam_triplets);
+    jac_cam->set_from_triplets(cam_triplets);
     jac_points->allocate(jacobi_rows, point_cols);
-    jac_points->set_from_triplets(&point_triplets);
+    jac_points->set_from_triplets(point_triplets);
 }
 
 void
