@@ -25,6 +25,8 @@ public:
     DenseVector (void) = default;
     DenseVector (std::size_t size, T const& value = T(0));
     void resize (std::size_t size, T const& value = T(0));
+    void clear (void);
+    void fill (T const& value);
     std::size_t size (void) const;
 
     T* data (void);
@@ -55,17 +57,32 @@ private:
 /* ------------------------ Implementation ------------------------ */
 
 template <typename T>
+inline
 DenseVector<T>::DenseVector (std::size_t size, T const& value)
 {
     this->resize(size, value);
 }
 
 template <typename T>
-void
+inline void
 DenseVector<T>::resize (std::size_t size, T const& value)
 {
     this->values.clear();
     this->values.resize(size, value);
+}
+
+template <typename T>
+inline void
+DenseVector<T>::clear (void)
+{
+    this->values.clear();
+}
+
+template <typename T>
+inline void
+DenseVector<T>::fill (T const& value)
+{
+    std::fill(this->values.begin(), this->values.end(), value);
 }
 
 template <typename T>

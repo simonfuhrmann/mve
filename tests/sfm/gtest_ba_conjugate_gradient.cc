@@ -7,7 +7,7 @@
 
 TEST(ConjugateGradientTest, CGInvalidInputTest)
 {
-    typedef sfm::ba::ConjugateGradientSolver<double> CGSolver;
+    typedef sfm::ba::ConjugateGradient<double> CGSolver;
     typedef sfm::ba::SparseMatrix<double> SparseMatrix;
     typedef sfm::ba::DenseVector<double> DenseVector;
 
@@ -24,10 +24,9 @@ TEST(ConjugateGradientTest, CGInvalidInputTest)
     EXPECT_EQ(CGSolver::INVALID_INPUT, status.info);
 }
 
-
 TEST(ConjugateGradientTest, CGSolverTest)
 {
-    typedef sfm::ba::ConjugateGradientSolver<double> CGSolver;
+    typedef sfm::ba::ConjugateGradient<double> CGSolver;
     typedef sfm::ba::SparseMatrix<double> SparseMatrix;
     typedef sfm::ba::DenseVector<double> DenseVector;
 
@@ -61,7 +60,7 @@ TEST(ConjugateGradientTest, CGSolverTest)
 
 TEST(ConjugateGradientTest, CGSolverExplicitFunctorTest)
 {
-    typedef sfm::ba::ConjugateGradientSolver<double> CGSolver;
+    typedef sfm::ba::ConjugateGradient<double> CGSolver;
     typedef sfm::ba::SparseMatrix<double> SparseMatrix;
     typedef sfm::ba::DenseVector<double> DenseVector;
 
@@ -85,7 +84,7 @@ TEST(ConjugateGradientTest, CGSolverExplicitFunctorTest)
 
     DenseVector x;
     CGSolver::Status status = solver.solve(
-        CGSolver::BasicMatrixFunctor(&A), b, &x);
+        sfm::ba::CGBasicMatrixFunctor<double>(&A), b, &x);
 
     EXPECT_EQ(CGSolver::MAX_ITERATIONS, status.info);
     EXPECT_NEAR(x[0], 1.0, 1e-14);
@@ -94,11 +93,9 @@ TEST(ConjugateGradientTest, CGSolverExplicitFunctorTest)
     EXPECT_NEAR(x[3], 1.0 / 4.0, 1e-14);
 }
 
-
-
 TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
 {
-    typedef sfm::ba::ConjugateGradientSolver<double> CGSolver;
+    typedef sfm::ba::ConjugateGradient<double> CGSolver;
     typedef sfm::ba::SparseMatrix<double> SparseMatrix;
     typedef sfm::ba::DenseVector<double> DenseVector;
 
@@ -141,7 +138,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
 
 TEST(ConjugateGradientTest, PreconditionedCGSolverApproximateTest)
 {
-    typedef sfm::ba::ConjugateGradientSolver<double> CGSolver;
+    typedef sfm::ba::ConjugateGradient<double> CGSolver;
     typedef sfm::ba::SparseMatrix<double> SparseMatrix;
     typedef sfm::ba::DenseVector<double> DenseVector;
 
@@ -179,4 +176,3 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverApproximateTest)
     EXPECT_NEAR(x[2], 1.0 / 3.0, 1e-14);
     EXPECT_NEAR(x[3], 1.0 / 4.0, 1e-14);
 }
-

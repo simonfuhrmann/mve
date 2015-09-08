@@ -44,12 +44,12 @@ BundleAdjustment::optimize (void)
 void
 BundleAdjustment::sanity_checks (void)
 {
-    /* Check for NULL arguments. */
-    if (this->cameras == NULL)
+    /* Check for null arguments. */
+    if (this->cameras == nullptr)
         throw std::invalid_argument("No cameras given");
-    if (this->points_3d == NULL)
+    if (this->points_3d == nullptr)
         throw std::invalid_argument("No tracks given");
-    if (this->points_2d == NULL)
+    if (this->points_2d == nullptr)
         throw std::invalid_argument("No observations given");
 
     /* Check for valid focal lengths. */
@@ -197,7 +197,7 @@ BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
 
         Point3D new_point;
         Camera new_camera;
-        if (delta_x != NULL)
+        if (delta_x != nullptr)
         {
             std::size_t cam_id = p2d.camera_id * 9;
             std::size_t pt_id = this->cameras->size() * 9 + p2d.point3d_id * 3;
