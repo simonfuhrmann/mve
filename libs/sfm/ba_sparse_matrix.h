@@ -10,10 +10,8 @@
 #ifndef SFM_SPARSE_MATRIX_HEADER
 #define SFM_SPARSE_MATRIX_HEADER
 
-#include <map>
 #include <stdexcept>
 #include <vector>
-#include <memory>
 #include <algorithm>
 
 #include "sfm/ba_dense_vector.h"
@@ -51,6 +49,7 @@ public:
     void set_from_triplets (Triplets const& triplets);
     void mult_diagonal (T const& factor);
     void cwise_invert (void);
+    void column_nonzeros (std::size_t col, DenseVector<T>* vector) const;
 
     SparseMatrix transpose (void) const;
     SparseMatrix subtract (SparseMatrix const& rhs) const;
@@ -65,21 +64,6 @@ public:
     T* end (void);
 
     void debug (void) const;
-
-private:
-    struct MatrixData
-    {
-        typedef std::shared_ptr<MatrixData> Ptr;
-
-        void init_outer (std::size_t outer_size);
-        void reserve (std::size_t num_elements);
-        Triplets to_triplets (void) const;
-        void from_triplets (Triplets const& triplets);
-
-        std::vector<T> values;
-        std::vector<std::size_t> outer;
-        std::vector<std::size_t> inner;
-    };
 
 private:
     std::size_t rows;
@@ -144,15 +128,16 @@ template <typename T>
 void
 SparseMatrix<T>::set_from_triplets (Triplets const& triplets)
 {
-    /* Create Transposed matrix */
+    /* Create a temporary transposed matrix */
     SparseMatrix<T> transposed(this->cols, this->rows);
     transposed.values.resize(triplets.size());
     transposed.inner.resize(triplets.size());
 
+    /* Initialize outer indices with amount of inner values. */
     for (std::size_t i = 0; i < triplets.size(); ++i)
         transposed.outer[triplets[i].row]++;
 
-    /* Prefix sum */
+    /* Convert amounts to indices with prefix sum. */
     std::size_t sum = 0;
     std::vector<std::size_t> scratch(transposed.outer.size());
     for (std::size_t i = 0; i < transposed.outer.size(); ++i)
@@ -371,6 +356,17 @@ SparseMatrix<T>::cwise_invert (void)
 {
     for (std::size_t i = 0; i < this->values.size(); ++i)
         this->values[i] = T(1) / this->values[i];
+}
+
+template<typename T>
+void
+SparseMatrix<T>::column_nonzeros (std::size_t col, DenseVector<T>* vector) const
+{
+    std::size_t const start = this->outer[col];
+    std::size_t const end = this->outer[col + 1];
+    vector->resize(end - start);
+    for (std::size_t row = start, i = 0; row < end; ++row, ++i)
+        vector->at(i) = this->values[row];
 }
 
 template<typename T>

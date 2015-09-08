@@ -35,6 +35,39 @@ namespace
                 *(iter++) = rot[i];
         }
     }
+
+    /*
+     * Computes for a given matrix A the square matrix A^T * A for the
+     * case that block columns of A only need to be multiplied with itself.
+     * Becase the resulting matrix is symmetric, only about half the work
+     * needs to be performed.
+     */
+    void
+    matrix_block_column_multiply (SparseMatrix<double> const& A,
+        std::size_t block_size, SparseMatrix<double>* B)
+    {
+        SparseMatrix<double>::Triplets triplets;
+        triplets.reserve(A.num_cols() * block_size);
+        for (std::size_t block = 0; block < A.num_cols(); block += block_size)
+        {
+            std::vector<DenseVector<double>> columns(block_size);
+            for (std::size_t col = 0; col < block_size; ++col)
+                A.column_nonzeros(block + col, &columns[col]);
+            for (std::size_t col = 0; col < block_size; ++col)
+            {
+                double dot = columns[col].dot(columns[col]);
+                triplets.emplace_back(block + col, block + col, dot);
+                for (std::size_t row = col + 1; row < block_size; ++row)
+                {
+                    dot = columns[col].dot(columns[row]);
+                    triplets.emplace_back(block + row, block + col, dot);
+                    triplets.emplace_back(block + col, block + row, dot);
+                }
+            }
+        }
+        B->allocate(A.num_cols(), A.num_cols());
+        B->set_from_triplets(triplets);
+    }
 }
 
 LinearSolver::Status
@@ -54,9 +87,10 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     SparseMatrixType JpT = Jp.transpose();
 
     /* Compute the blocks of the Hessian. */
-    SparseMatrixType B = JcT.multiply(Jc);
+    SparseMatrixType B, C;
+    matrix_block_column_multiply(Jc, 9, &B);  // Jc^T * Jc
+    matrix_block_column_multiply(Jp, 3, &C);  // Jp^T * Jp
     SparseMatrixType E = JcT.multiply(Jp);
-    SparseMatrixType C = JpT.multiply(Jp);  // Most time-consuming product.
 
     /* Assemble two values vectors. */
     DenseVectorType v = JcT.multiply(F);
