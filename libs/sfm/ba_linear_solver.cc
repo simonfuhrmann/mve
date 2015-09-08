@@ -7,13 +7,6 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
-#define USE_EIGEN_LINEAR_ALGEBRA 0
-#ifdef USE_EIGEN_LINEAR_ALGEBRA
-#   include <eigen3/Eigen/Core>
-#   include <eigen3/Eigen/Sparse>
-#   include <eigen3/Eigen/QR>
-#endif
-
 #include <iostream>
 
 #include "util/timer.h"
@@ -25,12 +18,30 @@
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
+namespace
+{
+    void
+    invert_block_matrix_3x3_inplace (SparseMatrix<double>* M)
+    {
+        for (double* iter = M->begin(); iter != M->end(); )
+        {
+            double* iter_backup = iter;
+            math::Matrix<double, 3, 3> rot;
+            for (int i = 0; i < 9; ++i)
+                rot[i] = *(iter++);
+            rot = math::matrix_inverse(rot);
+            iter = iter_backup;
+            for (int i = 0; i < 9; ++i)
+                *(iter++) = rot[i];
+        }
+    }
+}
+
 LinearSolver::Status
 LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     SparseMatrixType const& jac_points,
     DenseVectorType const& values, DenseVectorType* delta_x)
 {
-#if !USE_EIGEN_LINEAR_ALGEBRA
     /*
      * Jacobian J = [ Jc Jp ] with Jc camera block, Jp point block.
      * Hessian H = [ B E; E^T C ] = J^T J = [ Jc^T; Jp^T ] * [ Jc Jp ]
@@ -58,17 +69,7 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     B.mult_diagonal(1.0 + 1.0 / this->opts.trust_region_radius);
 
     /* Invert C matrix. */
-    for (double* iter = C.begin(); iter != C.end(); )
-    {
-        double* iter_backup = iter;
-        math::Matrix<double, 3, 3> rot;
-        for (int i = 0; i < 9; ++i)
-            rot[i] = *(iter++);
-        rot = math::matrix_inverse(rot);
-        iter = iter_backup;
-        for (int i = 0; i < 9; ++i)
-            *(iter++) = rot[i];
-    }
+    invert_block_matrix_3x3_inplace(&C);
 
     /* Compute the Schur complement matrix S. */
     SparseMatrixType ET = E.transpose();
@@ -103,7 +104,6 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
             std::cout << "BA: CG failed (invalid input)" << std::endl;
             status.cg_success = false;
             return status;
-            break;
         default:
             break;
     }
@@ -131,274 +131,71 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
         (delta_z.multiply(1.0 / this->opts.trust_region_radius).add(w)));
 
     return status;
-
-#else // !USE_EIGEN_LINEAR_ALGEBRA
-
-    typedef std::vector<Eigen::Triplet<double> > TripletsType;
-    typedef Eigen::SparseMatrix<double> SparseMatrixType;
-    typedef Eigen::Map<Eigen::VectorXd const> MappedVectorType;
-    typedef Eigen::Matrix<double, Eigen::Dynamic, 1> DenseVectorType;
-
-    std::size_t const jac_rows = values.size();
-    std::size_t const jac_cam_cols = jac_cams.size() / jac_rows;
-    std::size_t const jac_point_cols = jac_points.size() / jac_rows;
-    std::size_t const jac_cols = jac_cam_cols + jac_point_cols;
-
-    /* Assemble sparse matrices for the camera Jacobian. */
-    SparseMatrixType Jc(jac_rows, jac_cam_cols);
-    {
-        TripletsType triplets;
-        triplets.reserve(jac_cam_cols * 2);
-        Jc.reserve(jac_cam_cols * 2);
-        for (std::size_t i = 0; i < jac_cams.size(); ++i)
-        {
-            if (jac_cams[i] == 0.0)
-                continue;
-            std::size_t col = i % jac_cam_cols;
-            std::size_t row = i / jac_cam_cols;
-            triplets.emplace_back(row, col, jac_cams[i]);
-        }
-        Jc.setFromTriplets(triplets.begin(), triplets.end());
-    }
-
-    /* Assemble sparse matrices for the point Jacobian. */
-    SparseMatrixType Jp(jac_rows, jac_point_cols);
-    {
-        TripletsType triplets;
-        triplets.reserve(jac_point_cols * 2);
-        Jp.reserve(jac_point_cols * 2);
-        for (std::size_t i = 0; i < jac_points.size(); ++i)
-        {
-            if (jac_points[i] == 0.0)
-                continue;
-            std::size_t col = i % jac_point_cols;
-            std::size_t row = i / jac_point_cols;
-            triplets.emplace_back(row, col, jac_points[i]);
-        }
-        Jp.setFromTriplets(triplets.begin(), triplets.end());
-    }
-
-    /* Compute the blocks of the Hessian. */
-    SparseMatrixType B = Jc.transpose() * Jc;
-    SparseMatrixType E = Jc.transpose() * Jp;
-    SparseMatrixType C = Jp.transpose() * Jp;
-
-    /* Assemble two values vectors. */
-    MappedVectorType F(values.data(), values.size());
-    DenseVectorType v = -Jc.transpose() * F;
-    DenseVectorType w = -Jp.transpose() * F;
-
-    /* Add regularization to C and B. */
-    if (this->opts.trust_region_radius != 0.0)
-    {
-        TripletsType triplets;
-        triplets.reserve(C.cols());
-        for (int i = 0; i < C.cols(); ++i)
-            triplets.emplace_back(i, i, C.diagonal()[i] / this->opts.trust_region_radius);
-        SparseMatrixType C_diag(C.cols(), C.cols());
-        C_diag.setFromTriplets(triplets.begin(), triplets.end());
-        C = C + C_diag;
-
-        triplets.clear();
-        triplets.reserve(B.cols());
-        for (int i = 0; i < B.cols(); ++i)
-            triplets.emplace_back(i, i, B.diagonal()[i] / this->opts.trust_region_radius);
-        SparseMatrixType B_diag(B.cols(), B.cols());
-        B_diag.setFromTriplets(triplets.begin(), triplets.end());
-        B = B + B_diag;
-    }
-
-    /* Invert C matrix. */
-    SparseMatrixType C_inv(jac_point_cols, jac_point_cols);
-    {
-        std::vector<math::Matrix3d> Cm(jac_point_cols / 3, math::Matrix3d(0.0));
-        for (int i = 0; i < C.outerSize(); ++i)
-            for (SparseMatrixType::InnerIterator it(C, i); it; ++it)
-                Cm[it.row() / 3][(it.row() % 3) * 3 + (it.col() % 3)] = it.value();
-        for (std::size_t i = 0; i < Cm.size(); ++i)
-            Cm[i] = math::matrix_inverse(Cm[i]);
-
-        TripletsType triplets;
-        for (std::size_t i = 0; i < Cm.size(); ++i)
-            for (std::size_t j = 0; j < 9; ++j)
-                triplets.emplace_back(i * 3 + j / 3, i * 3 + j % 3, Cm[i][j]);
-        C_inv.setFromTriplets(triplets.begin(), triplets.end());
-    }
-
-    /* Compute the Schur complement matrix S. */
-    SparseMatrixType S = B - E * C_inv * E.transpose();
-    DenseVectorType rhs = v - E * (C_inv * w);
-
-    /* Solve linear system. */
-    Eigen::ConjugateGradient<SparseMatrixType> cg;
-    cg.setMaxIterations(this->opts.cg_max_iterations);
-    //cg.setTolerance(this->opts.cg_tolerance);
-    cg.compute(S);
-    DenseVectorType delta_y = cg.solve(rhs);
-
-    Status status;
-    status.num_cg_iterations = cg.iterations();
-    switch (cg.info())
-    {
-        case Eigen::Success:
-            status.cg_success = true;
-            break;
-        case Eigen::NumericalIssue:
-            std::cout << "BA: CG failed (data prerequisites)" << std::endl;
-            status.cg_success = false;
-            return status;
-        case Eigen::NoConvergence:
-            std::cout << "BA: CG failed (not converged)" << std::endl;
-            status.cg_success = false;
-            return status;
-        case Eigen::InvalidInput:
-            std::cout << "BA: CG failed (invalid input)" << std::endl;
-            status.cg_success = false;
-            return status;
-        default:
-            std::cout << "BA: CG failed (unknown error)" << std::endl;
-            status.cg_success = false;
-            return status;
-    }
-
-    /* Substitute back to obtain delta z. */
-    DenseVectorType delta_z = C_inv * (w - E.transpose() * delta_y);
-
-    /* Compute predicted error decrease */
-    status.predicted_error_decrease = 0;
-    status.predicted_error_decrease += delta_y.dot(
-        ((1.0 / this->opts.trust_region_radius * delta_y) + v));
-    status.predicted_error_decrease += delta_z.dot(
-        ((1.0 / this->opts.trust_region_radius * delta_z) + w));
-
-    /* Fill output vector. */
-    if (delta_x->size() != jac_cols)
-    {
-        delta_x->clear();
-        delta_x->resize(jac_cols, 0.0);
-    }
-    for (std::size_t i = 0; i < jac_cam_cols; ++i)
-        delta_x->at(i) = delta_y[i];
-    for (std::size_t i = 0; i < jac_point_cols; ++i)
-        delta_x->at(jac_cam_cols + i) = delta_z[i];
-
-    return status;
-#endif // !USE_EIGEN_LINEAR_ALGEBRA
 }
 
-#if 0
 LinearSolver::Status
-LinearSolver::solve (SparseMatrixType const& jac_cams,
-    SparseMatrixType const& jac_points,
-    DenseVectorType const& values,
-    DenseVectorType* delta_x)
+LinearSolver::solve (SparseMatrixType const& J, DenseVectorType const& values,
+    DenseVectorType* delta_x, std::size_t block_size)
 {
-#if !USE_EIGEN_LINEAR_ALGEBRA
+    DenseVectorType const& F = values;
+    SparseMatrixType Jt = J.transpose();
 
-    // TODO
-    throw std::runtime_error("Not implemented");
+    SparseMatrixType H = Jt.multiply(J);
+    DenseVectorType g = Jt.multiply(F);
+    g.negate_self();
 
-#else // !USE_EIGEN_LINEAR_ALGEBRA
-
-    std::size_t jac_rows = values.size();
-    std::size_t jac_cam_cols = jac_cams.size() / jac_rows;
-    std::size_t jac_point_cols = jac_points.size() / jac_rows;
-    std::size_t jac_cols = jac_cam_cols + jac_point_cols;
-
-    typedef Eigen::SparseMatrix<double> SparseMatrixType;
-    typedef Eigen::Map<Eigen::VectorXd const> MappedVectorType;
-    typedef Eigen::Matrix<double, Eigen::Dynamic, 1> DenseVectorType;
-    typedef std::vector<Eigen::Triplet<double> > TripletsType;
-
-    SparseMatrixType J(jac_rows, jac_cols);
-    {
-        TripletsType triplets;
-        triplets.reserve(jac_cols * 2);
-        J.reserve(jac_cols * 2);
-        for (std::size_t i = 0; i < jac_cams.size(); ++i)
-        {
-            if (jac_cams[i] == 0.0)
-                continue;
-            std::size_t col = i % jac_cam_cols;
-            std::size_t row = i / jac_cam_cols;
-            triplets.push_back(Eigen::Triplet<double>(row, col, jac_cams[i]));
-        }
-        for (std::size_t i = 0; i < jac_points.size(); ++i)
-        {
-            if (jac_points[i] == 0.0)
-                continue;
-            std::size_t col = i % jac_point_cols;
-            std::size_t row = i / jac_point_cols;
-            triplets.push_back(Eigen::Triplet<double>(row, jac_cam_cols + col, jac_points[i]));
-        }
-
-        J.setFromTriplets(triplets.begin(), triplets.end());
-    }
-
-    MappedVectorType F(values.data(), values.size());
-    SparseMatrixType H = J.transpose() * J;
-    DenseVectorType g = -J.transpose() * F;
-
-    if (this->opts.trust_region_radius != 0.0)
-    {
-        TripletsType H_diag_triplets;
-        for (std::size_t i = 0; i < jac_cols; ++i)
-            H_diag_triplets.push_back(Eigen::Triplet<double>(i, i,
-                H.diagonal()[i] / this->opts.trust_region_radius));
-        SparseMatrixType H_diag(jac_cols, jac_cols);
-        H_diag.setFromTriplets(H_diag_triplets.begin(), H_diag_triplets.end());
-        H = H + H_diag;
-    }
-
-    Eigen::ConjugateGradient<SparseMatrixType> cg;
-    cg.setMaxIterations(this->opts.cg_max_iterations);
-    cg.compute(H);
-    DenseVectorType x = cg.solve(g);
-
-    if (cg.info() == Eigen::Success)
-    {
-        if (delta_x->size() != jac_cols)
-        {
-            delta_x->clear();
-            delta_x->resize(jac_cols, 0.0);
-        }
-
-        for (std::size_t i = 0; i < jac_cols; ++i)
-            delta_x->at(i) = x[i];
-    }
+    H.mult_diagonal(1.0 + 1.0 / this->opts.trust_region_radius);
 
     Status status;
-    status.num_cg_iterations = cg.iterations();
-    status.predicted_error_decrease
-        = x.dot((1.0 / this->opts.trust_region_radius) * x + g);
-    switch (cg.info())
+
+    if (block_size == 0)
     {
-        case Eigen::Success:
-            status.cg_success = true;
-            break;
-        case Eigen::NumericalIssue:
-            std::cout << "BA: CG failed (data prerequisites)" << std::endl;
-            status.cg_success = false;
-            break;
-        case Eigen::NoConvergence:
-            std::cout << "BA: CG failed (not converged)" << std::endl;
-            status.cg_success = false;
-            break;
-        case Eigen::InvalidInput:
-            std::cout << "BA: CG failed (invalid input)" << std::endl;
-            status.cg_success = false;
-            break;
-        default:
-            std::cout << "BA: CG failed (unknown error)" << std::endl;
-            status.cg_success = false;
-            break;
+        /* Use simple preconditioned CG */
+        SparseMatrixType precond = H.diagonal_matrix();
+        precond.cwise_invert();
+
+        typedef sfm::ba::ConjugateGradient<double> CGSolver;
+        CGSolver::Options cg_opts;
+        cg_opts.max_iterations = this->opts.cg_max_iterations;
+        cg_opts.tolerance = 1e-20;
+        CGSolver solver(cg_opts);
+        CGSolver::Status cg_status;
+        cg_status = solver.solve(H, g, delta_x, &precond);
+
+        status.num_cg_iterations = cg_status.num_iterations;
+
+        switch (cg_status.info)
+        {
+            case CGSolver::CG_CONVERGENCE:
+                status.cg_success = true;
+                break;
+            case CGSolver::CG_MAX_ITERATIONS:
+                status.cg_success = true;
+                break;
+            case CGSolver::CG_INVALID_INPUT:
+                std::cout << "BA: CG failed (invalid input)" << std::endl;
+                status.cg_success = false;
+                return status;
+            default:
+                break;
+        }
+    }
+    else if (block_size == 3)
+    {
+        /* Invert blocks of H directly */
+        invert_block_matrix_3x3_inplace(&H);
+        *delta_x = H.multiply(g);
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid block_size in linear solver.");
     }
 
-    return status;
+    status.predicted_error_decrease = delta_x->dot(
+        delta_x->multiply(1.0 / this->opts.trust_region_radius).add(g));
 
-#endif // !USE_EIGEN_LINEAR_ALGEBRA
+    return status;
 }
-#endif
 
 SFM_BA_NAMESPACE_END
 SFM_NAMESPACE_END
