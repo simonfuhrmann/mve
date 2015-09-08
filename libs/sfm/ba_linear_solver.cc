@@ -45,7 +45,7 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     /* Compute the blocks of the Hessian. */
     SparseMatrixType B = JcT.multiply(Jc);
     SparseMatrixType E = JcT.multiply(Jp);
-    SparseMatrixType C = JpT.multiply(Jp);
+    SparseMatrixType C = JpT.multiply(Jp);  // Most time-consuming product.
 
     /* Assemble two values vectors. */
     DenseVectorType v = JcT.multiply(F);
@@ -75,6 +75,10 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     SparseMatrixType S = B.subtract(E.multiply(C).multiply(ET));
     DenseVectorType rhs = v.subtract(E.multiply(C.multiply(w)));
 
+    /* Compute pre-conditioner for linear system. */
+    SparseMatrixType precond = S.diagonal_matrix();
+    precond.cwise_invert();
+
     /* Solve linear system. */
     DenseVectorType delta_y(Jc.num_cols());
     typedef sfm::ba::ConjugateGradient<double> CGSolver;
@@ -83,7 +87,7 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     cg_opts.tolerance = 1e-20;
     CGSolver solver(cg_opts);
     CGSolver::Status cg_status;
-    cg_status = solver.solve(S, rhs, &delta_y);
+    cg_status = solver.solve(S, rhs, &delta_y, &precond);
 
     Status status;
     status.num_cg_iterations = cg_status.num_iterations;
