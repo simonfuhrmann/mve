@@ -40,7 +40,7 @@ TEST(ConjugateGradientTest, CGSolverTest)
     triplets.emplace_back(1, 1, 2.0);
     triplets.emplace_back(2, 2, 3.0);
     triplets.emplace_back(3, 3, 4.0);
-    A.set_from_triplets(&triplets);
+    A.set_from_triplets(triplets);
 
     DenseVector b(4);
     b[0] = 1;
@@ -74,7 +74,7 @@ TEST(ConjugateGradientTest, CGSolverExplicitFunctorTest)
     triplets.emplace_back(1, 1, 2.0);
     triplets.emplace_back(2, 2, 3.0);
     triplets.emplace_back(3, 3, 4.0);
-    A.set_from_triplets(&triplets);
+    A.set_from_triplets(triplets);
 
     DenseVector b(4);
     b[0] = 1;
@@ -109,7 +109,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
     tripletsA.emplace_back(1, 1, 2.0);
     tripletsA.emplace_back(2, 2, 3.0);
     tripletsA.emplace_back(3, 3, 4.0);
-    A.set_from_triplets(&tripletsA);
+    A.set_from_triplets(tripletsA);
 
     SparseMatrix P(4, 4);
     SparseMatrix::Triplets tripletsP;
@@ -117,7 +117,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
     tripletsP.emplace_back(1, 1, 1.0 / 2.0);
     tripletsP.emplace_back(2, 2, 1.0 / 3.0);
     tripletsP.emplace_back(3, 3, 1.0 / 4.0);
-    P.set_from_triplets(&tripletsP);
+    P.set_from_triplets(tripletsP);
 
     DenseVector b(4);
     b[0] = 1;
@@ -152,7 +152,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverApproximateTest)
     tripletsA.emplace_back(1, 1, 2.0);
     tripletsA.emplace_back(2, 2, 3.0);
     tripletsA.emplace_back(3, 3, 4.0);
-    A.set_from_triplets(&tripletsA);
+    A.set_from_triplets(tripletsA);
 
     SparseMatrix P(4, 4);
     SparseMatrix::Triplets tripletsP;
@@ -160,7 +160,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverApproximateTest)
     tripletsP.emplace_back(1, 1, 1.0 / 1.0);
     tripletsP.emplace_back(2, 2, 1.0 / 2.0);
     tripletsP.emplace_back(3, 3, 1.0 / 3.0);
-    P.set_from_triplets(&tripletsP);
+    P.set_from_triplets(tripletsP);
 
     DenseVector b(4);
     b[0] = 1;
