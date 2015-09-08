@@ -26,9 +26,9 @@ public:
 
     enum ReturnInfo
     {
-        CONVERGENCE,
-        MAX_ITERATIONS,
-        INVALID_INPUT
+        CG_CONVERGENCE,
+        CG_MAX_ITERATIONS,
+        CG_INVALID_INPUT
     };
 
     struct Options
@@ -125,7 +125,7 @@ ConjugateGradient<T>::solve(Functor const& A, Vector const& b, Vector* x,
 
     if (A.output_size() != b.size())
     {
-        this->status.info = INVALID_INPUT;
+        this->status.info = CG_INVALID_INPUT;
         return this->status;
     }
 
@@ -181,7 +181,7 @@ ConjugateGradient<T>::solve(Functor const& A, Vector const& b, Vector* x,
         /* Check tolerance condition. */
         if (new_r_dot_r < this->opts.tolerance)
         {
-            this->status.info = CONVERGENCE;
+            this->status.info = CG_CONVERGENCE;
             return this->status;
         }
 
@@ -206,7 +206,7 @@ ConjugateGradient<T>::solve(Functor const& A, Vector const& b, Vector* x,
         r_dot_r = new_r_dot_r;
     }
 
-    this->status.info = MAX_ITERATIONS;
+    this->status.info = CG_MAX_ITERATIONS;
     return this->status;
 }
 

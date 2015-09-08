@@ -89,13 +89,13 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     status.num_cg_iterations = cg_status.num_iterations;
     switch (cg_status.info)
     {
-        case CGSolver::CONVERGENCE:
+        case CGSolver::CG_CONVERGENCE:
             status.cg_success = true;
             break;
-        case CGSolver::MAX_ITERATIONS:
+        case CGSolver::CG_MAX_ITERATIONS:
             status.cg_success = true;
             break;
-        case CGSolver::INVALID_INPUT:
+        case CGSolver::CG_INVALID_INPUT:
             std::cout << "BA: CG failed (invalid input)" << std::endl;
             status.cg_success = false;
             return status;
