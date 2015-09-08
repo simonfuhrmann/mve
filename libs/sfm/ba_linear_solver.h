@@ -50,10 +50,15 @@ public:
         SparseMatrixType const& jac_points,
         DenseVectorType const& values, DenseVectorType* delta_x);
 
-    /* Conjugate Gradient on H = J^T * J. */
-    //Status solve (SparseMatrixType const& jac_cams,
-    //    SparseMatrixType const& jac_points,
-    //    DenseVectorType const& values, DenseVectorType* delta_x);
+    /**
+     * J is the Jacobian of the problem. If H = Jt * J has a block diagonal
+     * structure (e.g. 'motion only' or 'structure only' problems in BA),
+     * block_size can be used to directly invert H. If block_size is 0
+     * the diagonal of H is used as a preconditioner and the linear system
+     * is solved via conjugate gradient.
+     */
+    Status solve (SparseMatrixType const& J, DenseVectorType const& values,
+        DenseVectorType* delta_x, std::size_t block_size = 0);
 
 private:
     Options opts;
