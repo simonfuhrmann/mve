@@ -22,16 +22,16 @@ class Logging
 public:
     enum LogLevel
     {
-        ERROR,
-        WARNING,
-        INFO,
-        VERBOSE,
-        DEBUG
+        LOG_ERROR,
+        LOG_WARNING,
+        LOG_INFO,
+        LOG_VERBOSE,
+        LOG_DEBUG
     };
 
     struct NullStream : public std::ostream
     {
-        NullStream (void) : std::ostream(NULL) {}
+        NullStream (void) : std::ostream(nullptr) {}
         NullStream (NullStream const&) =delete;
         template <typename T>
         NullStream& operator<< (T const& arg);
@@ -65,7 +65,7 @@ Logging::NullStream::operator<< (T const& /*arg*/)
 
 inline
 Logging::Logging (void)
-    : max_level(INFO)
+    : max_level(LOG_INFO)
 {
 }
 
@@ -86,37 +86,37 @@ Logging::log (LogLevel log_level) const
 {
     if (log_level > this->max_level)
         return const_cast<NullStream&>(this->nullstream);
-    return (log_level == ERROR) ? std::cerr : std::cout;
+    return (log_level == LOG_ERROR) ? std::cerr : std::cout;
 }
 
 inline std::ostream&
 Logging::error (void) const
 {
-    return this->log(ERROR);
+    return this->log(LOG_ERROR);
 }
 
 inline std::ostream&
 Logging::warning (void) const
 {
-    return this->log(WARNING);
+    return this->log(LOG_WARNING);
 }
 
 inline std::ostream&
 Logging::info (void) const
 {
-    return this->log(INFO);
+    return this->log(LOG_INFO);
 }
 
 inline std::ostream&
 Logging::verbose (void) const
 {
-    return this->log(VERBOSE);
+    return this->log(LOG_VERBOSE);
 }
 
 inline std::ostream&
 Logging::debug (void) const
 {
-    return this->log(DEBUG);
+    return this->log(LOG_DEBUG);
 }
 
 UTIL_NAMESPACE_END

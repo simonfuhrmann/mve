@@ -21,7 +21,7 @@ TEST(ConjugateGradientTest, CGInvalidInputTest)
 
     CGSolver::Status status = solver.solve(A, b, &x);
 
-    EXPECT_EQ(CGSolver::INVALID_INPUT, status.info);
+    EXPECT_EQ(CGSolver::CG_INVALID_INPUT, status.info);
 }
 
 TEST(ConjugateGradientTest, CGSolverTest)
@@ -51,7 +51,7 @@ TEST(ConjugateGradientTest, CGSolverTest)
     DenseVector x;
     CGSolver::Status status = solver.solve(A, b, &x);
 
-    EXPECT_EQ(CGSolver::MAX_ITERATIONS, status.info);
+    EXPECT_EQ(CGSolver::CG_MAX_ITERATIONS, status.info);
     EXPECT_NEAR(x[0], 1.0, 1e-14);
     EXPECT_NEAR(x[1], 1.0 / 2.0, 1e-14);
     EXPECT_NEAR(x[2], 1.0 / 3.0, 1e-14);
@@ -84,9 +84,9 @@ TEST(ConjugateGradientTest, CGSolverExplicitFunctorTest)
 
     DenseVector x;
     CGSolver::Status status = solver.solve(
-        sfm::ba::CGBasicMatrixFunctor<double>(&A), b, &x);
+        sfm::ba::CGBasicMatrixFunctor<double>(A), b, &x);
 
-    EXPECT_EQ(CGSolver::MAX_ITERATIONS, status.info);
+    EXPECT_EQ(CGSolver::CG_MAX_ITERATIONS, status.info);
     EXPECT_NEAR(x[0], 1.0, 1e-14);
     EXPECT_NEAR(x[1], 1.0 / 2.0, 1e-14);
     EXPECT_NEAR(x[2], 1.0 / 3.0, 1e-14);
@@ -129,7 +129,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
     CGSolver::Status status = solver.solve(A, b, &x, &P);
 
     EXPECT_EQ(0, status.num_iterations);
-    EXPECT_EQ(CGSolver::CONVERGENCE, status.info);
+    EXPECT_EQ(CGSolver::CG_CONVERGENCE, status.info);
     EXPECT_NEAR(x[0], 1.0, 1e-14);
     EXPECT_NEAR(x[1], 1.0 / 2.0, 1e-14);
     EXPECT_NEAR(x[2], 1.0 / 3.0, 1e-14);
