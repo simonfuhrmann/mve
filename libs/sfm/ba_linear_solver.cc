@@ -77,11 +77,11 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
 
     /* Solve linear system. */
     DenseVectorType delta_y(Jc.num_cols());
-    typedef sfm::ba::ConjugateGradientSolver<double> CGSolver;
+    typedef sfm::ba::ConjugateGradient<double> CGSolver;
     CGSolver::Options cg_opts;
     cg_opts.max_iterations = this->opts.cg_max_iterations;
     cg_opts.tolerance = 1e-20;
-    CGSolver solver (cg_opts);
+    CGSolver solver(cg_opts);
     CGSolver::Status cg_status;
     cg_status = solver.solve(S, rhs, &delta_y);
 
