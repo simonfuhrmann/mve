@@ -34,7 +34,6 @@ public:
     {
         Triplet (void) = default;
         Triplet (std::size_t col, std::size_t row, T const& value);
-        bool operator< (Triplet const& other) const;
 
         std::size_t row;
         std::size_t col;
@@ -49,13 +48,15 @@ public:
     SparseMatrix (std::size_t rows, std::size_t cols);
     void allocate (std::size_t rows, std::size_t cols);
     void reserve (std::size_t num_elements);
-    void set_from_triplets (Triplets* triplets);
+    void set_from_triplets (Triplets const& triplets);
+    void mult_diagonal (T const& factor);
+    void cwise_invert (void);
 
     SparseMatrix transpose (void) const;
     SparseMatrix subtract (SparseMatrix const& rhs) const;
     SparseMatrix multiply (SparseMatrix const& rhs) const;
     DenseVector<T> multiply (DenseVector<T> const& rhs) const;
-    void mult_diagonal (T const& factor);
+    SparseMatrix diagonal_matrix (void) const;
 
     std::size_t num_non_zero (void) const;
     std::size_t num_rows (void) const;
@@ -99,18 +100,10 @@ SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
 template <typename T>
-SparseMatrix<T>::Triplet::Triplet (std::size_t col,
-    std::size_t row, T const& value)
+SparseMatrix<T>::Triplet::Triplet (std::size_t row,
+    std::size_t col, T const& value)
     : row(row), col(col), value(value)
 {
-}
-
-template <typename T>
-bool
-SparseMatrix<T>::Triplet::operator< (Triplet const& other) const
-{
-    return this->col < other.col
-        || (this->col == other.col && this->row < other.row);
 }
 
 /* --------------------------------------------------------------- */
@@ -149,27 +142,38 @@ SparseMatrix<T>::reserve (std::size_t num_elements)
 
 template <typename T>
 void
-SparseMatrix<T>::set_from_triplets (Triplets* triplets)
+SparseMatrix<T>::set_from_triplets (Triplets const& triplets)
 {
-    // TODO: It's possible to do this more efficiently!
-    std::sort(triplets->begin(), triplets->end());
+    /* Create Transposed matrix */
+    SparseMatrix<T> transposed(this->cols, this->rows);
+    transposed.values.resize(triplets.size());
+    transposed.inner.resize(triplets.size());
 
-    this->values.clear();
-    this->inner.clear();
-    this->values.reserve(triplets->size());
-    this->inner.reserve(triplets->size());
+    for (std::size_t i = 0; i < triplets.size(); ++i)
+        transposed.outer[triplets[i].row]++;
 
-    std::size_t outer = 0;
-    for (std::size_t i = 0; i < triplets->size(); ++i)
+    /* Prefix sum */
+    std::size_t sum = 0;
+    std::vector<std::size_t> scratch(transposed.outer.size());
+    for (std::size_t i = 0; i < transposed.outer.size(); ++i)
     {
-        Triplet const& t = triplets->at(i);
-        for ( ; outer <= t.col; ++outer)
-            this->outer[outer] = i;
-        this->values.push_back(t.value);
-        this->inner.push_back(t.row);
+        std::size_t const temp = transposed.outer[i];
+        transposed.outer[i] = sum;
+        scratch[i] = sum;
+        sum += temp;
     }
-    for (std::size_t j = outer; j < this->outer.size(); ++j)
-        this->outer[j] = triplets->size();
+
+    /* Add triplets, inner indices are unsorted. */
+    for (std::size_t i = 0; i < triplets.size(); ++i)
+    {
+        Triplet const& t = triplets[i];
+        std::size_t pos = scratch[t.row]++;
+        transposed.values[pos] = t.value;
+        transposed.inner[pos] = t.col;
+    }
+
+    /* Transpose matrix, implicit sorting of inner indices. */
+    *this = transposed.transpose();
 }
 
 template <typename T>
@@ -310,7 +314,6 @@ SparseMatrix<T>::multiply (SparseMatrix const& rhs) const
     return ret;
 }
 
-
 template<typename T>
 DenseVector<T>
 SparseMatrix<T>::multiply (DenseVector<T> const& rhs) const
@@ -326,6 +329,29 @@ SparseMatrix<T>::multiply (DenseVector<T> const& rhs) const
 }
 
 template<typename T>
+SparseMatrix<T>
+SparseMatrix<T>::diagonal_matrix (void) const
+{
+    std::size_t const diag_size = std::min(this->rows, this->cols);
+    SparseMatrix ret(diag_size, diag_size);
+    ret.reserve(diag_size);
+    for (std::size_t i = 0; i < diag_size; ++i)
+    {
+        ret.outer[i] = ret.values.size();
+        for (std::size_t j = this->outer[i]; j < this->outer[i + 1]; ++j)
+            if (this->inner[j] == i)
+            {
+                ret.inner.push_back(i);
+                ret.values.push_back(this->values[j]);
+            }
+            else if (this->inner[j] > i)
+                break;
+    }
+    ret.outer[diag_size] = ret.values.size();
+    return ret;
+}
+
+template<typename T>
 void
 SparseMatrix<T>::mult_diagonal (T const& factor)
 {
@@ -337,6 +363,14 @@ SparseMatrix<T>::mult_diagonal (T const& factor)
             if (this->inner[j] >= i)
                 break;
         }
+}
+
+template<typename T>
+void
+SparseMatrix<T>::cwise_invert (void)
+{
+    for (std::size_t i = 0; i < this->values.size(); ++i)
+        this->values[i] = T(1) / this->values[i];
 }
 
 template<typename T>
