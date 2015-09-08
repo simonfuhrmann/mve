@@ -8,32 +8,10 @@
 #include "sfm/ba_sparse_matrix.h"
 #include "sfm/ba_dense_vector.h"
 #include "sfm/ba_linear_solver.h"
+#include "sfm/ba_types.h"
 
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
-
-struct Camera
-{
-    Camera (void);
-
-    double focal_length;
-    double distortion[2];
-    double translation[3];
-    double rotation[9];
-    bool is_constant;
-};
-
-struct Point3D
-{
-    double pos[3];
-};
-
-struct Point2D
-{
-    double pos[2];
-    int camera_id;
-    int point3d_id;
-};
 
 class BundleAdjustment
 {
@@ -118,25 +96,7 @@ private:
     std::vector<Point2D>* points_2d;
 };
 
-SFM_BA_NAMESPACE_END
-SFM_NAMESPACE_END
-
 /* ------------------------ Implementation ------------------------ */
-
-#include <algorithm>
-
-SFM_NAMESPACE_BEGIN
-SFM_BA_NAMESPACE_BEGIN
-
-inline
-Camera::Camera (void)
-    : focal_length(0.0)
-    , is_constant(false)
-{
-    std::fill(this->distortion, this->distortion + 2, 0.0);
-    std::fill(this->translation, this->translation + 3, 0.0);
-    std::fill(this->rotation, this->rotation + 9, 0.0);
-}
 
 inline
 BundleAdjustment::Options::Options (void)
