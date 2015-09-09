@@ -21,9 +21,12 @@ SFM_BA_NAMESPACE_BEGIN
 namespace
 {
     void
-    invert_block_matrix_3x3_inplace (SparseMatrix<double>* M)
+    invert_block_matrix_3x3_inplace (SparseMatrix<double>* A)
     {
-        for (double* iter = M->begin(); iter != M->end(); )
+        if (A->num_rows() != A->num_cols())
+            throw std::invalid_argument("Block matrix must be square");
+
+        for (double* iter = A->begin(); iter != A->end(); )
         {
             double* iter_backup = iter;
             math::Matrix<double, 3, 3> rot;

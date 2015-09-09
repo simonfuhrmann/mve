@@ -121,6 +121,7 @@ Incremental::reconstruct_next_view (int view_id)
     temp_camera.set_k_matrix(viewport.focal_length, 0.0, 0.0);
 
     /* Compute pose from 2D-3D correspondences using P3P. */
+    util::WallTimer timer;
     RansacPoseP3P::Result ransac_result;
     {
         RansacPoseP3P ransac(this->opts.pose_p3p_opts);
@@ -142,7 +143,7 @@ Incremental::reconstruct_next_view (int view_id)
         std::cout << "Selected " << ransac_result.inliers.size()
             << " 2D-3D correspondences inliers ("
             << (100 * ransac_result.inliers.size() / corr.size())
-            << "%)." << std::endl;
+            << "%), took " << timer.get_elapsed() << "ms." << std::endl;
     }
 
     /*
