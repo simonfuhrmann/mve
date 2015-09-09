@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2015, Simon Fuhrmann
+ * Copyright (C) 2015, Simon Fuhrmann, Fabian Langguth
  * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
  * All rights reserved.
  *
  * This software may be modified and distributed under the terms
- * of the GPL 3 license. See the LICENSE.txt file for details.
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
 #include <limits>
@@ -320,12 +320,11 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 
     /* Run bundle adjustment. */
     ba::BundleAdjustment ba(ba_opts);
-    //ba.print_options();
     ba.set_cameras(&ba_cameras);
     ba.set_points_3d(&ba_tracks);
     ba.set_points_2d(&ba_points_2d);
     ba.optimize();
-    ba.print_status();
+    //ba.print_status();
 
     /* Transfer cameras and track positions back. */
     std::size_t ba_cam_counter = 0;
