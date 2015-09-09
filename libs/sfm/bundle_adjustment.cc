@@ -106,7 +106,7 @@ BundleAdjustment::lm_optimize (void)
 
         /* Update reprojection errors and MSE after linear step. */
         double new_mse, delta_mse;
-        if (cg_status.cg_success)
+        if (cg_status.success)
         {
             this->compute_reprojection_errors(&F_new, &delta_x);
             new_mse = this->compute_mse(F_new);
@@ -140,8 +140,8 @@ BundleAdjustment::lm_optimize (void)
             /* Compute trust region update. */
             double const gain_ratio = delta_mse * (F.size() / 2)
                 / cg_status.predicted_error_decrease;
-            double const trust_region_update = std::min(3.0,
-                1.0 / (1.0 - MATH_POW3(2.0 * gain_ratio - 1.0)));
+            double const trust_region_update = 1.0 / std::max(1.0 / 3.0,
+                (1.0 - MATH_POW3(2.0 * gain_ratio - 1.0)));
             pcg_opts.trust_region_radius *= trust_region_update;
         }
         else
