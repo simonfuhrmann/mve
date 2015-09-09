@@ -639,7 +639,7 @@ import_bundle (AppSettings const& conf)
             view->set_camera(cam);
 
             if (cam.flen != 0.0f)
-                undist = mve::image::image_undistort_bundler<uint8_t>
+                undist = mve::image::image_undistort_k2k4<uint8_t>
                     (original, cam.flen, cam.dist[0], cam.dist[1]);
 
             if (!import_original)

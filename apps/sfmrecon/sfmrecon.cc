@@ -417,8 +417,8 @@ sfm_reconstruct (AppSettings const& conf)
             if (original == nullptr)
                 continue;
             mve::ByteImage::Ptr undist
-                = mve::image::image_undistort_vsfm<uint8_t>
-                (original, cam.flen, cam.dist[0]);
+                = mve::image::image_undistort_k2k4<uint8_t>
+                (original, cam.flen, cam.dist[0], cam.dist[1]);
             view->set_image(undist, conf.undistorted_name);
         }
 
