@@ -59,7 +59,4 @@ Please refer to the Wiki pages for a more detailed description.
 Licensing
 ---------------------------------------------------------------------------
 
-Most of MVE is licensed under the BSD 3-Clause license. Some parts are
-licensed using the GPL 3 license. See the source file headers or the
-LICENSE.txt file for more details.
-
+See the LICENSE.txt file and the source file headers for more details.

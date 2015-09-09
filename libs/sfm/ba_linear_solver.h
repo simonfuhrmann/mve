@@ -36,7 +36,7 @@ public:
 
         double predicted_error_decrease;
         int num_cg_iterations;
-        bool cg_success;
+        bool success;
     };
 
     typedef SparseMatrix<double> SparseMatrixType;
@@ -77,7 +77,7 @@ inline
 LinearSolver::Status::Status (void)
     : predicted_error_decrease(0.0)
     , num_cg_iterations(0)
-    , cg_success(false)
+    , success(false)
 {
 }
 

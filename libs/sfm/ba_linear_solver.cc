@@ -129,14 +129,14 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     switch (cg_status.info)
     {
         case CGSolver::CG_CONVERGENCE:
-            status.cg_success = true;
+            status.success = true;
             break;
         case CGSolver::CG_MAX_ITERATIONS:
-            status.cg_success = true;
+            status.success = true;
             break;
         case CGSolver::CG_INVALID_INPUT:
             std::cout << "BA: CG failed (invalid input)" << std::endl;
-            status.cg_success = false;
+            status.success = false;
             return status;
         default:
             break;
@@ -173,15 +173,12 @@ LinearSolver::solve (SparseMatrixType const& J, DenseVectorType const& values,
 {
     DenseVectorType const& F = values;
     SparseMatrixType Jt = J.transpose();
-
     SparseMatrixType H = Jt.multiply(J);
     DenseVectorType g = Jt.multiply(F);
     g.negate_self();
-
     H.mult_diagonal(1.0 + 1.0 / this->opts.trust_region_radius);
 
     Status status;
-
     if (block_size == 0)
     {
         /* Use simple preconditioned CG */
@@ -201,14 +198,14 @@ LinearSolver::solve (SparseMatrixType const& J, DenseVectorType const& values,
         switch (cg_status.info)
         {
             case CGSolver::CG_CONVERGENCE:
-                status.cg_success = true;
+                status.success = true;
                 break;
             case CGSolver::CG_MAX_ITERATIONS:
-                status.cg_success = true;
+                status.success = true;
                 break;
             case CGSolver::CG_INVALID_INPUT:
                 std::cout << "BA: CG failed (invalid input)" << std::endl;
-                status.cg_success = false;
+                status.success = false;
                 return status;
             default:
                 break;
@@ -219,10 +216,12 @@ LinearSolver::solve (SparseMatrixType const& J, DenseVectorType const& values,
         /* Invert blocks of H directly */
         invert_block_matrix_3x3_inplace(&H);
         *delta_x = H.multiply(g);
+        status.success = true;
     }
     else
     {
-        throw std::invalid_argument("Invalid block_size in linear solver.");
+        status.success = false;
+        throw std::invalid_argument("Unsupported block_size in linear solver");
     }
 
     status.predicted_error_decrease = delta_x->dot(

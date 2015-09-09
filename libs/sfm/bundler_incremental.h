@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Simon Fuhrmann
+ * Copyright (C) 2015, Simon Fuhrmann, Fabian Langguth
  * TU Darmstadt - Graphics, Capture and Massively Parallel Computing
  * All rights reserved.
  *

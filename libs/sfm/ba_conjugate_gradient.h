@@ -86,7 +86,7 @@ template <typename T>
 inline
 ConjugateGradient<T>::Options::Options (void)
     : max_iterations(100)
-    , tolerance(1e-40)
+    , tolerance(1e-20)
 {
 }
 
