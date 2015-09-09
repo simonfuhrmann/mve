@@ -87,7 +87,6 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     SparseMatrixType const& Jc = jac_cams;
     SparseMatrixType const& Jp = jac_points;
     SparseMatrixType JcT = Jc.transpose();
-    SparseMatrixType JpT = Jp.transpose();
 
     /* Compute the blocks of the Hessian. */
     SparseMatrixType B, C;
@@ -96,8 +95,8 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     SparseMatrixType E = JcT.multiply(Jp);
 
     /* Assemble two values vectors. */
-    DenseVectorType v = JcT.multiply(F);
-    DenseVectorType w = JpT.multiply(F);
+    DenseVectorType v = Jc.transposed_multiply(F);
+    DenseVectorType w = Jp.transposed_multiply(F);
     v.negate_self();
     w.negate_self();
 

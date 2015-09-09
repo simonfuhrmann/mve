@@ -190,6 +190,32 @@ TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorMultiplyTest)
     EXPECT_EQ(0, ret[2]);
 }
 
+TEST(BundleAdjustmentVectorMatrixTest, MatrixVectorTransposedMultiplyTest)
+{
+    typedef sfm::ba::SparseMatrix<int> SparseMatrix;
+    typedef sfm::ba::DenseVector<int> DenseVector;
+
+    SparseMatrix m1(4, 3);
+    {
+        SparseMatrix::Triplets triplets;
+        triplets.emplace_back(1, 0, 1);
+        triplets.emplace_back(2, 0, 4);
+        triplets.emplace_back(2, 1, 3);
+        triplets.emplace_back(3, 0, 1);
+        m1.set_from_triplets(triplets);
+    }
+
+    DenseVector v1(4, 0);
+    v1[1] = 1;
+    v1[2] = 2;
+
+    DenseVector ret = m1.transposed_multiply(v1);
+    EXPECT_EQ(3, ret.size());
+    EXPECT_EQ(9, ret[0]);
+    EXPECT_EQ(6, ret[1]);
+    EXPECT_EQ(0, ret[2]);
+}
+
 TEST(BundleAdjustmentVectorMatrixTest, MatrixMultiplyDiagonalTest)
 {
     typedef sfm::ba::SparseMatrix<int> SparseMatrix;

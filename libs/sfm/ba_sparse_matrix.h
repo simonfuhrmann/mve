@@ -55,6 +55,7 @@ public:
     SparseMatrix subtract (SparseMatrix const& rhs) const;
     SparseMatrix multiply (SparseMatrix const& rhs) const;
     DenseVector<T> multiply (DenseVector<T> const& rhs) const;
+    DenseVector<T> transposed_multiply (DenseVector<T> const& rhs) const;
     SparseMatrix diagonal_matrix (void) const;
 
     std::size_t num_non_zero (void) const;
@@ -310,6 +311,20 @@ SparseMatrix<T>::multiply (DenseVector<T> const& rhs) const
     for (std::size_t i = 0; i < this->cols; ++i)
         for (std::size_t id = this->outer[i]; id < this->outer[i + 1]; ++id)
             ret[this->inner[id]] += this->values[id] * rhs[i];
+    return ret;
+}
+
+template<typename T>
+DenseVector<T>
+SparseMatrix<T>::transposed_multiply (DenseVector<T> const& rhs) const
+{
+    if (rhs.size() != this->rows)
+        throw std::invalid_argument("Incompatible dimensions");
+
+    DenseVector<T> ret(this->cols, T(0));
+    for (std::size_t i = 0; i < this->cols; ++i)
+        for (std::size_t id = this->outer[i]; id < this->outer[i + 1]; ++id)
+            ret[i] += this->values[id] * rhs[this->inner[id]];
     return ret;
 }
 
