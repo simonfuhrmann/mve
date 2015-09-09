@@ -32,6 +32,7 @@ TEST(ConjugateGradientTest, CGSolverTest)
 
     CGSolver::Options opts;
     opts.max_iterations = 4;
+    opts.tolerance = 1e-40;
     CGSolver solver(opts);
 
     SparseMatrix A(4, 4);
@@ -66,6 +67,7 @@ TEST(ConjugateGradientTest, CGSolverExplicitFunctorTest)
 
     CGSolver::Options opts;
     opts.max_iterations = 4;
+    opts.tolerance = 1e-40;
     CGSolver solver(opts);
 
     SparseMatrix A(4,4);
@@ -101,6 +103,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverExactTest)
 
     CGSolver::Options opts;
     opts.max_iterations = 4;
+    opts.tolerance = 1e-40;
     CGSolver solver(opts);
 
     SparseMatrix A(4, 4);
@@ -144,6 +147,7 @@ TEST(ConjugateGradientTest, PreconditionedCGSolverApproximateTest)
 
     CGSolver::Options opts;
     opts.max_iterations = 4;
+    opts.tolerance = 1e-40;
     CGSolver solver(opts);
 
     SparseMatrix A(4, 4);
