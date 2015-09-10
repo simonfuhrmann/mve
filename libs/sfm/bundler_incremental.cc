@@ -254,18 +254,19 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
 {
     ba::BundleAdjustment::Options ba_opts;
     ba_opts.verbose_output = true;
-
     if (single_camera_ba >= 0)
-    {
-        std::cout << "WARNING: Single camera BA not supported." << std::endl;
-        return;
-    }
+        ba_opts.bundle_mode = ba::BundleAdjustment::BA_CAMERAS;
+    else
+        ba_opts.bundle_mode = ba::BundleAdjustment::BA_CAMERAS_AND_POINTS;
 
     /* Convert camera to BA data structures. */
     std::vector<ba::Camera> ba_cameras;
     std::vector<int> ba_cameras_mapping(this->viewports->size(), -1);
     for (std::size_t i = 0; i < this->viewports->size(); ++i)
     {
+        if (single_camera_ba >= 0 && int(i) != single_camera_ba)
+            continue;
+
         CameraPose const& pose = this->viewports->at(i).pose;
         if (!pose.is_valid())
             continue;
@@ -278,8 +279,9 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         ba_cameras.push_back(cam);
     }
 
-    /* Convert tracks to BA data structures. */
-    std::vector<ba::Point3D> ba_tracks;
+    /* Convert tracks and observations to BA data structures. */
+    std::vector<ba::Point2D> ba_points_2d;
+    std::vector<ba::Point3D> ba_points_3d;
     std::vector<int> ba_tracks_mapping(this->tracks->size(), -1);
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
@@ -287,24 +289,19 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         if (!track.is_valid())
             continue;
 
+        /* Add corresponding 3D point to BA. */
         ba::Point3D point;
         std::copy(track.pos.begin(), track.pos.end(), point.pos);
-        ba_tracks_mapping[i] = ba_tracks.size();
-        ba_tracks.push_back(point);
-    }
+        ba_tracks_mapping[i] = ba_points_3d.size();
+        ba_points_3d.push_back(point);
 
-    /* Convert observations to BA data structures. */
-    std::vector<ba::Point2D> ba_points_2d;
-    for (std::size_t i = 0; i < this->tracks->size(); ++i)
-    {
-        Track const& track = this->tracks->at(i);
-        if (!track.is_valid())
-            continue;
-
+        /* Add all observations to BA. */
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             int const view_id = track.features[j].view_id;
             if (!this->viewports->at(view_id).pose.is_valid())
+                continue;
+            if (single_camera_ba >= 0 && view_id != single_camera_ba)
                 continue;
 
             int const feature_id = track.features[j].feature_id;
@@ -322,23 +319,24 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     /* Run bundle adjustment. */
     ba::BundleAdjustment ba(ba_opts);
     ba.set_cameras(&ba_cameras);
-    ba.set_points_3d(&ba_tracks);
+    ba.set_points_3d(&ba_points_3d);
     ba.set_points_2d(&ba_points_2d);
     ba.optimize();
-    //ba.print_status();
+    ba.print_status();
 
-    /* Transfer cameras and track positions back. */
+
+    /* Transfer cameras back to SfM data structures. */
     std::size_t ba_cam_counter = 0;
     for (std::size_t i = 0; i < this->viewports->size(); ++i)
     {
-        if (!this->viewports->at(i).pose.is_valid())
+        if (ba_cameras_mapping[i] == -1)
             continue;
 
         Viewport& view = this->viewports->at(i);
         CameraPose& pose = view.pose;
         ba::Camera const& cam = ba_cameras[ba_cam_counter];
 
-        if (this->opts.verbose_output && single_camera_ba < 0)
+        if (this->opts.verbose_output)
         {
             std::cout << "Camera " << std::setw(3) << i
                 << ", focal length: "
@@ -358,6 +356,11 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         ba_cam_counter += 1;
     }
 
+    /* Exit if single camera BA is used. */
+    if (single_camera_ba >= 0)
+        return;
+
+    /* Transfer tracks back to SfM data structures. */
     std::size_t ba_track_counter = 0;
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
@@ -365,7 +368,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         if (!track.is_valid())
             continue;
 
-        ba::Point3D const& point = ba_tracks[ba_track_counter];
+        ba::Point3D const& point = ba_points_3d[ba_track_counter];
         std::copy(point.pos, point.pos + 3, track.pos.begin());
         ba_track_counter += 1;
     }

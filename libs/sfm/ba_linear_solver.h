@@ -45,20 +45,39 @@ public:
 public:
     LinearSolver (Options const& options);
 
-    /* Conjugate Gradient on Schur-complement. */
+    /**
+     * Solve the system J^T J x = -J^T f based on the bundle adjustment mode.
+     * If the Jacobian for cameras is empty, only points are optimized.
+     * If the Jacobian for points is empty, only cameras are optimized.
+     * If both, Jacobian for cams and points is given, the Schur complement
+     * trick is used to solve the linear system.
+     */
+    Status solve (SparseMatrixType const& jac_cams,
+        SparseMatrixType const& jac_points,
+        DenseVectorType const& vector_f,
+        DenseVectorType* delta_x);
+
+private:
+    /**
+     * Conjugate Gradient on Schur-complement by exploiting the block
+     * structure of H = J^T * J.
+     */
     Status solve_schur (SparseMatrixType const& jac_cams,
         SparseMatrixType const& jac_points,
-        DenseVectorType const& values, DenseVectorType* delta_x);
+        DenseVectorType const& values,
+        DenseVectorType* delta_x);
 
     /**
-     * J is the Jacobian of the problem. If H = Jt * J has a block diagonal
+     * J is the Jacobian of the problem. If H = J^T * J has a block diagonal
      * structure (e.g. 'motion only' or 'structure only' problems in BA),
      * block_size can be used to directly invert H. If block_size is 0
      * the diagonal of H is used as a preconditioner and the linear system
      * is solved via conjugate gradient.
      */
-    Status solve (SparseMatrixType const& J, DenseVectorType const& values,
-        DenseVectorType* delta_x, std::size_t block_size = 0);
+    Status solve (SparseMatrixType const& J,
+        DenseVectorType const& vector_f,
+        DenseVectorType* delta_x,
+        std::size_t block_size = 0);
 
 private:
     Options opts;

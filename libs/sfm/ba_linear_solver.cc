@@ -7,6 +7,7 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
+#include <stdexcept>
 #include <iostream>
 
 #include "util/timer.h"
@@ -71,6 +72,29 @@ namespace
         B->allocate(A.num_cols(), A.num_cols());
         B->set_from_triplets(triplets);
     }
+}
+
+LinearSolver::Status
+LinearSolver::solve (SparseMatrixType const& jac_cams,
+    SparseMatrixType const& jac_points,
+    DenseVectorType const& vector_f,
+    DenseVectorType* delta_x)
+{
+    bool const has_jac_cams = jac_cams.num_rows() > 0;
+    bool const has_jac_points = jac_points.num_rows() > 0;
+
+    if (!has_jac_cams && !has_jac_points)
+        throw std::invalid_argument("No Jacobian given");
+
+    /* Select solver based on bundle adjustment mode. */
+    if (has_jac_cams && has_jac_points)
+        return this->solve_schur(jac_cams, jac_points, vector_f, delta_x);
+    else if (has_jac_cams && !has_jac_points)
+        return this->solve(jac_cams, vector_f, delta_x, 0);
+    else if (!has_jac_cams && has_jac_points)
+        return this->solve(jac_points, vector_f, delta_x, 3);
+    else
+        throw std::runtime_error("");
 }
 
 LinearSolver::Status
@@ -171,20 +195,26 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
 }
 
 LinearSolver::Status
-LinearSolver::solve (SparseMatrixType const& J, DenseVectorType const& values,
-    DenseVectorType* delta_x, std::size_t block_size)
+LinearSolver::solve (SparseMatrixType const& J,
+    DenseVectorType const& vector_f,
+    DenseVectorType* delta_x,
+    std::size_t block_size)
 {
-    DenseVectorType const& F = values;
+    DenseVectorType const& F = vector_f;
     SparseMatrixType Jt = J.transpose();
     SparseMatrixType H = Jt.multiply(J);
+
+    /* Compute RHS. */
     DenseVectorType g = Jt.multiply(F);
     g.negate_self();
+
+    /* Add regularization to H. */
     H.mult_diagonal(1.0 + 1.0 / this->opts.trust_region_radius);
 
     Status status;
     if (block_size == 0)
     {
-        /* Use simple preconditioned CG */
+        /* Use preconditioned CG using the diagonal of H. */
         SparseMatrixType precond = H.diagonal_matrix();
         precond.cwise_invert();
 
@@ -195,7 +225,6 @@ LinearSolver::solve (SparseMatrixType const& J, DenseVectorType const& values,
         CGSolver solver(cg_opts);
         CGSolver::Status cg_status;
         cg_status = solver.solve(H, g, delta_x, &precond);
-
         status.num_cg_iterations = cg_status.num_iterations;
 
         switch (cg_status.info)
