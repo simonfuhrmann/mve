@@ -20,10 +20,11 @@ UTIL_NAMESPACE_BEGIN
 UTIL_SYSTEM_NAMESPACE_BEGIN
 
 void
-print_build_timestamp (char const* application_name)
+print_build_timestamp (char const* application_name,
+        char const* date, char const* time)
 {
     std::cout << application_name << " (built on "
-        << __DATE__ ", " __TIME__ ")" << std::endl;
+        << date << ", " << time << ")" << std::endl;
 }
 
 /* ---------------------------------------------------------------- */

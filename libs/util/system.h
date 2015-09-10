@@ -50,9 +50,14 @@ int rand_int (void);
  * ---------------------- Signals / Application ----------------------
  */
 
-/** Prints the application name and time and date of the build. */
+/** Prints the application name and date and time of the build. */
 void
 print_build_timestamp (char const* application_name);
+
+/** Prints the application name and the given date and time strings. */
+void
+print_build_timestamp (char const* application_name,
+    char const* date, char const* time);
 
 /** Registers signal SIGSEGV (segmentation fault) handler. */
 void register_segfault_handler (void);
@@ -106,6 +111,12 @@ inline int
 rand_int (void)
 {
     return std::rand();
+}
+
+inline void
+print_build_timestamp (char const* application_name)
+{
+    print_build_timestamp(application_name, __DATE__, __TIME__);
 }
 
 UTIL_SYSTEM_NAMESPACE_END
