@@ -8,6 +8,7 @@
  */
 
 #include "math/matrix_tools.h"
+#include "util/timer.h"
 #include "sfm/ba_sparse_matrix.h"
 #include "sfm/ba_dense_vector.h"
 #include "sfm/bundle_adjustment.h"
@@ -35,9 +36,11 @@ SFM_BA_NAMESPACE_BEGIN
 BundleAdjustment::Status
 BundleAdjustment::optimize (void)
 {
+    util::WallTimer timer;
     this->sanity_checks();
     this->status = Status();
     this->lm_optimize();
+    this->status.runtime_ms = timer.get_elapsed();
     return this->status;
 }
 
@@ -97,12 +100,25 @@ BundleAdjustment::lm_optimize (void)
 
         /* Compute Jacobian. */
         SparseMatrixType Jc, Jp;
-        this->analytic_jacobian(&Jc, &Jp);
+        switch (this->opts.bundle_mode)
+        {
+            case BA_CAMERAS_AND_POINTS:
+                this->analytic_jacobian(&Jc, &Jp);
+                break;
+            case BA_CAMERAS:
+                this->analytic_jacobian(&Jc, nullptr);
+                break;
+            case BA_POINTS:
+                this->analytic_jacobian(nullptr, &Jp);
+                break;
+            default:
+                throw std::runtime_error("");
+        }
 
         /* Perform linear step. */
         DenseVectorType delta_x;
         LinearSolver pcg(pcg_opts);
-        LinearSolver::Status cg_status = pcg.solve_schur(Jc, Jp, F, &delta_x);
+        LinearSolver::Status cg_status = pcg.solve(Jc, Jp, F, &delta_x);
 
         /* Update reprojection errors and MSE after linear step. */
         double new_mse, delta_mse;
@@ -200,14 +216,23 @@ BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
         if (delta_x != nullptr)
         {
             std::size_t cam_id = p2d.camera_id * 9;
-            std::size_t pt_id = this->cameras->size() * 9 + p2d.point3d_id * 3;
-            this->update_camera(cam, delta_x->data() + cam_id, &new_camera);
-            this->update_point(p3d, delta_x->data() + pt_id, &new_point);
-            flen = &new_camera.focal_length;
-            dist = new_camera.distortion;
-            rot = new_camera.rotation;
-            trans = new_camera.translation;
-            point = new_point.pos;
+            std::size_t pt_id = p2d.point3d_id * 3;
+
+            if (this->opts.bundle_mode & BA_CAMERAS)
+            {
+                this->update_camera(cam, delta_x->data() + cam_id, &new_camera);
+                flen = &new_camera.focal_length;
+                dist = new_camera.distortion;
+                rot = new_camera.rotation;
+                trans = new_camera.translation;
+                pt_id += this->cameras->size() * 9;
+            }
+
+            if (this->opts.bundle_mode & BA_POINTS)
+            {
+                this->update_point(p3d, delta_x->data() + pt_id, &new_point);
+                point = new_point.pos;
+            }
         }
 
         /* Project point onto image plane. */
@@ -278,8 +303,10 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
     std::size_t const jacobi_rows = this->points_2d->size() * 2;
 
     SparseMatrixType::Triplets cam_triplets, point_triplets;
-    cam_triplets.reserve(this->points_2d->size() * 9 * 2);
-    point_triplets.reserve(this->points_2d->size() * 3 * 2);
+    if (jac_cam != nullptr)
+        cam_triplets.reserve(this->points_2d->size() * 9 * 2);
+    if (jac_points != nullptr)
+        point_triplets.reserve(this->points_2d->size() * 3 * 2);
 
     double cam_x_ptr[9], cam_y_ptr[9], point_x_ptr[3], point_y_ptr[3];
     for (std::size_t i = 0; i < this->points_2d->size(); ++i)
@@ -293,22 +320,28 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
         std::size_t row_x = i * 2, row_y = row_x + 1;
         std::size_t cam_col = p2d.camera_id * 9;
         std::size_t point_col = p2d.point3d_id * 3;
-        for (int j = 0; j < 9; ++j)
+        for (int j = 0; jac_cam != nullptr && j < 9; ++j)
         {
             cam_triplets.emplace_back(row_x, cam_col + j, cam_x_ptr[j]);
             cam_triplets.emplace_back(row_y, cam_col + j, cam_y_ptr[j]);
         }
-        for (int j = 0; j < 3; ++j)
+        for (int j = 0; jac_points != nullptr && j < 3; ++j)
         {
             point_triplets.emplace_back(row_x, point_col + j, point_x_ptr[j]);
             point_triplets.emplace_back(row_y, point_col + j, point_y_ptr[j]);
         }
     }
 
-    jac_cam->allocate(jacobi_rows, camera_cols);
-    jac_cam->set_from_triplets(cam_triplets);
-    jac_points->allocate(jacobi_rows, point_cols);
-    jac_points->set_from_triplets(point_triplets);
+    if (jac_cam != nullptr)
+    {
+        jac_cam->allocate(jacobi_rows, camera_cols);
+        jac_cam->set_from_triplets(cam_triplets);
+    }
+    if (jac_points != nullptr)
+    {
+        jac_points->allocate(jacobi_rows, point_cols);
+        jac_points->set_from_triplets(point_triplets);
+    }
 }
 
 void
@@ -421,16 +454,24 @@ void
 BundleAdjustment::update_parameters (DenseVectorType const& delta_x)
 {
     /* Update cameras. */
-    for (std::size_t i = 0; i < this->cameras->size(); ++i)
-        this->update_camera(this->cameras->at(i),
-            delta_x.data() + 9 * i, &this->cameras->at(i));
+    std::size_t num_camera_params = 0;
+    if (this->opts.bundle_mode & BA_CAMERAS)
+    {
+        for (std::size_t i = 0; i < this->cameras->size(); ++i)
+            this->update_camera(this->cameras->at(i),
+                delta_x.data() + 9 * i, &this->cameras->at(i));
+        num_camera_params = this->cameras->size() * 9;
+    }
 
     /* Update points. */
-    std::size_t num_camera_params = this->cameras->size() * 9;
-    for (std::size_t i = 0; i < this->points_3d->size(); ++i)
-        this->update_point(this->points_3d->at(i),
-            delta_x.data() + num_camera_params + i * 3,
-            &this->points_3d->at(i));
+    if (this->opts.bundle_mode & BA_POINTS)
+    {
+
+        for (std::size_t i = 0; i < this->points_3d->size(); ++i)
+            this->update_point(this->points_3d->at(i),
+                delta_x.data() + num_camera_params + i * 3,
+                &this->points_3d->at(i));
+    }
 }
 
 void
@@ -461,8 +502,19 @@ BundleAdjustment::update_point (Point3D const& pt,
 }
 
 void
-BundleAdjustment::print_status (void) const
+BundleAdjustment::print_status (bool detailed) const
 {
+    if (!detailed)
+    {
+        std::cout << "BA: MSE " << this->status.initial_mse
+            << " -> " << this->status.final_mse << ", "
+            << this->status.num_lm_iterations << " LM iters, "
+            << this->status.num_cg_iterations << " CG iters, "
+            << this->status.runtime_ms << "ms."
+            << std::endl;
+        return;
+    }
+
     std::cout << "Bundle Adjustment Status:" << std::endl;
     std::cout << "  Initial MSE: "
         << this->status.initial_mse << std::endl;

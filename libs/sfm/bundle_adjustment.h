@@ -27,9 +27,9 @@ class BundleAdjustment
 public:
     enum BAMode
     {
-        BA_CAMERAS_AND_POINTS,
-        BA_CAMERAS_ONLY,
-        BA_POINTS_ONLY
+        BA_CAMERAS = 1,
+        BA_POINTS = 2,
+        BA_CAMERAS_AND_POINTS = 1 | 2
     };
 
     struct Options
@@ -37,7 +37,7 @@ public:
         Options (void);
 
         bool verbose_output;
-        //BAMode bundle_mode;
+        BAMode bundle_mode;
         //bool fixed_intrinsics;
         //bool shared_intrinsics;
         int lm_max_iterations;
@@ -57,6 +57,7 @@ public:
         int num_lm_successful_iterations;
         int num_lm_unsuccessful_iterations;
         int num_cg_iterations;
+        std::size_t runtime_ms;
     };
 
 public:
@@ -67,7 +68,7 @@ public:
     void set_points_2d (std::vector<Point2D>* points_2d);
 
     Status optimize (void);
-    void print_status (void) const;
+    void print_status (bool detailed = false) const;
 
 private:
     typedef SparseMatrix<double> SparseMatrixType;
@@ -110,11 +111,11 @@ private:
 inline
 BundleAdjustment::Options::Options (void)
     : verbose_output(false)
-    //, bundle_mode(BA_CAMERAS_AND_POINTS)
+    , bundle_mode(BA_CAMERAS_AND_POINTS)
     , lm_max_iterations(20)
     , lm_min_iterations(0)
-    , lm_delta_threshold(1e-8)
-    , lm_mse_threshold(1e-16)
+    , lm_delta_threshold(1e-16)
+    , lm_mse_threshold(1e-8)
 {
 }
 
