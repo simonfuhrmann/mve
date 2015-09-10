@@ -7,6 +7,9 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
+#include <iostream>
+#include <iomanip>
+
 #include "math/matrix_tools.h"
 #include "util/timer.h"
 #include "sfm/ba_sparse_matrix.h"
@@ -142,9 +145,11 @@ BundleAdjustment::lm_optimize (void)
          */
         if (successful_iteration)
         {
-            LOG_V << "BA: Iteration " << lm_iter << " success."
-                << " MSE " << current_mse << " -> " << new_mse
-                << ", trr = " << pcg_opts.trust_region_radius
+            LOG_V << "BA: #" << std::setw(2) << lm_iter << " success"
+                << ", MSE " << std::setw(11) << current_mse
+                << " -> " << std::setw(11) << new_mse
+                << ", CG " << std::setw(3) << cg_status.num_cg_iterations
+                << ", TRR " << pcg_opts.trust_region_radius
                 << std::endl;
 
             this->status.num_lm_iterations += 1;
@@ -162,9 +167,11 @@ BundleAdjustment::lm_optimize (void)
         }
         else
         {
-            LOG_V << "BA: Iteration " << lm_iter << " failure."
-                << " MSE " << current_mse
-                << ", trr = " << pcg_opts.trust_region_radius
+            LOG_V << "BA: #" << std::setw(2) << lm_iter << " failure"
+                << ", MSE " << std::setw(11) << current_mse
+                << ",    " << std::setw(11) << " "
+                << " CG " << std::setw(3) << cg_status.num_cg_iterations
+                << ", TRR " << pcg_opts.trust_region_radius
                 << std::endl;
 
             this->status.num_lm_iterations += 1;
