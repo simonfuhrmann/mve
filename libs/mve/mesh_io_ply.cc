@@ -1067,7 +1067,7 @@ save_xf_file (std::string const& filename, float const* ctw)
 {
     std::cout << "Writing XF file " << filename << "..." << std::endl;
 
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 

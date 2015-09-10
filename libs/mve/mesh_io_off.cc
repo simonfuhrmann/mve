@@ -164,7 +164,7 @@ save_off_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
         throw std::invalid_argument("No filename given");
 
     /* Open file for writing. */
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (out.fail())
         throw util::FileException(filename, std::strerror(errno));
 

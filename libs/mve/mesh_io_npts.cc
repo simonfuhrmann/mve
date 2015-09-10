@@ -73,7 +73,7 @@ save_npts_mesh (TriangleMesh::ConstPtr mesh,
     if (mesh->get_vertex_normals().size() != mesh->get_vertices().size())
         throw std::invalid_argument("No vertex normals given");
 
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 

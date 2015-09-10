@@ -877,7 +877,7 @@ save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
     std::string scale = "1.0"; // we currently don't support scales
 #endif
 
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 
@@ -1004,7 +1004,7 @@ save_ppm_file_intern (ImageBase::ConstPtr image, std::string const& filename)
     else
         throw std::invalid_argument("Invalid image format");
 
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 
@@ -1120,7 +1120,7 @@ save_mvei_file (ImageBase::ConstPtr image, std::string const& filename)
     char const* data = image->get_byte_pointer();
     std::size_t size = image->get_byte_size();
 
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 

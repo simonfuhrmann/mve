@@ -203,7 +203,7 @@ CameraSequence::read_file (std::string const& fname)
 void
 CameraSequence::write_file (std::string const& fname)
 {
-    std::ofstream out(fname.c_str());
+    std::ofstream out(fname.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(fname, std::strerror(errno));
 

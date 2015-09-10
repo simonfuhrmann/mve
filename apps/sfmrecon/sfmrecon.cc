@@ -440,7 +440,7 @@ check_prebundle (AppSettings const& conf)
         return;
 
     /* Check if the prebundle is writable. */
-    std::ofstream out(prebundle_path.c_str());
+    std::ofstream out(prebundle_path.c_str(), std::ios::binary);
     if (!out.good())
     {
         out.close();

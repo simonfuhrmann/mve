@@ -85,7 +85,7 @@ save_smf_mesh (mve::TriangleMesh::ConstPtr mesh, std::string const& filename)
     TriangleMesh::FaceList const& faces(mesh->get_faces());
 
     /* Open output file. */
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 

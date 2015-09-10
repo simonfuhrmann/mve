@@ -425,7 +425,7 @@ save_photosynther_bundle (Bundle::ConstPtr bundle, std::string const& filename)
     std::cout << "Writing bundle (" << cameras.size() << " cameras, "
         << features.size() << " features): " << filename << "...\n";
 
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
 

@@ -608,7 +608,7 @@ FileLock::acquire (std::string const& filename)
     }
 
     /* Finally create the lock file. */
-    std::ofstream touch(this->lockfile.c_str());
+    std::ofstream touch(this->lockfile.c_str(), std::ios::binary);
     if (!touch.good())
     {
         this->reason = "Error locking: ";

@@ -251,7 +251,7 @@ TEST(ImageFileTest, PFMSaveLoad)
 TEST(ImageFileTest, PFMLoadScale)
 {
     TempFile filename("pfmtestscale");
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     float value = 10.0f;
     out << "Pf\n1 1 -2.0\n";
     out.write(reinterpret_cast<char const*>(&value), sizeof(float));

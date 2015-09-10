@@ -44,7 +44,7 @@ graph_mode (AppSettings const& conf,
     sfm::bundler::ViewportList const& /*viewports*/,
     sfm::bundler::PairwiseMatching const& pairwise_matching)
 {
-    std::ofstream out(conf.graph_file.c_str());
+    std::ofstream out(conf.graph_file.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(conf.graph_file, std::strerror(errno));
 

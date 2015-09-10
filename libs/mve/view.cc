@@ -621,7 +621,7 @@ View::save_meta_data (std::string const& path)
     std::string const fname = util::fs::join_path(path, VIEW_IO_META_FILE);
     std::string const fname_new = fname + ".new";
 
-    std::ofstream out(fname_new.c_str());
+    std::ofstream out(fname_new.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(fname_new, std::strerror(errno));
 
@@ -967,7 +967,7 @@ View::save_blob_intern (BlobProxy* proxy)
 
     // Check if file exists? Create unique temp name?
     //std::cout << "View: Saving BLOB " << proxy->filename << std::endl;
-    std::ofstream out(fname_new.c_str());
+    std::ofstream out(fname_new.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(fname_new, std::strerror(errno));
 

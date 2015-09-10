@@ -177,7 +177,7 @@ void
 save_prebundle_to_file (ViewportList const& viewports,
     PairwiseMatching const& matching, std::string const& filename)
 {
-    std::ofstream out(filename.c_str());
+    std::ofstream out(filename.c_str(), std::ios::binary);
     if (!out.good())
         throw util::FileException(filename, std::strerror(errno));
     save_prebundle_data(viewports, matching, out);
