@@ -90,7 +90,8 @@ Tracks::compute (PairwiseMatching const& matching,
                     viewports->at(view_id).track_ids[feat_id] = view1_tid;
                     track1.features.push_back(track2.features[k]);
                 }
-                track2.features.clear();
+                /* Free old track's memory. clear() does not work. */
+                track2.features = FeatureReferenceList();
             }
         }
     }
