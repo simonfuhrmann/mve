@@ -26,12 +26,15 @@
 #include "fssr/sample_io.h"
 #include "fssr/iso_octree.h"
 #include "fssr/iso_surface.h"
+#include "fssr/hermite.h"
+#include "fssr/defines.h"
 
 struct AppOptions
 {
     std::vector<std::string> in_files;
     std::string out_mesh;
     int refine_octree;
+    fssr::InterpolationType interp_type;
 };
 
 void
@@ -83,7 +86,7 @@ fssrecon (AppOptions const& app_opts, fssr::SampleIO::Options const& pset_opts)
     {
         std::cout << "Extracting isosurface..." << std::endl;
         util::WallTimer timer;
-        fssr::IsoSurface iso_surface(&octree, octree.get_voxels());
+        fssr::IsoSurface iso_surface(&octree, app_opts.interp_type);
         mesh = iso_surface.extract_mesh();
         std::cout << "  Done. Surface extraction took "
             << timer.get_elapsed() << "ms." << std::endl;
@@ -144,6 +147,9 @@ main (int argc, char** argv)
     args.add_option('r', "refine-octree", true, "Refines octree with N levels [0]");
     args.add_option('\0', "min-scale", true, "Minimum scale, smaller samples are clamped");
     args.add_option('\0', "max-scale", true, "Maximum scale, larger samples are ignored");
+#if FSSR_USE_DERIVATIVES
+    args.add_option('\0', "interpolation", true, "Interpolation: linear, scaling, lsderiv, [cubic]");
+#endif // FSSR_USE_DERIVATIVES
     args.set_description("Samples the implicit function defined by the input "
         "samples and produces a surface mesh. The input samples must have "
         "normals and the \"values\" PLY attribute (the scale of the samples). "
@@ -156,6 +162,7 @@ main (int argc, char** argv)
     fssr::SampleIO::Options pset_opts;
     AppOptions app_opts;
     app_opts.refine_octree = 0;
+    app_opts.interp_type = fssr::INTERPOLATION_CUBIC;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
@@ -174,6 +181,24 @@ main (int argc, char** argv)
             pset_opts.min_scale = arg->get_arg<float>();
         else if (arg->opt->lopt == "max-scale")
             pset_opts.max_scale = arg->get_arg<float>();
+        else if (arg->opt->lopt == "interpolation")
+        {
+            if (arg->arg == "linear")
+                app_opts.interp_type = fssr::INTERPOLATION_LINEAR;
+            else if (arg->arg == "scaling")
+                app_opts.interp_type = fssr::INTERPOLATION_SCALING;
+            else if (arg->arg == "lsderiv")
+                app_opts.interp_type = fssr::INTERPOLATION_LSDERIV;
+            else if (arg->arg == "cubic")
+                app_opts.interp_type = fssr::INTERPOLATION_CUBIC;
+            else
+            {
+                args.generate_helptext(std::cerr);
+                std::cerr << std::endl << "Error: Invalid interpolation: "
+                    << arg->arg << std::endl;
+                return 1;
+            }
+        }
         else
         {
             std::cerr << "Invalid option: " << arg->opt->sopt << std::endl;

@@ -112,6 +112,64 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
     float const sample_max_scale = samples[num_samples]->scale * 2.0f;
     //float const sample_max_scale = std::numeric_limits<float>::max();
 
+#if FSSR_USE_DERIVATIVES
+
+    /*
+     *         sum_i f_i(x) w_i(x) c_i     g(x)
+     * F(x) = ------------------------- = ------
+     *            sum_i w_i(x) c_i         h(x)
+     *
+     *  d           d/dx_i g(x) * h(x) - g(x) * d/dx_i h(x)
+     * ---- F(x) = -----------------------------------------
+     * dx_i                          h(x)^2
+     */
+
+    double total_value = 0.0;
+    double total_weight = 0.0;
+    double total_scale = 0.0;
+    double total_color_weight = 0.0;
+    math::Vector<double, 3> total_value_deriv(0.0);
+    math::Vector<double, 3> total_weight_deriv(0.0);
+    math::Vector<double, 3> total_color(0.0);
+
+    for (std::size_t i = 0; i < samples.size(); ++i)
+    {
+        Sample const& sample = *samples[i];
+        if (sample.scale > sample_max_scale)
+            continue;
+
+        /* Evaluate basis and weight function. */
+        double value, weight;
+        math::Vector<double, 3> value_deriv, weight_deriv;
+        evaluate(voxel_pos, sample, &value, &weight,
+            &value_deriv, &weight_deriv);
+
+        /* Incrementally update basis and weight. */
+        total_value += value * weight * sample.confidence;
+        total_weight += weight * sample.confidence;
+        total_value_deriv += (value_deriv * weight + weight_deriv * value)
+            * sample.confidence;
+        total_weight_deriv += weight_deriv * sample.confidence;
+
+        /* Incrementally update color. */
+        double const color_weight = gaussian_normalized<double>
+            (sample.scale / 5.0f, voxel_pos - sample.pos) * sample.confidence;
+        total_scale += sample.scale * color_weight;
+        total_color += sample.color * color_weight;
+        total_color_weight += color_weight;
+    }
+
+    /* Compute final voxel data. */
+    VoxelData voxel;
+    voxel.value = total_value / total_weight;
+    voxel.conf = total_weight;
+    voxel.deriv = (total_value_deriv * total_weight
+        - total_weight_deriv * total_value) / MATH_POW2(total_weight);
+    voxel.scale = total_scale / total_color_weight;
+    voxel.color = total_color / total_color_weight;
+
+#else // FSSR_USE_DERIVATIVES
+
     /* Evaluate implicit function as the sum of basis functions. */
     double total_ifn = 0.0;
     double total_weight = 0.0;
@@ -143,12 +201,15 @@ IsoOctree::sample_ifn (math::Vec3d const& voxel_pos)
     }
 
     /* Compute final voxel data. */
-    VoxelData data;
-    data.value = total_ifn / total_weight;
-    data.conf = total_weight;
-    data.scale = total_scale / total_color_weight;
-    data.color = total_color / total_color_weight;
-    return data;
+    VoxelData voxel;
+    voxel.value = total_ifn / total_weight;
+    voxel.conf = total_weight;
+    voxel.scale = total_scale / total_color_weight;
+    voxel.color = total_color / total_color_weight;
+
+#endif // FSSR_USE_DERIVATIVES
+
+    return voxel;
 }
 
 void

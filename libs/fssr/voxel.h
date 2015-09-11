@@ -67,6 +67,9 @@ public:
     float conf;
     float scale;
     math::Vec3f color;
+#if FSSR_USE_DERIVATIVES
+    math::Vec3f deriv;
+#endif // FSSR_USE_DERIVATIVES
 };
 
 /* --------------------------------------------------------------------- */

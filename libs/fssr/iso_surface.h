@@ -21,10 +21,11 @@
 #include <cstdint>
 
 #include "math/algo.h"
-#include "fssr/voxel.h"
-#include "fssr/octree.h"
-#include "fssr/iso_octree.h"
 #include "fssr/defines.h"
+#include "fssr/hermite.h"
+#include "fssr/iso_octree.h"
+#include "fssr/octree.h"
+#include "fssr/voxel.h"
 
 FSSR_NAMESPACE_BEGIN
 
@@ -36,7 +37,8 @@ FSSR_NAMESPACE_BEGIN
 class IsoSurface
 {
 public:
-    IsoSurface (Octree* octree, IsoOctree::VoxelVector const& voxels);
+    IsoSurface (IsoOctree* octree,
+        InterpolationType interpolation_type = INTERPOLATION_CUBIC);
     mve::TriangleMesh::Ptr extract_mesh (void);
 
 private:
@@ -85,7 +87,8 @@ private:
         int edge_id, EdgeIndex* edge_index, EdgeInfo* edge_info);
     void get_finest_isoedges (Octree::Iterator const& iter,
         int face_id, IsoEdgeList* isoedges, bool descend_only);
-    void get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex);
+    void get_isovertex (EdgeIndex const& edge_index,
+        int edge_id, IsoVertex* iso_vertex);
     void compute_isopolygons(Octree::Iterator const& iter,
         EdgeVertexMap const& edgemap, PolygonList* polygons);
     void compute_triangulation(IsoVertexVector const& isovertices,
@@ -99,14 +102,16 @@ private:
 private:
     Octree* octree;
     IsoOctree::VoxelVector const* voxels;
+    InterpolationType interpolation_type;
 };
 
 /* --------------------------------------------------------------------- */
 
 inline
-IsoSurface::IsoSurface (Octree* octree, IsoOctree::VoxelVector const& voxels)
+IsoSurface::IsoSurface (IsoOctree* octree, InterpolationType interpolation_type)
     : octree(octree)
-    , voxels(&voxels)
+    , voxels(&octree->get_voxels())
+    , interpolation_type(interpolation_type)
 {
 }
 

@@ -564,7 +564,7 @@ IsoSurface::compute_isovertices (Octree::Iterator const& iter,
 
         /* Interpolate isovertex and add index to map. */
         IsoVertex isovertex;
-        this->get_isovertex(edge_index, &isovertex);
+        this->get_isovertex(edge_index, i, &isovertex);
         edgemap->insert(std::make_pair(edge_index, isovertices->size()));
         isovertices->push_back(isovertex);
     }
@@ -658,12 +658,24 @@ IsoSurface::get_finest_cube_edge (Octree::Iterator const& iter,
 }
 
 void
-IsoSurface::get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex)
+IsoSurface::get_isovertex (EdgeIndex const& edge_index,
+    int edge_id, IsoVertex* iso_vertex)
 {
     /* Get voxel data. */
     VoxelIndex vi1, vi2;
     vi1.index = edge_index.first;
     vi2.index = edge_index.second;
+
+#if FSSR_USE_DERIVATIVES
+
+    int const edge_axis = edge_id % 3;
+    if ((edge_axis == 0 && vi1.get_offset_x() > vi2.get_offset_x())
+        || (edge_axis == 1 && vi1.get_offset_y() > vi2.get_offset_y())
+        || (edge_axis == 2 && vi1.get_offset_z() > vi2.get_offset_z()))
+        std::swap(vi1, vi2);
+
+#endif // FSSR_USE_DERIVATIVES
+
     VoxelData const* vd1 = this->get_voxel_data(vi1);
     VoxelData const* vd2 = this->get_voxel_data(vi2);
     /* Get voxel positions. */
@@ -673,10 +685,25 @@ IsoSurface::get_isovertex (EdgeIndex const& edge_index, IsoVertex* iso_vertex)
     math::Vec3d pos2 = vi2.compute_position(
         this->octree->get_root_node_center(),
         this->octree->get_root_node_size());
+
+#if FSSR_USE_DERIVATIVES
+
     /* Interpolate voxel data and position. */
-    double const w = (vd1->value - ISO_VALUE) / (vd1->value - vd2->value);
-    iso_vertex->data = interpolate_voxel(*vd1, (1.0 - w), *vd2,  w);
-    iso_vertex->pos = pos1 * (1.0 - w) + pos2 * w;
+    double const norm = pos2[edge_axis] - pos1[edge_axis];
+    double const weight = interpolate_root(
+        vd1->value - ISO_VALUE, vd2->value - ISO_VALUE,
+        vd1->deriv[edge_axis] * norm, vd2->deriv[edge_axis] * norm,
+        this->interpolation_type);
+
+#else // FSSR_USE_DERIVATIVES
+
+    /* Interpolate voxel data and position. */
+    double const weight = (vd1->value - ISO_VALUE) / (vd1->value - vd2->value);
+
+#endif // FSSR_USE_DERIVATIVES
+
+    iso_vertex->data = interpolate_voxel(*vd1, (1.0 - weight), *vd2,  weight);
+    iso_vertex->pos = pos1 * (1.0 - weight) + pos2 * weight;
 }
 
 bool
