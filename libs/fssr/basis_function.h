@@ -133,7 +133,7 @@ fssr_basis (T const& scale, math::Vector<T, 3> const& pos,
 template <typename T>
 T
 fssr_weight (T const& scale, math::Vector<T, 3> const& pos,
-    math::Vector<T, 3>* deriv = nullptr)
+    math::Vector<T, 3>* deriv)
 {
     T const square_radius = pos.square_norm() / MATH_POW2(scale);
     if (square_radius >= T(9))
