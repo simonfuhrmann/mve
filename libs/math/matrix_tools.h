@@ -163,6 +163,15 @@ matrix_multiply (T const* mat_a, int rows_a, int cols_a,
     T const* mat_b, int cols_b, T* mat_res);
 
 /**
+ * Matrix multiplication of the transposed with itself.
+ * This computes for a given matrix A the product R = A^T * A.
+ * The resulting matrix is of size cols times cols.
+ */
+template <typename T>
+void
+matrix_transpose_multiply (T const* mat_a, int rows, int cols, T* mat_res);
+
+/**
  * Swaps the rows r1 and r2 of matrix mat with dimension rows, cols.
  */
 template <typename T>
@@ -553,6 +562,23 @@ matrix_multiply (T const* mat_a, int rows_a, int cols_a,
             for (int k = 0; k < cols_a; ++k)
                 mat_res[icb + j] += mat_a[ica + k] * mat_b[k * cols_b + j];
         }
+    }
+}
+
+template <typename T>
+void
+matrix_transpose_multiply (T const* mat_a, int rows, int cols, T* mat_res)
+{
+    std::fill(mat_res, mat_res + cols * cols, T(0));
+
+    T const* A_trans_iter = mat_a;
+    T const* A_row = mat_a;
+    for (int ri = 0; ri < rows; ++ri, A_row += cols)
+    {
+        T* R_iter = mat_res;
+        for (int c1 = 0; c1 < cols; ++c1, ++A_trans_iter)
+            for (int c2 = 0; c2 < cols; ++c2, ++R_iter)
+                (*R_iter) += A_row[c2] * (*A_trans_iter);
     }
 }
 
