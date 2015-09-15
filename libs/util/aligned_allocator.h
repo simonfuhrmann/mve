@@ -87,7 +87,7 @@ AlignedAllocator<T, alignment>::allocate (size_type n)
       throw std::bad_alloc();
     size_t size = n * sizeof(T);
     pointer p = nullptr;
-#ifdef _MSC_VER
+#ifdef _WIN32
     p = reinterpret_cast<pointer>(::_aligned_malloc(size, alignment));
     if (p == nullptr)
         throw std::bad_alloc();
@@ -102,7 +102,7 @@ template <typename T, size_t alignment>
 inline void
 AlignedAllocator<T, alignment>::deallocate(pointer p, size_type /*n*/)
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
     ::_aligned_free(p);
 #else
     ::free(p);

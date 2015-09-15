@@ -10,7 +10,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
 #   include <execinfo.h> // ::backtrace
 #endif
 
@@ -51,7 +51,7 @@ signal_segfault_handler (int code)
 void
 print_stack_trace (void)
 {
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
     /* Get stack pointers for all frames on the stack. */
     void *array[32];
     int const size = ::backtrace(array, 32);
