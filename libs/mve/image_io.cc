@@ -1075,7 +1075,7 @@ namespace
 ImageBase::Ptr
 load_mvei_file (std::string const& filename)
 {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename.c_str(), std::ios::binary);
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 
@@ -1098,7 +1098,7 @@ load_mvei_file (std::string const& filename)
 ImageHeaders
 load_mvei_file_headers (std::string const& filename)
 {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename.c_str(), std::ios::binary);
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 
