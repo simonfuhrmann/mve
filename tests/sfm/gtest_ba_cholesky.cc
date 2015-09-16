@@ -70,11 +70,11 @@ TEST(CholeskyDecompTest, InvertLDGoldenData2Test)
 
 TEST(CholeskyDecompTest, CholeskyInvertGoldenData1Test)
 {
-    double const matrix[9] = { 1, 2, 3,  2, 4, 5,  3, 5, 6 };
-    double const oracle[9] = { 1, -3, 2,  -3, 3, -1,  2, -1, 0 };
+    double const matrix[9] = { 2, -1, 0,  -1, 2, -1,  0, -1, 2 };
+    double const oracle[9] = { 3.0/4, 1.0/2, 1.0/4,  1.0/2, 1, 1.0/2,  1.0/4, 1.0/2, 3.0/4 };
 
     double result[9];
     sfm::ba::cholesky_invert(matrix, 3, result);
     for (int i = 0; i < 9; ++i)
-        EXPECT_NEAR(oracle[i], result[i], 1e-16);
+        EXPECT_NEAR(oracle[i], result[i], 1e-15);
 }
