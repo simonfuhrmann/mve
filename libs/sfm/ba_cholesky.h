@@ -71,16 +71,17 @@ template <typename T>
 void
 cholesky_decomposition (T const* A, int const cols, T* L)
 {
+    T* out_ptr = L;
     for (int r = 0; r < cols; ++r)
     {
         /* Compute left-of-diagonal entries. */
         for (int c = 0; c < r; ++c)
         {
-            double result = T(0);
+            T result = T(0);
             for (int ci = 0; ci < c; ++ci)
                 result += L[r * cols + ci] * L[c * cols + ci];
             result = A[r * cols + c] - result;
-            L[r * cols + c] = result / L[c * cols + c];
+            (*out_ptr++) = result / L[c * cols + c];
         }
 
         /* Compute diagonal entry. */
@@ -90,12 +91,12 @@ cholesky_decomposition (T const* A, int const cols, T* L)
             for (int c = 0; c < r; ++c)
                 result += MATH_POW2(L_row_ptr[c]);
             result = std::max(T(0), A[r * cols + r] - result);
-            L[r * cols + r] = std::sqrt(result);
+            (*out_ptr++) = std::sqrt(result);
         }
 
         /* Set right-of-diagonal entries zero. */
         for (int c = r + 1; c < cols; ++c)
-            L[r * cols + c] = T(0);
+            (*out_ptr++) = T(0);
     }
 }
 
@@ -114,7 +115,7 @@ invert_lower_diagonal (T const* A, int const cols, T* A_inv)
         /* Compute left-of-diagonal entries. */
         for (int c = 0; c < r; ++c)
         {
-            double result = T(0);
+            T result = T(0);
             for (int ci = 0; ci < r; ++ci)
                 result -= A_row_ptr[ci] * A_inv[ci * cols + c];
             A_inv_row_ptr[c] = result / A_row_ptr[r];
