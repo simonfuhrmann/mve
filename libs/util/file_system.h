@@ -40,7 +40,11 @@ char const* get_home_dir (void);
 /** Determines the current working directory of the process. */
 char* get_cwd (char* buf, std::size_t size);
 
-/** Changes working directory to 'pathname', returns true on success. */
+/**
+ * Changes the current working directory to 'pathname' and returns true
+ * on success. NOTE: An application should never change its working
+ * directory. Make sure this is really necessary.
+ */
 bool set_cwd (char const* pathname);
 
 /*

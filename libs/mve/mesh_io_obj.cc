@@ -98,8 +98,8 @@ load_mtl_file (std::string const& filename,
             if (material_name.empty())
                 throw util::Exception("Unbound material property");
 
-            std::string path = util::fs::abspath(util::fs::join_path(
-                util::fs::dirname(filename), line[1]));
+            std::string path = util::fs::join_path
+                (util::fs::dirname(filename), line[1]);
             result->insert(std::make_pair(material_name, path));
             material_name.clear();
         }
