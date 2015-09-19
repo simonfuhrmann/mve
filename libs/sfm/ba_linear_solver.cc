@@ -14,6 +14,7 @@
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
 #include "sfm/ba_linear_solver.h"
+#include "sfm/ba_cholesky.h"
 #include "sfm/ba_conjugate_gradient.h"
 
 SFM_NAMESPACE_BEGIN
@@ -21,11 +22,45 @@ SFM_BA_NAMESPACE_BEGIN
 
 namespace
 {
+    /*
+     * Inverts a symmetric, positive definite matrix with NxN bocks on its
+     * diagonal using Cholesky decomposition. All other entries must be zero.
+     */
+    void
+    invert_block_matrix_NxN_inplace (SparseMatrix<double>* A, int blocksize)
+    {
+        if (A->num_rows() != A->num_cols())
+            throw std::invalid_argument("Block matrix must be square");
+        if (A->num_non_zero() != A->num_rows() * blocksize)
+            throw std::invalid_argument("Invalid number of non-zeros");
+
+        int const bs2 = blocksize * blocksize;
+        std::vector<double> matrix_block(bs2);
+        for (double* iter = A->begin(); iter != A->end(); )
+        {
+            double* iter_backup = iter;
+            for (int i = 0; i < bs2; ++i)
+                matrix_block[i] = *(iter++);
+
+            cholesky_invert_inplace(matrix_block.data(), blocksize);
+
+            iter = iter_backup;
+            for (int i = 0; i < bs2; ++i)
+                *(iter++) = matrix_block[i];
+        }
+    }
+
+    /*
+     * Inverts a matrix with 3x3 bocks on its diagonal. All other entries
+     * must be zero. Reading blocks is thus very efficient.
+     */
     void
     invert_block_matrix_3x3_inplace (SparseMatrix<double>* A)
     {
         if (A->num_rows() != A->num_cols())
             throw std::invalid_argument("Block matrix must be square");
+        if (A->num_non_zero() != A->num_rows() * 3)
+            throw std::invalid_argument("Invalid number of non-zeros");
 
         for (double* iter = A->begin(); iter != A->end(); )
         {
@@ -83,9 +118,6 @@ LinearSolver::solve (SparseMatrixType const& jac_cams,
     bool const has_jac_cams = jac_cams.num_rows() > 0;
     bool const has_jac_points = jac_points.num_rows() > 0;
 
-    if (!has_jac_cams && !has_jac_points)
-        throw std::invalid_argument("No Jacobian given");
-
     /* Select solver based on bundle adjustment mode. */
     if (has_jac_cams && has_jac_points)
         return this->solve_schur(jac_cams, jac_points, vector_f, delta_x);
@@ -94,7 +126,7 @@ LinearSolver::solve (SparseMatrixType const& jac_cams,
     else if (!has_jac_cams && has_jac_points)
         return this->solve(jac_points, vector_f, delta_x, 3);
     else
-        throw std::runtime_error("");
+        throw std::invalid_argument("No Jacobian given");
 }
 
 LinearSolver::Status
@@ -138,8 +170,10 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     DenseVectorType rhs = v.subtract(E.multiply(C.multiply(w)));
 
     /* Compute pre-conditioner for linear system. */
-    SparseMatrixType precond = S.diagonal_matrix();
-    precond.cwise_invert();
+    //SparseMatrixType precond = S.diagonal_matrix();
+    //precond.cwise_invert();
+    SparseMatrixType precond = B;
+    invert_block_matrix_NxN_inplace(&precond, 9);
 
     /* Solve linear system. */
     DenseVectorType delta_y(Jc.num_cols());

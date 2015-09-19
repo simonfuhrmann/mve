@@ -31,7 +31,7 @@ public:
     struct Triplet
     {
         Triplet (void) = default;
-        Triplet (std::size_t col, std::size_t row, T const& value);
+        Triplet (std::size_t row, std::size_t col, T const& value);
 
         std::size_t row;
         std::size_t col;

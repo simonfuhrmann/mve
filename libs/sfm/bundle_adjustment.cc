@@ -145,7 +145,8 @@ BundleAdjustment::lm_optimize (void)
          */
         if (successful_iteration)
         {
-            LOG_V << "BA: #" << std::setw(2) << lm_iter << " success"
+            LOG_V << "BA: #" << std::setw(2) << std::left << lm_iter
+                << " success" << std::right
                 << ", MSE " << std::setw(11) << current_mse
                 << " -> " << std::setw(11) << new_mse
                 << ", CG " << std::setw(3) << cg_status.num_cg_iterations
@@ -167,7 +168,8 @@ BundleAdjustment::lm_optimize (void)
         }
         else
         {
-            LOG_V << "BA: #" << std::setw(2) << lm_iter << " failure"
+            LOG_V << "BA: #" << std::setw(2) << std::left << lm_iter
+                << " failure" << std::right
                 << ", MSE " << std::setw(11) << current_mse
                 << ",    " << std::setw(11) << " "
                 << " CG " << std::setw(3) << cg_status.num_cg_iterations
