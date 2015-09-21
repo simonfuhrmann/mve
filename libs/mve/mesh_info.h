@@ -19,141 +19,149 @@
 
 MVE_NAMESPACE_BEGIN
 
-/**
- * Each vertex is classified into one of SIMPLE, COMPLEX, BORDER and
- * UNREF. A simple vertex has a full fan of adjacent triangles. A
- * border vertex has a single but incomplete fan of adjacent
- * triangles. An unreferenced vertex has no adjacent triangles.
- * Everything else is a complex vertex, which is basically a
- * non-2-manifold configuration.
- */
-enum MeshVertexClass
-{
-    VERTEX_CLASS_SIMPLE,
-    VERTEX_CLASS_COMPLEX,
-    VERTEX_CLASS_BORDER,
-    VERTEX_CLASS_UNREF
-};
-
-/* ---------------------------------------------------------------- */
-
-/**
- * This class holds per-vertex information, namely the
- * vertex class, the list of adjacent faces and vertices.
- */
-struct MeshVertexInfo
-{
-    typedef std::vector<std::size_t> FaceRefList;
-    typedef std::vector<std::size_t> VertexRefList;
-
-    MeshVertexClass vclass;
-    VertexRefList verts;
-    FaceRefList faces;
-
-    void remove_adjacent_face (std::size_t face_id);
-    void remove_adjacent_vertex (std::size_t vertex_id);
-    void replace_adjacent_face (std::size_t old_value, std::size_t new_value);
-    void replace_adjacent_vertex (std::size_t old_value, std::size_t new_value);
-};
-
-/* ---------------------------------------------------------------- */
-
-/**
- * This class extracts per-vertex information. Each vertex is
- * cassified into one of the classes SIMPLE, COMPLEX, BORDER and
- * UNREF, see above. Adjacent faces and vertices are collected for
- * each vertex and stored in the MeshVertexInfo struct.
- */
-class VertexInfoList : public std::vector<MeshVertexInfo>
+class MeshInfo
 {
 public:
-    typedef std::shared_ptr<VertexInfoList> Ptr;
-    typedef std::shared_ptr<VertexInfoList const> ConstPtr;
+    /** Vertex classification according to adjacent triangles. */
+    enum VertexClass
+    {
+        /** Vertex with a single closed fan of adjacent triangles. */
+        VERTEX_CLASS_SIMPLE,
+        /** Vertex with a single but open fan of triangles. */
+        VERTEX_CLASS_BORDER,
+        /** Vertex with more than one triangle fan. */
+        VERTEX_CLASS_COMPLEX,
+        /** Vertiex without any adjacent triangles. */
+        VERTEX_CLASS_UNREF
+    };
+
+    typedef std::vector<std::size_t> AdjacentVertices;
+    typedef std::vector<std::size_t> AdjacentFaces;
+
+    /** Per-vertex classification and adjacency information. */
+    struct VertexInfo
+    {
+        VertexClass vclass;
+        AdjacentVertices verts;
+        AdjacentFaces faces;
+
+        void remove_adjacent_face (std::size_t face_id);
+        void remove_adjacent_vertex (std::size_t vertex_id);
+        void replace_adjacent_face (std::size_t old_id, std::size_t new_id);
+        void replace_adjacent_vertex (std::size_t old_id, std::size_t new_id);
+    };
 
 public:
-    /* Creates an uninitialized vertex info list. */
-    VertexInfoList (void);
-    /* Creates and initializes a vertex info list. */
-    VertexInfoList (TriangleMesh::ConstPtr mesh);
+    /** Constructor without initialization. */
+    MeshInfo (void);
 
-    /** Creates an empty vertex list. */
-    static Ptr create (void);
+    /** Constructor with initialization for the given mesh. */
+    MeshInfo (TriangleMesh::ConstPtr mesh);
 
-    /** Creates vertex info for the given mesh. */
-    static Ptr create (TriangleMesh::ConstPtr mesh);
-
-    /** Calculates vertex info for the given mesh. */
-    void calculate (TriangleMesh::ConstPtr mesh);
+    /** Initializes the data structure for the given mesh. */
+    void initialize (TriangleMesh::ConstPtr mesh);
 
     /**
-     * Orders and classifies adjacent vertices and faces.
-     * This is usually done by calculate() but can be called after modifying
-     * the mesh data structure. The list of adjacent faces is expected
-     * to be complete.
+     * Updates the vertex info for a single vertex. It expects that the
+     * list of adjacent faces is complete (but unorderd), and recomputes
+     * adjacent face ordering, adjacent vertices and the vertex class.
      */
-    void order_and_classify (TriangleMesh const& mesh, std::size_t idx);
+    void update_vertex (TriangleMesh const& mesh, std::size_t vertex_id);
 
-    /** Checks for the existence of and edge between the given vertices. */
+    /** Checks for the existence of an edge between the given vertices. */
     bool is_mesh_edge (std::size_t v1, std::size_t v2) const;
 
-    /** Fills the given vector with all faces containing the edge. */
+    /** Returns faces adjacent to both vertices. */
     void get_faces_for_edge (std::size_t v1, std::size_t v2,
-        std::vector<std::size_t>* afaces) const;
+        std::vector<std::size_t>* adjacent_faces) const;
+
+public:
+    VertexInfo& operator[] (std::size_t id);
+    VertexInfo const& operator[] (std::size_t id) const;
+    VertexInfo& at (std::size_t id);
+    VertexInfo const& at (std::size_t id) const;
+    std::size_t size (void) const;
+    void clear (void);
+
+private:
+    std::vector<VertexInfo> vertex_info;
 };
 
 /* ------------------------- Implementation ----------------------- */
 
+inline
+MeshInfo::MeshInfo (void)
+{
+}
+
+inline
+MeshInfo::MeshInfo (TriangleMesh::ConstPtr mesh)
+{
+    this->initialize(mesh);
+}
+
+inline MeshInfo::VertexInfo&
+MeshInfo::operator[] (std::size_t id)
+{
+    return this->vertex_info[id];
+}
+
+inline MeshInfo::VertexInfo const&
+MeshInfo::operator[] (std::size_t id) const
+{
+    return this->vertex_info[id];
+}
+
+inline MeshInfo::VertexInfo&
+MeshInfo::at (std::size_t id)
+{
+    return this->vertex_info[id];
+}
+
+inline MeshInfo::VertexInfo const&
+MeshInfo::at (std::size_t id) const
+{
+    return this->vertex_info[id];
+}
+
+inline std::size_t
+MeshInfo::size (void) const
+{
+    return this->vertex_info.size();
+}
+
 inline void
-MeshVertexInfo::remove_adjacent_face (std::size_t face_id)
+MeshInfo::clear (void)
+{
+    std::vector<VertexInfo>().swap(this->vertex_info);
+}
+
+inline void
+MeshInfo::VertexInfo::remove_adjacent_face (std::size_t face_id)
 {
     this->faces.erase(std::remove(this->faces.begin(), this->faces.end(),
         face_id), this->faces.end());
 }
 
 inline void
-MeshVertexInfo::remove_adjacent_vertex (std::size_t vertex_id)
+MeshInfo::VertexInfo::remove_adjacent_vertex (std::size_t vertex_id)
 {
     this->verts.erase(std::remove(this->verts.begin(), this->verts.end(),
         vertex_id), this->verts.end());
 }
 
 inline void
-MeshVertexInfo::replace_adjacent_face (std::size_t old_value,
-    std::size_t new_value)
+MeshInfo::VertexInfo::replace_adjacent_face (std::size_t old_id,
+    std::size_t new_id)
 {
-    std::replace(this->faces.begin(), this->faces.end(), old_value, new_value);
+    std::replace(this->faces.begin(), this->faces.end(), old_id, new_id);
 }
 
 inline void
-MeshVertexInfo::replace_adjacent_vertex (std::size_t old_value,
-    std::size_t new_value)
+MeshInfo::VertexInfo::replace_adjacent_vertex (std::size_t old_id,
+    std::size_t new_id)
 {
-    std::replace(this->verts.begin(), this->verts.end(), old_value, new_value);
-}
-
-inline
-VertexInfoList::VertexInfoList (void)
-{
-}
-
-inline
-VertexInfoList::VertexInfoList (TriangleMesh::ConstPtr mesh)
-{
-    this->calculate(mesh);
-}
-
-inline VertexInfoList::Ptr
-VertexInfoList::create (void)
-{
-    return Ptr(new VertexInfoList);
-}
-
-inline VertexInfoList::Ptr
-VertexInfoList::create (TriangleMesh::ConstPtr mesh)
-{
-    Ptr ret(new VertexInfoList);
-    ret->calculate(mesh);
-    return ret;
+    std::replace(this->verts.begin(), this->verts.end(), old_id, new_id);
 }
 
 MVE_NAMESPACE_END

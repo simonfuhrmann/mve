@@ -269,10 +269,10 @@ main (int argc, char** argv)
         if (conf.with_scale)
         {
             mvscale.resize(mverts.size(), 0.0f);
-            mve::VertexInfoList::Ptr vinfo = mve::VertexInfoList::create(mesh);
-            for (std::size_t j = 0; j < vinfo->size(); ++j)
+            mve::MeshInfo mesh_info(mesh);
+            for (std::size_t j = 0; j < mesh_info.size(); ++j)
             {
-                mve::MeshVertexInfo const& vinf = vinfo->at(j);
+                mve::MeshInfo::VertexInfo const& vinf = mesh_info[j];
                 for (std::size_t k = 0; k < vinf.verts.size(); ++k)
                     mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
                 mvscale[j] /= static_cast<float>(vinf.verts.size());

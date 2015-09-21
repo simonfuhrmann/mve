@@ -167,11 +167,11 @@ main (int argc, char** argv)
     if (conf.sample_scale <= 0.0f)
     {
         std::cout << "Computing scale..." << std::endl;
-        mve::VertexInfoList vinfo(mesh);
+        mve::MeshInfo mesh_info(mesh);
         std::size_t num_unreferenced = 0;
-        for (std::size_t i = 0; i < vinfo.size(); ++i)
+        for (std::size_t i = 0; i < mesh_info.size(); ++i)
         {
-            mve::MeshVertexInfo const& vi = vinfo[i];
+            mve::MeshInfo::VertexInfo const& vi = mesh_info[i];
             if (vi.verts.size() < 3)
             {
                 num_unreferenced += 1;

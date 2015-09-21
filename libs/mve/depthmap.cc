@@ -506,12 +506,11 @@ depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
 
     /* Find boundary vertices and remember them. */
     std::vector<std::size_t> vidx;
-    VertexInfoList vinfo(mesh);
+    MeshInfo mesh_info(mesh);
 
-    for (std::size_t i = 0; i < vinfo.size(); ++i)
+    for (std::size_t i = 0; i < mesh_info.size(); ++i)
     {
-        MeshVertexInfo const& info(vinfo[i]);
-        if (info.vclass == VERTEX_CLASS_BORDER)
+        if (mesh_info[i].vclass == MeshInfo::VERTEX_CLASS_BORDER)
             vidx.push_back(i);
     }
 
@@ -531,7 +530,7 @@ depthmap_mesh_confidences (TriangleMesh::Ptr mesh, int iterations)
         std::swap(vidx, cvidx);
         for (std::size_t i = 0; i < cvidx.size(); ++i)
         {
-            MeshVertexInfo info = vinfo[cvidx[i]];
+            MeshInfo::VertexInfo info = mesh_info[cvidx[i]];
             for (std::size_t j = 0; j < info.verts.size(); ++j)
                 if (confs[info.verts[j]] == 1.0f)
                     vidx.push_back(info.verts[j]);
@@ -560,11 +559,11 @@ depthmap_mesh_peeling (TriangleMesh::Ptr mesh, int iterations)
     /* Iteratively invalidate triangles at the boundary. */
     for (int iter = 0; iter < iterations; ++iter)
     {
-        VertexInfoList::Ptr vinfo(VertexInfoList::create(mesh));
-        for (std::size_t i = 0; i < vinfo->size(); ++i)
+        MeshInfo mesh_info(mesh);
+        for (std::size_t i = 0; i < mesh_info.size(); ++i)
         {
-            MeshVertexInfo const& info(vinfo->at(i));
-            if (info.vclass == VERTEX_CLASS_BORDER)
+            MeshInfo::VertexInfo const& info(mesh_info[i]);
+            if (info.vclass == MeshInfo::VERTEX_CLASS_BORDER)
                 for (std::size_t j = 0; j < info.faces.size(); ++j)
                     for (int k = 0; k < 3; ++k)
                     {

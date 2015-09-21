@@ -127,11 +127,10 @@ mesh_merge (TriangleMesh::ConstPtr mesh1, TriangleMesh::Ptr mesh2)
 void
 mesh_components (TriangleMesh::Ptr mesh, std::size_t vertex_threshold)
 {
-    TriangleMesh::VertexList const& verts = mesh->get_vertices();
-    VertexInfoList vinfos(mesh);
-    std::vector<int> component_per_vertex(vinfos.size(), -1);
+    MeshInfo mesh_info(mesh);
+    std::vector<int> component_per_vertex(mesh_info.size(), -1);
     int current_component = 0;
-    for (std::size_t i = 0; i < vinfos.size(); ++i)
+    for (std::size_t i = 0; i < mesh_info.size(); ++i)
     {
         /* Start with a vertex that has no component yet. */
         if (component_per_vertex[i] >= 0)
@@ -151,12 +150,12 @@ mesh_components (TriangleMesh::Ptr mesh, std::size_t vertex_threshold)
             component_per_vertex[vid] = current_component;
 
             /* Add all adjacent vertices to queue. */
-            MeshVertexInfo::VertexRefList const& adj_verts = vinfos[vid].verts;
+            MeshInfo::AdjacentVertices const& adj_verts = mesh_info[vid].verts;
             queue.insert(queue.end(), adj_verts.begin(), adj_verts.end());
         }
         current_component += 1;
     }
-    vinfos.clear();
+    mesh_info.clear();
 
     /* Create a list of components and count vertices per component. */
     std::vector<std::size_t> components_size(current_component, 0);
@@ -164,7 +163,7 @@ mesh_components (TriangleMesh::Ptr mesh, std::size_t vertex_threshold)
         components_size[component_per_vertex[i]] += 1;
 
     /* Mark vertices to be deleted if part of a small component. */
-    TriangleMesh::DeleteList delete_list(verts.size(), false);
+    TriangleMesh::DeleteList delete_list(mesh_info.size(), false);
     for (std::size_t i = 0; i < component_per_vertex.size(); ++i)
         if (components_size[component_per_vertex[i]] <= vertex_threshold)
             delete_list[i] = true;
@@ -268,12 +267,12 @@ mesh_delete_unreferenced (TriangleMesh::Ptr mesh)
     if (mesh == nullptr)
         throw std::invalid_argument("Null mesh given");
 
-    VertexInfoList vinfos(mesh);
-    TriangleMesh::DeleteList dlist(vinfos.size(), false);
+    MeshInfo mesh_info(mesh);
+    TriangleMesh::DeleteList dlist(mesh_info.size(), false);
     std::size_t num_deleted = 0;
-    for (std::size_t i = 0; i < vinfos.size(); ++i)
+    for (std::size_t i = 0; i < mesh_info.size(); ++i)
     {
-        if (vinfos[i].vclass == VERTEX_CLASS_UNREF)
+        if (mesh_info[i].vclass == MeshInfo::VERTEX_CLASS_UNREF)
         {
             dlist[i] = true;
             num_deleted += 1;

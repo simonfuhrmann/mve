@@ -16,7 +16,7 @@
 FSSR_NAMESPACE_BEGIN
 
 bool
-edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
+edge_collapse (mve::TriangleMesh::Ptr mesh, mve::MeshInfo& mesh_info,
     std::size_t v1, std::size_t v2, math::Vec3f const& new_vert,
     std::vector<std::size_t> const& afaces,
     float acos_threshold = 0.95f)
@@ -25,7 +25,7 @@ edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
     mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
 
     /* Test if the hypothetical vertex destroys geometry. */
-    mve::MeshVertexInfo& vinfo1 = vinfos[v1];
+    mve::MeshInfo::VertexInfo& vinfo1 = mesh_info[v1];
     for (std::size_t i = 0; i < vinfo1.verts.size(); ++i)
     {
         std::size_t ip1 = (i + 1) % vinfo1.verts.size();
@@ -42,7 +42,7 @@ edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
             return false;
     }
 
-    mve::MeshVertexInfo& vinfo2 = vinfos[v2];
+    mve::MeshInfo::VertexInfo& vinfo2 = mesh_info[v2];
     for (std::size_t i = 0; i < vinfo2.verts.size(); ++i)
     {
         std::size_t ip1 = (i + 1) % vinfo2.verts.size();
@@ -86,14 +86,14 @@ edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
     {
         std::size_t const vert_id = vinfo2.verts[i];
         if (vert_id != v1 && vert_id != v3 && vert_id != v4)
-            vinfos[vert_id].replace_adjacent_vertex(v2, v1);
+            mesh_info[vert_id].replace_adjacent_vertex(v2, v1);
     }
 
     /* Update vertex info for v3 and v4: remove v2, remove deleted faces. */
-    mve::MeshVertexInfo& vinfo3 = vinfos[v3];
+    mve::MeshInfo::VertexInfo& vinfo3 = mesh_info[v3];
     vinfo3.remove_adjacent_face(afaces[0]);
     vinfo3.remove_adjacent_vertex(v2);
-    mve::MeshVertexInfo& vinfo4 = vinfos[v4];
+    mve::MeshInfo::VertexInfo& vinfo4 = mesh_info[v4];
     vinfo4.remove_adjacent_face(afaces[1]);
     vinfo4.remove_adjacent_vertex(v2);
 
@@ -103,12 +103,12 @@ edge_collapse (mve::TriangleMesh::Ptr mesh, mve::VertexInfoList& vinfos,
     for (std::size_t i = 0; i < vinfo2.faces.size(); ++i)
     if (vinfo2.faces[i] != afaces[0] && vinfo2.faces[i] != afaces[1])
             vinfo1.faces.push_back(vinfo2.faces[i]);
-    vinfos.order_and_classify(*mesh, v1);
+    mesh_info.update_vertex(*mesh, v1);
 
     /* Update vertex info for v2. */
     vinfo2.faces.clear();
     vinfo2.verts.clear();
-    vinfo2.vclass = mve::VERTEX_CLASS_UNREF;
+    vinfo2.vclass = mve::MeshInfo::VERTEX_CLASS_UNREF;
 
     return true;
 }
@@ -151,7 +151,7 @@ std::size_t
 clean_needles (mve::TriangleMesh::Ptr mesh, float needle_ratio_thres)
 {
     float const square_needle_ratio_thres = MATH_POW2(needle_ratio_thres);
-    mve::VertexInfoList vinfos(mesh);
+    mve::MeshInfo mesh_info(mesh);
 
     /*
      * Algorithm to remove slivers with a two long and a very short edge.
@@ -177,19 +177,19 @@ clean_needles (mve::TriangleMesh::Ptr mesh, float needle_ratio_thres)
             continue;
 
         /* Skip edges between non-simple vertices. */
-        if (vinfos[v1].vclass != mve::VERTEX_CLASS_SIMPLE
-            || vinfos[v2].vclass != mve::VERTEX_CLASS_SIMPLE)
+        if (mesh_info[v1].vclass != mve::MeshInfo::VERTEX_CLASS_SIMPLE
+            || mesh_info[v2].vclass != mve::MeshInfo::VERTEX_CLASS_SIMPLE)
             continue;
 
-        /* Find triangle adjecent to the edge, skip non-simple edges. */
+        /* Find triangle adjacent to the edge, skip non-simple edges. */
         std::vector<std::size_t> afaces;
-        vinfos.get_faces_for_edge(v1, v2, &afaces);
+        mesh_info.get_faces_for_edge(v1, v2, &afaces);
         if (afaces.size() != 2)
             continue;
 
         /* Collapse the edge. */
         math::Vec3f new_v = (verts[v1] + verts[v2]) / 2.0f;
-        if (edge_collapse(mesh, vinfos, v1, v2, new_v, afaces))
+        if (edge_collapse(mesh, mesh_info, v1, v2, new_v, afaces))
             num_collapses += 1;
     }
 
@@ -204,16 +204,14 @@ clean_needles (mve::TriangleMesh::Ptr mesh, float needle_ratio_thres)
 std::size_t
 clean_caps (mve::TriangleMesh::Ptr mesh)
 {
-    mve::VertexInfoList vinfos(mesh);
+    mve::MeshInfo mesh_info(mesh);
     mve::TriangleMesh::VertexList& verts = mesh->get_vertices();
     std::size_t num_collapses = 0;
     for (std::size_t v1 = 0; v1 < verts.size(); ++v1)
     {
-        mve::MeshVertexInfo& vinfo = vinfos[v1];
-
-        if (vinfo.vclass != mve::VERTEX_CLASS_SIMPLE)
+        mve::MeshInfo::VertexInfo& vinfo = mesh_info[v1];
+        if (vinfo.vclass != mve::MeshInfo::VERTEX_CLASS_SIMPLE)
             continue;
-
         if (vinfo.verts.size() != 3)
             continue;
 
@@ -226,12 +224,12 @@ clean_caps (mve::TriangleMesh::Ptr mesh)
         std::size_t v2 = edge_len[0].second;
 
         std::vector<std::size_t> afaces;
-        vinfos.get_faces_for_edge(v1, v2, &afaces);
+        mesh_info.get_faces_for_edge(v1, v2, &afaces);
         if (afaces.size() != 2)
             continue;
 
         /* Edge collapse fails if (v2 - v1) is not coplanar to triangle. */
-        if (edge_collapse(mesh, vinfos, v1, v2, verts[v2], afaces))
+        if (edge_collapse(mesh, mesh_info, v1, v2, verts[v2], afaces))
             num_collapses += 1;
     }
 
