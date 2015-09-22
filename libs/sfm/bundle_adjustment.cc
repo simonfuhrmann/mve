@@ -28,14 +28,6 @@
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
-/*
- * A few notes and TODOs.
- *
- * - PBA normalizes focal length and depth values before LM optimization,
- *   and denormalizes afterwards. Is this necessary with double?
- * - PBA exits the LM main loop if norm of -JF is small. Useful?
- */
-
 BundleAdjustment::Status
 BundleAdjustment::optimize (void)
 {
@@ -53,9 +45,9 @@ BundleAdjustment::sanity_checks (void)
     /* Check for null arguments. */
     if (this->cameras == nullptr)
         throw std::invalid_argument("No cameras given");
-    if (this->points_3d == nullptr)
+    if (this->points == nullptr)
         throw std::invalid_argument("No tracks given");
-    if (this->points_2d == nullptr)
+    if (this->observations == nullptr)
         throw std::invalid_argument("No observations given");
 
     /* Check for valid focal lengths. */
@@ -64,14 +56,14 @@ BundleAdjustment::sanity_checks (void)
             throw std::invalid_argument("Camera with invalid focal length");
 
     /* Check for valid IDs in the observations. */
-    for (std::size_t i = 0; i < this->points_2d->size(); ++i)
+    for (std::size_t i = 0; i < this->observations->size(); ++i)
     {
-        Point2D const& p2d = this->points_2d->at(i);
-        if (p2d.camera_id < 0
-            || p2d.camera_id >= static_cast<int>(this->cameras->size()))
+        Observation const& obs = this->observations->at(i);
+        if (obs.camera_id < 0
+            || obs.camera_id >= static_cast<int>(this->cameras->size()))
             throw std::invalid_argument("Observation with invalid camera ID");
-        if (p2d.point3d_id < 0
-            || p2d.point3d_id >= static_cast<int>(this->points_3d->size()))
+        if (obs.point_id < 0
+            || obs.point_id >= static_cast<int>(this->points->size()))
             throw std::invalid_argument("Observation with invalid track ID");
     }
 }
@@ -204,15 +196,15 @@ void
 BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
     DenseVectorType const* delta_x)
 {
-    if (vector_f->size() != this->points_2d->size() * 2)
-        vector_f->resize(this->points_2d->size() * 2);
+    if (vector_f->size() != this->observations->size() * 2)
+        vector_f->resize(this->observations->size() * 2);
 
 //#pragma omp parallel for
-    for (std::size_t i = 0; i < this->points_2d->size(); ++i)
+    for (std::size_t i = 0; i < this->observations->size(); ++i)
     {
-        Point2D const& p2d = this->points_2d->at(i);
-        Point3D const& p3d = this->points_3d->at(p2d.point3d_id);
-        Camera const& cam = this->cameras->at(p2d.camera_id);
+        Observation const& obs = this->observations->at(i);
+        Point3D const& p3d = this->points->at(obs.point_id);
+        Camera const& cam = this->cameras->at(obs.camera_id);
 
         double const* flen = &cam.focal_length;
         double const* dist = cam.distortion;
@@ -224,8 +216,8 @@ BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
         Camera new_camera;
         if (delta_x != nullptr)
         {
-            std::size_t cam_id = p2d.camera_id * 9;
-            std::size_t pt_id = p2d.point3d_id * 3;
+            std::size_t cam_id = obs.camera_id * 9;
+            std::size_t pt_id = obs.point_id * 3;
 
             if (this->opts.bundle_mode & BA_CAMERAS)
             {
@@ -260,8 +252,8 @@ BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
         this->radial_distort(rp + 0, rp + 1, dist);
 
         /* Compute reprojection error. */
-        vector_f->at(i * 2 + 0) = rp[0] * (*flen) - p2d.pos[0];
-        vector_f->at(i * 2 + 1) = rp[1] * (*flen) - p2d.pos[1];
+        vector_f->at(i * 2 + 0) = rp[0] * (*flen) - obs.pos[0];
+        vector_f->at(i * 2 + 1) = rp[1] * (*flen) - obs.pos[1];
     }
 }
 
@@ -308,27 +300,27 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
     SparseMatrixType* jac_points)
 {
     std::size_t const camera_cols = this->cameras->size() * 9;
-    std::size_t const point_cols = this->points_3d->size() * 3;
-    std::size_t const jacobi_rows = this->points_2d->size() * 2;
+    std::size_t const point_cols = this->points->size() * 3;
+    std::size_t const jacobi_rows = this->observations->size() * 2;
 
     SparseMatrixType::Triplets cam_triplets, point_triplets;
     if (jac_cam != nullptr)
-        cam_triplets.reserve(this->points_2d->size() * 9 * 2);
+        cam_triplets.reserve(this->observations->size() * 9 * 2);
     if (jac_points != nullptr)
-        point_triplets.reserve(this->points_2d->size() * 3 * 2);
+        point_triplets.reserve(this->observations->size() * 3 * 2);
 
     double cam_x_ptr[9], cam_y_ptr[9], point_x_ptr[3], point_y_ptr[3];
-    for (std::size_t i = 0; i < this->points_2d->size(); ++i)
+    for (std::size_t i = 0; i < this->observations->size(); ++i)
     {
-        Point2D const& p2d = this->points_2d->at(i);
-        Point3D const& p3d = this->points_3d->at(p2d.point3d_id);
-        Camera const& cam = this->cameras->at(p2d.camera_id);
+        Observation const& obs = this->observations->at(i);
+        Point3D const& p3d = this->points->at(obs.point_id);
+        Camera const& cam = this->cameras->at(obs.camera_id);
         this->analytic_jacobian_entries(cam, p3d,
             cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
 
         std::size_t row_x = i * 2, row_y = row_x + 1;
-        std::size_t cam_col = p2d.camera_id * 9;
-        std::size_t point_col = p2d.point3d_id * 3;
+        std::size_t cam_col = obs.camera_id * 9;
+        std::size_t point_col = obs.point_id * 3;
         for (int j = 0; jac_cam != nullptr && j < 9; ++j)
         {
             cam_triplets.emplace_back(row_x, cam_col + j, cam_x_ptr[j]);
@@ -476,10 +468,10 @@ BundleAdjustment::update_parameters (DenseVectorType const& delta_x)
     if (this->opts.bundle_mode & BA_POINTS)
     {
 
-        for (std::size_t i = 0; i < this->points_3d->size(); ++i)
-            this->update_point(this->points_3d->at(i),
+        for (std::size_t i = 0; i < this->points->size(); ++i)
+            this->update_point(this->points->at(i),
                 delta_x.data() + num_camera_params + i * 3,
-                &this->points_3d->at(i));
+                &this->points->at(i));
     }
 }
 

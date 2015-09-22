@@ -19,9 +19,35 @@
 #include "sfm/ba_linear_solver.h"
 #include "sfm/ba_types.h"
 
+/*
+ * A few notes.
+ *
+ * - PBA normalizes focal length and depth values before LM optimization,
+ *   and denormalizes afterwards. Is this necessary with double?
+ * - PBA exits the LM main loop if norm of -JF is small. Useful?
+ * - The slowest part is computing the Schur complement because of matrix
+ *   multiplications. How can this be improved?
+ *
+ * Actual TODOs.
+ *
+ * - Better preconditioner for conjugate gradient, i.e., use the 9x9 diagonal
+ *   blocks of S instead of B. Requires method in matrix.
+ * - Fix or investigate LM increments and gain ratio.
+ * - Change meaning of delta threshold: Use length of parameter vector delta.
+ * - Properly implement and test BA_POINTS mode.
+ */
+
 SFM_NAMESPACE_BEGIN
 SFM_BA_NAMESPACE_BEGIN
 
+/**
+ * A simple bundle adjustment optimization implementation.
+ * The algorithm requires good initial camera parameters and 3D points, as
+ * well as observations of the 3D points in the cameras. The algorithm
+ * then optimizes the 3D point positions and camera parameters in order to
+ * minimize the reprojection errors, i.e., the distances from the point
+ * projections to the observations.
+ */
 class BundleAdjustment
 {
 public:
@@ -64,8 +90,8 @@ public:
     BundleAdjustment (Options const& options);
 
     void set_cameras (std::vector<Camera>* cameras);
-    void set_points_3d (std::vector<Point3D>* points_3d);
-    void set_points_2d (std::vector<Point2D>* points_2d);
+    void set_points (std::vector<Point3D>* points);
+    void set_observations (std::vector<Observation>* observations);
 
     Status optimize (void);
     void print_status (bool detailed = false) const;
@@ -102,8 +128,8 @@ private:
     Status status;
     util::Logging log;
     std::vector<Camera>* cameras;
-    std::vector<Point3D>* points_3d;
-    std::vector<Point2D>* points_2d;
+    std::vector<Point3D>* points;
+    std::vector<Observation>* observations;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -137,8 +163,8 @@ BundleAdjustment::BundleAdjustment (Options const& options)
         ? util::Logging::LOG_DEBUG
         : util::Logging::LOG_INFO)
     , cameras(nullptr)
-    , points_3d(nullptr)
-    , points_2d(nullptr)
+    , points(nullptr)
+    , observations(nullptr)
 {
 }
 
@@ -149,15 +175,15 @@ BundleAdjustment::set_cameras (std::vector<Camera>* cameras)
 }
 
 inline void
-BundleAdjustment::set_points_3d (std::vector<Point3D>* points_3d)
+BundleAdjustment::set_points (std::vector<Point3D>* points)
 {
-    this->points_3d = points_3d;
+    this->points = points;
 }
 
 inline void
-BundleAdjustment::set_points_2d (std::vector<Point2D>* points_2d)
+BundleAdjustment::set_observations (std::vector<Observation>* points_2d)
 {
-    this->points_2d = points_2d;
+    this->observations = points_2d;
 }
 
 SFM_BA_NAMESPACE_END
