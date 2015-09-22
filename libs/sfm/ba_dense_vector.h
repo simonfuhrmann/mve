@@ -10,9 +10,11 @@
 #ifndef SFM_BA_DENSE_VECTOR_HEADER
 #define SFM_BA_DENSE_VECTOR_HEADER
 
+#include <cmath>
 #include <stdexcept>
 #include <vector>
 
+#include "math/defines.h"
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
@@ -43,6 +45,8 @@ public:
     T& at (std::size_t index);
     T const& at (std::size_t index) const;
 
+    T norm (void) const;
+    T squared_norm (void) const;
     T dot (DenseVector const& rhs) const;
     DenseVector add (DenseVector const& rhs) const;
     DenseVector subtract (DenseVector const& rhs) const;
@@ -182,6 +186,23 @@ T const&
 DenseVector<T>::at (std::size_t index) const
 {
     return this->values[index];
+}
+
+template <typename T>
+inline T
+DenseVector<T>::norm (void) const
+{
+    return std::sqrt(this->squared_norm());
+}
+
+template <typename T>
+T
+DenseVector<T>::squared_norm (void) const
+{
+    T ret(0);
+    for (std::size_t i = 0; i < this->size(); ++i)
+        ret += MATH_POW2(this->values[i]);
+    return ret;
 }
 
 template <typename T>
