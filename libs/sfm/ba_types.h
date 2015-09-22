@@ -27,11 +27,11 @@ struct Point3D
 };
 
 /** Observation of a 3D point for a camera. */
-struct Point2D
+struct Observation
 {
     double pos[2];
     int camera_id;
-    int point3d_id;
+    int point_id;
 };
 
 /* ------------------------ Implementation ------------------------ */

@@ -92,16 +92,16 @@ main (void)
     std::vector<sfm::ba::Point3D> p3d;
     make_points(&p3d);
 
-    std::vector<sfm::ba::Point2D> p2d;
+    std::vector<sfm::ba::Observation> p2d;
     for (std::size_t i = 0; i < p3d.size(); ++i)
     {
-        sfm::ba::Point2D obs1;
+        sfm::ba::Observation obs1;
         obs1.camera_id = 0;
-        obs1.point3d_id = i;
+        obs1.point_id = i;
         project(cams[0], p3d[i], obs1.pos);
 
 
-        sfm::ba::Point2D obs2 = obs1;
+        sfm::ba::Observation obs2 = obs1;
         obs2.camera_id = 1;
         project(cams[1], p3d[i], obs2.pos);
 
@@ -113,8 +113,8 @@ main (void)
     ba_opts.verbose_output = true;
     sfm::ba::BundleAdjustment ba(ba_opts);
     ba.set_cameras(&cams);
-    ba.set_points_3d(&p3d);
-    ba.set_points_2d(&p2d);
+    ba.set_points(&p3d);
+    ba.set_observations(&p2d);
     ba.optimize();
     ba.print_status();
 

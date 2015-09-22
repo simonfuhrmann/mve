@@ -280,7 +280,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     }
 
     /* Convert tracks and observations to BA data structures. */
-    std::vector<ba::Point2D> ba_points_2d;
+    std::vector<ba::Observation> ba_points_2d;
     std::vector<ba::Point3D> ba_points_3d;
     std::vector<int> ba_tracks_mapping(this->tracks->size(), -1);
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
@@ -308,10 +308,10 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
             Viewport const& view = this->viewports->at(view_id);
             math::Vec2f const& f2d = view.features.positions[feature_id];
 
-            ba::Point2D point;
+            ba::Observation point;
             std::copy(f2d.begin(), f2d.end(), point.pos);
             point.camera_id = ba_cameras_mapping[view_id];
-            point.point3d_id = ba_tracks_mapping[i];
+            point.point_id = ba_tracks_mapping[i];
             ba_points_2d.push_back(point);
         }
     }
@@ -319,8 +319,8 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     /* Run bundle adjustment. */
     ba::BundleAdjustment ba(ba_opts);
     ba.set_cameras(&ba_cameras);
-    ba.set_points_3d(&ba_points_3d);
-    ba.set_points_2d(&ba_points_2d);
+    ba.set_points(&ba_points_3d);
+    ba.set_observations(&ba_points_2d);
     ba.optimize();
     ba.print_status();
 
