@@ -128,9 +128,10 @@ void
 mesh_components (TriangleMesh::Ptr mesh, std::size_t vertex_threshold)
 {
     MeshInfo mesh_info(mesh);
-    std::vector<int> component_per_vertex(mesh_info.size(), -1);
+    std::size_t const num_vertices = mesh->get_vertices().size();
+    std::vector<int> component_per_vertex(num_vertices, -1);
     int current_component = 0;
-    for (std::size_t i = 0; i < mesh_info.size(); ++i)
+    for (std::size_t i = 0; i < num_vertices; ++i)
     {
         /* Start with a vertex that has no component yet. */
         if (component_per_vertex[i] >= 0)
@@ -163,7 +164,7 @@ mesh_components (TriangleMesh::Ptr mesh, std::size_t vertex_threshold)
         components_size[component_per_vertex[i]] += 1;
 
     /* Mark vertices to be deleted if part of a small component. */
-    TriangleMesh::DeleteList delete_list(mesh_info.size(), false);
+    TriangleMesh::DeleteList delete_list(num_vertices, false);
     for (std::size_t i = 0; i < component_per_vertex.size(); ++i)
         if (components_size[component_per_vertex[i]] <= vertex_threshold)
             delete_list[i] = true;
