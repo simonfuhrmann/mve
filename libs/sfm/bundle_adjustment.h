@@ -33,7 +33,6 @@
  * - Better preconditioner for conjugate gradient, i.e., use the 9x9 diagonal
  *   blocks of S instead of B. Requires method in matrix.
  * - Fix or investigate LM increments and gain ratio.
- * - Change meaning of delta threshold: Use length of parameter vector delta.
  * - Properly implement and test BA_POINTS mode.
  */
 
@@ -140,7 +139,7 @@ BundleAdjustment::Options::Options (void)
     , bundle_mode(BA_CAMERAS_AND_POINTS)
     , lm_max_iterations(20)
     , lm_min_iterations(0)
-    , lm_delta_threshold(1e-16)
+    , lm_delta_threshold(1e-8)
     , lm_mse_threshold(1e-8)
 {
 }

@@ -151,7 +151,7 @@ BundleAdjustment::lm_optimize (void)
             std::swap(F, F_new);
             current_mse = new_mse;
 
-            /* Compute trust region update. */
+            /* Compute trust region update. FIXME delta_norm or mse? */
             double const gain_ratio = delta_mse * (F.size() / 2)
                 / cg_status.predicted_error_decrease;
             double const trust_region_update = 1.0 / std::max(1.0 / 3.0,
@@ -173,19 +173,26 @@ BundleAdjustment::lm_optimize (void)
             pcg_opts.trust_region_radius *= TRUST_REGION_RADIUS_DECREMENT;
         }
 
-        /* Check termination of LM iterations. */
+        /* Check termination due to LM iterations. */
         if (lm_iter + 1 < this->opts.lm_min_iterations)
             continue;
-
         if (lm_iter + 1 >= this->opts.lm_max_iterations)
         {
-            LOG_I << "BA: Reached max LM iterations." << std::endl;
+            LOG_I << "BA: Reached maximum LM iterations of "
+                << this->opts.lm_max_iterations << std::endl;
             break;
         }
-        if (successful_iteration && delta_mse < this->opts.lm_delta_threshold)
+
+        /* Check threshold on the norm of delta_x. */
+        if (successful_iteration)
         {
-            LOG_I << "BA: Satisfied MSE delta threshold." << std::endl;
-            break;
+            double const delta_norm = delta_x.norm();
+            if (delta_norm < this->opts.lm_delta_threshold)
+            {
+                LOG_I << "BA: Satisfied delta norm threshold of "
+                    << this->opts.lm_delta_threshold << std::endl;
+                break;
+            }
         }
     }
 

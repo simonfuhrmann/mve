@@ -79,7 +79,7 @@ namespace
         x *= cam.focal_length * rd_factor;
         p2d[0] = x[0];
         p2d[1] = x[1];
-        std::cout << "Projection: " << x << std::endl;
+        //std::cout << "Projection: " << x << std::endl;
     }
 }
 
@@ -92,7 +92,7 @@ main (void)
     std::vector<sfm::ba::Point3D> p3d;
     make_points(&p3d);
 
-    std::vector<sfm::ba::Observation> p2d;
+    std::vector<sfm::ba::Observation> observations;
     for (std::size_t i = 0; i < p3d.size(); ++i)
     {
         sfm::ba::Observation obs1;
@@ -105,16 +105,18 @@ main (void)
         obs2.camera_id = 1;
         project(cams[1], p3d[i], obs2.pos);
 
-        p2d.push_back(obs1);
-        p2d.push_back(obs2);
+        observations.push_back(obs1);
+        observations.push_back(obs2);
     }
 
     sfm::ba::BundleAdjustment::Options ba_opts;
     ba_opts.verbose_output = true;
+    ba_opts.lm_mse_threshold = 1e-16;
+    ba_opts.lm_delta_threshold = 1e-8;
     sfm::ba::BundleAdjustment ba(ba_opts);
     ba.set_cameras(&cams);
     ba.set_points(&p3d);
-    ba.set_observations(&p2d);
+    ba.set_observations(&observations);
     ba.optimize();
     ba.print_status();
 
