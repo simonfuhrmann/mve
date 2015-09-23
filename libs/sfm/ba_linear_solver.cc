@@ -157,6 +157,10 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     v.negate_self();
     w.negate_self();
 
+    /* Save diagonal for computing predicted error decrease */
+    SparseMatrixType B_diag = B.diagonal_matrix();
+    SparseMatrixType C_diag = C.diagonal_matrix();
+
     /* Add regularization to C and B. */
     C.mult_diagonal(1.0 + 1.0 / this->opts.trust_region_radius);
     B.mult_diagonal(1.0 + 1.0 / this->opts.trust_region_radius);
@@ -220,10 +224,10 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
 
     /* Compute predicted error decrease */
     status.predicted_error_decrease = 0.0;
-    status.predicted_error_decrease += delta_y.dot(
-        (delta_y.multiply(1.0 / this->opts.trust_region_radius).add(v)));
-    status.predicted_error_decrease += delta_z.dot(
-        (delta_z.multiply(1.0 / this->opts.trust_region_radius).add(w)));
+    status.predicted_error_decrease += delta_y.dot(B_diag.multiply(
+        delta_y).multiply(1.0 / this->opts.trust_region_radius).add(v));
+    status.predicted_error_decrease += delta_z.dot(C_diag.multiply(
+        delta_z).multiply(1.0 / this->opts.trust_region_radius).add(w));
 
     return status;
 }
@@ -237,6 +241,7 @@ LinearSolver::solve (SparseMatrixType const& J,
     DenseVectorType const& F = vector_f;
     SparseMatrixType Jt = J.transpose();
     SparseMatrixType H = Jt.multiply(J);
+    SparseMatrixType H_diag = H.diagonal_matrix();
 
     /* Compute RHS. */
     DenseVectorType g = Jt.multiply(F);
@@ -290,8 +295,8 @@ LinearSolver::solve (SparseMatrixType const& J,
         throw std::invalid_argument("Unsupported block_size in linear solver");
     }
 
-    status.predicted_error_decrease = delta_x->dot(
-        delta_x->multiply(1.0 / this->opts.trust_region_radius).add(g));
+    status.predicted_error_decrease = delta_x->dot(H_diag.multiply(
+        *delta_x).multiply(1.0 / this->opts.trust_region_radius).add(g));
 
     return status;
 }
