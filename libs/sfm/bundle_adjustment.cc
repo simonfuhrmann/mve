@@ -474,7 +474,6 @@ BundleAdjustment::update_parameters (DenseVectorType const& delta_x)
     /* Update points. */
     if (this->opts.bundle_mode & BA_POINTS)
     {
-
         for (std::size_t i = 0; i < this->points->size(); ++i)
             this->update_point(this->points->at(i),
                 delta_x.data() + num_camera_params + i * 3,
