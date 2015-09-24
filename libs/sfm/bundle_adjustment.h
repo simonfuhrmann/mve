@@ -32,8 +32,9 @@
  *
  * - Better preconditioner for conjugate gradient, i.e., use the 9x9 diagonal
  *   blocks of S instead of B. Requires method in matrix.
- * - Fix or investigate LM increments and gain ratio.
  * - Properly implement and test BA_POINTS mode.
+ * - More accurate implementations for the Jacobian (currently approximated).
+ * - Implement block_size = 9 in linear solver, no need for CG
  */
 
 SFM_NAMESPACE_BEGIN

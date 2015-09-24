@@ -14,7 +14,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "math/defines.h"
 #include "sfm/defines.h"
 
 SFM_NAMESPACE_BEGIN
@@ -199,10 +198,7 @@ template <typename T>
 T
 DenseVector<T>::squared_norm (void) const
 {
-    T ret(0);
-    for (std::size_t i = 0; i < this->size(); ++i)
-        ret += MATH_POW2(this->values[i]);
-    return ret;
+    return this->dot(*this);
 }
 
 template <typename T>
