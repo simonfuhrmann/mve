@@ -310,7 +310,7 @@ load_bundler_ps_intern (std::string const& filename, BundleFormat format)
         || num_features < 0 || num_features > 100000000)
         throw util::Exception("Spurious amount of cameras or features");
 
-    /* Print message according to deteected parser format. */
+    /* Print message according to detected parser format. */
     std::cout << "Reading " << parser_string << " file ("
         << num_views << " cameras, "
         << num_features << " features)..." << std::endl;
