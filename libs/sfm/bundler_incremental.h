@@ -74,6 +74,8 @@ public:
     void bundle_adjustment_full (void);
     /** Runs bundle adjustment on a single camera without structure. */
     void bundle_adjustment_single_cam (int view_id);
+    /** Runs bundle adjustment on the structure (3D points) only. */
+    void bundle_adjustment_points_only (void);
 
     /** Transforms the bundle for numerical stability. */
     void normalize_scene (void);

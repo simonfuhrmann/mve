@@ -107,7 +107,7 @@ BundleAdjustment::lm_optimize (void)
                 this->analytic_jacobian(nullptr, &Jp);
                 break;
             default:
-                throw std::runtime_error("");
+                throw std::runtime_error("Invalid bundle mode");
         }
 
         /* Perform linear step. */
