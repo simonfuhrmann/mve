@@ -244,7 +244,18 @@ Incremental::bundle_adjustment_full (void)
 void
 Incremental::bundle_adjustment_single_cam (int view_id)
 {
+    if (view_id < 0 || std::size_t(view_id) >= this->viewports->size()
+        || !this->viewports->at(view_id).pose.is_valid())
+        throw std::invalid_argument("Invalid view ID");
     this->bundle_adjustment_intern(view_id);
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Incremental::bundle_adjustment_points_only (void)
+{
+    this->bundle_adjustment_intern(-2);
 }
 
 /* ---------------------------------------------------------------- */
@@ -256,8 +267,12 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     ba_opts.verbose_output = true;
     if (single_camera_ba >= 0)
         ba_opts.bundle_mode = ba::BundleAdjustment::BA_CAMERAS;
-    else
+    else if (single_camera_ba == -2)
+        ba_opts.bundle_mode = ba::BundleAdjustment::BA_POINTS;
+    else if (single_camera_ba == -1)
         ba_opts.bundle_mode = ba::BundleAdjustment::BA_CAMERAS_AND_POINTS;
+    else
+        throw std::invalid_argument("Invalid BA mode selection");
 
     /* Convert camera to BA data structures. */
     std::vector<ba::Camera> ba_cameras;
@@ -267,7 +282,8 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         if (single_camera_ba >= 0 && int(i) != single_camera_ba)
             continue;
 
-        CameraPose const& pose = this->viewports->at(i).pose;
+        Viewport const& view = this->viewports->at(i);
+        CameraPose const& pose = view.pose;
         if (!pose.is_valid())
             continue;
 
@@ -275,6 +291,8 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         cam.focal_length = pose.get_focal_length();
         std::copy(pose.t.begin(), pose.t.end(), cam.translation);
         std::copy(pose.R.begin(), pose.R.end(), cam.rotation);
+        std::copy(view.radial_distortion,
+            view.radial_distortion + 2, cam.distortion);
         ba_cameras_mapping[i] = ba_cameras.size();
         ba_cameras.push_back(cam);
     }
@@ -323,7 +341,6 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
     ba.set_observations(&ba_points_2d);
     ba.optimize();
     ba.print_status();
-
 
     /* Transfer cameras back to SfM data structures. */
     std::size_t ba_cam_counter = 0;

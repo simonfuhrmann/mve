@@ -288,6 +288,7 @@ LinearSolver::solve (SparseMatrixType const& J,
         invert_block_matrix_3x3_inplace(&H);
         *delta_x = H.multiply(g);
         status.success = true;
+        status.num_cg_iterations = 0;
     }
     else
     {
