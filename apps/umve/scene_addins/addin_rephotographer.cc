@@ -153,6 +153,8 @@ AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
         GL_RENDERBUFFER, renderbuffer[1]);
     this->repaint();
 
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
     /* Read color image from OpenGL. */
     mve::ByteImage::Ptr image = mve::ByteImage::create(width, height, 3);
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image->begin());
