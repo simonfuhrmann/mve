@@ -131,7 +131,9 @@ load_8bit_image (std::string const& fname, std::string* exif)
             return mve::image::load_file(fname);
     }
     catch (...)
-    { }
+    {
+        throw;
+    }
 
     return mve::ByteImage::Ptr();
 }
@@ -631,7 +633,15 @@ import_bundle (AppSettings const& conf)
             /* For Noah datasets, load original image and undistort it. */
             std::string orig_fname
                 = util::fs::join_path(image_path, orig_files[i]);
-            original = load_8bit_image(orig_fname, &exif);
+            try
+            {
+                original = load_8bit_image(orig_fname, &exif);
+            }
+            catch (util::Exception &e)
+            {
+                std::cerr << orig_fname << ": " << e.what() << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
             thumb = create_thumbnail(original);
 
             /* Convert Bundler's focal length to MVE focal length. */
@@ -662,10 +672,23 @@ import_bundle (AppSettings const& conf)
                 + util::string::get_filled(num_valid_cams, 4) + ".jpg");
 
             /* Try the newer file name and fall back if not existing. */
-            if (util::fs::file_exists(undist_new_filename.c_str()))
-                undist = mve::image::load_file(undist_new_filename);
-            else
-                undist = mve::image::load_file(undist_old_filename);
+            try
+            {
+                if (util::fs::file_exists(undist_new_filename.c_str()))
+                    undist = mve::image::load_file(undist_new_filename);
+                else
+                    undist = mve::image::load_file(undist_old_filename);
+            }
+            catch (util::FileException &e)
+            {
+                std::cerr << e.filename << ": " << e.what() << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+            catch (util::Exception &e)
+            {
+                std::cerr << e.what() << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
 
             /* Create thumbnail. */
             thumb = create_thumbnail(undist);
