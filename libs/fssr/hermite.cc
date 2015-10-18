@@ -78,7 +78,7 @@ find_root_cubic (double a0, double a1, double a2, double a3)
         root[1] = -(root[0] + root[2] + a2);
 
         /* Check how many roots are in [0, 1]. */
-        double the_root;
+        double the_root = 0.0;
         int num_roots = 0;
         for (int i = 0; i < 3; ++i)
             if (root[i] >= 0.0 && root[i] <= 1.0)
@@ -101,7 +101,6 @@ find_root_cubic (double a0, double a1, double a2, double a3)
             /* Find linear interpolant. */
             double const v0 = a0 * a3;
             double const v1 = (a0 + a1 + a2 + 1.0) * a3;
-            //std::cout << "Linear case" << std::endl;
             return find_root_linear(v0, v1 - v0);
 #endif
         }
