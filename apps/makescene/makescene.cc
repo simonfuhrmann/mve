@@ -93,7 +93,7 @@ read_noah_imagelist (std::string const& filename, StringVector& files)
     /*
      * The list of the original images is read from the list.txt file.
      */
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename.c_str(), std::ios::binary);
     if (!in.good())
     {
         std::cerr << "Error: Cannot read bundler list file!" << std::endl;
