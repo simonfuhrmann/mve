@@ -25,6 +25,10 @@
 #include "scenemanager.h"
 #include "viewinspect.h"
 
+#if QT_VERSION >= 0x050000
+#   include <QWindow>
+#endif
+
 ViewInspect::ViewInspect (QWidget* parent)
     : MainWindowTab(parent)
 {
@@ -438,7 +442,11 @@ ViewInspect::display_byte_image (mve::ByteImage::ConstPtr img)
             }
     }
 
-    this->scroll_image->set_pixmap(QPixmap::fromImage(img_qimage));
+    QPixmap pixmap = QPixmap::fromImage(img_qimage);
+#if QT_VERSION >= 0x050000
+    pixmap.setDevicePixelRatio(this->windowHandle()->devicePixelRatio());
+#endif
+    this->scroll_image->set_pixmap(pixmap);
     this->action_zoom_fit->setEnabled(true);
     this->update_actions();
 }
