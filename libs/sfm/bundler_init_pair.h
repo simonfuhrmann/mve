@@ -100,6 +100,8 @@ private:
     void compute_candidate_pairs (CandidatePairs* candidates);
     double angle_for_pose (CandidatePair const& candidate,
         CameraPose const& pose1, CameraPose const& pose2);
+    float score_for_pair (CandidatePair const& candidate,
+        std::size_t num_inliers, double angle);
     void debug_output (CandidatePair const& candidate,
         std::size_t num_inliers = 0, double angle = 0.0);
 

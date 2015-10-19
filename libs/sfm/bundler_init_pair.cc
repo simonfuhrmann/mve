@@ -25,6 +25,8 @@ InitialPair::compute_pair (Result* result)
         throw std::invalid_argument("Null viewports or tracks");
 
     std::cout << "Searching for initial pair..." << std::endl;
+    result->view_1_id = -1;
+    result->view_2_id = -1;
 
     /* Convert tracks to pairwise information. */
     std::vector<CandidatePair> candidates;
@@ -33,9 +35,15 @@ InitialPair::compute_pair (Result* result)
     /* Sort the candidate pairs by number of matches. */
     std::sort(candidates.rbegin(), candidates.rend());
 
-    /* Search for a good initial pair with few homography inliers. */
+    /*
+     * Search for a good initial pair and return the first pair that
+     * satisfies all thresholds (min matches, max homography inliers,
+     * min triangulation angle). If no pair satisfies all thresholds, the
+     * pair with the best score is returned.
+     */
     bool found_pair = false;
     std::size_t found_pair_id = std::numeric_limits<std::size_t>::max();
+    std::vector<float> pair_scores(candidates.size(), 0.0f);
 #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < candidates.size(); ++i)
     {
@@ -71,6 +79,7 @@ InitialPair::compute_pair (Result* result)
 
         /* Rejects pairs with bad triangulation angle. */
         double const angle = this->angle_for_pose(candidate, pose1, pose2);
+        pair_scores[i] = this->score_for_pair(candidate, num_inliers, angle);
         this->debug_output(candidate, num_inliers, angle);
         if (angle < this->opts.min_triangulation_angle)
             continue;
@@ -87,10 +96,30 @@ InitialPair::compute_pair (Result* result)
         }
     }
 
-    if (!found_pair)
+    /* Return if a pair satisfying all thresholds has been found. */
+    if (found_pair)
+        return;
+
+    /* Return pair with best score (larger than 0.0). */
+    std::cout << "Searching for pair with best score..." << std::endl;
+    float best_score = 0.0f;
+    std::size_t best_pair_id = 0;
+    for (std::size_t i = 0; i < pair_scores.size(); ++i)
     {
-        result->view_1_id = -1;
-        result->view_2_id = -1;
+        if (pair_scores[i] <= best_score)
+            continue;
+
+        best_score = pair_scores[i];
+        best_pair_id = i;
+    }
+
+    /* Recompute pose for pair with best score. */
+    if (best_score > 0.0f)
+    {
+        result->view_1_id = candidates[best_pair_id].view_1_id;
+        result->view_2_id = candidates[best_pair_id].view_2_id;
+        this->compute_pose(candidates[best_pair_id],
+            &result->view_1_pose, &result->view_2_pose);
     }
 }
 
@@ -256,6 +285,27 @@ InitialPair::angle_for_pose (CandidatePair const& candidate,
     return std::acos(cos_angle);
 }
 
+float
+InitialPair::score_for_pair (CandidatePair const& candidate,
+    std::size_t num_inliers, double angle)
+{
+    float const matches = static_cast<float>(candidate.matches.size());
+    float const inliers = static_cast<float>(num_inliers) / matches;
+    float const angle_d = MATH_RAD2DEG(angle);
+
+    /* Score for matches (min: 20, good: 200). */
+    float f1 = 2.0 / (1.0 + std::exp((20.0 - matches) * 6.0 / 200.0)) - 1.0;
+    /* Score for angle (min 1 degree, good 8 degree). */
+    float f2 = 2.0 / (1.0 + std::exp((1.0 - angle_d) * 6.0 / 8.0)) - 1.0;
+    /* Score for H-Inliers (max 70%, good 40%). */
+    float f3 = 2.0 / (1.0 + std::exp((inliers - 0.7) * 6.0 / 0.4)) - 1.0;
+
+    f1 = math::clamp(f1, 0.0f, 1.0f);
+    f2 = math::clamp(f2, 0.0f, 1.0f);
+    f3 = math::clamp(f3, 0.0f, 1.0f);
+    return f1 * f2 * f3;
+}
+
 void
 InitialPair::debug_output (CandidatePair const& candidate,
     std::size_t num_inliers, double angle)
@@ -278,7 +328,7 @@ InitialPair::debug_output (CandidatePair const& candidate,
 
     if (angle > 0.0)
     {
-        message << ", " << std::setw(4)
+        message << ", " << std::setw(5)
             << util::string::get_fixed(MATH_RAD2DEG(angle), 2)
             << " pair angle";
     }
