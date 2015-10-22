@@ -15,15 +15,8 @@
 #ifndef UTIL_TIMER_HEADER
 #define UTIL_TIMER_HEADER
 
+#include <chrono>
 #include <ctime>
-#ifdef _WIN32
-#   ifndef NOMINMAX
-#       define NOMINMAX
-#   endif
-#   include "windows.h"
-#else
-#   include <sys/time.h>
-#endif
 
 #include "util/defines.h"
 
@@ -32,16 +25,15 @@ UTIL_NAMESPACE_BEGIN
 /**
  * Cross-platform high-resolution real-time timer.
  * This implementation returns milli seconds as smallest unit.
- * The windows implementation uses functions with poor precision (~15ms).
  */
 class WallTimer
 {
 private:
-#ifdef _WIN32
-    std::size_t start;
-#else
-    struct timeval start;
-#endif
+    typedef std::chrono::high_resolution_clock TimerClock;
+    typedef std::chrono::time_point<TimerClock> TimerTimePoint;
+    typedef std::chrono::duration<double, std::milli> TimerDurationMs;
+
+    TimerTimePoint start;
 
 public:
     WallTimer (void);
@@ -95,31 +87,14 @@ WallTimer::WallTimer (void)
 inline void
 WallTimer::reset (void)
 {
-#ifdef _WIN32
-    // FIXME: ::GetTickCount64 has poor precision (~10 - 16ms)
-    this->start = ::GetTickCount64();
-#else
-    ::gettimeofday(&this->start, nullptr);
-#endif
+    this->start = TimerClock::now();
 }
 
 inline std::size_t
 WallTimer::get_elapsed (void) const
 {
-#ifdef _WIN32
-    return ::GetTickCount64() - start;
-#else
-    struct timeval cur_time;
-    ::gettimeofday(&cur_time, nullptr);
-    std::size_t ret = (cur_time.tv_sec - start.tv_sec) * 1000;
-    std::size_t cur_ms = cur_time.tv_usec / 1000;
-    std::size_t start_ms = start.tv_usec / 1000;
-    if (cur_ms >= start_ms)
-        ret += (cur_ms - start_ms);
-    else
-        ret -= (start_ms - cur_ms);
-    return ret;
-#endif
+    TimerDurationMs diff = TimerClock::now() - this->start;
+    return diff.count();
 }
 
 inline float
