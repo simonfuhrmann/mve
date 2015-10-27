@@ -3,6 +3,9 @@ cmake_minimum_required (VERSION 3.1)
 project(MVE)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED yes)
+
 if(WIN32 AND NOT UNIX)
 	if(MSVC)
 		set(MVE_BUILD_WITH_SSE2 yes CACHE BOOL "Build MVE with SSE2 support")
