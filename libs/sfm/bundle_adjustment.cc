@@ -451,10 +451,131 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
     point_y_ptr[2] = fz * rd_factor * (r[5] - r[8] * iy);
 #elif JACOBIAN_APPROX_PBA
     /* Computation of Jacobian approximation with one distortion argument. */
-    // TODO
+
+    double rd_derivative_x;
+    double rd_derivative_y;
+
+    rd_derivative_x = 2.0 * ix * ix * (k[0] + 2.0 * k[1] * radius2);
+    rd_derivative_y = 2.0 * iy * iy * (k[0] + 2.0 * k[1] * radius2);
+    rd_derivative_x += rd_factor;
+    rd_derivative_y += rd_factor;
+
+    cam_x_ptr[3] = fz * rd_derivative_x;
+    cam_x_ptr[4] = 0.0;
+    cam_x_ptr[5] = -fz * rd_derivative_x * ix;
+    cam_x_ptr[6] = -fz * rd_derivative_x * ry * ix;
+    cam_x_ptr[7] = fz * rd_derivative_x * (rz + rx * ix);
+    cam_x_ptr[8] = -fz * rd_derivative_x * ry;
+
+    cam_y_ptr[3] = 0.0;
+    cam_y_ptr[4] = fz * rd_derivative_y;
+    cam_y_ptr[5] = -fz * rd_derivative_y * iy;
+    cam_y_ptr[6] = -fz * rd_derivative_y * (rz + ry * iy);
+    cam_y_ptr[7] = fz * rd_derivative_y * rx * iy;
+    cam_y_ptr[8] = fz * rd_derivative_y * rx;
+
+    /*
+     * Compute point derivatives in x, y, and z.
+     */
+    point_x_ptr[0] = fz * rd_derivative_x * (r[0] - r[6] * ix);
+    point_x_ptr[1] = fz * rd_derivative_x * (r[1] - r[7] * ix);
+    point_x_ptr[2] = fz * rd_derivative_x * (r[2] - r[8] * ix);
+
+    point_y_ptr[0] = fz * rd_derivative_y * (r[3] - r[6] * iy);
+    point_y_ptr[1] = fz * rd_derivative_y * (r[4] - r[7] * iy);
+    point_y_ptr[2] = fz * rd_derivative_y * (r[5] - r[8] * iy);
+
 #else
     /* Computation of the full Jacobian. */
-    // TODO
+
+    /*
+     * To keep everything comprehensible the chain rule
+     * is applied excessively
+     */
+    double const f = cam.focal_length;
+
+    double const rd_deriv_rad = k[0] + 2.0 * k[1] * radius2;
+
+    double const rad_deriv_px = 2.0 * ix / pz;
+    double const rad_deriv_py = 2.0 * iy / pz;
+    double const rad_deriv_pz = -2.0 * radius2 / pz;
+
+    double const rd_deriv_px = rd_deriv_rad * rad_deriv_px;
+    double const rd_deriv_py = rd_deriv_rad * rad_deriv_py;
+    double const rd_deriv_pz = rd_deriv_rad * rad_deriv_pz;
+
+    double const ix_deriv_px = 1 / pz;
+    double const ix_deriv_pz = -ix / pz;
+
+    double const iy_deriv_py = 1 / pz;
+    double const iy_deriv_pz = -iy / pz;
+
+    double const ix_deriv_r0 = -ix * ry / pz;
+    double const ix_deriv_r1 = (rz + rx * ix) / pz;
+    double const ix_deriv_r2 = -ry / pz;
+
+    double const iy_deriv_r0 = -(rz + ry * iy) / pz;
+    double const iy_deriv_r1 = rx * iy / pz;
+    double const iy_deriv_r2 = rx / pz;
+
+    double const rad_deriv_r0 = 2.0 * ix * ix_deriv_r0 + 2.0 * iy * iy_deriv_r0;
+    double const rad_deriv_r1 = 2.0 * ix * ix_deriv_r1 + 2.0 * iy * iy_deriv_r1;
+    double const rad_deriv_r2 = 2.0 * ix * ix_deriv_r2 + 2.0 * iy * iy_deriv_r2;
+
+    double const rd_deriv_r0 = rd_deriv_rad * rad_deriv_r0;
+    double const rd_deriv_r1 = rd_deriv_rad * rad_deriv_r1;
+    double const rd_deriv_r2 = rd_deriv_rad * rad_deriv_r2;
+
+    double const ix_deriv_X0 = (r[0] - r[6] * ix) / pz;
+    double const ix_deriv_X1 = (r[1] - r[7] * ix) / pz;
+    double const ix_deriv_X2 = (r[2] - r[8] * ix) / pz;
+
+    double const iy_deriv_X0 = (r[3] - r[6] * iy) / pz;
+    double const iy_deriv_X1 = (r[4] - r[7] * iy) / pz;
+    double const iy_deriv_X2 = (r[5] - r[8] * iy) / pz;
+
+    double const rad_deriv_X0 = 2.0 * ix * ix_deriv_X0 + 2.0 * iy * iy_deriv_X0;
+    double const rad_deriv_X1 = 2.0 * ix * ix_deriv_X1 + 2.0 * iy * iy_deriv_X1;
+    double const rad_deriv_X2 = 2.0 * ix * ix_deriv_X2 + 2.0 * iy * iy_deriv_X2;
+
+    double const rd_deriv_X0 = rd_deriv_rad * rad_deriv_X0;
+    double const rd_deriv_X1 = rd_deriv_rad * rad_deriv_X1;
+    double const rd_deriv_X2 = rd_deriv_rad * rad_deriv_X2;
+
+    /*
+     * Compute translation derivatives
+     * NOTE: px_deriv_t0 = 1
+     */
+    cam_x_ptr[3] = f * (rd_deriv_px * ix + rd_factor * ix_deriv_px);
+    cam_x_ptr[4] = f * (rd_deriv_py * ix); // + rd_factor * ix_deriv_py = 0
+    cam_x_ptr[5] = f * (rd_deriv_pz * ix + rd_factor * ix_deriv_pz);
+
+    cam_y_ptr[3] = f * (rd_deriv_px * iy); // + rd_factor * iy_deriv_px = 0
+    cam_y_ptr[4] = f * (rd_deriv_py * iy + rd_factor * iy_deriv_py);
+    cam_y_ptr[5] = f * (rd_deriv_pz * iy + rd_factor * iy_deriv_pz);
+
+    /*
+     * Compute rotation derivatives
+     */
+    cam_x_ptr[6] = f * (rd_deriv_r0 * ix + rd_factor * ix_deriv_r0);
+    cam_x_ptr[7] = f * (rd_deriv_r1 * ix + rd_factor * ix_deriv_r1);
+    cam_x_ptr[8] = f * (rd_deriv_r2 * ix + rd_factor * ix_deriv_r2);
+
+    cam_y_ptr[6] = f * (rd_deriv_r0 * iy + rd_factor * iy_deriv_r0);
+    cam_y_ptr[7] = f * (rd_deriv_r1 * iy + rd_factor * iy_deriv_r1);
+    cam_y_ptr[8] = f * (rd_deriv_r2 * iy + rd_factor * iy_deriv_r2);
+
+    /*
+     * Compute point derivatives in x, y, and z.
+     */
+    point_x_ptr[0] = f * (rd_deriv_X0 * ix + rd_factor * ix_deriv_X0);
+    point_x_ptr[1] = f * (rd_deriv_X1 * ix + rd_factor * ix_deriv_X1);
+    point_x_ptr[2] = f * (rd_deriv_X2 * ix + rd_factor * ix_deriv_X2);
+
+    point_y_ptr[0] = f * (rd_deriv_X0 * iy + rd_factor * iy_deriv_X0);
+    point_y_ptr[1] = f * (rd_deriv_X1 * iy + rd_factor * iy_deriv_X1);
+    point_y_ptr[2] = f * (rd_deriv_X2 * iy + rd_factor * iy_deriv_X2);
+
 #endif
 }
 
