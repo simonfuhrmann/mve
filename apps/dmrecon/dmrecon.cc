@@ -251,7 +251,7 @@ main (int argc, char** argv)
     fancyProgressPrinter.setBasePath(conf.scene_path);
     fancyProgressPrinter.setNumViews(scene->get_views().size());
     if (conf.progress_style == PROGRESS_FANCY)
-        fancyProgressPrinter.pt_create();
+        fancyProgressPrinter.start();
 
     util::WallTimer timer;
     if (conf.master_id >= 0)
@@ -325,10 +325,7 @@ main (int argc, char** argv)
     }
 
     if (conf.progress_style == PROGRESS_FANCY)
-    {
         fancyProgressPrinter.stop();
-        fancyProgressPrinter.pt_join();
-    }
 
     std::cout << "Reconstruction took "
         << timer.get_elapsed() << "ms." << std::endl;

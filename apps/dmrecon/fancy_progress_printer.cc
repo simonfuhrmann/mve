@@ -7,6 +7,8 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
+#include <chrono>
+
 #include "fancy_progress_printer.h"
 #include "util/system.h"
 
@@ -25,57 +27,66 @@
 #define ANSI_STYLE_CYAN "\x1B[36m"
 #define ANSI_STYLE_WHITE "\x1B[37m"
 
-void*
+void
+FancyProgressPrinter::start()
+{
+    thread = std::thread(&FancyProgressPrinter::run, this);
+    thread.detach();
+}
+
+void
 FancyProgressPrinter::run()
 {
     this->isRunning = true;
     while (this->isRunning)
     {
-        util::system::sleep_sec(1.0f);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
 
+        this->print();
+    }
+}
+
+void
+FancyProgressPrinter::print()
+{
+    std::lock_guard<std::mutex> lock(this->mutex);
+
+    std::cout << ANSI_CURSOR_RESET << ANSI_CLEAR_SCREEN;
+    std::cout << "Reconstructing " << this->basePath << "\n\n  ";
+
+    for (std::vector<ViewStatus>::iterator it = this->viewStatus.begin();
+        it != this->viewStatus.end(); ++it)
+    {
+        switch (*it)
         {
-            util::MutexLock lock(this->mutex);
-
-            std::cout << ANSI_CURSOR_RESET << ANSI_CLEAR_SCREEN;
-            std::cout << "Reconstructing " << this->basePath << "\n\n  ";
-
-            for (std::vector<ViewStatus>::iterator it = this->viewStatus.begin();
-                 it != this->viewStatus.end(); ++it)
-            {
-                switch (*it)
-                {
-                case STATUS_IGNORED:
-                    std::cout << ANSI_STYLE_WHITE << '_';
-                    break;
-                case STATUS_QUEUED:
-                    std::cout << ANSI_STYLE_WHITE << '.';
-                    break;
-                case STATUS_IN_PROGRESS:
-                    std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_YELLOW << '@';
-                    break;
-                case STATUS_DONE:
-                    std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_GREEN << '!';
-                    break;
-                case STATUS_FAILED:
-                    std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_RED << '!';
-                    break;
-                }
-
-                std::cout << ANSI_STYLE_RESET;
-            }
-
-            std::cout << "\n\n";
-
-            for (std::set<mvs::DMRecon const*>::iterator it = this->runningRecons.begin();
-                 it != this->runningRecons.end(); ++it)
-            {
-                mvs::Progress const &p = (*it)->getProgress();
-                std::cout << "View #" << (*it)->getRefViewNr()
-                          << ": filled " << p.filled
-                          << " of " << (p.filled + p.queueSize) << '\n';
-            }
+        case STATUS_IGNORED:
+            std::cout << ANSI_STYLE_WHITE << '_';
+            break;
+        case STATUS_QUEUED:
+            std::cout << ANSI_STYLE_WHITE << '.';
+            break;
+        case STATUS_IN_PROGRESS:
+            std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_YELLOW << '@';
+            break;
+        case STATUS_DONE:
+            std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_GREEN << '!';
+            break;
+        case STATUS_FAILED:
+            std::cout << ANSI_STYLE_BOLD << ANSI_STYLE_RED << '!';
+            break;
         }
+
+        std::cout << ANSI_STYLE_RESET;
     }
 
-    return nullptr;
+    std::cout << "\n\n";
+
+    for (std::set<mvs::DMRecon const*>::iterator it = this->runningRecons.begin();
+        it != this->runningRecons.end(); ++it)
+    {
+        mvs::Progress const &p = (*it)->getProgress();
+        std::cout << "View #" << (*it)->getRefViewNr()
+                  << ": filled " << p.filled
+                  << " of " << (p.filled + p.queueSize) << '\n';
+    }
 }
