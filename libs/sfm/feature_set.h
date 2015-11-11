@@ -52,6 +52,14 @@ public:
         bool keep_descriptors;
     };
 
+#if DISCRETIZE_DESCRIPTORS
+    typedef util::AlignedMemory<unsigned short, 16> SiftDescriptor;
+    typedef util::AlignedMemory<signed short, 16> SurfDescriptor;
+#else
+    typedef util::AlignedMemory<float, 16> SiftDescriptor;
+    typedef util::AlignedMemory<float, 16> SurfDescriptor;
+#endif
+
 public:
     FeatureSet (void);
     explicit FeatureSet (Options const& options);
@@ -93,13 +101,8 @@ private:
     Options opts;
     int num_sift_descriptors;
     int num_surf_descriptors;
-#if DISCRETIZE_DESCRIPTORS
-    util::AlignedMemory<unsigned short, 16> sift_descr;
-    util::AlignedMemory<signed short, 16> surf_descr;
-#else
-    util::AlignedMemory<float, 16> sift_descr;
-    util::AlignedMemory<float, 16> surf_descr;
-#endif
+    SiftDescriptor sift_descr;
+    SurfDescriptor surf_descr;
 };
 
 /* ------------------------ Implementation ------------------------ */
