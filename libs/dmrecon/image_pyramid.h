@@ -13,6 +13,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <mutex>
 
 #include "mve/scene.h"
 #include "mve/view.h"
@@ -21,8 +22,6 @@
 #include "mve/camera.h"
 #include "math/matrix.h"
 #include "dmrecon/defines.h"
-#include "util/thread.h"
-#include "util/thread_locks.h"
 
 MVS_NAMESPACE_BEGIN
 
@@ -74,7 +73,7 @@ public:
     static void cleanup();
 
 private:
-    static util::Mutex metadataMutex;
+    static std::mutex metadataMutex;
     static mve::Scene::Ptr cachedScene;
     static std::string cachedEmbedding;
 

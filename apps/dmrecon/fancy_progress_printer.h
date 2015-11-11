@@ -10,11 +10,12 @@
 #ifndef DMRECON_FANCY_PROGRESS_PRINTER_H
 #define DMRECON_FANCY_PROGRESS_PRINTER_H
 
-#include "util/thread.h"
-#include "dmrecon/dmrecon.h"
-
 #include <set>
 #include <string>
+#include <thread>
+#include <mutex>
+
+#include "dmrecon/dmrecon.h"
 
 class FancyProgressPrinter;
 
@@ -41,7 +42,7 @@ private:
 
 /* -------------------------------------------------------------- */
 
-class FancyProgressPrinter : public util::Thread
+class FancyProgressPrinter
 {
     friend class ProgressHandle;
 
@@ -53,8 +54,10 @@ public:
     void addRefViews(T const& views);
     void addRefView(std::size_t viewID);
 
-    virtual void* run();
+    void run();
     void stop();
+    void print();
+    void start();
 
 private:
     enum ViewStatus
@@ -72,7 +75,8 @@ private:
     void eraseRecon(mvs::DMRecon const *ptr);
 
 private:
-    util::Mutex mutex;
+    std::thread thread;
+    std::mutex mutex;
     std::string basePath;
     bool isRunning;
 
@@ -85,21 +89,21 @@ private:
 inline void
 FancyProgressPrinter::setBasePath(std::string _basePath)
 {
-    util::MutexLock lock(this->mutex);
+    std::lock_guard<std::mutex> lock(this->mutex);
     this->basePath = _basePath;
 }
 
 inline void
 FancyProgressPrinter::setNumViews(std::size_t numViews)
 {
-    util::MutexLock lock(this->mutex);
+    std::lock_guard<std::mutex> lock(this->mutex);
     this->viewStatus.resize(numViews, STATUS_IGNORED);
 }
 
 inline void
 FancyProgressPrinter::addRefView(std::size_t viewID)
 {
-    util::MutexLock lock(this->mutex);
+    std::lock_guard<std::mutex> lock(this->mutex);
     this->viewStatus.at(viewID) = STATUS_QUEUED;
 }
 
@@ -107,7 +111,7 @@ template<class T>
 inline void
 FancyProgressPrinter::addRefViews(T const& views)
 {
-    util::MutexLock lock(this->mutex);
+    std::lock_guard<std::mutex> lock(this->mutex);
     for (typename T::const_iterator it = views.begin(); it != views.end(); ++it)
     {
         if (static_cast<std::size_t>(*it) < this->viewStatus.size())
@@ -118,22 +122,25 @@ FancyProgressPrinter::addRefViews(T const& views)
 inline void
 FancyProgressPrinter::insertRecon(mvs::DMRecon const *ptr)
 {
-    util::MutexLock lock(mutex);
+    std::lock_guard<std::mutex> lock(this->mutex);
     runningRecons.insert(ptr);
 }
 
 inline void
 FancyProgressPrinter::eraseRecon(mvs::DMRecon const *ptr)
 {
-    util::MutexLock lock(this->mutex);
+    std::lock_guard<std::mutex> lock(this->mutex);
     this->runningRecons.erase(ptr);
 }
 
 inline void
 FancyProgressPrinter::stop()
 {
-    util::MutexLock lock(this->mutex);
-    this->isRunning = false;
+    {
+        std::lock_guard<std::mutex> lock(this->mutex);
+        this->isRunning = false;
+    }
+    this->print();
 }
 
 inline void

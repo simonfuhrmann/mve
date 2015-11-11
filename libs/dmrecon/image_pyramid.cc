@@ -99,7 +99,7 @@ ImagePyramid::ConstPtr
 ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
     std::string embeddingName, int minLevel)
 {
-    util::MutexLock lock(ImagePyramidCache::metadataMutex);
+    std::lock_guard<std::mutex> lock(ImagePyramidCache::metadataMutex);
 
     /* Initialize on first access. */
     if (ImagePyramidCache::cachedScene == nullptr)
@@ -134,7 +134,7 @@ ImagePyramidCache::get(mve::Scene::Ptr scene, mve::View::Ptr view,
 void
 ImagePyramidCache::cleanup()
 {
-    util::MutexLock lock(ImagePyramidCache::metadataMutex);
+    std::lock_guard<std::mutex> lock(ImagePyramidCache::metadataMutex);
 
     if (ImagePyramidCache::cachedScene == nullptr)
         return;
@@ -154,7 +154,7 @@ ImagePyramidCache::cleanup()
 }
 
 /* static fields of ImgPyramidCache: */
-util::Mutex ImagePyramidCache::metadataMutex;
+std::mutex ImagePyramidCache::metadataMutex;
 mve::Scene::Ptr ImagePyramidCache::cachedScene;
 std::string ImagePyramidCache::cachedEmbedding = "";
 std::map<int, ImagePyramid::Ptr> ImagePyramidCache::entries;
