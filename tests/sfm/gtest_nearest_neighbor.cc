@@ -9,8 +9,8 @@
 TEST(NearestNeighborTest, TestSingnedShort)
 {
     util::AlignedMemory<short> elements;
-    elements.allocate(8 * 4);
-    short* ptr = elements.begin();
+    elements.resize(8 * 4);
+    short* ptr = elements.data();
 
     // Fill elements.
     (*ptr++) = 127;
@@ -51,7 +51,7 @@ TEST(NearestNeighborTest, TestSingnedShort)
 
     sfm::NearestNeighbor<short>::Result result;
     sfm::NearestNeighbor<short> nn;
-    nn.set_elements(elements.begin(), 4);
+    nn.set_elements(elements.data(), 4);
     nn.set_element_dimensions(8);
 
     short query1[8] = { 127, 0, 0, 0, 0, 0, 0, 0 };
@@ -93,8 +93,8 @@ TEST(NearestNeighborTest, TestSingnedShort)
 TEST(NearestNeighborTest, TestUnsignedShort)
 {
     util::AlignedMemory<unsigned short> elements;
-    elements.allocate(8 * 2);
-    unsigned short* ptr = elements.begin();
+    elements.resize(8 * 2);
+    unsigned short* ptr = elements.data();
 
     // Fill elements.
     (*ptr++) = 255;
@@ -117,7 +117,7 @@ TEST(NearestNeighborTest, TestUnsignedShort)
 
     sfm::NearestNeighbor<unsigned short>::Result result;
     sfm::NearestNeighbor<unsigned short> nn;
-    nn.set_elements(elements.begin(), 2);
+    nn.set_elements(elements.data(), 2);
     nn.set_element_dimensions(8);
 
     unsigned short query1[8] = { 255, 0, 0, 0, 0, 0, 0, 0 };
@@ -145,8 +145,8 @@ TEST(NearestNeighborTest, TestUnsignedShort)
 TEST(NearestNeighborTest, TestFloat)
 {
     util::AlignedMemory<float> elements;
-    elements.allocate(4 * 3);
-    float* ptr = elements.begin();
+    elements.resize(4 * 3);
+    float* ptr = elements.data();
 
     // Fill elements.
     (*ptr++) = 1.0f;
@@ -166,7 +166,7 @@ TEST(NearestNeighborTest, TestFloat)
 
     sfm::NearestNeighbor<float>::Result result;
     sfm::NearestNeighbor<float> nn;
-    nn.set_elements(elements.begin(), 3);
+    nn.set_elements(elements.data(), 3);
     nn.set_element_dimensions(4);
 
     float query1[4] = { 1.0f, 0.0f, 0.0f, 0.0f };

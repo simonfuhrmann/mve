@@ -96,13 +96,13 @@ FeatureSet::compute_sift (mve::ByteImage::ConstPtr image)
     std::size_t offset = this->positions.size();
     this->positions.resize(offset + descr.size());
     this->colors.resize(offset + descr.size());
-    this->sift_descr.allocate(descr.size() * 128);
+    this->sift_descr.resize(descr.size() * 128);
     this->num_sift_descriptors = descr.size();
 
 #if DISCRETIZE_DESCRIPTORS
-    unsigned short* ptr = this->sift_descr.begin();
+    unsigned short* ptr = this->sift_descr.data();
 #else
-    float* ptr = this->sift_descr.begin();
+    float* ptr = this->sift_descr.data();
 #endif
     for (std::size_t i = 0; i < descr.size(); ++i, ptr += 128)
     {
@@ -135,13 +135,13 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
     std::size_t offset = this->positions.size();
     this->positions.resize(offset + descr.size());
     this->colors.resize(offset + descr.size());
-    this->surf_descr.allocate(descr.size() * 64);
+    this->surf_descr.resize(descr.size() * 64);
     this->num_surf_descriptors = descr.size();
 
 #if DISCRETIZE_DESCRIPTORS
-    signed short* ptr = this->surf_descr.begin();
+    signed short* ptr = this->surf_descr.data();
 #else
-    float* ptr = this->surf_descr.begin();
+    float* ptr = this->surf_descr.data();
 #endif
     for (std::size_t i = 0; i < descr.size(); ++i, ptr += 64)
     {
@@ -163,9 +163,9 @@ FeatureSet::match_lowres (FeatureSet const& other, int num_features) const
     {
         sfm::Matching::Result sift_result;
         sfm::Matching::twoway_match(this->opts.sift_matching_opts,
-            this->sift_descr.begin(),
+            this->sift_descr.data(),
             std::min(num_features, this->num_sift_descriptors),
-            other.sift_descr.begin(),
+            other.sift_descr.data(),
             std::min(num_features, other.num_sift_descriptors),
             &sift_result);
         return sfm::Matching::count_consistent_matches(sift_result);
@@ -176,9 +176,9 @@ FeatureSet::match_lowres (FeatureSet const& other, int num_features) const
     {
         sfm::Matching::Result surf_result;
         sfm::Matching::twoway_match(this->opts.surf_matching_opts,
-            this->surf_descr.begin(),
+            this->surf_descr.data(),
             std::min(num_features, this->num_surf_descriptors),
-            other.surf_descr.begin(),
+            other.surf_descr.data(),
             std::min(num_features, other.num_surf_descriptors),
             &surf_result);
         return sfm::Matching::count_consistent_matches(surf_result);
@@ -195,8 +195,8 @@ FeatureSet::match (FeatureSet const& other, Matching::Result* result) const
     if (this->num_sift_descriptors > 0)
     {
         sfm::Matching::twoway_match(this->opts.sift_matching_opts,
-            this->sift_descr.begin(), this->num_sift_descriptors,
-            other.sift_descr.begin(), other.num_sift_descriptors,
+            this->sift_descr.data(), this->num_sift_descriptors,
+            other.sift_descr.data(), other.num_sift_descriptors,
             &sift_result);
         sfm::Matching::remove_inconsistent_matches(&sift_result);
     }
@@ -206,8 +206,8 @@ FeatureSet::match (FeatureSet const& other, Matching::Result* result) const
     if (this->num_surf_descriptors > 0)
     {
         sfm::Matching::twoway_match(this->opts.surf_matching_opts,
-            this->surf_descr.begin(), this->num_surf_descriptors,
-            other.surf_descr.begin(), other.num_surf_descriptors,
+            this->surf_descr.data(), this->num_surf_descriptors,
+            other.surf_descr.data(), other.num_surf_descriptors,
             &surf_result);
         sfm::Matching::remove_inconsistent_matches(&surf_result);
     }
@@ -250,10 +250,10 @@ void
 FeatureSet::clear_descriptors (void)
 {
     this->num_sift_descriptors = 0;
-    this->sift_descr.deallocate();
+    this->sift_descr.clear();
     this->sift_descriptors.clear();
     this->num_surf_descriptors = 0;
-    this->surf_descr.deallocate();
+    this->surf_descr.clear();
     this->surf_descriptors.clear();
 }
 
