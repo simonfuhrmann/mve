@@ -169,6 +169,9 @@ AddinMeshesRenderer::paint_impl (void)
     this->state->surface_shader->bind();
     this->state->surface_shader->send_uniform("lighting",
         static_cast<int>(this->render_lighting_cb->isChecked()));
+    this->state->texture_shader->bind();
+    this->state->texture_shader->send_uniform("lighting",
+        static_cast<int>(this->render_lighting_cb->isChecked()));
 
     /* Draw meshes. */
     QMeshList::MeshList& ml(this->mesh_list->get_meshes());
