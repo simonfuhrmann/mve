@@ -75,10 +75,15 @@ ScrollImage::set_auto_scale (bool value)
 inline void
 ScrollImage::reset_scale (void)
 {
+    double diff_factor = 1.0 / this->get_scale();
+
     this->image->set_scale_factor(1.0);
     this->scale_contents = false;
     //this->scale_factor = 1.0;
     //this->image_label->adjustSize();
+
+    this->adjust_scrollbar(this->horizontalScrollBar(), diff_factor);
+    this->adjust_scrollbar(this->verticalScrollBar(), diff_factor);
 }
 
 inline void
