@@ -13,8 +13,6 @@
 #include <QLabel>
 #include <QMouseEvent>
 
-#define MOUSE_ZOOM_FACTOR (1.0 / 8.0)
-
 /* Scalable image that features click signals. */
 class ClickImage : public QLabel
 {
@@ -22,7 +20,6 @@ class ClickImage : public QLabel
 
 private:
     double scale_factor;
-    QPoint get_image_coordinates (QPoint pnt);
 
 protected:
     void mousePressEvent (QMouseEvent* event);
@@ -34,7 +31,7 @@ signals:
     void mouse_clicked (int x, int y, QMouseEvent* event);
     void mouse_released (int x, int y, QMouseEvent* event);
     void mouse_moved (int x, int y, QMouseEvent* event);
-    void mouse_zoomed (QPoint diff);
+    void mouse_zoomed (int x, int y, QWheelEvent* event);
 
 public:
     ClickImage (void);
@@ -43,6 +40,7 @@ public:
     double get_scale_factor (void) const;
     void set_scale_factor (double factor);
     void update_size (void);
+    QPoint get_image_coordinates (QPoint pnt) const;
 };
 
 /* ---------------------------------------------------------------- */
@@ -104,19 +102,12 @@ ClickImage::mouseMoveEvent (QMouseEvent* event)
 inline void
 ClickImage::wheelEvent (QWheelEvent* event)
 {
-    QPoint old_pnt = this->get_image_coordinates(event->pos());
-
-    float sign = event->delta() > 0 ? 1.0f : -1.0f;
-    this->set_scale_factor(this->scale_factor
-        + this->scale_factor * MOUSE_ZOOM_FACTOR * sign);
-
-    QPoint new_pnt = this->get_image_coordinates(event->pos());
-    QPoint diff = (old_pnt - new_pnt) * this->scale_factor;
-    emit this->mouse_zoomed(diff);
+    QPoint const& pnt = this->get_image_coordinates(event->pos());
+    emit this->mouse_zoomed(pnt.x(), pnt.y(), event);
 }
 
 inline QPoint
-ClickImage::get_image_coordinates (QPoint pnt)
+ClickImage::get_image_coordinates (QPoint pnt) const
 {
     if (this->hasScaledContents())
     {

@@ -31,11 +31,11 @@ ScrollImage::ScrollImage (void)
     this->scale_contents = true;
 
     this->connect(this->image, SIGNAL(mouse_clicked(int, int, QMouseEvent*)),
-                  this, SLOT(mouse_clicked(int,int,QMouseEvent*)));
+                  this, SLOT(mouse_clicked(int, int, QMouseEvent*)));
     this->connect(this->image, SIGNAL(mouse_moved(int, int, QMouseEvent*)),
-                  this, SLOT(mouse_moved(int,int,QMouseEvent*)));
-    this->connect(this->image, SIGNAL(mouse_zoomed(QPoint)),
-                  this, SLOT(mouse_zoomed(QPoint)));
+                  this, SLOT(mouse_moved(int, int, QMouseEvent*)));
+    this->connect(this->image, SIGNAL(mouse_zoomed(int, int, QWheelEvent*)),
+                  this, SLOT(mouse_zoomed(int, int, QWheelEvent*)));
 }
 
 /* ---------------------------------------------------------------- */
@@ -65,10 +65,10 @@ ScrollImage::max_image_size (void)
 /* ---------------------------------------------------------------- */
 
 void
-ScrollImage::set_scale (double factor)
+ScrollImage::set_scale_and_center (double factor)
 {
     double diff_factor = factor / this->get_scale();
-    this->image->set_scale_factor(factor);
+    this->set_scale(factor);
 
     this->adjust_scrollbar(this->horizontalScrollBar(), diff_factor);
     this->adjust_scrollbar(this->verticalScrollBar(), diff_factor);
@@ -104,17 +104,25 @@ ScrollImage::mouse_moved(int, int, QMouseEvent* event)
     if (event->buttons() ^ Qt::LeftButton)
         return;
     QPoint diff = mouse_pos - event->pos();
-    verticalScrollBar()->setValue(verticalScrollBar()->value() + diff.y());
-    horizontalScrollBar()->setValue(horizontalScrollBar()->value() + diff.x());
+    this->move_scrollbar(this->horizontalScrollBar(), diff.x());
+    this->move_scrollbar(this->verticalScrollBar(), diff.y());
 }
 
 /* ---------------------------------------------------------------- */
 
 void
-ScrollImage::mouse_zoomed(QPoint diff)
+ScrollImage::mouse_zoomed(int x, int y, QWheelEvent* event)
 {
-    verticalScrollBar()->setValue(verticalScrollBar()->value() + diff.y());
-    horizontalScrollBar()->setValue(horizontalScrollBar()->value() + diff.x());
+    QPoint old_pnt(x, y);
+    if (event->delta() > 0)
+        this->set_scale(this->get_scale() * MOUSE_ZOOM_IN_FACTOR);
+    else
+        this->set_scale(this->get_scale() * MOUSE_ZOOM_OUT_FACTOR);
+
+    QPoint new_pnt = this->image->get_image_coordinates(event->pos());
+    QPoint diff = (old_pnt - new_pnt) * this->get_scale();
+    this->move_scrollbar(this->horizontalScrollBar(), diff.x());
+    this->move_scrollbar(this->verticalScrollBar(), diff.y());
     this->scale_contents = false;
 }
 
@@ -125,6 +133,12 @@ ScrollImage::adjust_scrollbar (QScrollBar* bar, float factor)
 {
     bar->setValue((int)(factor * bar->value()
         + ((factor - 1) * bar->pageStep() / 2)));
+}
+
+void
+ScrollImage::move_scrollbar (QScrollBar* bar, int delta)
+{
+    bar->setValue(bar->value() + delta);
 }
 
 /* ---------------------------------------------------------------- */
