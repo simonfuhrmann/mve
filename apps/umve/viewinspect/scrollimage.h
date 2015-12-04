@@ -38,9 +38,9 @@ protected:
     void move_scrollbar (QScrollBar* bar, int delta);
 
 private slots:
-    void mouse_moved(int x, int y, QMouseEvent* event);
-    void mouse_clicked(int x, int y, QMouseEvent* event);
-    void mouse_zoomed(int x, int y, QWheelEvent* event);
+    void mouse_moved (int x, int y, QMouseEvent* event);
+    void mouse_clicked (int x, int y, QMouseEvent* event);
+    void mouse_zoomed (int x, int y, QWheelEvent* event);
 
 public:
     ScrollImage (void);

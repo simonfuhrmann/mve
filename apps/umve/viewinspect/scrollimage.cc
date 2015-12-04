@@ -31,11 +31,11 @@ ScrollImage::ScrollImage (void)
     this->scale_contents = true;
 
     this->connect(this->image, SIGNAL(mouse_clicked(int, int, QMouseEvent*)),
-                  this, SLOT(mouse_clicked(int, int, QMouseEvent*)));
+        this, SLOT(mouse_clicked(int, int, QMouseEvent*)));
     this->connect(this->image, SIGNAL(mouse_moved(int, int, QMouseEvent*)),
-                  this, SLOT(mouse_moved(int, int, QMouseEvent*)));
+        this, SLOT(mouse_moved(int, int, QMouseEvent*)));
     this->connect(this->image, SIGNAL(mouse_zoomed(int, int, QWheelEvent*)),
-                  this, SLOT(mouse_zoomed(int, int, QWheelEvent*)));
+        this, SLOT(mouse_zoomed(int, int, QWheelEvent*)));
 }
 
 /* ---------------------------------------------------------------- */
@@ -90,7 +90,7 @@ ScrollImage::resizeEvent (QResizeEvent* event)
 /* ---------------------------------------------------------------- */
 
 void
-ScrollImage::mouse_clicked(int, int, QMouseEvent* event)
+ScrollImage::mouse_clicked (int, int, QMouseEvent* event)
 {
     if (event->button() & Qt::LeftButton)
         mouse_pos = event->pos();
@@ -99,7 +99,7 @@ ScrollImage::mouse_clicked(int, int, QMouseEvent* event)
 /* ---------------------------------------------------------------- */
 
 void
-ScrollImage::mouse_moved(int, int, QMouseEvent* event)
+ScrollImage::mouse_moved (int, int, QMouseEvent* event)
 {
     if (event->buttons() ^ Qt::LeftButton)
         return;
@@ -111,8 +111,13 @@ ScrollImage::mouse_moved(int, int, QMouseEvent* event)
 /* ---------------------------------------------------------------- */
 
 void
-ScrollImage::mouse_zoomed(int x, int y, QWheelEvent* event)
+ScrollImage::mouse_zoomed (int x, int y, QWheelEvent* event)
 {
+    if (!(event->modifiers() & Qt::ControlModifier))
+    {
+        event->ignore();
+        return;
+    }
     QPoint old_pnt(x, y);
     if (event->delta() > 0)
         this->set_scale(this->get_scale() * MOUSE_ZOOM_IN_FACTOR);
