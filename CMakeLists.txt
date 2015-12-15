@@ -6,6 +6,15 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED yes)
 
+# Warning flags
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wundef -pedantic")
+elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything -pedantic")
+endif()
+
 if(WIN32 AND NOT UNIX)
 	if(MSVC)
 		set(MVE_BUILD_WITH_SSE2 yes CACHE BOOL "Build MVE with SSE2 support")
