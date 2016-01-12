@@ -41,7 +41,7 @@ public:
     template<class U>
     struct rebind
     {
-        typedef AlignedAllocator<T, alignment> other;
+        typedef AlignedAllocator<U, alignment> other;
     };
 
 public:
