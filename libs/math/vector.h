@@ -32,6 +32,8 @@ typedef Vector<float,3> Vec3f;
 typedef Vector<float,4> Vec4f;
 typedef Vector<float,5> Vec5f;
 typedef Vector<float,6> Vec6f;
+typedef Vector<float,64> Vec64f;
+typedef Vector<float,128> Vec128f;
 typedef Vector<double,1> Vec1d;
 typedef Vector<double,2> Vec2d;
 typedef Vector<double,3> Vec3d;
@@ -114,7 +116,7 @@ public:
     Vector<T,N>& copy (T const* values, int num = N);
 
     /** Returns the dimension of the vector. */
-    int dim (void) const;
+    static int constexpr dim (void);
 
     /** Returns the smallest element in the vector. */
     T minimum (void) const;
@@ -380,8 +382,8 @@ Vector<T,N>::copy (T const* values, int num)
 }
 
 template <typename T, int N>
-inline int
-Vector<T,N>::dim (void) const
+inline int constexpr
+Vector<T,N>::dim (void)
 {
     return N;
 }
