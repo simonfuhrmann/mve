@@ -29,8 +29,20 @@ struct AppSettings
     bool delete_conf;
     bool delete_colors;
     float conf_threshold;
+    float conf_percentile;
     int component_size;
 };
+
+template <typename T>
+T
+percentile (std::vector<T> const& in, float percent)
+{
+    /* copy the input vector because 'nth_element' will rearrange it */
+    std::vector<T> copy = in;
+    std::size_t n = static_cast<std::size_t>(percent / 100.0f * in.size());
+    std::nth_element(copy.begin(), copy.begin() + n, copy.end());
+    return copy[n];
+}
 
 void
 remove_low_conf_vertices (mve::TriangleMesh::Ptr mesh, float const thres)
@@ -60,6 +72,7 @@ main (int argc, char** argv)
     args.set_helptext_indent(25);
     args.set_usage(argv[0], "[ OPTS ] IN_MESH OUT_MESH");
     args.add_option('t', "threshold", true, "Threshold on the geometry confidence [1.0]");
+    args.add_option('p', "percentile", true, "Use the nth percentile (0 - 100) as confidence threshold [disabled]");
     args.add_option('c', "component-size", true, "Minimum number of vertices per component [1000]");
     args.add_option('n', "no-clean", false, "Prevents cleanup of degenerated faces");
     args.add_option('\0', "delete-scale", false, "Delete scale attribute from mesh");
@@ -75,6 +88,7 @@ main (int argc, char** argv)
     conf.in_mesh = args.get_nth_nonopt(0);
     conf.out_mesh = args.get_nth_nonopt(1);
     conf.conf_threshold = 1.0f;
+    conf.conf_percentile = -1.0f;
     conf.component_size = 1000;
     conf.clean_degenerated = true;
     conf.delete_scale = false;
@@ -86,6 +100,8 @@ main (int argc, char** argv)
     {
         if (arg->opt->lopt == "threshold")
             conf.conf_threshold = arg->get_arg<float>();
+        if (arg->opt->lopt == "percentile")
+            conf.conf_percentile = arg->get_arg<float>();
         else if (arg->opt->lopt == "component-size")
             conf.component_size = arg->get_arg<int>();
         else if (arg->opt->lopt == "no-clean")
@@ -139,6 +155,9 @@ main (int argc, char** argv)
     }
 
     /* Remove low-confidence geometry. */
+    if (conf.conf_percentile > 0.0f)
+        conf.conf_threshold = percentile(mesh->get_vertex_confidences(),
+            conf.conf_percentile);
     if (conf.conf_threshold > 0.0f)
     {
         std::cout << "Removing low-confidence geometry (threshold "
