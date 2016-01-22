@@ -33,15 +33,40 @@ struct AppSettings
     int component_size;
 };
 
-template <typename T>
-T
-percentile (std::vector<T> const& in, float percent)
-{
-    /* copy the input vector because 'nth_element' will rearrange it */
-    std::vector<T> copy = in;
-    std::size_t n = static_cast<std::size_t>(percent / 100.0f * in.size());
-    std::nth_element(copy.begin(), copy.begin() + n, copy.end());
-    return copy[n];
+
+template <class InputIt>
+typename std::iterator_traits<InputIt>::value_type
+percentile(InputIt first, InputIt last, float p) {
+    if (p <= 0.0f || 1.0f <= p)
+        throw std::domain_error("p has to be in the open intervall (0.0,1.0)");
+
+    typedef typename std::iterator_traits<InputIt>::value_type T;
+    typedef typename std::iterator_traits<InputIt>::difference_type D;
+
+    D num_elements = std::distance(first, last);
+    if (num_elements < 1)
+        throw std::invalid_argument("Invalid range");
+
+    bool invert = p > 0.5f;
+    if (invert) p = 1.0f - p;
+
+    InputIt it = first + std::ceil(num_elements * p);
+
+    std::vector<T> heap(first, it);
+    if (invert) std::for_each(heap.begin(), heap.end(), [] (T &v) {v = -v;});
+    std::make_heap(heap.begin(), heap.end());
+
+    for (; it != last; ++it)
+    {
+        T v = invert ? -*it : *it;
+        if (heap.front() < v) continue;
+        heap.push_back(v);
+        std::push_heap(heap.begin(), heap.end());
+        std::pop_heap(heap.begin(), heap.end());
+        heap.pop_back();
+    }
+
+    return invert ? -heap.front() : heap.front();
 }
 
 void
@@ -156,8 +181,13 @@ main (int argc, char** argv)
 
     /* Remove low-confidence geometry. */
     if (conf.conf_percentile > 0.0f)
-        conf.conf_threshold = percentile(mesh->get_vertex_confidences(),
-            conf.conf_percentile);
+    {
+        mve::TriangleMesh::ConfidenceList const & confidences =
+            mesh->get_vertex_confidences();
+        conf.conf_threshold = percentile(confidences.begin(), confidences.end(),
+            conf.conf_percentile / 100.0f);
+    }
+
     if (conf.conf_threshold > 0.0f)
     {
         std::cout << "Removing low-confidence geometry (threshold "
