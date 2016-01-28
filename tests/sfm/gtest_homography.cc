@@ -38,28 +38,6 @@ namespace
         H(1,0) = sin;   H(1,1) = cos;   H(1,2) = -0.2;
         H(2,0) = 0.0;   H(2,1) = 0.0;   H(2,2) = 1.0;
     }
-
-    void
-    add_noise_to_some_correspondences(sfm::Correspondences2D2D& c)
-    {
-        c[8].p1[0] = 0.326288814627068;
-        c[8].p1[1] = 0.117213830798614;
-        c[9].p1[0] = 0.0240626402725487;
-        c[9].p1[1] = 0.263411987273768;
-        c[10].p1[0] = 0.361346210858494;
-        c[10].p1[1] = 0.390211149784608;
-        c[11].p1[0] = 0.242605199466884;
-        c[11].p1[1] = 0.0379430966087662;
-        c[12].p2[0] = 0.122647210549326;
-        c[12].p2[1] = 0.292936166168673;
-        c[13].p2[0] = 0.0667539265113883;
-        c[13].p2[1] = 0.317247752706202;
-        c[14].p2[0] = 0.169893344054385;
-        c[14].p2[1] = 0.0734493351109307;
-        c[15].p2[0] = 0.366559482195224;
-        c[15].p2[1] = 0.497863625648762;
-    }
-
 }  // namespace
 
 TEST(HomographyTest, TestHomographyDLT)
@@ -122,28 +100,3 @@ TEST(RansacHomographyTest, TestEstimate)
     for (int i = 0; i < 9; ++i)
         EXPECT_NEAR((H[i] - H2[i]), 0.0, 1e-6);
 }
-
-#if 0 // not deterministic
-TEST(RansacHomographyTest, TestEstimateNoisy)
-{
-    sfm::Correspondences2D2D c(16);
-    sfm::HomographyMatrix H2;
-    fill_golden_correspondences(c, H2);
-    add_noise_to_some_correspondences(c);
-
-    sfm::RansacHomography::Options options;
-    options.max_iterations = 1000000;
-    sfm::RansacHomography ransac(options);
-    sfm::RansacHomography::Result result;
-    ransac.estimate(c, &result);
-
-    std::vector<int> inliers = result.inliers;
-    std::sort(inliers.begin(), inliers.end());
-    for (std::size_t i = 0; i < inliers.size(); ++i)
-        EXPECT_EQ(inliers[i], i);
-
-    sfm::HomographyMatrix H = result.homography;
-    for (int i = 0; i < 9; ++i)
-        EXPECT_NEAR((H[i] - H2[i]), 0.0, 1e-6);
-}
-#endif
