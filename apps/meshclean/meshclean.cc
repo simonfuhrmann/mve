@@ -100,7 +100,7 @@ main (int argc, char** argv)
     {
         if (arg->opt->lopt == "threshold")
             conf.conf_threshold = arg->get_arg<float>();
-        if (arg->opt->lopt == "percentile")
+        else if (arg->opt->lopt == "percentile")
             conf.conf_percentile = arg->get_arg<float>();
         else if (arg->opt->lopt == "component-size")
             conf.component_size = arg->get_arg<int>();
