@@ -16,11 +16,7 @@
 #include "util/aligned_memory.h"
 #include "sfm/sift.h"
 #include "sfm/surf.h"
-#include "sfm/matching.h"
 #include "sfm/defines.h"
-
-/* Whether to use floating point or 8-bit descriptors for matching. */
-#define DISCRETIZE_DESCRIPTORS 1
 
 SFM_NAMESPACE_BEGIN
 
@@ -47,18 +43,7 @@ public:
         FeatureTypes feature_types;
         Sift::Options sift_opts;
         Surf::Options surf_opts;
-        Matching::Options sift_matching_opts;
-        Matching::Options surf_matching_opts;
-        bool keep_descriptors;
     };
-
-#if DISCRETIZE_DESCRIPTORS
-    typedef util::AlignedMemory<unsigned short, 16> SiftDescriptor;
-    typedef util::AlignedMemory<signed short, 16> SurfDescriptor;
-#else
-    typedef util::AlignedMemory<float, 16> SiftDescriptor;
-    typedef util::AlignedMemory<float, 16> SurfDescriptor;
-#endif
 
 public:
     FeatureSet (void);
@@ -67,16 +52,6 @@ public:
 
     /** Computes the features specified in the options. */
     void compute_features (mve::ByteImage::Ptr image);
-
-    /** Matches all feature types yielding a single matching result. */
-    void match (FeatureSet const& other, Matching::Result* result) const;
-
-    /**
-     * Matches the N lowest resolution features and returns the number of
-     * matches. Can be used as a guess for full matchability. Useful values
-     * are at most 3 matches for 500 features, or 2 matches with 300 features.
-     */
-    int match_lowres (FeatureSet const& other, int num_features) const;
 
     /** Clear descriptor data. */
     void clear_descriptors (void);
@@ -99,10 +74,6 @@ private:
 
 private:
     Options opts;
-    int num_sift_descriptors;
-    int num_surf_descriptors;
-    SiftDescriptor sift_descr;
-    SurfDescriptor surf_descr;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -110,26 +81,17 @@ private:
 inline
 FeatureSet::Options::Options (void)
     : feature_types(FEATURE_SIFT)
-    , keep_descriptors(false)
 {
-    this->sift_matching_opts.lowe_ratio_threshold = 0.8f;
-    this->sift_matching_opts.descriptor_length = 128;
-    this->surf_matching_opts.lowe_ratio_threshold = 0.7f;
-    this->surf_matching_opts.descriptor_length = 64;
 }
 
 inline
 FeatureSet::FeatureSet (void)
-    : num_sift_descriptors(0)
-    , num_surf_descriptors(0)
 {
 }
 
 inline
 FeatureSet::FeatureSet (Options const& options)
     : opts(options)
-    , num_sift_descriptors(0)
-    , num_surf_descriptors(0)
 {
 }
 
