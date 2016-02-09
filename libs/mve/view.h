@@ -75,21 +75,18 @@ public:
      */
     struct MetaData
     {
-        MetaData (void);
-
         typedef std::map<std::string, std::string> KeyValueMap;
+
         CameraInfo camera;
         KeyValueMap data;
-        bool is_dirty;
+        bool is_dirty = false;
     };
 
     /** Proxy for images. */
     struct ImageProxy
     {
-        ImageProxy (void);
-
         /** Indicates if the image is unsaved or has been changed. */
-        bool is_dirty;
+        bool is_dirty = false;
 
         /** The name of the image. */
         std::string name;
@@ -102,11 +99,11 @@ public:
         std::string filename;
 
         /* These fields are initialized on-demand (get_*_proxy()). */
-        bool is_initialized;
-        int32_t width;
-        int32_t height;
-        int32_t channels;
-        ImageType type;
+        bool is_initialized = false;
+        int32_t width = 0;
+        int32_t height = 0;
+        int32_t channels = 0;
+        ImageType type = IMAGE_TYPE_UNKNOWN;
 
         /* This field is initialized on request with get_image(). */
         ImageBase::Ptr image;
@@ -115,10 +112,8 @@ public:
     /** Proxy for BLOBs (Binary Large OBjects). */
     struct BlobProxy
     {
-        BlobProxy (void);
-
         /** Indicates if the BLOB is unsaved or has been changed. */
-        bool is_dirty;
+        bool is_dirty = false;
 
         /** The name of the BLOB. */
         std::string name;
@@ -130,8 +125,8 @@ public:
         std::string filename;
 
         /* These fields are initialized on-demand. */
-        bool is_initialized;
-        uint64_t size;
+        bool is_initialized = false;
+        uint64_t size = 0;
 
         /* This field is initialized on request with get_blob(). */
         ByteImage::Ptr blob;
@@ -315,33 +310,6 @@ protected:
     BlobProxies blobs;
     FilenameList to_delete;
 };
-
-/* ---------------------------------------------------------------- */
-
-inline
-View::MetaData::MetaData (void)
-    : is_dirty(false)
-{
-}
-
-inline
-View::ImageProxy::ImageProxy (void)
-    : is_dirty(false)
-    , is_initialized(false)
-    , width(0)
-    , height(0)
-    , channels(0)
-    , type(IMAGE_TYPE_UNKNOWN)
-{
-}
-
-inline
-View::BlobProxy::BlobProxy (void)
-    : is_dirty(false)
-    , is_initialized(false)
-    , size(0)
-{
-}
 
 /* ---------------------------------------------------------------- */
 
