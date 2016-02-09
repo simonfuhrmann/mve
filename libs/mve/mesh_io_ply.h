@@ -49,24 +49,14 @@ load_xf_file (std::string const& filename, float* ctw);
  */
 struct SavePLYOptions
 {
-    SavePLYOptions (void)
-        : format_binary(true)
-        , write_vertex_colors(true)
-        , write_vertex_normals(false)
-        , write_vertex_confidences(true)
-        , write_vertex_values(true)
-        , write_face_colors(true)
-        , write_face_normals(false)
-        , verts_per_simplex(3) {}
-
-    bool format_binary;
-    bool write_vertex_colors;
-    bool write_vertex_normals;
-    bool write_vertex_confidences;
-    bool write_vertex_values;
-    bool write_face_colors;
-    bool write_face_normals;
-    unsigned int verts_per_simplex;
+    bool format_binary = true;
+    bool write_vertex_colors = true;
+    bool write_vertex_normals = false;
+    bool write_vertex_confidences = true;
+    bool write_vertex_values = true;
+    bool write_face_colors = true;
+    bool write_face_normals = false;
+    unsigned int verts_per_simplex = 3;
 };
 
 /**
