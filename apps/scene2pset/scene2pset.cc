@@ -32,16 +32,16 @@ struct AppSettings
 {
     std::string scenedir;
     std::string outmesh;
-    std::string dmname;
-    std::string image;
+    std::string dmname = "depth-L0";
+    std::string image = "undistorted";
     std::string mask;
     std::string aabb;
-    bool with_normals;
-    bool with_scale;
-    bool with_conf;
-    bool poisson_normals;
-    float min_valid_fraction;
-    float scale_factor;
+    bool with_normals = false;
+    bool with_scale = false;
+    bool with_conf = false;
+    bool poisson_normals = false;
+    float min_valid_fraction = 0.0f;
+    float scale_factor = 2.5f; /* "Radius" of MVS patch (usually 5x5). */
     std::vector<int> ids;
 };
 
@@ -110,14 +110,6 @@ main (int argc, char** argv)
     AppSettings conf;
     conf.scenedir = args.get_nth_nonopt(0);
     conf.outmesh = args.get_nth_nonopt(1);
-    conf.dmname = "depth-L0";
-    conf.image = "undistorted";
-    conf.with_normals = false;
-    conf.with_scale = false;
-    conf.with_conf = false;
-    conf.poisson_normals = false;
-    conf.min_valid_fraction = 0.0f;
-    conf.scale_factor = 2.5f; /* "Radius" of MVS patch (usually 5x5). */
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())

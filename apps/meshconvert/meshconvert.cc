@@ -21,7 +21,7 @@ struct AppSettings
 {
     std::string infile;
     std::string outfile;
-    bool compute_normals;
+    bool compute_normals = false;
 };
 
 int
@@ -49,7 +49,6 @@ main (int argc, char** argv)
     AppSettings conf;
     conf.infile = args.get_nth_nonopt(0);
     conf.outfile = args.get_nth_nonopt(1);
-    conf.compute_normals = false;
 
     for (util::ArgResult const* arg = args.next_option();
         arg != nullptr; arg = args.next_option())

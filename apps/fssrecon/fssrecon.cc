@@ -33,8 +33,8 @@ struct AppOptions
 {
     std::vector<std::string> in_files;
     std::string out_mesh;
-    int refine_octree;
-    fssr::InterpolationType interp_type;
+    int refine_octree = 0;
+    fssr::InterpolationType interp_type = fssr::INTERPOLATION_CUBIC;
 };
 
 void
@@ -159,10 +159,8 @@ main (int argc, char** argv)
     args.parse(argc, argv);
 
     /* Init default settings. */
-    fssr::SampleIO::Options pset_opts;
     AppOptions app_opts;
-    app_opts.refine_octree = 0;
-    app_opts.interp_type = fssr::INTERPOLATION_CUBIC;
+    fssr::SampleIO::Options pset_opts;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())

@@ -33,13 +33,17 @@ enum ProgressStyle
 struct AppSettings
 {
     std::string scene_path;
-    std::string ply_dest;
-    int master_id;
+    std::string ply_dest = "recon";
+    int master_id = -1;
     std::vector<int> view_ids;
-    int max_pixels;
-    bool force_recon;
-    bool write_ply;
-    ProgressStyle progress_style;
+    int max_pixels = 1500000;
+    bool force_recon = false;
+    bool write_ply = false;
+#ifdef _WIN32
+    ProgressStyle progress_style = PROGRESS_SIMPLE;
+#else
+    ProgressStyle progress_style = PROGRESS_FANCY;
+#endif  // _WIN32
     mvs::Settings mvs;
 };
 
@@ -155,16 +159,6 @@ main (int argc, char** argv)
 
     AppSettings conf;
     conf.scene_path = args.get_nth_nonopt(0);
-    conf.ply_dest = "recon";
-    conf.master_id = -1;
-    conf.force_recon = false;
-    conf.write_ply = false;
-    conf.max_pixels = 1500000;
-#ifdef _WIN32
-    conf.progress_style = PROGRESS_SIMPLE;
-#else
-    conf.progress_style = PROGRESS_FANCY;
-#endif
 
     util::ArgResult const* arg;
     while ((arg = args.next_option()))

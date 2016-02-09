@@ -63,12 +63,12 @@ struct AppSettings
 {
     std::string input_path;
     std::string output_path;
-    int bundle_id;
-    bool import_orig;
-    bool skip_invalid;
-    bool images_only;
-    bool append_images;
-    int max_pixels;
+    int bundle_id = 0;
+    bool import_orig = false;
+    bool skip_invalid = true;
+    bool images_only = false;
+    bool append_images = false;
+    int max_pixels = std::numeric_limits<int>::max();
 
     /* Computed values. */
     std::string bundle_path;
@@ -899,14 +899,8 @@ main (int argc, char** argv)
 
     /* Setup defaults. */
     AppSettings conf;
-    conf.import_orig = false;
-    conf.skip_invalid = true;
-    conf.images_only = false;
-    conf.append_images = false;
     conf.input_path = util::fs::sanitize_path(args.get_nth_nonopt(0));
     conf.output_path = util::fs::sanitize_path(args.get_nth_nonopt(1));
-    conf.bundle_id = 0;
-    conf.max_pixels = std::numeric_limits<int>::max();
 
     /* General settings. */
     for (util::ArgResult const* i = args.next_option();

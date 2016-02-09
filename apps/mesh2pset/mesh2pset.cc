@@ -24,6 +24,18 @@
 #include "mve/mesh_info.h"
 #include "mve/depthmap.h"
 
+struct AppSettings
+{
+    std::string in_mesh;
+    std::string out_pointset;
+    std::string aabb;
+    float sample_scale = 0.0f;
+    float scale_factor = 1.0f;
+    bool no_confidences = false;
+    bool no_scale_values = false;
+    bool no_normals = false;
+};
+
 void
 split_mesh (mve::TriangleMesh::Ptr mesh, std::string const& fname)
 {
@@ -63,18 +75,6 @@ split_mesh (mve::TriangleMesh::Ptr mesh, std::string const& fname)
     mve::geom::save_ply_mesh(amesh, fname, ply_options);
 }
 
-struct AppSettings
-{
-    std::string in_mesh;
-    std::string out_pointset;
-    std::string aabb;
-    float sample_scale;
-    float scale_factor;
-    bool no_confidences;
-    bool no_scale_values;
-    bool no_normals;
-};
-
 int
 main (int argc, char** argv)
 {
@@ -105,11 +105,6 @@ main (int argc, char** argv)
     AppSettings conf;
     conf.in_mesh = args.get_nth_nonopt(0);
     conf.out_pointset = args.get_nth_nonopt(1);
-    conf.sample_scale = 0.0f;
-    conf.scale_factor = 1.0f;
-    conf.no_confidences = false;
-    conf.no_scale_values = false;
-    conf.no_normals = false;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())

@@ -21,7 +21,7 @@ struct AppSettings
 {
     std::string input_bundle;
     std::string output_ply;
-    float sphere_radius;
+    float sphere_radius = 0.0f;
 };
 
 float ico_verts[12][3] =
@@ -113,7 +113,6 @@ main (int argc, char** argv)
     AppSettings conf;
     conf.input_bundle = args.get_nth_nonopt(0);
     conf.output_ply = args.get_nth_nonopt(1);
-    conf.sphere_radius = 0.0f;
 
     /* Read arguments. */
     for (util::ArgResult const* i = args.next_option();

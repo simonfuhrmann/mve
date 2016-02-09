@@ -39,25 +39,25 @@
 struct AppSettings
 {
     std::string scene_path;
-    std::string original_name;
-    std::string undistorted_name;
-    std::string exif_name;
-    std::string prebundle_file;
+    std::string original_name = "original";
+    std::string undistorted_name = "undistorted";
+    std::string exif_name = "exif";
+    std::string prebundle_file = "prebundle.sfm";
     std::string log_file;
-    int max_image_size;
-    bool lowres_matching;
-    bool normalize_scene;
-    bool skip_sfm;
-    bool always_full_ba;
-    bool fixed_intrinsics;
-    bool shared_intrinsics;
-    bool intrinsics_from_views;
-    int video_matching;
-    float track_error_thres_factor;
-    float new_track_error_thres;
-    int initial_pair_1;
-    int initial_pair_2;
-    int min_views_per_track;
+    int max_image_size = 6000000;
+    bool lowres_matching = true;
+    bool normalize_scene = false;
+    bool skip_sfm = false;
+    bool always_full_ba = false;
+    bool fixed_intrinsics = false;
+    bool shared_intrinsics = false;
+    bool intrinsics_from_views = false;
+    int video_matching = 0;
+    float track_error_thres_factor = 25.0f;
+    float new_track_error_thres = 0.01f;
+    int initial_pair_1 = -1;
+    int initial_pair_2 = -1;
+    int min_views_per_track = 3;
 };
 
 void
@@ -495,24 +495,6 @@ main (int argc, char** argv)
     /* Setup defaults. */
     AppSettings conf;
     conf.scene_path = args.get_nth_nonopt(0);
-    conf.original_name = "original";
-    conf.undistorted_name = "undistorted";
-    conf.exif_name = "exif";
-    conf.prebundle_file = "prebundle.sfm";
-    conf.max_image_size = 6000000;
-    conf.lowres_matching = true;
-    conf.normalize_scene = false;
-    conf.skip_sfm = false;
-    conf.always_full_ba = false;
-    conf.video_matching = 0;
-    conf.fixed_intrinsics = false;
-    conf.shared_intrinsics = false;
-    conf.intrinsics_from_views = false;
-    conf.track_error_thres_factor = 25.0f;
-    conf.new_track_error_thres = 0.01f;
-    conf.min_views_per_track = 3;
-    conf.initial_pair_1 = -1;
-    conf.initial_pair_2 = -1;
 
     /* Read arguments. */
     for (util::ArgResult const* i = args.next_option();

@@ -26,6 +26,12 @@
 #define MATCHING_SIGNATURE_LEN 13
 #define MATCHING_SIGNATURE "MVE_MATCHING\n"
 
+struct AppSettings
+{
+    std::string input_path;
+    bool keep_original = false;
+};
+
 /* ------------------- Input for old Prebundle -------------------- */
 
 void
@@ -163,12 +169,6 @@ load_old_prebundle_file (std::string const& filename,
 
 /* ---------------------------------------------------------------- */
 
-struct AppSettings
-{
-    std::string input_path;
-    bool keep_original;
-};
-
 void
 convert_prebundle (AppSettings const& conf, std::string const& fname)
 {
@@ -304,7 +304,6 @@ main (int argc, char** argv)
     /* Setup defaults. */
     AppSettings conf;
     conf.input_path = util::fs::sanitize_path(args.get_nth_nonopt(0));
-    conf.keep_original = false;
 
     /* Assign options. */
     for (util::ArgResult const* i = args.next_option();

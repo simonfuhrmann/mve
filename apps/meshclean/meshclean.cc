@@ -24,13 +24,13 @@ struct AppSettings
 {
     std::string in_mesh;
     std::string out_mesh;
-    bool clean_degenerated;
-    bool delete_scale;
-    bool delete_conf;
-    bool delete_colors;
-    float conf_threshold;
-    float conf_percentile;
-    int component_size;
+    bool clean_degenerated = true;
+    bool delete_scale = false;
+    bool delete_conf = false;
+    bool delete_colors = false;
+    float conf_threshold = 1.0f;
+    float conf_percentile = -1.0f;
+    int component_size = 1000;
 };
 
 template <typename T>
@@ -87,13 +87,6 @@ main (int argc, char** argv)
     AppSettings conf;
     conf.in_mesh = args.get_nth_nonopt(0);
     conf.out_mesh = args.get_nth_nonopt(1);
-    conf.conf_threshold = 1.0f;
-    conf.conf_percentile = -1.0f;
-    conf.component_size = 1000;
-    conf.clean_degenerated = true;
-    conf.delete_scale = false;
-    conf.delete_conf = false;
-    conf.delete_colors = false;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_option())
