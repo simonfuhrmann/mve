@@ -21,62 +21,35 @@ MVS_NAMESPACE_BEGIN
 
 struct Settings
 {
-    Settings (void);
-
     /** The reference view ID to reconstruct. */
-    std::size_t refViewNr;
+    std::size_t refViewNr = 0;
 
     /** Input image emebdding. */
-    std::string imageEmbedding;
+    std::string imageEmbedding = "undistorted";
 
     /** Size of the patch is width * width, defaults to 5x5. */
-    unsigned int filterWidth;
-    float minNCC;
-    float minParallax;
-    float acceptNCC;
-    float minRefineDiff;
-    unsigned int maxIterations;
-    unsigned int nrReconNeighbors;
-    unsigned int globalVSMax;
-    int scale;
-    bool useColorScale;
-    bool writePlyFile;
+    unsigned int filterWidth = 5;
+    float minNCC = 0.3f;
+    float minParallax = 10.0f;
+    float acceptNCC = 0.6f;
+    float minRefineDiff = 0.001f;
+    unsigned int maxIterations = 20;
+    unsigned int nrReconNeighbors = 4;
+    unsigned int globalVSMax = 20;
+    int scale = 0;
+    bool useColorScale = true;
+    bool writePlyFile = false;
 
     /** Features outside the AABB are ignored. */
-    math::Vec3f aabbMin;
-    math::Vec3f aabbMax;
+    math::Vec3f aabbMin = math::Vec3f(-std::numeric_limits<float>::max());
+    math::Vec3f aabbMax = math::Vec3f(std::numeric_limits<float>::max());
 
     std::string plyPath;
 
-    bool keepDzMap;
-    bool keepConfidenceMap;
-    bool quiet;
+    bool keepDzMap = false;
+    bool keepConfidenceMap = false;
+    bool quiet = false;
 };
-
-/* ------------------------- Implementation ----------------------- */
-
-inline
-Settings::Settings (void)
-    : refViewNr(0)
-    , imageEmbedding("undistorted")
-    , filterWidth(5)
-    , minNCC(0.3f)
-    , minParallax(10.f)
-    , acceptNCC(0.6f)
-    , minRefineDiff(0.001f)
-    , maxIterations(20)
-    , nrReconNeighbors(4)
-    , globalVSMax(20)
-    , scale(0)
-    , useColorScale(true)
-    , writePlyFile(false)
-    , aabbMin(-std::numeric_limits<float>::max())
-    , aabbMax(std::numeric_limits<float>::max())
-    , keepDzMap(false)
-    , keepConfidenceMap(false)
-    , quiet(false)
-{
-}
 
 MVS_NAMESPACE_END
 
