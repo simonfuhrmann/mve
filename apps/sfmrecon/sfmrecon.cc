@@ -116,7 +116,8 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     {
         util::WallTimer timer;
         sfm::bundler::Matching bundler_matching(matching_opts);
-        bundler_matching.compute(*viewports, pairwise_matching);
+        bundler_matching.init(viewports);
+        bundler_matching.compute(pairwise_matching);
         std::cout << "Matching took " << timer.get_elapsed()
             << " ms." << std::endl;
         log_message(conf, "Feature matching took "

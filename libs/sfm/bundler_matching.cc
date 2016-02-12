@@ -11,21 +11,54 @@
 #include <fstream>
 #include <cstring>
 #include <cerrno>
+#include <stdexcept>
 
 #include "util/exception.h"
 #include "util/timer.h"
 #include "sfm/sift.h"
 #include "sfm/ransac.h"
 #include "sfm/bundler_matching.h"
+#include "sfm/exhaustive_matching.h"
 
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
-void
-Matching::compute (ViewportList const& viewports,
-    PairwiseMatching* pairwise_matching)
+Matching::Matching (Options const& options, Progress* progress)
+    : opts(options)
+    , progress(progress)
 {
-    std::size_t num_pairs = viewports.size() * (viewports.size() - 1) / 2;
+    switch (this->opts.matcher_type)
+    {
+        case MATCHER_EXHAUSTIVE:
+            this->matcher.reset(new ExhaustiveMatching());
+            break;
+        default:
+            throw std::runtime_error("Unhandled matcher type");
+    }
+}
+
+void
+Matching::init (ViewportList* viewports)
+{
+    if (viewports == nullptr)
+        throw std::invalid_argument("Viewports must not be null");
+
+    this->viewports = viewports;
+    this->matcher->init(viewports);
+
+    /* Free descriptors. */
+    for (std::size_t i = 0; i < viewports->size(); i++)
+        viewports->at(i).features.clear_descriptors();
+}
+
+void
+Matching::compute (PairwiseMatching* pairwise_matching)
+{
+    if (this->viewports == nullptr)
+        throw std::runtime_error("Viewports must not be null");
+
+    std::size_t num_viewports = this->viewports->size();
+    std::size_t num_pairs = num_viewports * (num_viewports - 1) / 2;
     std::size_t num_done = 0;
 
     if (this->progress != nullptr)
@@ -54,8 +87,8 @@ Matching::compute (ViewportList const& viewports,
             && view_2_id + this->opts.match_num_previous_frames < view_1_id)
             continue;
 
-        FeatureSet const& view_1 = viewports[view_1_id].features;
-        FeatureSet const& view_2 = viewports[view_2_id].features;
+        FeatureSet const& view_1 = this->viewports->at(view_1_id).features;
+        FeatureSet const& view_2 = this->viewports->at(view_2_id).features;
         if (view_1.positions.empty() || view_2.positions.empty())
             continue;
 
@@ -63,7 +96,7 @@ Matching::compute (ViewportList const& viewports,
         util::WallTimer timer;
         std::stringstream message;
         CorrespondenceIndices matches;
-        this->two_view_matching(view_1, view_2, &matches, message);
+        this->two_view_matching(view_1_id, view_2_id, &matches, message);
         std::size_t matching_time = timer.get_elapsed();
 
         if (matches.empty())
@@ -95,16 +128,18 @@ Matching::compute (ViewportList const& viewports,
 }
 
 void
-Matching::two_view_matching (FeatureSet const& view_1,
-    FeatureSet const& view_2, CorrespondenceIndices* matches,
-    std::stringstream& message)
+Matching::two_view_matching (int view_1_id, int view_2_id,
+    CorrespondenceIndices* matches, std::stringstream& message)
 {
+    FeatureSet const& view_1 = this->viewports->at(view_1_id).features;
+    FeatureSet const& view_2 = this->viewports->at(view_2_id).features;
+
     /* Low-res matching if number of features is large. */
     if (this->opts.use_lowres_matching
         && view_1.positions.size() * view_2.positions.size() > 1000000)
     {
-        int const num_matches = view_1.match_lowres(view_2,
-            this->opts.num_lowres_features);
+        int const num_matches = this->matcher->pairwise_match_lowres(view_1_id,
+            view_2_id, this->opts.num_lowres_features);
         if (num_matches < this->opts.min_lowres_matches)
         {
             message << "only " << num_matches
@@ -116,7 +151,7 @@ Matching::two_view_matching (FeatureSet const& view_1,
 
     /* Perform two-view descriptor matching. */
     sfm::Matching::Result matching_result;
-    view_1.match(view_2, &matching_result);
+    this->matcher->pairwise_match(view_1_id, view_2_id, &matching_result);
     int num_matches = sfm::Matching::count_consistent_matches(matching_result);
 
     /* Require at least 8 matches. Check threshold. */

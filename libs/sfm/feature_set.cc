@@ -16,44 +16,6 @@ SFM_NAMESPACE_BEGIN
 
 namespace
 {
-#if DISCRETIZE_DESCRIPTORS
-    void
-    convert_descriptor (Sift::Descriptor const& descr, unsigned short* data)
-    {
-        for (int i = 0; i < 128; ++i)
-        {
-            float value = descr.data[i];
-            value = math::clamp(value, 0.0f, 1.0f);
-            value = math::round(value * 255.0f);
-            data[i] = static_cast<unsigned char>(value);
-        }
-    }
-
-    void
-    convert_descriptor (Surf::Descriptor const& descr, signed short* data)
-    {
-        for (int i = 0; i < 64; ++i)
-        {
-            float value = descr.data[i];
-            value = math::clamp(value, -1.0f, 1.0f);
-            value = math::round(value * 127.0f);
-            data[i] = static_cast<signed char>(value);
-        }
-    }
-#else // DISCRETIZE_DESCRIPTORS
-    void
-    convert_descriptor (Sift::Descriptor const& descr, float* data)
-    {
-        std::copy(descr.data.begin(), descr.data.end(), data);
-    }
-
-    void
-    convert_descriptor (Surf::Descriptor const& descr, float* data)
-    {
-        std::copy(descr.data.begin(), descr.data.end(), data);
-    }
-#endif // DISCRETIZE_DESCRIPTORS
-
     template <typename T>
     bool
     compare_scale (T const& descr1, T const& descr2)
@@ -96,24 +58,16 @@ FeatureSet::compute_sift (mve::ByteImage::ConstPtr image)
     std::size_t offset = this->positions.size();
     this->positions.resize(offset + descr.size());
     this->colors.resize(offset + descr.size());
-    this->sift_descr.resize(descr.size() * 128);
-    this->num_sift_descriptors = descr.size();
 
-#if DISCRETIZE_DESCRIPTORS
-    unsigned short* ptr = this->sift_descr.data();
-#else
-    float* ptr = this->sift_descr.data();
-#endif
-    for (std::size_t i = 0; i < descr.size(); ++i, ptr += 128)
+    for (std::size_t i = 0; i < descr.size(); ++i)
     {
         Sift::Descriptor const& d = descr[i];
-        convert_descriptor(d, ptr);
         this->positions[offset + i] = math::Vec2f(d.x, d.y);
         image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
 
-    if (this->opts.keep_descriptors)
-        std::swap(descr, this->sift_descriptors);
+    /* Keep SIFT descriptors. */
+    std::swap(descr, this->sift_descriptors);
 }
 
 void
@@ -135,126 +89,25 @@ FeatureSet::compute_surf (mve::ByteImage::ConstPtr image)
     std::size_t offset = this->positions.size();
     this->positions.resize(offset + descr.size());
     this->colors.resize(offset + descr.size());
-    this->surf_descr.resize(descr.size() * 64);
-    this->num_surf_descriptors = descr.size();
 
-#if DISCRETIZE_DESCRIPTORS
-    signed short* ptr = this->surf_descr.data();
-#else
-    float* ptr = this->surf_descr.data();
-#endif
-    for (std::size_t i = 0; i < descr.size(); ++i, ptr += 64)
+    for (std::size_t i = 0; i < descr.size(); ++i)
     {
         Surf::Descriptor const& d = descr[i];
-        convert_descriptor(d, ptr);
         this->positions[offset + i] = math::Vec2f(d.x, d.y);
         image->linear_at(d.x, d.y, this->colors[offset + i].begin());
     }
 
-    if (this->opts.keep_descriptors)
-        std::swap(descr, this->surf_descriptors);
-}
-
-int
-FeatureSet::match_lowres (FeatureSet const& other, int num_features) const
-{
-    /* SIFT lowres matching. */
-    if (this->num_sift_descriptors > 0)
-    {
-        sfm::Matching::Result sift_result;
-        sfm::Matching::twoway_match(this->opts.sift_matching_opts,
-            this->sift_descr.data(),
-            std::min(num_features, this->num_sift_descriptors),
-            other.sift_descr.data(),
-            std::min(num_features, other.num_sift_descriptors),
-            &sift_result);
-        return sfm::Matching::count_consistent_matches(sift_result);
-    }
-
-    /* SURF lowres matching. */
-    if (this->num_surf_descriptors > 0)
-    {
-        sfm::Matching::Result surf_result;
-        sfm::Matching::twoway_match(this->opts.surf_matching_opts,
-            this->surf_descr.data(),
-            std::min(num_features, this->num_surf_descriptors),
-            other.surf_descr.data(),
-            std::min(num_features, other.num_surf_descriptors),
-            &surf_result);
-        return sfm::Matching::count_consistent_matches(surf_result);
-    }
-
-    return 0;
-}
-
-void
-FeatureSet::match (FeatureSet const& other, Matching::Result* result) const
-{
-    /* SIFT matching. */
-    sfm::Matching::Result sift_result;
-    if (this->num_sift_descriptors > 0)
-    {
-        sfm::Matching::twoway_match(this->opts.sift_matching_opts,
-            this->sift_descr.data(), this->num_sift_descriptors,
-            other.sift_descr.data(), other.num_sift_descriptors,
-            &sift_result);
-        sfm::Matching::remove_inconsistent_matches(&sift_result);
-    }
-
-    /* SURF matching. */
-    sfm::Matching::Result surf_result;
-    if (this->num_surf_descriptors > 0)
-    {
-        sfm::Matching::twoway_match(this->opts.surf_matching_opts,
-            this->surf_descr.data(), this->num_surf_descriptors,
-            other.surf_descr.data(), other.num_surf_descriptors,
-            &surf_result);
-        sfm::Matching::remove_inconsistent_matches(&surf_result);
-    }
-
-    /* Fix offsets in the matching result. */
-    int other_surf_offset = other.num_sift_descriptors;
-    if (other_surf_offset > 0)
-        for (std::size_t i = 0; i < surf_result.matches_1_2.size(); ++i)
-            if (surf_result.matches_1_2[i] >= 0)
-                surf_result.matches_1_2[i] += other_surf_offset;
-
-    int this_surf_offset = this->num_sift_descriptors;
-    if (this_surf_offset > 0)
-        for (std::size_t i = 0; i < surf_result.matches_2_1.size(); ++i)
-            if (surf_result.matches_2_1[i] >= 0)
-                surf_result.matches_2_1[i] += this_surf_offset;
-
-    /* Create a combined matching result. */
-    std::size_t this_num_descriptors = this->num_sift_descriptors
-        + this->num_surf_descriptors;
-    std::size_t other_num_descriptors = other.num_sift_descriptors
-        + other.num_surf_descriptors;
-
-    result->matches_1_2.clear();
-    result->matches_1_2.reserve(this_num_descriptors);
-    result->matches_1_2.insert(result->matches_1_2.end(),
-        sift_result.matches_1_2.begin(), sift_result.matches_1_2.end());
-    result->matches_1_2.insert(result->matches_1_2.end(),
-        surf_result.matches_1_2.begin(), surf_result.matches_1_2.end());
-
-    result->matches_2_1.clear();
-    result->matches_2_1.reserve(other_num_descriptors);
-    result->matches_2_1.insert(result->matches_2_1.end(),
-        sift_result.matches_2_1.begin(), sift_result.matches_2_1.end());
-    result->matches_2_1.insert(result->matches_2_1.end(),
-        surf_result.matches_2_1.begin(), surf_result.matches_2_1.end());
+    /* Keep SURF descriptors. */
+    std::swap(descr, this->surf_descriptors);
 }
 
 void
 FeatureSet::clear_descriptors (void)
 {
-    this->num_sift_descriptors = 0;
-    this->sift_descr.clear();
     this->sift_descriptors.clear();
-    this->num_surf_descriptors = 0;
-    this->surf_descr.clear();
+    this->sift_descriptors.shrink_to_fit();
     this->surf_descriptors.clear();
+    this->surf_descriptors.shrink_to_fit();
 }
 
 SFM_NAMESPACE_END

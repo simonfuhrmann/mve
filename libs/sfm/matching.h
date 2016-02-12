@@ -27,8 +27,6 @@ public:
      */
     struct Options
     {
-        Options();
-
         /**
          * The length of the descriptor. Typically 128 for SIFT, 64 for SURF.
          */
@@ -103,14 +101,6 @@ public:
 };
 
 /* ---------------------------------------------------------------- */
-
-inline
-Matching::Options::Options (void)
-    : descriptor_length(128)
-    , lowe_ratio_threshold(0.8f)
-    , distance_threshold(std::numeric_limits<float>::max())
-{
-}
 
 template <typename T>
 void

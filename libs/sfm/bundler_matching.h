@@ -10,14 +10,16 @@
 #ifndef SFM_BUNDLER_MATCHING_HEADER
 #define SFM_BUNDLER_MATCHING_HEADER
 
+#include <memory>
+#include <stdexcept>
 #include <vector>
 #include <string>
 #include <sstream>
 
-#include "sfm/matching.h"
 #include "sfm/ransac_fundamental.h"
 #include "sfm/bundler_common.h"
 #include "sfm/defines.h"
+#include "sfm/matching_base.h"
 
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
@@ -47,24 +49,30 @@ SFM_BUNDLER_NAMESPACE_BEGIN
 class Matching
 {
 public:
+    enum MatcherType
+    {
+        MATCHER_EXHAUSTIVE
+    };
+
+    /** Options for feature matching. */
     struct Options
     {
-        Options (void);
-
         /** Options for RANSAC computation of the fundamental matrix. */
         sfm::RansacFundamental::Options ransac_opts;
         /** Minimum number of matching features before RANSAC. */
-        int min_feature_matches;
+        int min_feature_matches = 24;
         /** Minimum number of matching features after RANSAC. */
-        int min_matching_inliers;
+        int min_matching_inliers = 12;
         /** Perform low-resolution matching to reject unlikely pairs. */
-        bool use_lowres_matching;
+        bool use_lowres_matching = false;
         /** Number of features used for low-res matching. */
-        int num_lowres_features;
+        int num_lowres_features = 500;
         /** Minimum number of matches from low-res matching. */
-        int min_lowres_matches;
+        int min_lowres_matches = 5;
         /** Only match to a few previous frames. Disabled by default. */
-        int match_num_previous_frames;
+        int match_num_previous_frames = 0;
+        /** Matcher type. Exhaustive by default. */
+        MatcherType matcher_type = MATCHER_EXHAUSTIVE;
     };
 
     struct Progress
@@ -77,41 +85,28 @@ public:
     Matching (Options const& options, Progress* progress = nullptr);
 
     /**
+     * Initialize matching by passing features to the matcher for
+     * preprocessing.
+     */
+    void init (ViewportList* viewports);
+
+    /**
      * Computes the pairwise matching between all pairs of views.
      * Computation requires both descriptor data and 2D feature positions
      * in the viewports.
      */
-    void compute (ViewportList const& viewports,
-        PairwiseMatching* pairwise_matching);
+    void compute (PairwiseMatching* pairwise_matching);
 
 private:
-    void two_view_matching (FeatureSet const& view_1, FeatureSet const& view_2,
+    void two_view_matching (int view_1_id, int view_2_id,
         CorrespondenceIndices* matches, std::stringstream& message);
 
 private:
     Options opts;
     Progress* progress;
+    std::unique_ptr<MatchingBase> matcher;
+    ViewportList const* viewports;
 };
-
-/* ------------------------ Implementation ------------------------ */
-
-inline
-Matching::Options::Options (void)
-    : min_feature_matches(24)
-    , min_matching_inliers(12)
-    , use_lowres_matching(false)
-    , num_lowres_features(500)
-    , min_lowres_matches(5)
-    , match_num_previous_frames(0)
-{
-}
-
-inline
-Matching::Matching (Options const& options, Progress* progress)
-    : opts(options)
-    , progress(progress)
-{
-}
 
 SFM_BUNDLER_NAMESPACE_END
 SFM_NAMESPACE_END
