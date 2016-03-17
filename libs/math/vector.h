@@ -80,6 +80,7 @@ template <typename T, int N>
 class Vector
 {
 public:
+    typedef T ValueType;
 
     /* ------------------------ Constructors ---------------------- */
 

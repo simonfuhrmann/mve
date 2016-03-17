@@ -53,6 +53,7 @@ template <typename T, int N, int M>
 class Matrix
 {
 public:
+    typedef T ValueType;
 
     /* ------------------------ Constructors ---------------------- */
 
