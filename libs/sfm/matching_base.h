@@ -49,7 +49,7 @@ public:
      * are at most 3 matches for 500 features, or 2 matches with 300 features.
      */
     virtual int pairwise_match_lowres (int view_1_id, int view_2_id,
-        int num_features) const = 0;
+        std::size_t num_features) const = 0;
 
     Options opts;
 };

@@ -40,15 +40,15 @@ public:
      * are at most 3 matches for 500 features, or 2 matches with 300 features.
      */
     int pairwise_match_lowres (int view_1_id, int view_2_id,
-        int num_features) const override;
+        std::size_t num_features) const override;
 
-private:
+protected:
 #if DISCRETIZE_DESCRIPTORS
-    typedef util::AlignedMemory<uint16_t, 16> SiftDescriptors;
-    typedef util::AlignedMemory<int16_t, 16> SurfDescriptors;
+    typedef util::AlignedMemory<math::Vec128us, 16> SiftDescriptors;
+    typedef util::AlignedMemory<math::Vec64s, 16> SurfDescriptors;
 #else
-    typedef util::AlignedMemory<float, 16> SiftDescriptors;
-    typedef util::AlignedMemory<float, 16> SurfDescriptors;
+    typedef util::AlignedMemory<math::Vec128f, 16> SiftDescriptors;
+    typedef util::AlignedMemory<math::Vec64f, 16> SurfDescriptors;
 #endif
 
     /** Internal initialization methods for SIFT/SURF features. */
@@ -58,11 +58,10 @@ private:
     struct ProcessedFeatureSet
     {
         SiftDescriptors sift_descr;
-        int num_sift_descriptors;
         SurfDescriptors surf_descr;
-        int num_surf_descriptors;
     };
-    std::vector<ProcessedFeatureSet> processed_feature_sets;
+    typedef std::vector<ProcessedFeatureSet> ProcessedFeatureSets;
+    ProcessedFeatureSets processed_feature_sets;
 };
 
 SFM_NAMESPACE_END

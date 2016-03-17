@@ -65,10 +65,7 @@ ExhaustiveMatching::init (bundler::ViewportList* viewports)
         ProcessedFeatureSet& pfs = this->processed_feature_sets[i];
 
         this->init_sift(&pfs.sift_descr, fs.sift_descriptors);
-        pfs.num_sift_descriptors = fs.sift_descriptors.size();
-
         this->init_surf(&pfs.surf_descr, fs.surf_descriptors);
-        pfs.num_surf_descriptors = fs.surf_descriptors.size();
     }
 }
 
@@ -77,12 +74,12 @@ ExhaustiveMatching::init_sift (SiftDescriptors* dst,
     Sift::Descriptors const& src)
 {
     /* Prepare and copy to data structures. */
-    dst->resize(src.size() * 128);
+    dst->resize(src.size());
 
 #if DISCRETIZE_DESCRIPTORS
-    uint16_t* ptr = dst->data();
+    uint16_t* ptr = dst->data()->begin();
 #else
-    float* ptr = dst->data();
+    float* ptr = dst->data()->begin();
 #endif
     for (std::size_t i = 0; i < src.size(); ++i, ptr += 128)
     {
@@ -96,12 +93,12 @@ ExhaustiveMatching::init_surf (SurfDescriptors* dst,
     Surf::Descriptors const& src)
 {
     /* Prepare and copy to data structures. */
-    dst->resize(src.size() * 64);
+    dst->resize(src.size());
 
 #if DISCRETIZE_DESCRIPTORS
-    int16_t* ptr = dst->data();
+    int16_t* ptr = dst->data()->begin();
 #else
-    float* ptr = dst->data();
+    float* ptr = dst->data()->begin();
 #endif
     for (std::size_t i = 0; i < src.size(); ++i, ptr += 64)
     {
@@ -119,44 +116,44 @@ ExhaustiveMatching::pairwise_match (int view_1_id, int view_2_id,
 
     /* SIFT matching. */
     Matching::Result sift_result;
-    if (pfs_1.num_sift_descriptors > 0)
+    if (pfs_1.sift_descr.size() > 0)
     {
         Matching::twoway_match(this->opts.sift_matching_opts,
-            pfs_1.sift_descr.data(), pfs_1.num_sift_descriptors,
-            pfs_2.sift_descr.data(), pfs_2.num_sift_descriptors,
+            pfs_1.sift_descr.data()->begin(), pfs_1.sift_descr.size(),
+            pfs_2.sift_descr.data()->begin(), pfs_2.sift_descr.size(),
             &sift_result);
         Matching::remove_inconsistent_matches(&sift_result);
     }
 
     /* SURF matching. */
     Matching::Result surf_result;
-    if (pfs_1.num_surf_descriptors > 0)
+    if (pfs_1.surf_descr.size() > 0)
     {
         Matching::twoway_match(this->opts.surf_matching_opts,
-            pfs_1.surf_descr.data(), pfs_1.num_surf_descriptors,
-            pfs_2.surf_descr.data(), pfs_2.num_surf_descriptors,
+            pfs_1.surf_descr.data()->begin(), pfs_1.surf_descr.size(),
+            pfs_2.surf_descr.data()->begin(), pfs_2.surf_descr.size(),
             &surf_result);
         Matching::remove_inconsistent_matches(&surf_result);
     }
 
     /* Fix offsets in the matching result. */
-    int other_surf_offset = pfs_2.num_sift_descriptors;
+    std::size_t other_surf_offset = pfs_2.sift_descr.size();
     if (other_surf_offset > 0)
         for (std::size_t i = 0; i < surf_result.matches_1_2.size(); ++i)
             if (surf_result.matches_1_2[i] >= 0)
                 surf_result.matches_1_2[i] += other_surf_offset;
 
-    int this_surf_offset = pfs_1.num_sift_descriptors;
+    std::size_t this_surf_offset = pfs_1.sift_descr.size();
     if (this_surf_offset > 0)
         for (std::size_t i = 0; i < surf_result.matches_2_1.size(); ++i)
             if (surf_result.matches_2_1[i] >= 0)
                 surf_result.matches_2_1[i] += this_surf_offset;
 
     /* Create a combined matching result. */
-    std::size_t this_num_descriptors = pfs_1.num_sift_descriptors
-        + pfs_1.num_surf_descriptors;
-    std::size_t other_num_descriptors = pfs_2.num_sift_descriptors
-        + pfs_2.num_surf_descriptors;
+    std::size_t this_num_descriptors = pfs_1.sift_descr.size()
+        + pfs_1.surf_descr.size();
+    std::size_t other_num_descriptors = pfs_2.sift_descr.size()
+        + pfs_2.surf_descr.size();
 
     result->matches_1_2.clear();
     result->matches_1_2.reserve(this_num_descriptors);
@@ -175,20 +172,20 @@ ExhaustiveMatching::pairwise_match (int view_1_id, int view_2_id,
 
 int
 ExhaustiveMatching::pairwise_match_lowres (int view_1_id, int view_2_id,
-    int num_features) const
+    std::size_t num_features) const
 {
     ProcessedFeatureSet const& pfs_1 = this->processed_feature_sets[view_1_id];
     ProcessedFeatureSet const& pfs_2 = this->processed_feature_sets[view_2_id];
 
     /* SIFT lowres matching. */
-    if (pfs_1.num_sift_descriptors > 0)
+    if (pfs_1.sift_descr.size() > 0)
     {
         Matching::Result sift_result;
         Matching::twoway_match(this->opts.sift_matching_opts,
-            pfs_1.sift_descr.data(),
-            std::min(num_features, pfs_1.num_sift_descriptors),
-            pfs_2.sift_descr.data(),
-            std::min(num_features, pfs_2.num_sift_descriptors),
+            pfs_1.sift_descr.data()->begin(),
+            std::min(num_features, pfs_1.sift_descr.size()),
+            pfs_2.sift_descr.data()->begin(),
+            std::min(num_features, pfs_2.sift_descr.size()),
             &sift_result);
         return Matching::count_consistent_matches(sift_result);
     }
@@ -198,10 +195,10 @@ ExhaustiveMatching::pairwise_match_lowres (int view_1_id, int view_2_id,
     {
         Matching::Result surf_result;
         Matching::twoway_match(this->opts.surf_matching_opts,
-            pfs_1.surf_descr.data(),
-            std::min(num_features, pfs_1.num_surf_descriptors),
-            pfs_2.surf_descr.data(),
-            std::min(num_features, pfs_2.num_surf_descriptors),
+            pfs_1.surf_descr.data()->begin(),
+            std::min(num_features, pfs_1.surf_descr.size()),
+            pfs_2.surf_descr.data()->begin(),
+            std::min(num_features, pfs_2.surf_descr.size()),
             &surf_result);
         return Matching::count_consistent_matches(surf_result);
     }
