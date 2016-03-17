@@ -51,7 +51,8 @@ class Matching
 public:
     enum MatcherType
     {
-        MATCHER_EXHAUSTIVE
+        MATCHER_EXHAUSTIVE,
+        MATCHER_CASCADE_HASHING
     };
 
     /** Options for feature matching. */

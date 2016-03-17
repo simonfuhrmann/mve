@@ -18,6 +18,7 @@
 #include "sfm/sift.h"
 #include "sfm/ransac.h"
 #include "sfm/bundler_matching.h"
+#include "sfm/cascade_hashing.h"
 #include "sfm/exhaustive_matching.h"
 
 SFM_NAMESPACE_BEGIN
@@ -31,6 +32,9 @@ Matching::Matching (Options const& options, Progress* progress)
     {
         case MATCHER_EXHAUSTIVE:
             this->matcher.reset(new ExhaustiveMatching());
+            break;
+        case MATCHER_CASCADE_HASHING:
+            this->matcher.reset(new CascadeHashing());
             break;
         default:
             throw std::runtime_error("Unhandled matcher type");

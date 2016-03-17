@@ -58,6 +58,7 @@ struct AppSettings
     int initial_pair_1 = -1;
     int initial_pair_2 = -1;
     int min_views_per_track = 3;
+    bool cascade_hashing = false;
 };
 
 void
@@ -111,6 +112,9 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     matching_opts.ransac_opts.verbose_output = false;
     matching_opts.use_lowres_matching = conf.lowres_matching;
     matching_opts.match_num_previous_frames = conf.video_matching;
+    matching_opts.matcher_type = conf.cascade_hashing
+        ? sfm::bundler::Matching::MATCHER_CASCADE_HASHING
+        : sfm::bundler::Matching::MATCHER_EXHAUSTIVE;
 
     std::cout << "Performing feature matching..." << std::endl;
     {
@@ -491,6 +495,7 @@ main (int argc, char** argv)
     args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [25]");
     args.add_option('\0', "use-2cam-tracks", false, "Triangulate tracks from only two cameras");
     args.add_option('\0', "initial-pair", true, "Manually specify initial pair IDs [-1,-1]");
+    args.add_option('\0', "cascade-hashing", false, "Use cascade hashing for matching [false]");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -549,6 +554,8 @@ main (int argc, char** argv)
             std::cout << "Using initial pair (" << conf.initial_pair_1
                 << "," << conf.initial_pair_2 << ")." << std::endl;
         }
+        else if (i->opt->lopt == "cascade-hashing")
+            conf.cascade_hashing = true;
         else
         {
             std::cerr << "Error: Unexpected option: "
