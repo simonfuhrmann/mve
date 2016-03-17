@@ -51,7 +51,8 @@ TEST(NearestNeighborTest, TestSingnedShort)
 
     sfm::NearestNeighbor<short>::Result result;
     sfm::NearestNeighbor<short> nn;
-    nn.set_elements(elements.data(), 4);
+    nn.set_elements(elements.data());
+    nn.set_num_elements(4);
     nn.set_element_dimensions(8);
 
     short query1[8] = { 127, 0, 0, 0, 0, 0, 0, 0 };
@@ -117,7 +118,8 @@ TEST(NearestNeighborTest, TestUnsignedShort)
 
     sfm::NearestNeighbor<unsigned short>::Result result;
     sfm::NearestNeighbor<unsigned short> nn;
-    nn.set_elements(elements.data(), 2);
+    nn.set_elements(elements.data());
+    nn.set_num_elements(2);
     nn.set_element_dimensions(8);
 
     unsigned short query1[8] = { 255, 0, 0, 0, 0, 0, 0, 0 };
@@ -166,7 +168,8 @@ TEST(NearestNeighborTest, TestFloat)
 
     sfm::NearestNeighbor<float>::Result result;
     sfm::NearestNeighbor<float> nn;
-    nn.set_elements(elements.data(), 3);
+    nn.set_elements(elements.data());
+    nn.set_num_elements(3);
     nn.set_element_dimensions(4);
 
     float query1[4] = { 1.0f, 0.0f, 0.0f, 0.0f };

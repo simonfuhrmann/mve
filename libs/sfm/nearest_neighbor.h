@@ -58,9 +58,11 @@ public:
 public:
     NearestNeighbor (void);
     /** For SfM, this is the descriptor memory block. */
-    void set_elements (T const* elements, int num_elements);
+    void set_elements (T const* elements);
     /** For SfM, this is the descriptor length. */
     void set_element_dimensions (int element_dimensions);
+    /** For SfM, this is the number of descriptors. */
+    void set_num_elements (int num_elements);
     /** Find the nearest neighbor of 'query'. */
     void find (T const* query, Result* result) const;
 
@@ -85,10 +87,9 @@ NearestNeighbor<T>::NearestNeighbor (void)
 
 template <typename T>
 inline void
-NearestNeighbor<T>::set_elements (T const* elements, int num_elements)
+NearestNeighbor<T>::set_elements (T const* elements)
 {
     this->elements = elements;
-    this->num_elements = num_elements;
 }
 
 template <typename T>
@@ -96,6 +97,13 @@ inline void
 NearestNeighbor<T>::set_element_dimensions (int element_dimensions)
 {
     this->dimensions = element_dimensions;
+}
+
+template <typename T>
+inline void
+NearestNeighbor<T>::set_num_elements (int num_elements)
+{
+    this->num_elements = num_elements;
 }
 
 template <typename T>
