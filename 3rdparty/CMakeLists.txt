@@ -131,6 +131,7 @@ ExternalProject_Add(qt5
 				-skip qtsensors -skip qtserialport -skip qttools
 				-skip qttranslations -skip qtwayland -skip qtwebchannel
 				-skip qtwebkit -skip qtwebkit-examples -skip qtwebsockets
+				-nomake examples -no-compile-examples
 	BUILD_COMMAND nmake
 	BUILD_IN_SOURCE 1
 	INSTALL_COMMAND "")
