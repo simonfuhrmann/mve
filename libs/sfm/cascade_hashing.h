@@ -14,7 +14,11 @@
 #include <iostream>
 #include <random>
 
-#include <popcntintrin.h>
+#ifdef _MSC_VER
+#   include <nmmintrin.h>
+#else
+#   include <popcntintrin.h>
+#endif
 
 #include "math/vector.h"
 #include "sfm/defines.h"
