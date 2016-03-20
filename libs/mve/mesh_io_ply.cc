@@ -305,8 +305,15 @@ load_ply_mesh (std::string const& filename)
                 }
                 else if (header[1] == "int")
                 {
+					if (std::string::npos != header[2].find("viewID"))
+					{
+						v_format.push_back(PLY_V_VIEW_ID);
+					}
                     /* Ignore int data types. */
-                    v_format.push_back(PLY_V_IGNORE_UINT32);
+					else
+					{
+						v_format.push_back(PLY_V_IGNORE_UINT32);
+					}
                 }
                 else
                 {
@@ -375,10 +382,12 @@ load_ply_mesh (std::string const& filename)
     TriangleMesh::ValueList& vvalues = mesh->get_vertex_values();
     TriangleMesh::TexCoordList& tcoords = mesh->get_vertex_texcoords();
     TriangleMesh::NormalList& vnormals = mesh->get_vertex_normals();
+	TriangleMesh::VertexViewLists& vviews = mesh->get_vertex_view_lists();
 
     bool want_colors = false;
     bool want_vnormals = false;
     bool want_tex_coords = false;
+	bool want_views = false;
 
     for (std::size_t i = 0; i < v_format.size(); ++i)
     {
@@ -404,6 +413,10 @@ load_ply_mesh (std::string const& filename)
                 want_tex_coords = true;
                 break;
 
+			case PLY_V_VIEW_ID:
+				want_views = true;
+				break;
+
             default:
                 break;
         }
@@ -425,6 +438,8 @@ load_ply_mesh (std::string const& filename)
         vcolors.reserve(num_vertices);
     if (want_vnormals)
         vnormals.reserve(num_vertices);
+	if (want_views)
+		vviews.resize(num_vertices);
 
     bool eof = false;
     for (std::size_t i = 0; !eof && i < num_vertices; ++i)
@@ -433,6 +448,7 @@ load_ply_mesh (std::string const& filename)
         math::Vec3f vnormal(0.0f, 0.0f, 0.0f);
         math::Vec4f color(1.0f, 0.5f, 0.5f, 1.0f); // Make it ugly by default
         math::Vec2f tex_coord(0.0f, 0.0f);
+		int view_index = -1;
 
         for (std::size_t n = 0; n < v_format.size(); ++n)
         {
@@ -505,6 +521,10 @@ load_ply_mesh (std::string const& filename)
                 ply_read_value<unsigned char>(input, ply_format);
                 break;
 
+			case PLY_V_VIEW_ID:
+				view_index = ply_read_value<int>(input, ply_format);
+				break;
+
             default:
                 throw std::runtime_error("Unhandled PLY vertex property");
             }
@@ -517,6 +537,9 @@ load_ply_mesh (std::string const& filename)
             vcolors.push_back(color);
         if (want_tex_coords)
             tcoords.push_back(tex_coord);
+		if (want_views)
+			if (view_index >= 0)
+				vviews[i].push_back(view_index);
 
         eof = input.eof();
     }
@@ -776,10 +799,8 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
 
 	if (write_vview_ids)
 	{
-		for (std::size_t channel = 0; channel < options.view_ids_per_vertex; ++channel)
-		{
-			out << "property int viewID" << channel << std::endl;
-		}
+		for (std::size_t i = 0; i < options.view_ids_per_vertex; ++i)
+			out << "property int viewID" << i << std::endl;
 	}
 
     if (face_amount)

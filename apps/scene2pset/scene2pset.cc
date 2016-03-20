@@ -35,7 +35,7 @@ struct AppSettings
     std::string outmesh;
     std::string dmname = "depth-L0";
     std::string image = "undistorted";
-	std::string vmname = "views-L0";
+	std::string vmname;
     std::string mask;
 	std::string aabb;
 

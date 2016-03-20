@@ -139,10 +139,11 @@ enum PLYVertexProperty
     PLY_V_FLOAT_V,
     PLY_V_FLOAT_CONF,
     PLY_V_FLOAT_VALUE,
+	PLY_V_VIEW_ID,
     PLY_V_IGNORE_FLOAT,
     PLY_V_IGNORE_DOUBLE,
     PLY_V_IGNORE_UINT32,
-    PLY_V_IGNORE_UINT8
+	PLY_V_IGNORE_UINT8,
 };
 
 /** PLY face element properties. */
