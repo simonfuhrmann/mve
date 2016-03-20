@@ -221,6 +221,9 @@ public:
     /** Returns an image of type IMAGE_TYPE_FLOAT. */
     FloatImage::Ptr get_float_image (std::string const& name);
 
+	/** Returns an image of type IMAGE_TYPE_SINT32 (int). */
+	IntImage::Ptr get_int_image(std::string const& name);
+
     /**
      * Sets an image to the view and marks it dirty.
      * If an image by that name already exists, it is overwritten.
@@ -409,6 +412,13 @@ View::get_float_image (std::string const& name)
 {
     return std::dynamic_pointer_cast<FloatImage>
         (this->get_image(name, IMAGE_TYPE_FLOAT));
+}
+
+inline IntImage::Ptr
+View::get_int_image(std::string const& name)
+{
+	return std::dynamic_pointer_cast<IntImage>
+		(this->get_image(name, IMAGE_TYPE_SINT32));
 }
 
 MVE_NAMESPACE_END

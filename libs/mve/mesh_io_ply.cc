@@ -697,6 +697,7 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
     TriangleMesh::NormalList const& vnormals(mesh->get_vertex_normals());
     TriangleMesh::ConfidenceList const& conf(mesh->get_vertex_confidences());
     TriangleMesh::ValueList const& vvalues(mesh->get_vertex_values());
+	TriangleMesh::VertexViewLists const& vview_ids(mesh->get_vertex_view_lists());
     TriangleMesh::FaceList const& faces(mesh->get_faces());
     TriangleMesh::ColorList const& fcolors(mesh->get_face_colors());
     TriangleMesh::NormalList const& fnormals(mesh->get_face_normals());
@@ -713,6 +714,8 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
     write_vconfidences = write_vconfidences && verts.size() == conf.size();
     bool write_vvalues = options.write_vertex_values;
     write_vvalues = write_vvalues && verts.size() == vvalues.size();
+	bool write_vview_ids = options.write_vertex_view_ids;
+	write_vview_ids = write_vview_ids && verts.size() == vview_ids.size();
     bool write_fcolors = options.write_face_colors;
     write_fcolors = write_fcolors && fcolors.size() == face_amount;
     bool write_fnormals = options.write_face_normals;
@@ -732,6 +735,7 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
         << (write_vnormals ? ", with normals" : "")
         << (write_vconfidences ? ", with confidences" : "")
         << (write_vvalues ? ", with values" : "")
+		<< (write_vview_ids ? ", with indices of responsible views" : "")
         << ", " << face_amount << " faces"
         << (write_fcolors ? ", with colors" : "")
         << (write_fnormals ? ", with normals" : "")
@@ -770,6 +774,14 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
         out << "property float value" << std::endl;
     }
 
+	if (write_vview_ids)
+	{
+		for (std::size_t channel = 0; channel < options.view_ids_per_vertex; ++channel)
+		{
+			out << "property int viewID" << channel << std::endl;
+		}
+	}
+
     if (face_amount)
     {
         out << "element face " << face_amount << std::endl;
@@ -794,6 +806,7 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
 
     if (options.format_binary)
     {
+
         /* Output data in BINARY format. */
         for (std::size_t i = 0; i < verts.size(); ++i)
         {
@@ -810,7 +823,12 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
                 out.write((char const*)&conf[i], sizeof(float));
             if (write_vvalues)
                 out.write((char const*)&vvalues[i], sizeof(float));
-        }
+			if (write_vview_ids)
+			{
+				for (std::size_t channel = 0; channel < options.view_ids_per_vertex; ++channel)
+					out.write((char const*)&vview_ids[i][channel], sizeof(int));
+			}
+		}
 
         unsigned char verts_per_simplex_uchar = options.verts_per_simplex;
         for (std::size_t i = 0; i < face_amount; ++i)
@@ -852,6 +870,11 @@ save_ply_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename,
                 out << " " << conf[i];
             if (write_vvalues)
                 out << " " << vvalues[i];
+			if (write_vview_ids)
+			{
+				for (std::size_t channel = 0; channel < options.view_ids_per_vertex; ++channel)
+					out << " " << vview_ids[i][channel];
+			}
             out << std::endl;
         }
 

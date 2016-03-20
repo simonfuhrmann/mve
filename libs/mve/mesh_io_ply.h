@@ -54,9 +54,11 @@ struct SavePLYOptions
     bool write_vertex_normals = false;
     bool write_vertex_confidences = true;
     bool write_vertex_values = true;
+	bool write_vertex_view_ids = false;
     bool write_face_colors = true;
     bool write_face_normals = false;
     unsigned int verts_per_simplex = 3;
+	unsigned char view_ids_per_vertex = 4;
 };
 
 /**

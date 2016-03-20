@@ -15,6 +15,7 @@
 #include <cstring>
 #include <cerrno>
 #include <cstdlib>
+#include <fstream>
 
 #include "math/octree_tools.h"
 #include "util/system.h"
@@ -34,14 +35,18 @@ struct AppSettings
     std::string outmesh;
     std::string dmname = "depth-L0";
     std::string image = "undistorted";
+	std::string vmname = "views-L0";
     std::string mask;
-    std::string aabb;
-    bool with_normals = false;
-    bool with_scale = false;
-    bool with_conf = false;
-    bool poisson_normals = false;
+	std::string aabb;
+
     float min_valid_fraction = 0.0f;
-    float scale_factor = 2.5f; /* "Radius" of MVS patch (usually 5x5). */
+	float scale_factor = 2.5f; /* "Radius" of MVS patch (usually 5x5). */
+
+	bool with_conf = false;
+	bool with_normals = false;
+	bool with_scale = false;
+	bool poisson_normals = false;
+
     std::vector<int> ids;
 };
 
@@ -93,17 +98,19 @@ main (int argc, char** argv)
         "Generates a pointset from the scene by projecting reconstructed "
         "depth values in the world coordinate system.");
     args.add_option('d', "depthmap", true, "Name of depth map to use [depth-L0]");
-    args.add_option('i', "image", true, "Name of color image to use [undistorted]");
-    args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
-    args.add_option('s', "with-scale", false, "Write points with scale values (PLY only)");
-    args.add_option('c', "with-conf", false, "Write points with confidence (PLY only)");
+	args.add_option('i', "image", true, "Name of color image to use [undistorted]");
+	args.add_option('c', "with-conf", false, "Write points with confidence (PLY only)");
+	args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
+	args.add_option('s', "with-scale", false, "Write points with scale values (PLY only)");
+	args.add_option('V', "viewmap", false,
+		"Name of views image to write points with view indices of views which were used to create them (PLY only)");
     args.add_option('m', "mask", true, "Name of mask/silhouette image to clip 3D points []");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
     args.add_option('f', "min-fraction", true, "Minimum fraction of valid depth values [0.0]");
     args.add_option('p', "poisson-normals", false, "Scale normals according to confidence");
     args.add_option('S', "scale-factor", true, "Factor for computing scale values [2.5]");
-    args.add_option('F', "fssr", true, "FSSR output, sets -nsc and -di with scale ARG");
+	args.add_option('F', "fssr", true, "FSSR output, sets -nsc and -di with scale ARG");
     args.parse(argc, argv);
 
     /* Init default settings. */
@@ -119,10 +126,11 @@ main (int argc, char** argv)
 
         switch (arg->opt->sopt)
         {
+			case 'c': conf.with_conf = true; break;
             case 'n': conf.with_normals = true; break;
-            case 's': conf.with_scale = true; break;
-            case 'c': conf.with_conf = true; break;
+			case 's': conf.with_scale = true; break;
             case 'd': conf.dmname = arg->arg; break;
+			case 'V': conf.vmname = arg->arg; break;
             case 'i': conf.image = arg->arg; break;
             case 'm': conf.mask = arg->arg; break;
             case 'v': args.get_ids_from_string(arg->arg, &conf.ids); break;
@@ -135,13 +143,14 @@ main (int argc, char** argv)
                 conf.with_conf = true;
                 conf.with_normals = true;
                 conf.with_scale = true;
-                int const scale = arg->get_arg<int>();
-                conf.dmname = "depth-L" + util::string::get<int>(scale);
-                conf.image = (scale == 0)
-                    ? "undistorted"
-                    : "undist-L" + util::string::get<int>(scale);
+
+				int scale = arg->get_arg<int>();
+
+				std::string const scaleString = util::string::get<int>(scale);
+				conf.dmname = "depth-L" + scaleString;
+				conf.image = (0 == scale ? "undistorted" : "undist-L" + scaleString);
                 break;
-            }
+			}
 
             default: throw std::runtime_error("Unknown option");
         }
@@ -176,6 +185,7 @@ main (int argc, char** argv)
     mve::TriangleMesh::ColorList& vcolor(pset->get_vertex_colors());
     mve::TriangleMesh::ValueList& vvalues(pset->get_vertex_values());
     mve::TriangleMesh::ConfidenceList& vconfs(pset->get_vertex_confidences());
+	mve::TriangleMesh::VertexViewLists& vviews(pset->get_vertex_view_lists());
 
     /* Load scene. */
     mve::Scene::Ptr scene(mve::Scene::create());
@@ -185,7 +195,7 @@ main (int argc, char** argv)
     mve::Scene::ViewList& views(scene->get_views());
 #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < views.size(); ++i)
-    {
+	{
         mve::View::Ptr view = views[i];
         if (view == nullptr)
             continue;
@@ -220,6 +230,21 @@ main (int argc, char** argv)
         if (!conf.image.empty())
             ci = view->get_byte_image(conf.image);
 
+		mve::IntImage::Ptr vi;
+		if (!conf.vmname.empty())
+		{
+			vi = view->get_int_image(conf.vmname);
+
+			if (vi == nullptr)
+			{
+#pragma omp critical(showError)
+				{
+					std::cerr << "\nError: \"" << view->get_directory() + "\" does not contain a view map (" + conf.vmname + ")" << std::endl;
+					std::exit(EXIT_FAILURE);
+				}
+			}
+		}
+
 #pragma omp critical
         std::cout << "Processing view \"" << view->get_name()
             << "\"" << (ci != nullptr ? " (with colors)" : "")
@@ -228,11 +253,12 @@ main (int argc, char** argv)
         /* Triangulate depth map. */
         mve::CameraInfo const& cam = view->get_camera();
         mve::TriangleMesh::Ptr mesh;
-        mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
+		mesh = mve::geom::depthmap_triangulate(dm, ci, vi, cam);
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
         mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
+		mve::TriangleMesh::VertexViewLists& mvviews(mesh->get_vertex_view_lists());
 
         if (conf.with_normals)
             mesh->ensure_normals();
@@ -287,6 +313,8 @@ main (int argc, char** argv)
                     vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
                 if (conf.with_conf)
                     vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
+				if (!conf.vmname.empty())
+					vviews.insert(vviews.end(), mvviews.begin(), mvviews.end());
             }
         }
         else
@@ -308,12 +336,15 @@ main (int argc, char** argv)
                         vvalues.push_back(mvscale[i]);
                     if (conf.with_conf)
                         vconfs.push_back(mconfs[i]);
+					if (!conf.vmname.empty())
+						vviews.push_back(mvviews[i]);
                 }
             }
         }
 
         dm.reset();
         ci.reset();
+		vi.reset();
         view->cache_cleanup();
     }
 
@@ -383,9 +414,15 @@ main (int argc, char** argv)
     if (util::string::right(conf.outmesh, 4) == ".ply")
     {
         mve::geom::SavePLYOptions opts;
+		opts.write_vertex_confidences = conf.with_conf;
         opts.write_vertex_normals = conf.with_normals;
-        opts.write_vertex_values = conf.with_scale;
-        opts.write_vertex_confidences = conf.with_conf;
+		opts.write_vertex_values = conf.with_scale;
+		opts.write_vertex_view_ids = !conf.vmname.empty();
+		if (!conf.vmname.empty())
+		{
+			if (vviews.size() >= 1)
+				opts.view_ids_per_vertex = vviews[0].size();
+		}
         mve::geom::save_ply_mesh(pset, conf.outmesh, opts);
     }
     else

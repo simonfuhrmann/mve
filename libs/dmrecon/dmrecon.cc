@@ -75,8 +75,8 @@ DMRecon::DMRecon(mve::Scene::Ptr _scene, Settings const& _settings)
         throw std::invalid_argument("Invalid master view");
 
     /* Prepare reconstruction */
-    refV->loadColorImage(this->settings.scale);
-    refV->prepareMasterView(settings.scale);
+	refV->loadColorImage(settings.scale);
+	refV->prepareMasterView(settings.scale, settings.keepViewIndicesPerPixel, settings.nrReconNeighbors);
     mve::ByteImage::ConstPtr scaled_img = refV->getScaledImg();
     this->width = scaled_img->width();
     this->height = scaled_img->height();
@@ -118,31 +118,39 @@ DMRecon::start()
 
         // Save images to view
         mve::View::Ptr view = refV->getMVEView();
+		std::string scale = util::string::get(settings.scale);
 
-        std::string name("depth-L");
-        name += util::string::get(settings.scale);
+		std::string name("depth-L");
+		name += scale;
         view->set_image(refV->depthImg, name);
 
         if (settings.keepDzMap)
         {
             name = "dz-L";
-            name += util::string::get(settings.scale);
+			name += scale;
             view->set_image(refV->dzImg, name);
         }
 
         if (settings.keepConfidenceMap)
         {
             name = "conf-L";
-            name += util::string::get(settings.scale);
+			name += scale;
             view->set_image(refV->confImg, name);
         }
 
         if (settings.scale != 0)
         {
             name = "undist-L";
-            name += util::string::get(settings.scale);
+			name += scale;
             view->set_image(refV->getScaledImg()->duplicate(), name);
         }
+
+		if (settings.keepViewIndicesPerPixel)
+		{
+			name = "views-L";
+			name += scale;
+			view->set_image(refV->viewIndicesImg, name);
+		}
 
         progress.status = RECON_IDLE;
 
@@ -314,6 +322,16 @@ DMRecon::processFeatures()
             refV->dzImg->at(index, 0) = patch.getDzI();
             refV->dzImg->at(index, 1) = patch.getDzJ();
             refV->confImg->at(index) = conf;
+			if (settings.keepViewIndicesPerPixel)
+			{
+				// store view indices of for this feature in an image at the feature pixel coordinates
+				IndexSet const& localViewIDs = patch.getLocalViewIDs();
+
+				std::size_t nextViewIDIndex = 0;
+				for (IndexSet::iterator it = localViewIDs.begin(); it != localViewIDs.end(); ++it)
+					refV->viewIndicesImg->at(index, nextViewIDIndex++) = *it;
+			}
+
             QueueData tmpData;
             tmpData.confidence = conf;
             tmpData.depth = depth;
@@ -385,10 +403,12 @@ DMRecon::processQueue()
         tmpData.dz_j = patch.getDzJ();
         math::Vec3f normal = patch.getNormal();
         tmpData.localViewIDs = patch.getLocalViewIDs();
-        if (refV->confImg->at(index) <= 0) {
+		if (refV->confImg->at(index) <= 0)
+		{
             ++progress.filled;
         }
-        if (refV->confImg->at(index) < tmpData.confidence) {
+		if (refV->confImg->at(index) < tmpData.confidence)
+		{
             refV->depthImg->at(index) = tmpData.depth;
             refV->normalImg->at(index, 0) = normal[0];
             refV->normalImg->at(index, 1) = normal[1];
@@ -396,6 +416,15 @@ DMRecon::processQueue()
             refV->dzImg->at(index, 0) = tmpData.dz_i;
             refV->dzImg->at(index, 1) = tmpData.dz_j;
             refV->confImg->at(index) = tmpData.confidence;
+			if (settings.keepViewIndicesPerPixel)
+			{
+				// store view indices of for this feature in an image at the feature pixel coordinates
+				IndexSet const& localViewIDs = patch.getLocalViewIDs();
+
+				std::size_t nextViewIDIndex = 0;
+				for (IndexSet::iterator it = localViewIDs.begin(); it != localViewIDs.end(); ++it)
+					refV->viewIndicesImg->at(index, nextViewIDIndex++) = *it;
+			}
 
             // left
             tmpData.x = x - 1; tmpData.y = y;

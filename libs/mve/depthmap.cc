@@ -319,7 +319,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
 
 /* ---------------------------------------------------------------- */
 TriangleMesh::Ptr
-depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
+depthmap_triangulate(FloatImage::ConstPtr dm, ByteImage::ConstPtr ci, IntImage::ConstPtr vi,
     math::Matrix3f const& invproj, float dd_factor)
 {
     if (dm == nullptr)
@@ -331,37 +331,63 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     if (ci != nullptr && (ci->width() != width || ci->height() != height))
         throw std::invalid_argument("Color image dimension mismatch");
 
-    /* Triangulate depth map. */
-    mve::Image<unsigned int> vids;
-    mve::TriangleMesh::Ptr mesh;
-    mesh = mve::geom::depthmap_triangulate(dm, invproj, dd_factor, &vids);
+	if (vi != nullptr && (vi->width() != width || vi->height() != height))
+		throw std::invalid_argument("View ID image dimension mismatch");
 
-    if (ci == nullptr)
+    /* Triangulate depth map. */
+	mve::Image<unsigned int> vids;
+    mve::TriangleMesh::Ptr mesh;
+	mesh = mve::geom::depthmap_triangulate(dm, invproj, dd_factor, &vids);
+
+	/* If provided, add other data to the mesh, such as visibility information, colors. */
+	mve::TriangleMesh::VertexList const& verts(mesh->get_vertices());
+	int const num_pixel = vids.get_pixel_amount();
+
+	/* Add per vertex view sets? */
+	if (vi != nullptr)
+	{
+		mve::TriangleMesh::VertexViewLists& view_lists(mesh->get_vertex_view_lists());
+		view_lists.resize(verts.size());
+
+		/* Use vertex index mapping to set view indices for each vertex. */
+		std::size_t const channel_count = vi->channels();
+		for (int i = 0; i < num_pixel; ++i)
+		{
+			unsigned int const vertex_index = vids[i];
+			if (vertex_index == MATH_MAX_UINT)
+				continue;
+
+			view_lists[vertex_index].resize(channel_count);
+			for (std::size_t channel = 0; channel < channel_count; ++channel)
+				view_lists[vertex_index][channel] = vi->at(i, channel);
+		}
+	}
+
+	/* Add vertex colors? */
+	if (ci == nullptr)
         return mesh;
 
-    /* Use vertex index mapping to color the mesh. */
-    mve::TriangleMesh::ColorList& colors(mesh->get_vertex_colors());
-    mve::TriangleMesh::VertexList const& verts(mesh->get_vertices());
+	/* Use vertex index mapping to color the mesh. */
+	mve::TriangleMesh::ColorList& colors(mesh->get_vertex_colors());
     colors.resize(verts.size());
 
-    int num_pixel = vids.get_pixel_amount();
-    for (int i = 0; i < num_pixel; ++i)
-    {
-        if (vids[i] == MATH_MAX_UINT)
-            continue;
+	for (int i = 0; i < num_pixel; ++i)
+	{
+		if (vids[i] == MATH_MAX_UINT)
+			continue;
 
-        math::Vec4f color(ci->at(i, 0), 0.0f, 0.0f, 255.0f);
-        if (ci->channels() >= 3)
-        {
-            color[1] = ci->at(i, 1);
-            color[2] = ci->at(i, 2);
-        }
-        else
-        {
-            color[1] = color[2] = color[0];
-        }
-        colors[vids[i]] = color / 255.0f;
-    }
+		math::Vec4f color(ci->at(i, 0), 0.0f, 0.0f, 255.0f);
+		if (ci->channels() >= 3)
+		{
+			color[1] = ci->at(i, 1);
+			color[2] = ci->at(i, 2);
+		}
+		else
+		{
+			color[1] = color[2] = color[0];
+		}
+		colors[vids[i]] = color / 255.0f;
+	}
 
     return mesh;
 }
@@ -369,7 +395,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
 /* ---------------------------------------------------------------- */
 
 TriangleMesh::Ptr
-depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
+depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci, IntImage::ConstPtr vi,
     CameraInfo const& cam, float dd_factor)
 {
     if (dm == nullptr)
@@ -381,7 +407,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     math::Matrix3f invproj;
     cam.fill_inverse_calibration(*invproj, dm->width(), dm->height());
     mve::TriangleMesh::Ptr mesh;
-    mesh = mve::geom::depthmap_triangulate(dm, ci, invproj, dd_factor);
+	mesh = mve::geom::depthmap_triangulate(dm, ci, vi, invproj, dd_factor);
 
     /* Transform mesh to world coordinates. */
     math::Matrix4f ctw;

@@ -111,7 +111,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
  * image coordinates.
  */
 TriangleMesh::Ptr
-depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
+depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci, IntImage::ConstPtr vi,
     math::Matrix3f const& invproj, float dd_factor = 5.0f);
 
 /**
@@ -120,7 +120,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
  * the mesh into the global coordinate system.
  */
 TriangleMesh::Ptr
-depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
+depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci, IntImage::ConstPtr vi,
     CameraInfo const& cam, float dd_factor = 5.0f);
 
 /**
