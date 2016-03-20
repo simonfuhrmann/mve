@@ -102,8 +102,8 @@ main (int argc, char** argv)
 	args.add_option('c', "with-conf", false, "Write points with confidence (PLY only)");
 	args.add_option('n', "with-normals", false, "Write points with normals (PLY only)");
 	args.add_option('s', "with-scale", false, "Write points with scale values (PLY only)");
-	args.add_option('V', "viewmap", false,
-		"Name of views image to write points with view indices of views which were used to create them (PLY only)");
+	args.add_option('V', "viewmap", true,
+		"Name of views image to write points with view indices of views which were used to create them (PLY only) [views-L0]");
     args.add_option('m', "mask", true, "Name of mask/silhouette image to clip 3D points []");
     args.add_option('v', "views", true, "View IDs to use for reconstruction [all]");
     args.add_option('b', "bounding-box", true, "Six comma separated values used as AABB.");
