@@ -483,12 +483,26 @@ ViewInspect::populate_embeddings (void)
     if (this->view == nullptr)
         return;
 
+	/* Get image proxies of current view. */
     std::vector<std::string> names;
     mve::View::ImageProxies const& proxies = this->view->get_images();
     for (std::size_t i = 0; i < proxies.size(); ++i)
-        names.push_back(proxies[i].name);
+	{
+		mve::View::ImageProxy const& proxy = proxies[i];
+
+		/* Only add images which can be displayed. */
+		if (proxy.type != mve::IMAGE_TYPE_FLOAT &&
+			proxy.type != mve::IMAGE_TYPE_DOUBLE &&
+			proxy.type != mve::IMAGE_TYPE_UINT8)
+		{
+			continue;
+		}
+
+		names.push_back(proxy.name);
+	}
     std::sort(names.begin(), names.end());
 
+	/* Add supported images to displayed embeddings list. */
     for (std::size_t i = 0; i < names.size(); ++i)
     {
         this->embeddings->addItem(QString(names[i].c_str()), (int)i);
