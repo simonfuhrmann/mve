@@ -98,7 +98,7 @@ ViewInspect::create_detail_frame (void)
     this->populate_exif_viewer();
 
     this->connect(this->tone_mapping, SIGNAL(tone_mapping_changed()),
-        this, SLOT(on_tone_mapping_changed()));
+		this, SLOT(on_image_changed()));
     this->connect(this->operations, SIGNAL(signal_reload_embeddings()),
         this, SLOT(on_reload_embeddings()));
     this->connect(this->operations, SIGNAL(signal_select_embedding
@@ -392,21 +392,28 @@ ViewInspect::set_embedding (std::string const& name)
 void
 ViewInspect::set_image (mve::ImageBase::ConstPtr img)
 {
-    this->image = img;
-    if (this->image == nullptr)
-        return;
-    bool is_byte_image = this->image->get_type() == mve::IMAGE_TYPE_UINT8;
-    this->tone_mapping->setEnabled(!is_byte_image);
+	tone_mapping->setEnabled(false);
+	image = img;
+	if (image == nullptr)
+		return;
+
+	/* Enable tone mapping? */
+	if (image->get_type() == mve::IMAGE_TYPE_DOUBLE || image->get_type() == mve::IMAGE_TYPE_FLOAT)
+	{
+		tone_mapping->setEnabled(true);
+		tone_mapping->set_image(image);
+	}
+
+	on_image_changed();
+
 
     /* Update dimension and memory labels. */
     std::stringstream ss;
     ss << img->width() << "x" << img->height() << "x"
         << img->channels() << " (" << img->get_type_string() << ")";
-    this->label_dimension->setText(tr("%1").arg(ss.str().c_str()));
-    this->label_memory->setText(tr("%1 KB").arg(img->get_byte_size() / 1024));
+	label_dimension->setText(tr("%1").arg(ss.str().c_str()));
+	label_memory->setText(tr("%1 KB").arg(img->get_byte_size() / 1024));
 
-    this->tone_mapping->set_image(img);
-    this->on_tone_mapping_changed();
 }
 
 /* ---------------------------------------------------------------- */
@@ -642,9 +649,20 @@ ViewInspect::on_reload_embeddings (void)
 /* ---------------------------------------------------------------- */
 
 void
-ViewInspect::on_tone_mapping_changed (void)
+ViewInspect::on_image_changed (void)
 {
-    mve::ByteImage::ConstPtr byte_image = this->tone_mapping->render();
+	mve::ByteImage::ConstPtr byte_image = nullptr;
+	if (this->tone_mapping->isEnabled())
+	{
+		byte_image = this->tone_mapping->render();
+	}
+	else
+	{
+		byte_image = std::dynamic_pointer_cast<mve::ByteImage const>(this->image);
+		if (nullptr == byte_image)
+			return;
+	}
+
     this->inspector->set_image(byte_image, this->image);
     this->display_byte_image(byte_image);
 }

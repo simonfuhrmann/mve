@@ -62,8 +62,8 @@ AddinDMTriangulate::on_triangulate_clicked (void)
 
     float dd_factor = this->dm_depth_disc->value();
     std::string embedding = this->dm_depthmap_cb->currentText().toStdString();
-    std::string colorimage = this->dm_colorimage_cb->currentText().toStdString();
-    if (embedding.empty() || colorimage.empty())
+	std::string color_image = this->dm_colorimage_cb->currentText().toStdString();
+	if (embedding.empty() || color_image.empty())
     {
         this->show_error_box("Error triangulating", "No embedding selected");
         return;
@@ -84,14 +84,16 @@ AddinDMTriangulate::on_triangulate_clicked (void)
             "Depthmap not available: " + embedding);
         return;
     }
-    mve::ByteImage::Ptr ci(view->get_byte_image(colorimage));
-    mve::CameraInfo const& cam(view->get_camera());
+	mve::ByteImage::Ptr ci(view->get_byte_image(color_image));
+	mve::CameraInfo const& cam(view->get_camera());
 
     /* Triangulate mesh. */
     util::WallTimer timer;
     mve::TriangleMesh::Ptr mesh;
     try
-    { mesh = mve::geom::depthmap_triangulate(dm, ci, cam, dd_factor); }
+	{
+		mesh = mve::geom::depthmap_triangulate(dm, ci, cam, nullptr, dd_factor);
+	}
     catch (std::exception& e)
     {
         this->show_error_box("Error triangulating", e.what());

@@ -253,7 +253,7 @@ main (int argc, char** argv)
         /* Triangulate depth map. */
         mve::CameraInfo const& cam = view->get_camera();
         mve::TriangleMesh::Ptr mesh;
-		mesh = mve::geom::depthmap_triangulate(dm, ci, vi, cam);
+		mesh = mve::geom::depthmap_triangulate(dm, ci, cam, vi);
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());

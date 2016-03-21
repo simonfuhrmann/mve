@@ -73,7 +73,7 @@ private slots:
     void on_view_reload (void);
     void on_reload_embeddings (void);
     void on_image_clicked (int x, int y, QMouseEvent* event);
-    void on_tone_mapping_changed (void);
+	void on_image_changed (void);
 
     void on_scene_selected (mve::Scene::Ptr scene);
     void on_view_selected (mve::View::Ptr view);

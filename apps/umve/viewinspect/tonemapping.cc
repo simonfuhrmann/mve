@@ -534,9 +534,6 @@ ToneMapping::set_image (mve::ImageBase::ConstPtr img)
 mve::ByteImage::ConstPtr
 ToneMapping::render (void)
 {
-    if (this->image->get_type() == mve::IMAGE_TYPE_UINT8)
-        return std::dynamic_pointer_cast<mve::ByteImage const>(this->image);
-
     //util::WallTimer timer;
     //std::cout << "Rendering..." << std::flush;
     int const width = this->image->width();
