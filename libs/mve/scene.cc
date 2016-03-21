@@ -15,6 +15,7 @@
 #include "util/file_system.h"
 #include "mve/scene.h"
 #include "mve/bundle_io.h"
+#include "mve/camera_io.h"
 
 MVE_NAMESPACE_BEGIN
 
@@ -53,11 +54,15 @@ Scene::save_bundle (void)
 void
 Scene::save_views (void)
 {
+	std::cout << "Saving camera infos to camera MVE file..." << std::flush;
+		save_camera_infos(this->views, "camera_infos.txt");
+	std::cout << " done." << std::endl;
+
     std::cout << "Saving views to MVE files..." << std::flush;
     for (std::size_t i = 0; i < this->views.size(); ++i)
         if (this->views[i] != nullptr && this->views[i]->is_dirty())
             this->views[i]->save_view();
-    std::cout << " done." << std::endl;
+	std::cout << " done." << std::endl;
 }
 
 /* ---------------------------------------------------------------- */
