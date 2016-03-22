@@ -32,7 +32,7 @@ save_camera_infos (const std::vector<View::Ptr> &views, std::string const& file_
 		throw util::FileException(file_name, std::strerror(errno));
 
 	out << "MVE camera infos 1.0\n";
-	out << "view_count = " << view_count << "\n";
+	out << "camera_count = " << view_count << "\n";
 
 	/* Write all cameras infos to file. */
 	for (size_t viewIdx = 0; viewIdx < view_count; ++viewIdx)
