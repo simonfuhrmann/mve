@@ -16,9 +16,9 @@ TEST(VectorTest, MiscOperations)
     EXPECT_EQ(Vec2f(10.0f, 0.0f).normalize(), Vec2f(1.0f, 0.0f));
     EXPECT_EQ(Vec2f(3.0f, 4.0f).norm(), 5.0f);
     EXPECT_EQ(Vec2f(2.0f, 2.0f).square_norm(), 8.0f);
-    EXPECT_EQ(Vec2f().dim(), 2);
-    EXPECT_EQ(Vec3f().dim(), 3);
-    EXPECT_EQ(Vec4f().dim(), 4);
+    EXPECT_EQ(Vec2f::dim, 2);
+    EXPECT_EQ(Vec3f::dim, 3);
+    EXPECT_EQ(Vec4f::dim, 4);
     EXPECT_EQ(Vec2f(-1.0f, 2.0f).abs_value(), Vec2f(1.0f, 2.0f));
     EXPECT_EQ(Vec2f(-1.0f, -2.0f).abs_value(), Vec2f(1.0f, 2.0f));
     EXPECT_EQ(Vec2f(1.0f, -2.0f).abs_value(), Vec2f(1.0f, 2.0f));

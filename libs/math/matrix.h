@@ -55,6 +55,9 @@ class Matrix
 public:
     typedef T ValueType;
 
+    static int constexpr rows = N;
+    static int constexpr cols = M;
+
     /* ------------------------ Constructors ---------------------- */
 
     /** Default ctor that leaves values uninitialized. */
@@ -75,10 +78,6 @@ public:
     /** Fills all vector elements with the given value. */
     Matrix<T,N,M>& fill (T const& value);
 
-    /** Returns the amount of rows of the matrix. */
-    int rows (void) const;
-    /** Returns the amount of columns of the matrix. */
-    int cols (void) const;
     /** Tests if the matrix is square. */
     bool is_square (void) const;
 
@@ -222,6 +221,12 @@ MATH_NAMESPACE_END
 MATH_NAMESPACE_BEGIN
 
 template <typename T, int N, int M>
+int constexpr Matrix<T,N,M>::rows;
+
+template <typename T, int N, int M>
+int constexpr Matrix<T,N,M>::cols;
+
+template <typename T, int N, int M>
 inline
 Matrix<T,N,M>::Matrix (void)
 {
@@ -276,8 +281,8 @@ template <typename T, int N>
 inline Matrix<T,N,N>&
 matrix_inplace_transpose (Matrix<T,N,N>& matrix)
 {
-    for (int i = 0; i < matrix.rows(); ++i)
-        for (int j = i + 1; j < matrix.cols(); ++j)
+    for (int i = 0; i < matrix.rows; ++i)
+        for (int j = i + 1; j < matrix.cols; ++j)
             std::swap(matrix(i, j), matrix(j, i));
     return matrix;
 }
@@ -290,20 +295,6 @@ Matrix<T,N,M>::fill (T const& value)
 {
     std::fill(m, m + N * M, value);
     return *this;
-}
-
-template <typename T, int N, int M>
-inline int
-Matrix<T,N,M>::rows (void) const
-{
-    return N;
-}
-
-template <typename T, int N, int M>
-inline int
-Matrix<T,N,M>::cols (void) const
-{
-    return M;
 }
 
 template <typename T, int N, int M>
@@ -472,8 +463,8 @@ Matrix<T,N,M>::mult (Matrix<T,M,U> const& rhs) const
 {
     typedef algo::InterleavedIter<T,U> RowIter;
     Matrix<T,N,U> ret;
-    for (int i = 0; i < ret.rows(); ++i)
-        for (int j = 0; j < ret.cols(); ++j)
+    for (int i = 0; i < ret.rows; ++i)
+        for (int j = 0; j < ret.cols; ++j)
             ret(i,j) = std::inner_product(m + M * i,
                 m + M * i + M, RowIter(*rhs + j), T(0));
     return ret;
@@ -737,9 +728,9 @@ template <typename T, int N, int M>
 inline std::ostream&
 operator<< (std::ostream& os, Matrix<T,N,M> const& m)
 {
-    for (int i = 0; i < m.rows(); ++i)
-        for (int j = 0; j < m.cols(); ++j)
-            os << m(i,j) << (j == m.cols() - 1 ? "\n" : " ");
+    for (int i = 0; i < m.rows; ++i)
+        for (int j = 0; j < m.cols; ++j)
+            os << m(i,j) << (j == m.cols - 1 ? "\n" : " ");
     return os;
 }
 

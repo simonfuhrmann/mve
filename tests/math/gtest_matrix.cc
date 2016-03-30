@@ -80,6 +80,8 @@ TEST(MatrixTest, MatrixOperations)
     test(2,0) = 7.0f; test(2,1) = 8.0f; test(2,2) = 9.0f;
 
     /* Matrix access, min, max, square check, . */
+    EXPECT_EQ((Matrix<int,3,4>::rows), 3);
+    EXPECT_EQ((Matrix<int,3,4>::cols), 4);
     EXPECT_EQ(test.col(1), Vec3f(2.0f, 5.0f, 8.0f));
     EXPECT_EQ(test.row(1), Vec3f(4.0f, 5.0f, 6.0f));
     EXPECT_EQ(Matrix3f(1.0f).minimum(), 1.0f);

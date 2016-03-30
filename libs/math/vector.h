@@ -82,6 +82,8 @@ class Vector
 public:
     typedef T ValueType;
 
+    static int constexpr dim = N;
+
     /* ------------------------ Constructors ---------------------- */
 
     /** Default ctor. */
@@ -117,9 +119,6 @@ public:
 
     /** Copies values from the given pointer. */
     Vector<T,N>& copy (T const* values, int num = N);
-
-    /** Returns the dimension of the vector. */
-    static int constexpr dim (void);
 
     /** Returns the smallest element in the vector. */
     T minimum (void) const;
@@ -275,6 +274,9 @@ MATH_NAMESPACE_END
 MATH_NAMESPACE_BEGIN
 
 template <typename T, int N>
+int constexpr Vector<T,N>::dim;
+
+template <typename T, int N>
 inline
 Vector<T,N>::Vector (void)
 {
@@ -382,13 +384,6 @@ Vector<T,N>::copy (T const* values, int num)
 {
     std::copy(values, values + num, this->v);
     return *this;
-}
-
-template <typename T, int N>
-inline int constexpr
-Vector<T,N>::dim (void)
-{
-    return N;
 }
 
 template <typename T, int N>
