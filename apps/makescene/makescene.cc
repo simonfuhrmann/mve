@@ -23,6 +23,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <atomic>
 
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
@@ -194,6 +195,7 @@ load_any_image (std::string const& fname, std::string* exif)
     if (img_float != nullptr)
         return img_float;
 
+#pragma omp critical
     std::cerr << "Skipping file " << util::fs::basename(fname)
         << ", cannot load image." << std::endl;
     return mve::ImageBase::Ptr();
@@ -801,12 +803,14 @@ import_images (AppSettings const& conf)
 
     /* Sort file names, iterate over file names. */
     std::sort(dir.begin(), dir.end());
-    int id_cnt = max_scene_id + 1;
-    int num_imported = 0;
+    std::atomic_int id_cnt(max_scene_id + 1);
+    std::atomic_int num_imported(0);
+#pragma omp parallel for ordered schedule(dynamic,1)
     for (std::size_t i = 0; i < dir.size(); ++i)
     {
         if (dir[i].is_dir)
         {
+#pragma omp critical
             std::cout << "Skipping directory " << dir[i].name << std::endl;
             continue;
         }
@@ -814,15 +818,20 @@ import_images (AppSettings const& conf)
         std::string fname = dir[i].name;
         std::string afname = dir[i].get_absolute_name();
 
-        std::cout << "Importing image " << fname << "..." << std::endl;
         std::string exif;
         mve::ImageBase::Ptr image = load_any_image(afname, &exif);
         if (image == nullptr)
             continue;
 
+        /* Advance ID of successfully imported images. */
+        int id;
+#pragma omp ordered
+        id = id_cnt++;
+        num_imported += 1;
+
         /* Create view, set headers, add image. */
         mve::View::Ptr view = mve::View::create();
-        view->set_id(id_cnt);
+        view->set_id(id);
         view->set_name(remove_file_extension(fname));
 
         /* Rescale and add original image. */
@@ -842,13 +851,11 @@ import_images (AppSettings const& conf)
         add_exif_to_view(view, exif);
 
         /* Save view to disc. */
-        std::string mve_fname = make_image_name(id_cnt);
-        std::cout << "Writing MVE view: " << mve_fname << "..." << std::endl;
+        std::string mve_fname = make_image_name(id);
+#pragma omp critical
+        std::cout << "Importing image: " << fname
+            << ", writing MVE view: " << mve_fname << "..." << std::endl;
         view->save_view_as(util::fs::join_path(conf.views_path, mve_fname));
-
-        /* Advance ID of successfully imported images. */
-        id_cnt += 1;
-        num_imported += 1;
     }
 
     std::cout << "Imported " << num_imported << " input images, "
