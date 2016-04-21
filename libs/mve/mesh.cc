@@ -190,6 +190,8 @@ TriangleMesh::delete_vertices (DeleteList const& delete_list)
         math::algo::vector_clean(delete_list, &this->vertex_values);
     if (this->has_vertex_texcoords())
         math::algo::vector_clean(delete_list, &this->vertex_texcoords);
+	if (this->has_vertex_view_lists())
+		math::algo::vector_clean(delete_list, &this->vertex_view_lists);
     math::algo::vector_clean(delete_list, &this->vertices);
 }
 

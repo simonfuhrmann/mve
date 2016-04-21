@@ -155,6 +155,8 @@ main (int argc, char** argv)
         "progress output style: 'silent', 'simple' or 'fancy'");
     args.add_option('\0', "force", false,
         "Reconstruct and overwrite existing depthmaps");
+	args.add_option('V', "keep-views", false,
+		"save (per depth map pixel) view indices of views which were used to create depth map pixel values (save local view selections)");
     args.parse(argc, argv);
 
     AppSettings conf;
@@ -210,8 +212,10 @@ main (int argc, char** argv)
             }
 
         }
-        else if (arg->opt->lopt == "force")
-            conf.force_recon = true;
+		else if (arg->opt->lopt == "force")
+			conf.force_recon = true;
+		else if (arg->opt->lopt == "keep-views")
+			conf.mvs.keepViewIndicesPerPixel = true;
         else
         {
             args.generate_helptext(std::cerr);

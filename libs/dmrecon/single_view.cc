@@ -65,7 +65,7 @@ SingleView::loadColorImage(int _minLevel)
 }
 
 void
-SingleView::prepareMasterView(int scale)
+SingleView::prepareMasterView(int scale, bool keepViewIndicesPerPixel, int nrViewIndicesPerPixel)
 {
     /* Prepare target level (view is the master view). */
     this->target_level = (*this->img_pyramid)[scale];
@@ -79,6 +79,12 @@ SingleView::prepareMasterView(int scale)
     this->normalImg = mve::FloatImage::create(scaled_width, scaled_height, 3);
     this->dzImg = mve::FloatImage::create(scaled_width, scaled_height, 2);
     this->confImg = mve::FloatImage::create(scaled_width, scaled_height, 1);
+
+	if (keepViewIndicesPerPixel)
+	{
+		this->viewIndicesImg = mve::IntImage::create(scaled_width, scaled_height, nrViewIndicesPerPixel);
+		this->viewIndicesImg->fill(-1);	//initial value with meaning: no camera
+	}
 }
 
 math::Vec3f

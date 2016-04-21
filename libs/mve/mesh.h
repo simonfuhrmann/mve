@@ -95,6 +95,7 @@ public:
     typedef std::vector<math::Vec3f> NormalList;
     typedef std::vector<math::Vec2f> TexCoordList;
     typedef std::vector<VertexID> FaceList;
+	typedef std::vector<std::vector<int>> VertexViewLists;
 
     typedef std::vector<bool> DeleteList;
 
@@ -130,6 +131,13 @@ public:
     /** Returns the face colors. */
     ColorList& get_face_colors (void);
 
+	/** Returns a list of view sets that provides a set of views for each vertex.
+		The views in a set for a single vertex were used to estimate the vertex values and thus should see this vertex.*/
+	VertexViewLists const& get_vertex_view_lists(void) const;
+	/** Returns a list of view sets that provides a set of views for each vertex.
+		The views in a set for a single vertex were used to estimate the vertex values and thus should see this vertex.*/
+	VertexViewLists& get_vertex_view_lists(void);
+
     /** Returns true if vertex normal amount equals vertex amount. */
     bool has_vertex_normals (void) const;
     /** Returns true if texture coordinate amount equals vertex amount. */
@@ -138,6 +146,8 @@ public:
     bool has_face_normals (void) const;
     /** Returns true if face color amount equals face amount. */
     bool has_face_colors (void) const;
+	/** Returns true if the number of view sets in vertex_view_lists equals the number of vertices. */
+	bool has_vertex_view_lists(void) const;
 
     /** Recalculates normals if normal amount is inconsistent. */
     void ensure_normals (bool face = true, bool vertex = true);
@@ -177,6 +187,7 @@ protected:
     FaceList faces;
     NormalList face_normals;
     ColorList face_colors;
+	VertexViewLists vertex_view_lists;
 
 protected:
     /** Use the create() methods to instantiate a mesh. */
@@ -363,6 +374,18 @@ TriangleMesh::get_face_colors (void) const
     return this->face_colors;
 }
 
+inline TriangleMesh::VertexViewLists&
+TriangleMesh::get_vertex_view_lists(void)
+{
+	return this->vertex_view_lists;
+}
+
+inline TriangleMesh::VertexViewLists const&
+TriangleMesh::get_vertex_view_lists(void) const
+{
+	return this->vertex_view_lists;
+}
+
 inline void
 TriangleMesh::clear_normals (void)
 {
@@ -407,6 +430,13 @@ TriangleMesh::has_face_colors (void) const
 {
     return !this->faces.empty()
         && this->faces.size() == this->face_colors.size() * 3;
+}
+
+inline bool
+TriangleMesh::has_vertex_view_lists(void) const
+{
+	return !this->vertices.empty()
+		&& this->vertex_view_lists.size() == this->vertices.size();
 }
 
 MVE_NAMESPACE_END

@@ -112,7 +112,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
-    math::Matrix3f const& invproj, float dd_factor = 5.0f);
+	math::Matrix3f const& invproj, IntImage::ConstPtr vi = nullptr, float dd_factor = 5.0f);
 
 /**
  * A helper function that triangulates the given depth map with optional
@@ -121,7 +121,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
-    CameraInfo const& cam, float dd_factor = 5.0f);
+	CameraInfo const& cam, IntImage::ConstPtr vi = nullptr, float dd_factor = 5.0f);
 
 /**
  * Algorithm to triangulate range grids.

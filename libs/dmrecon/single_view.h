@@ -53,7 +53,7 @@ public:
     bool pointInFrustum(math::Vec3f const& wp) const;
     void saveReconAsPly(std::string const& path, float scale) const;
     bool seesFeature(std::size_t idx) const;
-    void prepareMasterView(int scale);
+	void prepareMasterView(int scale, bool keepViewIndicesPerPixel, int nrViewIndicesPerPixel);
     math::Vec2f worldToScreen(math::Vec3f const& point, int level);
     math::Vec2f worldToScreenScaled(math::Vec3f const& point);
     std::size_t getViewID() const;
@@ -64,6 +64,8 @@ public:
     mve::FloatImage::Ptr normalImg;
     mve::FloatImage::Ptr dzImg;
     mve::FloatImage::Ptr confImg;
+	mve::IntImage::Ptr viewIndicesImg;
+	
 
 private:
     /** Constructor is private, use the create() method for instantiation. */

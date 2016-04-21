@@ -306,7 +306,7 @@ load_bundler_ps_intern (std::string const& filename, BundleFormat format)
     if (in.eof())
         throw util::Exception("Unexpected EOF in bundle file");
 
-    if (num_views < 0 || num_views > 10000
+	if (num_views < 0 || num_views >= 10000
         || num_features < 0 || num_features > 100000000)
         throw util::Exception("Spurious amount of cameras or features");
 
