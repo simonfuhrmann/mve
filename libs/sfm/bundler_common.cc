@@ -188,7 +188,7 @@ void
 load_prebundle_from_file (std::string const& filename,
     ViewportList* viewports, PairwiseMatching* matching)
 {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename.c_str(), std::ios::binary);
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 

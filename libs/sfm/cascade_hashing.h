@@ -237,7 +237,7 @@ void CascadeHashing::GlobalData::generate_proj_matrices (
     std::vector<T>* prim_hash, std::vector<std::vector<T>>* sec_hash,
     Options const& cashash_opts)
 {
-    int const dim_desc = T::dim();
+    int const dim_desc = T::dim;
     int const dim_hash_data = dim_desc;
 
     prim_hash->resize(dim_hash_data);
@@ -274,7 +274,7 @@ CascadeHashing::compute_cascade_hashes (std::vector<T> const& zero_mean_descs,
     std::vector<std::vector<T>> const& sec_proj_mats,
     Options const& cashash_opts)
 {
-    int const dim_desc = T::dim();
+    int const dim_desc = T::dim;
     int const dim_hash_data = dim_desc;
     uint8_t const dim_comp_hash_data = dim_hash_data / 64;
     uint8_t const num_bucket_bits = cashash_opts.num_bucket_bits;
@@ -356,7 +356,7 @@ CascadeHashing::oneway_match (Matching::Options const& matching_opts,
 
     uint16_t const min_num_candidates = cashash_opts.min_num_candidates;
     uint16_t const max_num_candidates = cashash_opts.max_num_candidates;
-    int const descriptor_length = V::dim();
+    int const descriptor_length = V::dim;
     uint8_t const dim_hash_data = descriptor_length;
     uint32_t const dim_comp_hash_data = dim_hash_data / 64;
 
