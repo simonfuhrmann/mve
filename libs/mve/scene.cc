@@ -54,8 +54,10 @@ Scene::save_bundle (void)
 void
 Scene::save_views (void)
 {
+	std::string cameraFile = basedir + "/cameras.txt";
+
 	std::cout << "Saving camera infos to camera MVE file..." << std::flush;
-		save_camera_infos(this->views, "camera_infos.txt");
+		save_camera_infos(this->views, cameraFile);
 	std::cout << " done." << std::endl;
 
     std::cout << "Saving views to MVE files..." << std::flush;
