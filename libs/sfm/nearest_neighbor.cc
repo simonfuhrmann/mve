@@ -79,8 +79,7 @@ namespace
                 reg_result = _mm_add_epi16(reg_result,
                     _mm_mullo_epi16(reg_query, reg_subject));
             }
-            T tmp[8];
-            _mm_store_si128(reinterpret_cast<__m128i*>(tmp), reg_result);
+            T const* tmp = reinterpret_cast<T const*>(&reg_result);
             int inner_product = tmp[0] + tmp[1] + tmp[2] + tmp[3]
                 + tmp[4] + tmp[5] + tmp[6] + tmp[7];
 
