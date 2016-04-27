@@ -291,7 +291,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         pba::CameraT cam;
         cam.f = pose.get_focal_length();
         std::copy(pose.t.begin(), pose.t.end(), cam.t);
-        std::copy(pose.R.begin(), pose.R.end(), cam.m[0]);
+        std::copy(pose.R.begin(), pose.R.end(), &cam.m[0][0]);
         cam.radial = this->viewports->at(i).radial_distortion;
         cam.distortion_type = PBA_DISTORTION_TYPE;
         pba_cams_mapping[i] = pba_cams.size();
