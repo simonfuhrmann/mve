@@ -426,7 +426,7 @@ dirname (std::string const& path)
 std::string
 basename (std::string const& path)
 {
-    std::string sanitized = sanitize_path(path)
+    std::string sanitized = sanitize_path(path);
     
     /* Skip group of slashes at the end. */
     std::size_t len = sanitized.size();
