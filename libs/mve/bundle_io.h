@@ -85,7 +85,7 @@ save_photosynther_bundle (Bundle::ConstPtr bundle,
  * Writes a NVM bundle file.
  */
 void
-save_nvm_bundle (Bundle::ConstPtr bundle, const std::vector<NVMCameraInfo> &camera_info, std::string const& filename);
+save_nvm_bundle (Bundle::ConstPtr bundle, const std::vector<NVMCameraInfo> &camera_info, bool usedist, std::string const& filename);
 
 MVE_NAMESPACE_END
 

@@ -490,7 +490,7 @@ save_photosynther_bundle (Bundle::ConstPtr bundle, std::string const& filename)
 }
 
 void
-save_nvm_bundle (Bundle::ConstPtr bundle, const std::vector<NVMCameraInfo> &camera_info, std::string const& filename)
+save_nvm_bundle (Bundle::ConstPtr bundle, const std::vector<NVMCameraInfo> &camera_info, bool usedist, std::string const& filename)
 {
     Bundle::Features const& features = bundle->get_features();
     Bundle::Cameras const& cameras = bundle->get_cameras();
@@ -533,9 +533,9 @@ save_nvm_bundle (Bundle::ConstPtr bundle, const std::vector<NVMCameraInfo> &came
         math::Matrix3d rot(math::Matrix3f(cam.rot));
         get_quaternion_from_rot(rot, rotq);
         math::Matrix3d rotinv = math::matrix_inverse(rot);
-        math::Vec3d center = -(rotinv * math::Vec3f(cam.trans[0], cam.trans[1], cam.trans[2]));
+        math::Vec3d center = -(rotinv * math::Vec3f(cam.trans));
 
-        out << cam.flen << ' ' << rotq[0] << ' ' << rotq[1] << ' ' << rotq[2] << ' ' << rotq[3] << ' ' << center[0] << ' ' << center[1] << ' ' << center[2] << ' ' << cam.dist[0] << " 0\n";
+        out << cam.flen << ' ' << rotq[0] << ' ' << rotq[1] << ' ' << rotq[2] << ' ' << rotq[3] << ' ' << center[0] << ' ' << center[1] << ' ' << center[2] << ' ' << (usedist ? cam.dist[0] : 0.0f) << " 0\n";
     }
 
     out << '\n' << features.size() << '\n';
