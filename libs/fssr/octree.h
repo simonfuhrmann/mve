@@ -184,7 +184,8 @@ private:
     void get_samples_per_level (std::vector<std::size_t>* stats,
         Node const* node, std::size_t level) const;
     void influence_query (math::Vec3d const& pos, double factor,
-        std::vector<Sample const*>* result, Iterator const& iter) const;
+        std::vector<Sample const*>* result, Iterator const& iter,
+        math::Vec3d const& parent_node_center) const;
     void limit_octree_level (Node* node, Node* parent, int level);
 
 private:
@@ -310,7 +311,8 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
     std::vector<Sample const*>* result) const
 {
     result->resize(0);
-    this->influence_query(pos, factor, result, this->get_iterator_for_root());
+    this->influence_query(pos, factor, result, this->get_iterator_for_root(),
+        this->root_center);
 }
 
 inline void

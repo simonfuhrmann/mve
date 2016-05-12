@@ -345,7 +345,8 @@ Octree::get_iterator_for_root (void) const
 
 void
 Octree::influence_query (math::Vec3d const& pos, double factor,
-    std::vector<Sample const*>* result, Iterator const& iter) const
+    std::vector<Sample const*>* result, Iterator const& iter,
+    math::Vec3d const& parent_node_center) const
 {
     if (iter.current == nullptr)
         return;
@@ -363,10 +364,16 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
      * - Note: Nodes can contain samples with scale values much smaller than
      *   node_size. This is because the octree depth is limited.
      */
-
-    math::Vec3d node_center;
-    double node_size;
-    this->node_center_and_size(iter, &node_center, &node_size);
+    /* Compute current node center based on parent's. */
+    uint32_t x = (iter.path & 1) >> 0;
+    uint32_t y = (iter.path & 2) >> 1;
+    uint32_t z = (iter.path & 4) >> 2;
+    double node_size = this->root_size / (1 << iter.level);
+    double offset = (iter.level > 0) * node_size / 2.0;
+    math::Vec3d node_center(
+        parent_node_center[0] - offset + x * node_size,
+        parent_node_center[1] - offset + y * node_size,
+        parent_node_center[2] - offset + z * node_size);
 
     /* Estimate for the minimum distance. No sample is closer to pos. */
     double const min_distance = (pos - node_center).norm()
@@ -388,7 +395,8 @@ Octree::influence_query (math::Vec3d const& pos, double factor,
     if (iter.current->children == nullptr)
         return;
     for (int i = 0; i < 8; ++i)
-        this->influence_query(pos, factor, result, iter.descend(i));
+        this->influence_query(pos, factor, result, iter.descend(i),
+            node_center);
 }
 
 void
