@@ -61,10 +61,14 @@ endif()
 
 # Install 3rd party libraries
 if(WIN32)
-	set(LIBPNG_DLL "3rdparty/bin/libpng16.dll")
-	set(ZLIB_DLL "3rdparty/bin/zlib.dll")
-	set(LIBTIFF_DLL "3rdparty/bin/libtiff.dll")
-	install(FILES ${LIBPNG_DLL} ${ZLIB_DLL} ${LIBTIFF_DLL} DESTINATION .)
+	set(LIBPNG_DLL_DEBUG "3rdparty/bin/libpng16d.dll")
+	set(LIBPNG_DLL_RELEASE "3rdparty/bin/libpng16.dll")
+	set(ZLIB_DLL_RELEASE "3rdparty/bin/zlib.dll")
+	set(LIBTIFF_DLL_RELEASE "3rdparty/bin/libtiff.dll")
+	install(FILES ${LIBPNG_DLL_RELEASE} ${ZLIB_DLL_RELEASE}
+		${LIBTIFF_DLL_RELEASE} DESTINATION . CONFIGURATIONS Release RelWithDebInfo)
+	install(FILES ${LIBPNG_DLL_DEBUG} ${ZLIB_DLL_RELEASE}
+		${LIBTIFF_DLL_RELEASE} DESTINATION . CONFIGURATIONS Debug)
 endif()
 
 add_subdirectory(libs)
