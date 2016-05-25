@@ -48,27 +48,27 @@ if(WIN32)
 		set(component_DLL_DEBUG ${QT5_BASE_DIR}/bin/Qt5${component}d.dll)
         install(FILES ${component_DLL_RELEASE}
             DESTINATION .
-            CONFIGURATIONS MinSizeRel Release)
+			CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
         install(FILES ${component_DLL_DEBUG}
             DESTINATION .
-            CONFIGURATIONS Debug RelWithDebInfo)
+            CONFIGURATIONS Debug)
     endforeach()
 
 	# Install Qt5 platform DLL
 	install(FILES "${QT5_BASE_DIR}/plugins/platforms/qwindows.dll"
 		DESTINATION qt_plugins/platforms
-		CONFIGURATIONS MinSizeRel Release)
+		CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
 	install(FILES "${QT5_BASE_DIR}/plugins/platforms/qwindowsd.dll"
 		DESTINATION qt_plugins/platforms
-		CONFIGURATIONS Debug RelWithDebInfo)
+		CONFIGURATIONS Debug)
 
 	# Install SVG imageformat DLL
 	install(FILES "${QT5_BASE_DIR}/plugins/imageformats/qsvg.dll"
 		DESTINATION qt_plugins/imageformats
-		CONFIGURATIONS MinSizeRel Release)
+		CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
 	install(FILES "${QT5_BASE_DIR}/plugins/imageformats/qsvgd.dll"
 		DESTINATION qt_plugins/imageformats
-		CONFIGURATIONS Debug RelWithDebInfo)
+		CONFIGURATIONS Debug)
 endif()
 install(DIRECTORY shaders DESTINATION .)
 install(TARGETS umve RUNTIME DESTINATION .)
