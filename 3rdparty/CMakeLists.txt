@@ -104,6 +104,13 @@ if(CMAKE_CL_64)
 else()
 	set(VS_PLATFORM "Win32")
 endif()
+
+if(MSVC14)
+	set(VS_PLATFORM_TOOLSET "v140")
+else()
+	message(FATAL_ERROR "Unsupported Visual Studio version")
+endif()
+
 ExternalProject_Add(glew
 	PREFIX build/glew
 	URL ${GLEW_URL}
@@ -111,7 +118,7 @@ ExternalProject_Add(glew
 	CONFIGURE_COMMAND ""
 	PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${PATCHES_DIR}/glew.rc build
 	BUILD_COMMAND cd build/vc12
-		COMMAND msbuild glew.sln /m /p:Configuration=${VS_CONFIG} /p:Platform=${VS_PLATFORM}
+		COMMAND msbuild glew.sln /m /p:Configuration=${VS_CONFIG} /p:Platform=${VS_PLATFORM} /p:PlatformToolset=${VS_PLATFORM_TOOLSET}
 	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/build/glew/src/glew/include ${CMAKE_CURRENT_SOURCE_DIR}/include
 		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/build/glew/src/glew/lib/${VS_CONFIG}/${VS_PLATFORM}/glew32s.lib ${CMAKE_CURRENT_SOURCE_DIR}/lib
 		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/build/glew/src/glew/bin/${VS_CONFIG}/${VS_PLATFORM} ${CMAKE_CURRENT_SOURCE_DIR}/bin
