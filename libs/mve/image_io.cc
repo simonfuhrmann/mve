@@ -87,7 +87,9 @@ load_file (std::string const& filename)
         try
         {
             ImageBase::Ptr image = load_mvei_file(filename);
-            if (image->get_type() != IMAGE_TYPE_UINT8) { throw; }
+            if (image->get_type() != IMAGE_TYPE_UINT8) {
+                throw util::Exception("Invalid image format");
+            }
             return std::static_pointer_cast<ByteImage>(image);
         }
         catch (util::FileException& e) { throw; }
