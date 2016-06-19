@@ -83,6 +83,17 @@ load_file (std::string const& filename)
         { return load_ppm_file(filename); }
         catch (util::FileException& e) { throw; }
         catch (util::Exception& e) {}
+
+        try
+        {
+            ImageBase::Ptr image = load_mvei_file(filename);
+            if (image->get_type() != IMAGE_TYPE_UINT8) {
+                throw util::Exception("Invalid image format");
+            }
+            return std::static_pointer_cast<ByteImage>(image);
+        }
+        catch (util::FileException& e) { throw; }
+        catch (util::Exception& e) {}
     }
     catch (util::FileException& e)
     {
