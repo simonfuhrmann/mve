@@ -48,26 +48,49 @@ visualize_matching (sfm::Matching::Result const& matching,
 }
 
 void
+convert_sift_descriptors(sfm::Sift::Descriptors const& sift_descr,
+    util::AlignedMemory<math::Vec128f>* aligned_descr)
+{
+    aligned_descr->resize(sift_descr.size());
+    float* data_ptr = aligned_descr->data()->begin();
+    for (std::size_t i = 0; i < sift_descr.size(); ++i, data_ptr += 128)
+    {
+        sfm::Sift::Descriptor const& d = sift_descr[i];
+        std::copy(d.data.begin(), d.data.end(), data_ptr);
+    }
+}
+
+void
 feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 {
-    sfm::FeatureSet::Options opts;
-    opts.feature_types = sfm::FeatureSet::FEATURE_SIFT;
-    opts.keep_descriptors = true;
-    opts.sift_opts.verbose_output = true;
-    opts.surf_opts.contrast_threshold = 500.0f;
-    opts.surf_opts.verbose_output = true;
-    opts.sift_matching_opts.lowe_ratio_threshold = 0.8f;
-    opts.sift_matching_opts.descriptor_length = 128;
-    opts.surf_matching_opts.lowe_ratio_threshold = 0.7f;
-    opts.surf_matching_opts.descriptor_length = 64;
+    sfm::FeatureSet::Options feature_set_opts;
+    feature_set_opts.feature_types = sfm::FeatureSet::FEATURE_SIFT;
+    feature_set_opts.sift_opts.verbose_output = true;
+    feature_set_opts.surf_opts.contrast_threshold = 500.0f;
+    feature_set_opts.surf_opts.verbose_output = true;
 
-    sfm::FeatureSet feat1(opts);
+    sfm::Matching::Options sift_matching_opts;
+    sift_matching_opts.lowe_ratio_threshold = 0.8f;
+    sift_matching_opts.descriptor_length = 128;
+
+    sfm::FeatureSet feat1(feature_set_opts);
     feat1.compute_features(image1);
-    sfm::FeatureSet feat2(opts);
+    sfm::FeatureSet feat2(feature_set_opts);
     feat2.compute_features(image2);
 
-    sfm::Matching::Result matching;
-    feat1.match(feat2, &matching);
+    util::AlignedMemory<math::Vec128f, 16> sift_descr1, sift_descr2;
+    convert_sift_descriptors(feat1.sift_descriptors, &sift_descr1);
+    convert_sift_descriptors(feat2.sift_descriptors, &sift_descr2);
+
+    sfm::Matching::Result sift_matching;
+    sfm::Matching::twoway_match(sift_matching_opts,
+        sift_descr1.data()->begin(), sift_descr1.size(),
+        sift_descr2.data()->begin(), sift_descr2.size(),
+        &sift_matching);
+    sfm::Matching::remove_inconsistent_matches(&sift_matching);
+
+    sfm::Matching::Result const& matching = sift_matching;
+
     std::cout << "Consistent Matches: "
         << sfm::Matching::count_consistent_matches(matching)
         << std::endl;
