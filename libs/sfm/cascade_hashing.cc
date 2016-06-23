@@ -197,13 +197,15 @@ CascadeHashing::compute_avg_descriptors (ProcessedFeatureSets const& pfs,
         num_sift_descs_total += num_sift_descriptors;
         num_surf_descs_total += num_surf_descriptors;
 
+        float sift_max_value = std::numeric_limits<unsigned short>::max();
         for (std::size_t j = 0; j < num_sift_descriptors; j++)
             for (int k = 0; k < 128; k++)
-                sift_vec_sum[k] += sift_descr[j][k] / 255.0f;
+                sift_vec_sum[k] += sift_descr[j][k] / sift_max_value;
 
+        float surf_max_value = std::numeric_limits<signed short>::max();
         for (std::size_t j = 0; j < num_surf_descriptors; j++)
             for (int k = 0; k < 64; k++)
-                surf_vec_sum[k] += surf_descr[j][k] / 127.0f;
+                surf_vec_sum[k] += surf_descr[j][k] / surf_max_value;
     }
 
     /* Compute average vectors for SIFT/SURF. */
@@ -219,15 +221,19 @@ CascadeHashing::compute_zero_mean_descs(
     math::Vec128f const& sift_avg, math::Vec64f const& surf_avg)
 {
     /* Compute zero mean descriptors. */
+    float sift_max_value = std::numeric_limits<unsigned short>::max();
     sift_zero_mean_descs->resize(sift_descs.size());
     for (std::size_t i = 0; i < sift_descs.size(); i++)
         for (int j = 0; j < 128; j++)
-            (*sift_zero_mean_descs)[i][j] = sift_descs[i][j] / 255.0f - sift_avg[j];
+            (*sift_zero_mean_descs)[i][j] =
+                sift_descs[i][j] / sift_max_value - sift_avg[j];
 
     surf_zero_mean_descs->resize(surf_descs.size());
+    float surf_max_value = std::numeric_limits<signed short>::max();
     for (std::size_t i = 0; i < surf_descs.size(); i++)
         for (int j = 0; j < 64; j++)
-            (*surf_zero_mean_descs)[i][j] = surf_descs[i][j] / 127.0f - surf_avg[j];
+            (*surf_zero_mean_descs)[i][j] =
+                surf_descs[i][j] / surf_max_value - surf_avg[j];
 }
 
 /* ---------------------------------------------------------------- */
