@@ -98,6 +98,13 @@ public:
      */
     static int
     count_consistent_matches (Result const& matches);
+
+    /**
+     * Combines matching results of different descriptors.
+     */
+    static void
+    combine_results(Result const& sift_result,
+        Result const& surf_result, Matching::Result* result);
 };
 
 /* ---------------------------------------------------------------- */

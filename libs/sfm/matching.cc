@@ -46,4 +46,45 @@ Matching::count_consistent_matches (Matching::Result const& matches)
     return counter;
 }
 
+void
+Matching::combine_results(Matching::Result const& sift_result,
+    Matching::Result const& surf_result, Matching::Result* result)
+{
+    /* Determine size of combined matching result. */
+    std::size_t num_matches_1 = sift_result.matches_1_2.size()
+        + surf_result.matches_1_2.size();
+    std::size_t num_matches_2 = sift_result.matches_2_1.size()
+        + surf_result.matches_2_1.size();
+
+    /* Combine results. */
+    result->matches_1_2.clear();
+    result->matches_1_2.reserve(num_matches_1);
+    result->matches_1_2.insert(result->matches_1_2.end(),
+        sift_result.matches_1_2.begin(), sift_result.matches_1_2.end());
+    result->matches_1_2.insert(result->matches_1_2.end(),
+        surf_result.matches_1_2.begin(), surf_result.matches_1_2.end());
+
+    result->matches_2_1.clear();
+    result->matches_2_1.reserve(num_matches_2);
+    result->matches_2_1.insert(result->matches_2_1.end(),
+        sift_result.matches_2_1.begin(), sift_result.matches_2_1.end());
+    result->matches_2_1.insert(result->matches_2_1.end(),
+        surf_result.matches_2_1.begin(), surf_result.matches_2_1.end());
+
+    /* Fix offsets. */
+    std::size_t surf_offset_1 = sift_result.matches_1_2.size();
+    std::size_t surf_offset_2 = sift_result.matches_2_1.size();
+
+    if (surf_offset_2 > 0)
+        for (std::size_t i = surf_offset_1; i < result->matches_1_2.size(); ++i)
+            if (result->matches_1_2[i] >= 0)
+                result->matches_1_2[i] += surf_offset_2;
+
+    if (surf_offset_1 > 0)
+        for (std::size_t i = surf_offset_2; i < result->matches_2_1.size(); ++i)
+            if (result->matches_2_1[i] >= 0)
+                result->matches_2_1[i] += surf_offset_1;
+
+}
+
 SFM_NAMESPACE_END

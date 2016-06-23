@@ -47,16 +47,52 @@ visualize_matching (sfm::Matching::Result const& matching,
     return match_image;
 }
 
+#define DISCRETIZE_DESCRIPTORS 0
+template <typename T>
 void
 convert_sift_descriptors(sfm::Sift::Descriptors const& sift_descr,
-    util::AlignedMemory<math::Vec128f>* aligned_descr)
+    util::AlignedMemory<math::Vector<T, 128> >* aligned_descr)
 {
     aligned_descr->resize(sift_descr.size());
-    float* data_ptr = aligned_descr->data()->begin();
+    T* data_ptr = aligned_descr->data()->begin();
     for (std::size_t i = 0; i < sift_descr.size(); ++i, data_ptr += 128)
     {
         sfm::Sift::Descriptor const& d = sift_descr[i];
+#if DISCRETIZE_DESCRIPTORS
+        for (int j = 0; j < 128; ++j)
+        {
+            float value = d.data[j];
+            value = math::clamp(value, 0.0f, 1.0f);
+            value = math::round(value * 255.0f);
+            data_ptr[j] = static_cast<unsigned char>(value);
+        }
+#else
         std::copy(d.data.begin(), d.data.end(), data_ptr);
+#endif
+    }
+}
+
+template <typename T>
+void
+convert_surf_descriptors(sfm::Surf::Descriptors const& surf_descr,
+    util::AlignedMemory<math::Vector<T, 64> >* aligned_descr)
+{
+    aligned_descr->resize(surf_descr.size());
+    T* data_ptr = aligned_descr->data()->begin();
+    for (std::size_t i = 0; i < surf_descr.size(); ++i, data_ptr += 64)
+    {
+        sfm::Surf::Descriptor const& d = surf_descr[i];
+#if DISCRETIZE_DESCRIPTORS
+        for (int j = 0; j < 64; ++j)
+        {
+            float value = d.data[j];
+            value = math::clamp(value, -1.0f, 1.0f);
+            value = math::round(value * 127.0f);
+            data_ptr[j] = static_cast<signed char>(value);
+        }
+#else
+        std::copy(d.data.begin(), d.data.end(), data_ptr);
+#endif
     }
 }
 
@@ -64,21 +100,26 @@ void
 feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
 {
     sfm::FeatureSet::Options feature_set_opts;
-    feature_set_opts.feature_types = sfm::FeatureSet::FEATURE_SIFT;
+    feature_set_opts.feature_types = sfm::FeatureSet::FEATURE_ALL;
     feature_set_opts.sift_opts.verbose_output = true;
-    feature_set_opts.surf_opts.contrast_threshold = 500.0f;
     feature_set_opts.surf_opts.verbose_output = true;
-
-    sfm::Matching::Options sift_matching_opts;
-    sift_matching_opts.lowe_ratio_threshold = 0.8f;
-    sift_matching_opts.descriptor_length = 128;
+    feature_set_opts.surf_opts.contrast_threshold = 500.0f;
 
     sfm::FeatureSet feat1(feature_set_opts);
     feat1.compute_features(image1);
     sfm::FeatureSet feat2(feature_set_opts);
     feat2.compute_features(image2);
 
+    sfm::Matching::Options sift_matching_opts;
+    sift_matching_opts.lowe_ratio_threshold = 0.8f;
+    sift_matching_opts.descriptor_length = 128;
+    sift_matching_opts.distance_threshold = -1.0f;
+
+#if DISCRETIZE_DESCRIPTORS
+    util::AlignedMemory<math::Vec128us, 16> sift_descr1, sift_descr2;
+#else
     util::AlignedMemory<math::Vec128f, 16> sift_descr1, sift_descr2;
+#endif
     convert_sift_descriptors(feat1.sift_descriptors, &sift_descr1);
     convert_sift_descriptors(feat2.sift_descriptors, &sift_descr2);
 
@@ -88,13 +129,39 @@ feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
         sift_descr2.data()->begin(), sift_descr2.size(),
         &sift_matching);
     sfm::Matching::remove_inconsistent_matches(&sift_matching);
+    std::cout << "Consistent Sift Matches: "
+        << sfm::Matching::count_consistent_matches(sift_matching)
+        << std::endl;
 
-    sfm::Matching::Result const& matching = sift_matching;
+    sfm::Matching::Options surf_matching_opts;
+    surf_matching_opts.lowe_ratio_threshold = 0.7f;
+    surf_matching_opts.descriptor_length = 64;
+    surf_matching_opts.distance_threshold = -1.0f;
+
+#if DISCRETIZE_DESCRIPTORS
+    util::AlignedMemory<math::Vec64s, 16> surf_descr1, surf_descr2;
+#else
+    util::AlignedMemory<math::Vec64f, 16> surf_descr1, surf_descr2;
+#endif
+    convert_surf_descriptors(feat1.surf_descriptors, &surf_descr1);
+    convert_surf_descriptors(feat2.surf_descriptors, &surf_descr2);
+
+    sfm::Matching::Result surf_matching;
+    sfm::Matching::twoway_match(surf_matching_opts,
+        surf_descr1.data()->begin(), surf_descr1.size(),
+        surf_descr2.data()->begin(), surf_descr2.size(),
+        &surf_matching);
+    sfm::Matching::remove_inconsistent_matches(&surf_matching);
+    std::cout << "Consistent Surf Matches: "
+        << sfm::Matching::count_consistent_matches(surf_matching)
+        << std::endl;
+
+    sfm::Matching::Result matching;
+    sfm::Matching::combine_results(sift_matching, surf_matching, &matching);
 
     std::cout << "Consistent Matches: "
         << sfm::Matching::count_consistent_matches(matching)
         << std::endl;
-
 
 #if 1
     /* Draw features. */
@@ -163,13 +230,13 @@ main (int argc, char** argv)
     {
         std::cout << "Loading " << argv[1] << "..." << std::endl;
         image1 = mve::image::load_file(argv[1]);
-        //image1 = mve::image::rescale_half_size<uint8_t>(image1);
+        image1 = mve::image::rescale_half_size<uint8_t>(image1);
         //image1 = mve::image::rescale_half_size<uint8_t>(image1);
         //image1 = mve::image::rotate<uint8_t>(image1, mve::image::ROTATE_CCW);
 
         std::cout << "Loading " << argv[2] << "..." << std::endl;
         image2 = mve::image::load_file(argv[2]);
-        //image2 = mve::image::rescale_half_size<uint8_t>(image2);
+        image2 = mve::image::rescale_half_size<uint8_t>(image2);
         //image2 = mve::image::rescale_half_size<uint8_t>(image2);
         //image2 = mve::image::rotate<uint8_t>(image2, mve::image::ROTATE_CCW);
     }
