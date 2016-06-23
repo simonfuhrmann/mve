@@ -100,42 +100,7 @@ CascadeHashing::pairwise_match (int view_1_id, int view_2_id,
         Matching::remove_inconsistent_matches(&surf_result);
     }
 
-    /* TODO: The following code is the same as in
-     *       ExhaustiveMatching::pairwise_match() and could be moved into a
-     *       separate function to avoid code duplication.
-     */
-    /* Fix offsets in the matching result. */
-    std::size_t other_surf_offset = pfs_2.sift_descr.size();
-    if (other_surf_offset > 0)
-        for (std::size_t i = 0; i < surf_result.matches_1_2.size(); ++i)
-            if (surf_result.matches_1_2[i] >= 0)
-                surf_result.matches_1_2[i] += other_surf_offset;
-
-    std::size_t this_surf_offset = pfs_1.sift_descr.size();
-    if (this_surf_offset > 0)
-        for (std::size_t i = 0; i < surf_result.matches_2_1.size(); ++i)
-            if (surf_result.matches_2_1[i] >= 0)
-                surf_result.matches_2_1[i] += this_surf_offset;
-
-    /* Create a combined matching result. */
-    std::size_t this_num_descriptors = pfs_1.sift_descr.size()
-        + pfs_1.surf_descr.size();
-    std::size_t other_num_descriptors = pfs_2.sift_descr.size()
-        + pfs_2.surf_descr.size();
-
-    result->matches_1_2.clear();
-    result->matches_1_2.reserve(this_num_descriptors);
-    result->matches_1_2.insert(result->matches_1_2.end(),
-        sift_result.matches_1_2.begin(), sift_result.matches_1_2.end());
-    result->matches_1_2.insert(result->matches_1_2.end(),
-        surf_result.matches_1_2.begin(), surf_result.matches_1_2.end());
-
-    result->matches_2_1.clear();
-    result->matches_2_1.reserve(other_num_descriptors);
-    result->matches_2_1.insert(result->matches_2_1.end(),
-        sift_result.matches_2_1.begin(), sift_result.matches_2_1.end());
-    result->matches_2_1.insert(result->matches_2_1.end(),
-        surf_result.matches_2_1.begin(), surf_result.matches_2_1.end());
+    Matching::combine_results(sift_result, surf_result, result);
 }
 
 void
