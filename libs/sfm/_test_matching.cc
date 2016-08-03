@@ -113,7 +113,7 @@ feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
     sfm::Matching::Options sift_matching_opts;
     sift_matching_opts.lowe_ratio_threshold = 0.8f;
     sift_matching_opts.descriptor_length = 128;
-    sift_matching_opts.distance_threshold = -1.0f;
+    sift_matching_opts.distance_threshold = std::numeric_limits<float>::max();
 
 #if DISCRETIZE_DESCRIPTORS
     util::AlignedMemory<math::Vec128us, 16> sift_descr1, sift_descr2;
@@ -136,7 +136,7 @@ feature_set_matching (mve::ByteImage::Ptr image1, mve::ByteImage::Ptr image2)
     sfm::Matching::Options surf_matching_opts;
     surf_matching_opts.lowe_ratio_threshold = 0.7f;
     surf_matching_opts.descriptor_length = 64;
-    surf_matching_opts.distance_threshold = -1.0f;
+    surf_matching_opts.distance_threshold = std::numeric_limits<float>::max();
 
 #if DISCRETIZE_DESCRIPTORS
     util::AlignedMemory<math::Vec64s, 16> surf_descr1, surf_descr2;

@@ -24,6 +24,7 @@ class Matching
 public:
     /**
      * Feature matching options.
+     * There are no default values, all fields must be initialized.
      */
     struct Options
     {
@@ -35,14 +36,15 @@ public:
         /**
          * Requires that the ratio between the best and second best matching
          * distance is below some threshold. If this ratio is near 1, the match
-         * is ambiguous. Defaults to 0.8. Set to 1.0 to disable test.
+         * is ambiguous. Good values are 0.8 for SIFT and 0.7 for SURF.
+         * Set to 1.0 to disable the test.
          */
         float lowe_ratio_threshold;
 
         /**
          * Does not accept matches with distances larger than this value.
          * This needs to be tuned to the descriptor and data type used.
-         * Disabled by default.
+         * Set to FLOAT_MAX to disable the test.
          */
         float distance_threshold;
     };
