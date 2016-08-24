@@ -557,8 +557,10 @@ import_bundle (AppSettings const& conf)
     int num_valid_cams = 0;
     int undist_imported = 0;
     mve::Bundle::Cameras const& cams = bundle->get_cameras();
-    for (std::size_t i = 0; i < cams.size(); ++i)
-    {
+
+	#pragma omp parallel for
+	for (std::int64_t i = 0; i < cams.size(); ++i) 
+	{
         /*
          * For each camera in the bundle file, a new view is created.
          * Views are populated with ID, name, camera information,
