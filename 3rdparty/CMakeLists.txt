@@ -9,7 +9,7 @@ set(ZLIB_FILENAME "zlib128.zip")
 set(LIBTIFF_FILENAME "tiff-4.0.4.zip")
 set(GLEW_FILENAME "glew-1.12.0.zip")
 set(QT5_FILENAME "qt-everywhere-opensource-src-5.5.1.zip")
-set(GTEST_FILENAME "gtest-1.7.0.zip")
+set(GTEST_FILENAME "release-1.7.0.zip")
 
 set(LIBJPEG_URL "http://www.ijg.org/files/${LIBJPEG_FILENAME}")
 set(LIBPNG_URL "https://download.sourceforge.net/libpng/${LIBPNG_FILENAME}")
@@ -17,7 +17,7 @@ set(ZLIB_URL "https://download.sourceforge.net/libpng/${ZLIB_FILENAME}")
 set(LIBTIFF_URL "http://download.osgeo.org/libtiff/${LIBTIFF_FILENAME}")
 set(GLEW_URL "https://downloads.sourceforge.net/project/glew/glew/1.12.0/${GLEW_FILENAME}")
 set(QT5_URL "https://download.qt-project.org/official_releases/qt/5.5/5.5.1/single/${QT5_FILENAME}")
-set(GTEST_URL "https://googletest.googlecode.com/files/${GTEST_FILENAME}")
+set(GTEST_URL "https://github.com/google/googletest/archive/${GTEST_FILENAME}")
 
 set(PATCHES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/patches")
 
@@ -146,7 +146,7 @@ ExternalProject_Add(qt5
 ExternalProject_Add(gtest
 	PREFIX build/gtest
 	URL ${GTEST_URL}
-	URL_HASH SHA256=247ca18dd83f53deb1328be17e4b1be31514cedfc1e3424f672bf11fd7e0d60d
+	URL_HASH SHA256=b58cb7547a28b2c718d1e38aee18a3659c9e3ff52440297e965f5edffe34b6d0
 	CMAKE_ARGS
 		-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
 	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/build/gtest/src/gtest/include ${CMAKE_CURRENT_SOURCE_DIR}/include
