@@ -13,6 +13,7 @@
 #include <iostream>
 #include <limits>
 #include <complex>
+#include <type_traits>
 
 #include "util/exception.h"
 #include "math/accum.h"
@@ -415,13 +416,12 @@ gamma_correct (ByteImage::Ptr image, float power);
 
 /**
  * Applies gamma correction to float/double images (in-place) with linear
- * RGB values in range [0, 1] to nonlinear R'G'B' values according to the
- * sRGB standard at http://www.w3.org/Graphics/Color/sRGB:
+ * RGB values in range [0, 1] to nonlinear R'G'B' values according to
+ * http://www.brucelindbloom.com/index.html?Eqn_XYZ_to_RGB.html:
  *
- *   X' = 12.92 * X                   if X <= 0.00304
+ *   X' = 12.92 * X                   if X <= 0.0031308
  *   X' = 1.055 * X^(1/2.4) - 0.055   otherwise
  *
- * Warning: This only works correctly with float or double images.
  * TODO: Implement overloading for integer image types.
  */
 template <typename T>
@@ -431,12 +431,11 @@ gamma_correct_srgb (typename Image<T>::Ptr image);
 /**
  * Applies inverse gamma correction to float/double (in-place) images with
  * nonlinear R'G'B' values in the range [0, 1] to linear sRGB values according
- * to the sRGB standard at http://www.w3.org/Graphics/Color/sRGB
+ * to http://www.brucelindbloom.com/index.html?Eqn_RGB_to_XYZ.html:
  *
- *   X = X' / 12.92                     if X' <= 0.03928
+ *   X = X' / 12.92                     if X' <= 0.04045
  *   X = ((X' + 0.055) / (1.055))^2.4   otherwise
  *
- * Warning: This only works correctly with float or double images.
  * TODO: Implement overloading for integer image types.
  */
 template <typename T>
@@ -1548,10 +1547,12 @@ template <typename T>
 void
 gamma_correct_srgb (typename Image<T>::Ptr image)
 {
+    static_assert(std::is_floating_point<T>::value,
+        "Only implemented for floating point images");
     int const num_values = image->get_value_amount();
     for (int i = 0; i < num_values; i++)
     {
-        if (image->at(i) <= T(0.00304))
+        if (image->at(i) <= T(0.0031308))
             image->at(i) *= T(12.92);
         else
         {
@@ -1567,10 +1568,12 @@ template <typename T>
 void
 gamma_correct_inv_srgb (typename Image<T>::Ptr image)
 {
+    static_assert(std::is_floating_point<T>::value,
+        "Only implemented for floating point images");
     int const num_values = image->get_value_amount();
     for (int i = 0; i < num_values; i++)
     {
-        if (image->at(i) <= T(0.03928))
+        if (image->at(i) <= T(0.04045))
             image->at(i) /= T(12.92);
         else
         {
