@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "sfm/ransac_homography.h"
+#include "sfm/ransac_fundamental.h"
 #include "sfm/triangulate.h"
 #include "sfm/bundler_init_pair.h"
 
@@ -220,11 +221,12 @@ InitialPair::compute_pose (CandidatePair const& candidate,
     CameraPose* pose1, CameraPose* pose2)
 {
     /* Compute fundamental matrix from pair correspondences. */
-    FundamentalMatrix fundamental;
+    RansacFundamental::Result ransac_result;
     {
         Correspondences2D2D matches = candidate.matches;
-        fundamental_least_squares(matches, &fundamental);
-        enforce_fundamental_constraints(&fundamental);
+        RansacFundamental::Options opts;
+        RansacFundamental fundamental_ransac(opts);
+        fundamental_ransac.estimate(matches, &ransac_result);
     }
 
     /* Populate K-matrices. */
@@ -235,7 +237,7 @@ InitialPair::compute_pose (CandidatePair const& candidate,
     pose2->set_k_matrix(view_2.focal_length, 0.0, 0.0);
 
     /* Compute essential matrix from fundamental matrix (HZ (9.12)). */
-    EssentialMatrix E = pose2->K.transposed() * fundamental * pose1->K;
+    EssentialMatrix E = pose2->K.transposed() * ransac_result.fundamental * pose1->K;
 
     /* Compute pose from essential. */
     std::vector<CameraPose> poses;
