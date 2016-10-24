@@ -29,6 +29,11 @@ target_include_directories(mve_fssr PUBLIC
 
 set_target_properties(mve_fssr PROPERTIES VERSION ${PROJECT_VERSION})
 
+if(OPENMP_FOUND)
+   target_compile_options(mve_fssr PUBLIC "${OpenMP_CXX_FLAGS}")
+   target_link_libraries(mve_fssr PUBLIC ${OpenMP_CXX_FLAGS})
+endif()
+
 target_link_libraries(mve_fssr PUBLIC mve_mve mve_math 
 				PRIVATE mve_util)
 

@@ -27,8 +27,7 @@ add_library(mve_dmrecon STATIC ${DMRECON_SOURCES})
 target_include_directories(mve_dmrecon PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
 
-#target_compile_definitions(mve_dmrecon PUBLIC "-D__SSE2__ -D__SSE3__")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -msse3 -mpopcnt")
+target_compile_options(mve_dmrecon PUBLIC -msse2 -msse3 -mpopcnt)
 
 set_target_properties(mve_dmrecon PROPERTIES VERSION ${PROJECT_VERSION})
 
