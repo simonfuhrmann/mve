@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <random>
 
 #include "sfm/ransac_homography.h"
 #include "sfm/triangulate.h"
@@ -82,6 +83,26 @@ InitialPair::compute_pair (Result* result)
         pair_scores[i] = this->score_for_pair(candidate, num_inliers, angle);
         this->debug_output(candidate, num_inliers, angle);
         if (angle < this->opts.min_triangulation_angle)
+            continue;
+
+        /* Run triangulation to ensure correct pair */
+        Triangulate::Options triangulate_opts;
+        Triangulate triangulator(triangulate_opts);
+        std::vector<CameraPose const*> poses;
+        poses.push_back(&pose1);
+        poses.push_back(&pose2);
+        std::size_t successful_triangulations = 0;
+        std::vector<math::Vec2f> positions(2);
+        Triangulate::Statistics stats;
+        for (std::size_t j = 0; j < candidate.matches.size(); ++j)
+        {
+            positions[0] = math::Vec2f(candidate.matches[j].p1);
+            positions[1] = math::Vec2f(candidate.matches[j].p2);
+            math::Vec3d pos3d;
+            if (triangulator.triangulate(poses, positions, &pos3d, &stats))
+                successful_triangulations += 1;
+        }
+        if (successful_triangulations * 2 < candidate.matches.size())
             continue;
 
 #pragma omp critical
