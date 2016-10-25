@@ -223,6 +223,11 @@ InitialPair::compute_pose (CandidatePair const& candidate,
     FundamentalMatrix fundamental;
     {
         Correspondences2D2D matches = candidate.matches;
+        if (matches.size() > 1000ul) {
+            std::mt19937 g;
+            std::shuffle(matches.begin(), matches.end(), g);
+            matches.resize(1000ul);
+        }
         fundamental_least_squares(matches, &fundamental);
         enforce_fundamental_constraints(&fundamental);
     }
