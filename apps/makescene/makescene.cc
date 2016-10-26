@@ -766,14 +766,14 @@ find_max_scene_id (std::string const& view_path)
 
 /* ---------------------------------------------------------------- */
 
-/* Find corresponding cam file to file i in sorted directory. */
+/* Find corresponding cam file to image file i in sorted directory. */
 bool
 find_corresponding_cam_file(util::fs::Directory const & dir, std::size_t i,
     std::string * acfname)
 {
     std::string prefix = remove_file_extension(dir[i].name);
 
-    /* Look at files behind the given file until the prefix changes */
+    /* Look at files behind the given file until the prefix changes. */
     for (std::size_t j = i + 1; j < dir.size(); ++j) {
         if (dir[j].is_dir)
             continue;
@@ -794,7 +794,7 @@ find_corresponding_cam_file(util::fs::Directory const & dir, std::size_t i,
         }
     }
 
-    /* Look at files before the given file until the prefix changes */
+    /* Look at files before the given file until the prefix changes. */
     for (int j = i - 1; 0 <= j; --j) {
         if (dir[j].is_dir)
             continue;
@@ -913,6 +913,7 @@ import_images (AppSettings const& conf)
         std::string fname = dir[i].name;
         std::string afname = dir[i].get_absolute_name();
 
+        /* Ignore cam files. */
         if (fname.size() > 3 && util::string::right(fname, 4) == ".cam")
             continue;
 
