@@ -774,7 +774,8 @@ find_corresponding_cam_file(util::fs::Directory const & dir, std::size_t i,
     std::string prefix = remove_file_extension(dir[i].name);
 
     /* Look at files behind the given file until the prefix changes. */
-    for (std::size_t j = i + 1; j < dir.size(); ++j) {
+    for (std::size_t j = i + 1; j < dir.size(); ++j)
+    {
         if (dir[j].is_dir)
             continue;
 
@@ -788,14 +789,16 @@ find_corresponding_cam_file(util::fs::Directory const & dir, std::size_t i,
             break;
 
         std::string ext = fname.substr(pos + 1, fname.size());
-        if (util::string::lowercase(ext) == "cam") {
+        if (util::string::lowercase(ext) == "cam")
+        {
             *acfname = dir[j].get_absolute_name();
             return true;
         }
     }
 
     /* Look at files before the given file until the prefix changes. */
-    for (int j = i - 1; 0 <= j; --j) {
+    for (int j = i - 1; 0 <= j; --j)
+    {
         if (dir[j].is_dir)
             continue;
 
@@ -809,7 +812,8 @@ find_corresponding_cam_file(util::fs::Directory const & dir, std::size_t i,
             break;
 
         std::string ext = fname.substr(pos + 1, fname.size());
-        if (util::string::lowercase(ext) == "cam") {
+        if (util::string::lowercase(ext) == "cam")
+        {
             *acfname = dir[j].get_absolute_name();
             return true;
         }
@@ -934,7 +938,8 @@ import_images (AppSettings const& conf)
         view->set_name(remove_file_extension(fname));
 
         std::string acfname;
-        if (find_corresponding_cam_file(dir, i, &acfname)) {
+        if (find_corresponding_cam_file(dir, i, &acfname))
+        {
             try
             {
                 view->set_camera(load_cam_file(acfname));
