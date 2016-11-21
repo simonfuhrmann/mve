@@ -65,6 +65,15 @@ Matching::compute (PairwiseMatching* pairwise_matching)
     std::size_t num_pairs = num_viewports * (num_viewports - 1) / 2;
     std::size_t num_done = 0;
 
+    if (this->opts.matching_mask != nullptr) {
+        int width = this->opts.matching_mask->width();
+        int height = this->opts.matching_mask->height();
+        if (this->opts.matching_mask->channels() != 1
+            || static_cast<std::size_t>(width) != num_viewports
+            || static_cast<std::size_t>(height) != num_viewports)
+            throw std::runtime_error("Invalid matching mask dimension");
+    }
+
     if (this->progress != nullptr)
     {
         this->progress->num_total = num_pairs;
@@ -87,8 +96,13 @@ Matching::compute (PairwiseMatching* pairwise_matching)
 
         int const view_1_id = (int)(0.5 + std::sqrt(0.25 + 2.0 * i));
         int const view_2_id = (int)i - view_1_id * (view_1_id - 1) / 2;
+
         if (this->opts.match_num_previous_frames != 0
             && view_2_id + this->opts.match_num_previous_frames < view_1_id)
+            continue;
+
+        if (this->opts.matching_mask != nullptr
+            && this->opts.matching_mask->at(view_1_id, view_2_id, 0) == 0)
             continue;
 
         FeatureSet const& view_1 = this->viewports->at(view_1_id).features;

@@ -22,6 +22,7 @@
 #include "mve/bundle.h"
 #include "mve/bundle_io.h"
 #include "mve/image.h"
+#include "mve/image_io.h"
 #include "mve/image_tools.h"
 #include "sfm/nearest_neighbor.h"
 #include "sfm/feature_set.h"
@@ -43,6 +44,7 @@ struct AppSettings
     std::string undistorted_name = "undistorted";
     std::string exif_name = "exif";
     std::string prebundle_file = "prebundle.sfm";
+    std::string matching_mask_file;
     std::string log_file;
     int max_image_size = 6000000;
     bool lowres_matching = true;
@@ -83,7 +85,8 @@ log_message (AppSettings const& conf, std::string const& message)
 }
 
 void
-features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
+features_and_matching (mve::Scene::Ptr scene,
+    mve::ByteImage::ConstPtr matching_mask, AppSettings const& conf,
     sfm::bundler::ViewportList* viewports,
     sfm::bundler::PairwiseMatching* pairwise_matching)
 {
@@ -112,6 +115,7 @@ features_and_matching (mve::Scene::Ptr scene, AppSettings const& conf,
     matching_opts.ransac_opts.verbose_output = false;
     matching_opts.use_lowres_matching = conf.lowres_matching;
     matching_opts.match_num_previous_frames = conf.video_matching;
+    matching_opts.matching_mask = matching_mask;
     matching_opts.matcher_type = conf.cascade_hashing
         ? sfm::bundler::Matching::MATCHER_CASCADE_HASHING
         : sfm::bundler::Matching::MATCHER_EXHAUSTIVE;
@@ -169,9 +173,33 @@ sfm_reconstruct (AppSettings const& conf)
     sfm::bundler::PairwiseMatching pairwise_matching;
     if (!util::fs::file_exists(prebundle_path.c_str()))
     {
+        mve::ByteImage::Ptr matching_mask;
+        if (!conf.matching_mask_file.empty())
+        {
+            std::cout << "Loading matching mask from file..." << std::endl;
+            try
+            {
+                matching_mask = mve::image::load_png_file(conf.matching_mask_file);
+            }
+            catch (std::exception& e)
+            {
+                std::cerr << "Error loading matching mask: " << e.what() << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+
+            std::size_t num_views = scene->get_views().size();
+            if (matching_mask->channels() != 1
+                || static_cast<std::size_t>(matching_mask->width()) != num_views
+                || static_cast<std::size_t>(matching_mask->height()) != num_views)
+            {
+                std::cerr << "Invalid matching mask dimension" << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+        }
+
         log_message(conf, "Starting feature matching.");
         util::system::rand_seed(RAND_SEED_MATCHING);
-        features_and_matching(scene, conf, &viewports, &pairwise_matching);
+        features_and_matching(scene, matching_mask, conf, &viewports, &pairwise_matching);
 
         std::cout << "Saving pre-bundle to file..." << std::endl;
         sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
@@ -484,6 +512,7 @@ main (int argc, char** argv)
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle file [prebundle.sfm]");
     args.add_option('\0', "log-file", true, "Log some timings to file []");
     args.add_option('\0', "no-prediction", false, "Disable matchability prediction");
+    args.add_option('\0', "matching-mask", true, "Load matching mask from png file []");
     args.add_option('\0', "normalize", false, "Normalize scene after reconstruction");
     args.add_option('\0', "skip-sfm", false, "Compute prebundle, skip SfM reconstruction");
     args.add_option('\0', "always-full-ba", false, "Run full bundle adjustment after every view");
@@ -520,6 +549,8 @@ main (int argc, char** argv)
             conf.log_file = i->arg;
         else if (i->opt->lopt == "no-prediction")
             conf.lowres_matching = false;
+        else if (i->opt->lopt == "matching-mask")
+            conf.matching_mask_file = i->arg;
         else if (i->opt->lopt == "normalize")
             conf.normalize_scene = true;
         else if (i->opt->lopt == "skip-sfm")

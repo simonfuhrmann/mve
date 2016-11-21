@@ -72,6 +72,11 @@ public:
         int min_lowres_matches = 5;
         /** Only match to a few previous frames. Disabled by default. */
         int match_num_previous_frames = 0;
+        /**
+         * Only match pairs with non zero entries (lower triangle).
+         * No mask by default.
+         */
+        mve::ByteImage::ConstPtr matching_mask;
         /** Matcher type. Exhaustive by default. */
         MatcherType matcher_type = MATCHER_EXHAUSTIVE;
     };
