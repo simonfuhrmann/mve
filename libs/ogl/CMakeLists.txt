@@ -3,9 +3,9 @@ include_directories(${OPENGL_INCLUDE_DIR})
 set(MVE_OGL_LIBS ${OPENGL_LIBRARIES})
 
 if(WIN32)
-	find_package(GLEW REQUIRED)
-	include_directories(${GLEW_INCLUDE_DIRS})
-	set(MVE_OGL_LIBS ${MVE_OGL_LIBS} ${GLEW_LIBRARIES})
+    find_package(GLEW REQUIRED)
+    include_directories(${GLEW_INCLUDE_DIRS})
+    set(MVE_OGL_LIBS ${MVE_OGL_LIBS} ${GLEW_LIBRARIES})
 endif()
 
 file (GLOB HEADERS "*.h")
@@ -15,6 +15,6 @@ add_library(mve_ogl STATIC ${SOURCES} ${HEADERS})
 set_target_properties(mve_ogl PROPERTIES DEBUG_POSTFIX ${MVE_LIBS_DEBUG_POSTFIX})
 
 target_link_libraries(mve_ogl
-	${MVE_OGL_LIBS}
+    ${MVE_OGL_LIBS}
 )
 

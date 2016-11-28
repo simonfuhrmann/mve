@@ -6,26 +6,26 @@ find_package(Qt5 REQUIRED ${UMVE_QT_COMPONENTS})
 find_package(OpenGL REQUIRED)
 
 set(UMVE_LIBS
-	Qt5::Core
-	Qt5::Gui
-	Qt5::OpenGL
-	Qt5::Svg
-	Qt5::Widgets
+    Qt5::Core
+    Qt5::Gui
+    Qt5::OpenGL
+    Qt5::Svg
+    Qt5::Widgets
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${TIFF_LIBRARIES}
     ${OPENGL_LIBRARIES}
     mve_dmrecon
-	mve
-	mve_ogl
-	mve_util
-	mve_sfm
+    mve
+    mve_ogl
+    mve_util
+    mve_sfm
 )
 
 if(WIN32)
     find_package(GLEW REQUIRED)
     include_directories(${GLEW_INCLUDE_DIRS})
-	set(UMVE_LIBS ${UMVE_LIBS} ${GLEW_LIBRARIES})
+    set(UMVE_LIBS ${UMVE_LIBS} ${GLEW_LIBRARIES})
 endif()
 include_directories(.)
 
@@ -35,40 +35,40 @@ qt5_add_resources(RESOURCES_RCC umve.qrc)
 add_executable(umve ${SOURCES} ${HEADERS_MOC} ${RESOURCES_RCC})
 set_target_properties(umve PROPERTIES ENABLE_EXPORTS TRUE)
 target_link_libraries(umve
-	${UMVE_LIBS}
+    ${UMVE_LIBS}
 )
 
 add_subdirectory(plugins)
 
 if(WIN32)
     # Install Qt5 DLLs
-	set(QT5_BASE_DIR "${_qt5Core_install_prefix}")
+    set(QT5_BASE_DIR "${_qt5Core_install_prefix}")
     foreach(component ${UMVE_QT_COMPONENTS})
-		set(component_DLL_RELEASE ${QT5_BASE_DIR}/bin/Qt5${component}.dll)
-		set(component_DLL_DEBUG ${QT5_BASE_DIR}/bin/Qt5${component}d.dll)
+        set(component_DLL_RELEASE ${QT5_BASE_DIR}/bin/Qt5${component}.dll)
+        set(component_DLL_DEBUG ${QT5_BASE_DIR}/bin/Qt5${component}d.dll)
         install(FILES ${component_DLL_RELEASE}
             DESTINATION .
-			CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
+            CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
         install(FILES ${component_DLL_DEBUG}
             DESTINATION .
             CONFIGURATIONS Debug)
     endforeach()
 
-	# Install Qt5 platform DLL
-	install(FILES "${QT5_BASE_DIR}/plugins/platforms/qwindows.dll"
-		DESTINATION qt_plugins/platforms
-		CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
-	install(FILES "${QT5_BASE_DIR}/plugins/platforms/qwindowsd.dll"
-		DESTINATION qt_plugins/platforms
-		CONFIGURATIONS Debug)
+    # Install Qt5 platform DLL
+    install(FILES "${QT5_BASE_DIR}/plugins/platforms/qwindows.dll"
+        DESTINATION qt_plugins/platforms
+        CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
+    install(FILES "${QT5_BASE_DIR}/plugins/platforms/qwindowsd.dll"
+        DESTINATION qt_plugins/platforms
+        CONFIGURATIONS Debug)
 
-	# Install SVG imageformat DLL
-	install(FILES "${QT5_BASE_DIR}/plugins/imageformats/qsvg.dll"
-		DESTINATION qt_plugins/imageformats
-		CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
-	install(FILES "${QT5_BASE_DIR}/plugins/imageformats/qsvgd.dll"
-		DESTINATION qt_plugins/imageformats
-		CONFIGURATIONS Debug)
+    # Install SVG imageformat DLL
+    install(FILES "${QT5_BASE_DIR}/plugins/imageformats/qsvg.dll"
+        DESTINATION qt_plugins/imageformats
+        CONFIGURATIONS MinSizeRel Release RelWithDebInfo)
+    install(FILES "${QT5_BASE_DIR}/plugins/imageformats/qsvgd.dll"
+        DESTINATION qt_plugins/imageformats
+        CONFIGURATIONS Debug)
 endif()
 install(DIRECTORY shaders DESTINATION .)
 install(TARGETS umve RUNTIME DESTINATION .)
