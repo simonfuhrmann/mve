@@ -3,7 +3,11 @@ file (GLOB SOURCES "*.cc" "viewinspect/*.cc" "scene_inspect/*.cc" "scene_addins/
 
 set(UMVE_QT_COMPONENTS Core Gui OpenGL Svg Widgets)
 find_package(OpenGL REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS ${UMVE_QT_COMPONENTS})
+find_package(Qt5 QUIET COMPONENTS ${UMVE_QT_COMPONENTS})
+if(NOT Qt5_FOUND)
+    message("Qt5 NOT found! umve will NOT be built!")
+    return()
+endif()
 
 set(UMVE_LIBS
     Qt5::Core
