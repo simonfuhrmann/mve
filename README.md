@@ -50,9 +50,10 @@ The MVE reconstruction pipeline is composed of the following components:
 * Multi-View Stereo, which reconstructs dense depth maps for each photo.
 * Surface Reconstruction, which reconstructs a surface mesh.
 
-Please refer to the 
+The reconstruction tools can be found under `mve/apps/`. Please refer to the 
 [MVE Users Guide](https://github.com/simonfuhrmann/mve/wiki/MVE-Users-Guide)
-for a more detailed description.
+for a more detailed description how to use these tools. Note that UMVE is
+merely an interface for scene inspection and does not support reconstuction.
 
 
 # Licensing
