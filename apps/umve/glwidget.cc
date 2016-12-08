@@ -9,17 +9,14 @@
 
 #include <ctime>
 #include <iostream>
+#include <QApplication>
 
 #include "ogl/opengl.h"
 #include "ogl/events.h"
 #include "glwidget.h"
 
-#if QT_VERSION >= 0x050000
-#   include <QWindow>
-#endif
-
 GLWidget::GLWidget (QWidget *parent)
-    : QGLWidget(parent)
+    : QOpenGLWidget(parent)
     , context(nullptr)
     , gl_width(0)
     , gl_height(0)
@@ -27,6 +24,11 @@ GLWidget::GLWidget (QWidget *parent)
 {
     this->setFocusPolicy(Qt::ClickFocus);
     this->makeCurrent();
+    this->device_pixel_ratio = 1;
+#if QT_VERSION >= 0x050000
+    this->device_pixel_ratio = static_cast<QGuiApplication *>(
+        QApplication::instance())->devicePixelRatio();
+#endif
 
     /* This timer triggers a repaint after all events in the window system's
      * event queue have been processed. Thus a snappy 3D view is provided. */
@@ -53,6 +55,9 @@ GLWidget::initializeGL()
 void
 GLWidget::resizeGL(int width, int height)
 {
+    width *= this->device_pixel_ratio;
+    height *= this->device_pixel_ratio;
+
     std::cout << "Resizing GL from "
         << this->gl_width << "x" << this->gl_height << " to "
         << width << "x" << height << std::endl;
@@ -104,18 +109,13 @@ GLWidget::set_context (ogl::Context* context)
 void
 GLWidget::mousePressEvent (QMouseEvent *event)
 {
+    this->makeCurrent();
     ogl::MouseEvent e;
     e.type = ogl::MOUSE_EVENT_PRESS;
     e.button = (ogl::MouseButton)event->button();
     e.button_mask = event->buttons();
-#if QT_VERSION >= 0x050000
-    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
-    e.x = static_cast<int>(event->x() * pixel_ratio);
-    e.y = static_cast<int>(event->y() * pixel_ratio);
-#else
-    e.x = event->x();
-    e.y = event->y();
-#endif
+    e.x = event->x() * this->device_pixel_ratio;
+    e.y = event->y() * this->device_pixel_ratio;
     this->context->mouse_event(e);
     this->repaint_async();
 }
@@ -125,18 +125,13 @@ GLWidget::mousePressEvent (QMouseEvent *event)
 void
 GLWidget::mouseReleaseEvent (QMouseEvent *event)
 {
+    this->makeCurrent();
     ogl::MouseEvent e;
     e.type = ogl::MOUSE_EVENT_RELEASE;
     e.button = (ogl::MouseButton)event->button();
     e.button_mask = event->buttons();
-#if QT_VERSION >= 0x050000
-    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
-    e.x = static_cast<int>(event->x() * pixel_ratio);
-    e.y = static_cast<int>(event->y() * pixel_ratio);
-#else
-    e.x = event->x();
-    e.y = event->y();
-#endif
+    e.x = event->x() * this->device_pixel_ratio;
+    e.y = event->y() * this->device_pixel_ratio;
     this->context->mouse_event(e);
     this->repaint_async();
 }
@@ -146,18 +141,13 @@ GLWidget::mouseReleaseEvent (QMouseEvent *event)
 void
 GLWidget::mouseMoveEvent (QMouseEvent *event)
 {
+    this->makeCurrent();
     ogl::MouseEvent e;
     e.type = ogl::MOUSE_EVENT_MOVE;
     e.button = (ogl::MouseButton)event->button();
     e.button_mask = event->buttons();
-#if QT_VERSION >= 0x050000
-    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
-    e.x = static_cast<int>(event->x() * pixel_ratio);
-    e.y = static_cast<int>(event->y() * pixel_ratio);
-#else
-    e.x = event->x();
-    e.y = event->y();
-#endif
+    e.x = event->x() * this->device_pixel_ratio;
+    e.y = event->y() * this->device_pixel_ratio;
     this->context->mouse_event(e);
     this->repaint_async();
 }
@@ -167,6 +157,7 @@ GLWidget::mouseMoveEvent (QMouseEvent *event)
 void
 GLWidget::wheelEvent (QWheelEvent* event)
 {
+    this->makeCurrent();
     ogl::MouseEvent e;
     if (event->delta() < 0)
         e.type = ogl::MOUSE_EVENT_WHEEL_DOWN;
@@ -174,14 +165,8 @@ GLWidget::wheelEvent (QWheelEvent* event)
         e.type = ogl::MOUSE_EVENT_WHEEL_UP;
     e.button = ogl::MOUSE_BUTTON_NONE;
     e.button_mask = event->buttons();
-#if QT_VERSION >= 0x050000
-    qreal const pixel_ratio = this->windowHandle()->devicePixelRatio();
-    e.x = static_cast<int>(event->x() * pixel_ratio);
-    e.y = static_cast<int>(event->y() * pixel_ratio);
-#else
-    e.x = event->x();
-    e.y = event->y();
-#endif
+    e.x = event->x() * this->device_pixel_ratio;
+    e.y = event->y() * this->device_pixel_ratio;
     this->context->mouse_event(e);
     this->repaint_async();
 }

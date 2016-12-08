@@ -26,7 +26,7 @@
 #include "viewinspect.h"
 
 #if QT_VERSION >= 0x050000
-#   include <QWindow>
+#   include <QApplication>
 #endif
 
 ViewInspect::ViewInspect (QWidget* parent)
@@ -442,7 +442,8 @@ ViewInspect::display_byte_image (mve::ByteImage::ConstPtr img)
 
     QPixmap pixmap = QPixmap::fromImage(img_qimage);
 #if QT_VERSION >= 0x050000
-    pixmap.setDevicePixelRatio(this->windowHandle()->devicePixelRatio());
+    pixmap.setDevicePixelRatio(static_cast<QGuiApplication *>(
+        QApplication::instance())->devicePixelRatio());
 #endif
     this->scroll_image->set_pixmap(pixmap);
     this->action_zoom_fit->setEnabled(true);
