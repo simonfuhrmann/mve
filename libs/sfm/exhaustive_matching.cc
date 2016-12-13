@@ -11,9 +11,9 @@
 
 SFM_NAMESPACE_BEGIN
 
-#if DISCRETIZE_DESCRIPTORS
 namespace
 {
+#if DISCRETIZE_DESCRIPTORS
     void
     convert_descriptor (Sift::Descriptor const& descr, unsigned short* data)
     {
