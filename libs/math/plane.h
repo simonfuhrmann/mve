@@ -47,7 +47,10 @@ public:
     T point_dist (Vec3T const& p) const;
 
     /** Flips the orientation of the plane. */
-    Plane3<T> invert (void) const;
+    Plane3<T>& invert (void);
+
+    /** Returns plane with flipped orientation. */
+    Plane3<T> inverted (void) const;
 
 public:
     Vec3T n;
@@ -92,8 +95,17 @@ Plane3<T>::point_dist (Vec3T const& p) const
 }
 
 template <class T>
+Plane3<T>&
+Plane3<T>::invert (void)
+{
+    n = -n;
+    d = -d;
+    return *this;
+}
+
+template <class T>
 inline Plane3<T>
-Plane3<T>::invert (void) const
+Plane3<T>::inverted (void) const
 {
     return Plane3<T>(-n, -d);
 }
