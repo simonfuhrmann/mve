@@ -27,10 +27,10 @@ template <class T>
 class Line3
 {
 public:
-    /** Creates an uninitialized plane. */
+    /** Creates an uninitialized line. */
     Line3 (void);
 
-    /** Creates a plane with normal n and distance d from the origin. */
+    /** Creates a line with normal n and distance d from the origin. */
     Line3 (math::Vector<T, 3> const& d, math::Vector<T, 3> const& p);
 
 public:
