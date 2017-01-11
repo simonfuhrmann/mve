@@ -123,20 +123,13 @@ load_8bit_image (std::string const& fname, std::string* exif)
     std::string lcfname(util::string::lowercase(fname));
     std::string ext4 = util::string::right(lcfname, 4);
     std::string ext5 = util::string::right(lcfname, 5);
-    try
-    {
-        if (ext4 == ".jpg" || ext5 == ".jpeg")
-            return mve::image::load_jpg_file(fname, exif);
-        else if (ext4 == ".png" ||  ext4 == ".ppm"
-            || ext4 == ".tif" || ext5 == ".tiff")
-            return mve::image::load_file(fname);
-    }
-    catch (...)
-    {
-        throw;
-    }
-
-    return mve::ByteImage::Ptr();
+    if (ext4 == ".jpg" || ext5 == ".jpeg")
+        return mve::image::load_jpg_file(fname, exif);
+    else if (ext4 == ".png" ||  ext4 == ".ppm"
+        || ext4 == ".tif" || ext5 == ".tiff")
+        return mve::image::load_file(fname);
+    else
+        return mve::ByteImage::Ptr();
 }
 
 /* ---------------------------------------------------------------- */
@@ -147,17 +140,13 @@ load_16bit_image (std::string const& fname)
     std::string lcfname(util::string::lowercase(fname));
     std::string ext4 = util::string::right(lcfname, 4);
     std::string ext5 = util::string::right(lcfname, 5);
-    try
-    {
-        if (ext4 == ".tif" || ext5 == ".tiff")
-            return mve::image::load_tiff_16_file(fname);
-        else if (ext4 == ".ppm")
-            return mve::image::load_ppm_16_file(fname);
-    }
-    catch (...)
-    { }
 
-    return mve::RawImage::Ptr();
+    if (ext4 == ".tif" || ext5 == ".tiff")
+        return mve::image::load_tiff_16_file(fname);
+    else if (ext4 == ".ppm")
+        return mve::image::load_ppm_16_file(fname);
+    else
+        return mve::RawImage::Ptr();
 }
 
 /* ---------------------------------------------------------------- */
@@ -167,15 +156,11 @@ load_float_image (std::string const& fname)
 {
     std::string lcfname(util::string::lowercase(fname));
     std::string ext4 = util::string::right(lcfname, 4);
-    try
-    {
-        if (ext4 == ".pfm")
-            return mve::image::load_pfm_file(fname);
-    }
-    catch (...)
-    { }
 
-    return mve::FloatImage::Ptr();
+    if (ext4 == ".pfm")
+        return mve::image::load_pfm_file(fname);
+    else
+        return mve::FloatImage::Ptr();
 }
 
 /* ---------------------------------------------------------------- */
@@ -183,17 +168,32 @@ load_float_image (std::string const& fname)
 mve::ImageBase::Ptr
 load_any_image (std::string const& fname, std::string* exif)
 {
-    mve::ByteImage::Ptr img_8 = load_8bit_image(fname, exif);
-    if (img_8 != nullptr)
-        return img_8;
+    try
+    {
+        mve::ByteImage::Ptr img_8 = load_8bit_image(fname, exif);
+        if (img_8 != nullptr)
+            return img_8;
+    }
+    catch (...)
+    { }
 
-    mve::RawImage::Ptr img_16 = load_16bit_image(fname);
-    if (img_16 != nullptr)
-        return img_16;
+    try
+    {
+        mve::RawImage::Ptr img_16 = load_16bit_image(fname);
+        if (img_16 != nullptr)
+            return img_16;
+    }
+    catch (...)
+    { }
 
-    mve::FloatImage::Ptr img_float = load_float_image(fname);
-    if (img_float != nullptr)
-        return img_float;
+    try
+    {
+        mve::FloatImage::Ptr img_float = load_float_image(fname);
+        if (img_float != nullptr)
+            return img_float;
+    }
+    catch (...)
+    { }
 
 #pragma omp critical
     std::cerr << "Skipping file " << util::fs::basename(fname)
