@@ -132,9 +132,7 @@ load_8bit_image (std::string const& fname, std::string* exif)
             return mve::image::load_file(fname);
     }
     catch (...)
-    {
-        throw;
-    }
+    { }
 
     return mve::ByteImage::Ptr();
 }
@@ -635,13 +633,10 @@ import_bundle (AppSettings const& conf)
             /* For Noah datasets, load original image and undistort it. */
             std::string orig_fname
                 = util::fs::join_path(image_path, orig_files[i]);
-            try
+            original = load_8bit_image(orig_fname, &exif);
+            if (original == nullptr)
             {
-                original = load_8bit_image(orig_fname, &exif);
-            }
-            catch (util::Exception &e)
-            {
-                std::cerr << orig_fname << ": " << e.what() << std::endl;
+                std::cerr << "Error loading: " << orig_fname << std::endl;
                 std::exit(EXIT_FAILURE);
             }
             thumb = create_thumbnail(original);
