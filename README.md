@@ -36,7 +36,7 @@ System requirements to compile and run MVE or UVME are:
  * libpng (for MVE, http://www.libpng.org/pub/png/libpng.html)
  * libtiff (for MVE, http://www.libtiff.org/)
  * OpenGL (for libogl in MVE and UMVE)
- * Qt 5 (for UMVE, http://qt.nokia.com)
+ * Qt 5 (for UMVE, http://www.qt.io)
 
 Windows and OS X: Please refer to the Wiki pages for instructions.
 
