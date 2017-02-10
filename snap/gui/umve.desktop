@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=UMVE - Ultimate MVE
+Comment=Ultimate Multi-View Environment
+Exec=mve.umve
+Terminal=false
+Categories=Graphics;
+Icon=${SNAP}/meta/gui/umve.png
+

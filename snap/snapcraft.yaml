@@ -1,0 +1,81 @@
+name: mve
+version: '20170210-0'
+summary: Multi-View Environment
+description: |
+  The Multi-View Environment, MVE, is an implementation of a complete
+  end-to-end pipeline for image-based geometry reconstruction. It features
+  Structure-from-Motion, Multi-View Stereo and Surface Reconstruction.
+icon: snap/gui/umve.png
+
+grade: stable
+confinement: strict
+
+apps:
+  umve:
+    command: desktop-launch umve
+    plugs: [home, x11, mir, opengl, unity7]
+  bundle2pset:
+    command: bundle2pset
+    plugs: [home]
+  dmrecon:
+    command: dmrecon
+    plugs: [home]
+  fssrecon:
+    command: fssrecon
+    plugs: [home]
+  makescene:
+    command: makescene
+    plugs: [home]
+  mesh2pset:
+    command: mesh2pset
+    plugs: [home]
+  meshalign:
+    command: meshalign
+    plugs: [home]
+  meshclean:
+    command: meshclean
+    plugs: [home]
+  meshconvert:
+    command: meshconvert
+    plugs: [home]
+  scene2pset:
+    command: scene2pset
+    plugs: [home]
+  sceneupgrade:
+    command: sceneupgrade
+    plugs: [home]
+  sfmrecon:
+    command: sfmrecon
+    plugs: [home]
+
+parts:
+  mve:
+    after: [desktop-qt5]
+    plugin: make
+    source: https://github.com/simonfuhrmann/mve.git
+    source-commit: 2cfae0a430de965070e54e58a0da89173f7061ef
+    build-packages:
+      - g++
+      - libjpeg8-dev
+      - libpng12-dev
+      - libqt5opengl5-dev
+      - libtiff5-dev
+      - mesa-common-dev
+      - qt5-default
+    build: |
+      g++ --version
+      unset CXXFLAGS
+      make -j8
+      cd apps/umve
+      qmake
+      make -j8
+    install: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      cd apps
+      for prog in bundle2pset dmrecon fssrecon makescene mesh2pset meshalign \
+                  meshclean meshconvert scene2pset sceneupgrade sfmrecon umve
+      do
+          cp "$prog/$prog" $SNAPCRAFT_PART_INSTALL/bin/
+      done
+      cp -a umve/shaders/ $SNAPCRAFT_PART_INSTALL/bin/
+
