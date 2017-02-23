@@ -116,24 +116,29 @@ AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
     float const ppx = camera_info.ppoint[0];
     float const ppy = camera_info.ppoint[1];
 
-    /* Fill OpenGL view matrix */
-    camera_info.fill_world_to_cam(*this->camera->view);
+    /* Fill OpenGL view matrix. */
+    math::Matrix4f& viewmat = this->camera->view;
+    camera_info.fill_world_to_cam(viewmat.begin());
+    /* Convert to OpenGL convention - flip y and z. */
+    for (int i = 0; i < 4; ++i) {
+        viewmat[4 + i] *= -1.0f;
+        viewmat[8 + i] *= -1.0f;
+    }
 
     /* Fill OpenGL projection matrix. */
-    math::Matrix4f& proj = this->camera->proj;
-
+    math::Matrix4f& projmat = this->camera->proj;
     float const znear = 0.1f;
     float const zfar = 1000.0f;
-    proj.fill(0.0f);
-    proj[0]  = 2.0f * focal_length
+    projmat.fill(0.0f);
+    projmat(0, 0) = 2.0f * focal_length
         * (image_aspect > 1.0f ? 1.0f : 1.0f / image_aspect);
-    proj[2]  = -2.0f * (0.5f - ppx);
-    proj[5]  = -2.0f * focal_length
+    projmat(0, 2) = 2.0f * (ppx - 0.5f);
+    projmat(1, 1) = 2.0f * focal_length
         * (image_aspect > 1.0f ? image_aspect : 1.0f);
-    proj[6]  = -2.0f * (ppy - 0.5f);
-    proj[10] = -(-zfar - znear) / (zfar - znear);
-    proj[11] = -2.0f * zfar * znear / (zfar - znear);
-    proj[14] = 1.0f;
+    projmat(1, 2) = 2.0f * (ppy - 0.5f);
+    projmat(2, 2) = -(zfar + znear) / (zfar - znear);
+    projmat(2, 3) = -2.0f * zfar * znear / (zfar - znear);
+    projmat(3, 2) = -1.0f;
 
     /* Re-photograph. */
     this->request_context();
