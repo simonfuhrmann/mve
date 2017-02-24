@@ -134,6 +134,17 @@ public:
     void set_translation_from_string (std::string const& trans_string);
 
     /**
+     * Stores OpenGl view transformation 4x4 matrix in array pointed to by mat.
+     */
+    void fill_gl_viewtrans (float* mat) const;
+
+    /**
+     * Stores OpenGl projection 4x4 matrix in array pointed to by mat.
+     */
+    void fill_gl_projection (float * mat, float width, float height,
+        float znear, float zfar) const;
+
+    /**
      * Prints debug information to stdout.
      */
     void debug_print (void) const;

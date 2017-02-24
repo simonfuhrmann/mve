@@ -105,40 +105,15 @@ AddinRephotographer::on_rephoto_view (mve::View::Ptr view)
     /* Backup camera. */
     ogl::Camera camera_backup = *this->camera;
 
-    /* Get all parameters and check them. */
-    mve::CameraInfo const& camera_info = view->get_camera();
     int const width = view->get_image_proxy(source_name)->width;
     int const height = view->get_image_proxy(source_name)->height;
-    float const dimension_aspect = static_cast<float>(width) / height;
-    float const pixel_aspect = camera_info.paspect;
-    float const image_aspect = dimension_aspect * pixel_aspect;
-    float const focal_length = camera_info.flen;
-    float const ppx = camera_info.ppoint[0];
-    float const ppy = camera_info.ppoint[1];
-
-    /* Fill OpenGL view matrix. */
-    math::Matrix4f& viewmat = this->camera->view;
-    camera_info.fill_world_to_cam(viewmat.begin());
-    /* Convert to OpenGL convention - flip y and z. */
-    for (int i = 0; i < 4; ++i) {
-        viewmat[4 + i] *= -1.0f;
-        viewmat[8 + i] *= -1.0f;
-    }
-
-    /* Fill OpenGL projection matrix. */
-    math::Matrix4f& projmat = this->camera->proj;
     float const znear = 0.1f;
     float const zfar = 1000.0f;
-    projmat.fill(0.0f);
-    projmat(0, 0) = 2.0f * focal_length
-        * (image_aspect > 1.0f ? 1.0f : 1.0f / image_aspect);
-    projmat(0, 2) = 2.0f * (ppx - 0.5f);
-    projmat(1, 1) = 2.0f * focal_length
-        * (image_aspect > 1.0f ? image_aspect : 1.0f);
-    projmat(1, 2) = 2.0f * (ppy - 0.5f);
-    projmat(2, 2) = -(zfar + znear) / (zfar - znear);
-    projmat(2, 3) = -2.0f * zfar * znear / (zfar - znear);
-    projmat(3, 2) = -1.0f;
+    mve::CameraInfo const& camera_info = view->get_camera();
+
+    camera_info.fill_gl_viewtrans(this->camera->view.begin());
+    camera_info.fill_gl_projection(this->camera->proj.begin(),
+        width, height, znear, zfar);
 
     /* Re-photograph. */
     this->request_context();
