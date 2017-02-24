@@ -69,6 +69,17 @@ CameraInfo::fill_world_to_cam (float* mat) const
 /* ---------------------------------------------------------------- */
 
 void
+CameraInfo::fill_gl_viewtrans (float* mat) const
+{
+    mat[0]  =  rot[0]; mat[1]  =  rot[1]; mat[2]  =  rot[2]; mat[3]  =  trans[0];
+    mat[4]  = -rot[3]; mat[5]  = -rot[4]; mat[6]  = -rot[5]; mat[7]  = -trans[1];
+    mat[8]  = -rot[6]; mat[9]  = -rot[7]; mat[10] = -rot[8]; mat[11] = -trans[2];
+    mat[12] =  0.0f;   mat[13] =  0.0f;   mat[14] =  0.0f;   mat[15] = 1.0f;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
 CameraInfo::fill_cam_to_world (float* mat) const
 {
     mat[0]  = rot[0]; mat[1] = rot[3]; mat[2]  = rot[6];
@@ -130,6 +141,37 @@ CameraInfo::fill_calibration (float* mat, float width, float height) const
     mat[0] =   ax; mat[1] = 0.0f; mat[2] = width * this->ppoint[0];
     mat[3] = 0.0f; mat[4] =   ay; mat[5] = height * this->ppoint[1];
     mat[6] = 0.0f; mat[7] = 0.0f; mat[8] = 1.0f;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+CameraInfo::fill_gl_projection (float * mat, float width, float height,
+    float znear, float zfar) const
+{
+    float dim_aspect = width / height;
+    float image_aspect = dim_aspect * this->paspect;
+    float ax, ay;
+    if (image_aspect < 1.0f) /* Portrait. */
+    {
+        ax = this->flen / image_aspect;
+        ay = this->flen;
+    }
+    else /* Landscape */
+    {
+        ax = this->flen;
+        ay = this->flen * image_aspect;
+    }
+
+    std::fill(mat, mat + 16, 0.0f);
+
+    mat[4 * 0 + 0] = 2.0f * ax;
+    mat[4 * 0 + 2] = 2.0f * (this->ppoint[0] - 0.5f);
+    mat[4 * 1 + 1] = 2.0f * ay;
+    mat[4 * 1 + 2] = 2.0f * (this->ppoint[1] - 0.5f);
+    mat[4 * 2 + 2] = -(zfar + znear) / (zfar - znear);
+    mat[4 * 2 + 3] = -2.0f * zfar * znear / (zfar - znear);
+    mat[4 * 3 + 2] = -1.0f;
 }
 
 /* ---------------------------------------------------------------- */
