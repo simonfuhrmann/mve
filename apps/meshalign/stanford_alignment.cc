@@ -80,8 +80,10 @@ StanfordAlignment::read_alignment (std::string const& conffile)
             temp_rotation.to_rotation_matrix(ri.rotation.begin());
 
             /* This is a bit strange... */
-            ri.campos = ri.rotation * camera_rot.rotate(camera_pos) + ri.translation;
-            ri.viewdir = ri.rotation * camera_rot.rotate(math::Vec3f(0,0,1));
+            ri.campos = ri.rotation.transposed()
+                * camera_rot.conjugated().rotate(camera_pos) + ri.translation;
+            ri.viewdir = ri.rotation.transposed()
+                * camera_rot.conjugated().rotate(math::Vec3f(0.0f, 0.0f, 1.0f));
             this->images.push_back(ri);
         }
         else
@@ -100,7 +102,8 @@ StanfordAlignment::get_mesh (RangeImage const& ri)
     mve::TriangleMesh::Ptr ret;
     ret = mve::geom::load_mesh(ri.fullpath);
     mve::TriangleMesh::VertexList& verts(ret->get_vertices());
+    math::Matrix3f inv_rot = ri.rotation.transposed();
     for (std::size_t i = 0; i < verts.size(); ++i)
-        verts[i] = ri.rotation * verts[i] + ri.translation;
+        verts[i] = inv_rot * verts[i] + ri.translation;
     return ret;
 }
