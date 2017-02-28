@@ -116,9 +116,8 @@ CamTrackball::handle_tb_rotation (int x, int y)
     math::Vec3f bn_now = this->get_ball_normal(x, y);
 
     /* Rotation axis and angle. */
-    //math::Vec3f axis = bn_now.cross(bn_start);
-    math::Vec3f axis = bn_start.cross(bn_now);
-    float angle = std::acos(bn_start.dot(bn_now));
+    math::Vec3f axis = bn_now.cross(bn_start);
+    float angle = std::acos(bn_now.dot(bn_start));
 
     /* Rotate axis to world coords. Build inverse viewing matrix from
      * values stored at the time of mouse click.
@@ -126,15 +125,15 @@ CamTrackball::handle_tb_rotation (int x, int y)
     math::Matrix4f cam_to_world;
     math::Vec3f campos = this->tb_center + this->rot_tb_tocam * this->tb_radius;
     math::Vec3f viewdir = -this->rot_tb_tocam;
-    cam_to_world = math::matrix_viewtrans(campos, viewdir, this->rot_tb_upvec);
-    cam_to_world = math::matrix_invert_trans(cam_to_world);
+    cam_to_world = math::matrix_inverse_viewtrans(
+        campos, viewdir, this->rot_tb_upvec);
     axis = cam_to_world.mult(axis, 0.0f);
     axis.normalize();
 
     /* Rotate camera and up vector around axis. */
-    math::Quat4f rot(axis, angle);
-    this->tb_tocam = rot.rotate(this->rot_tb_tocam);
-    this->tb_upvec = rot.rotate(this->rot_tb_upvec);
+    math::Matrix3f rot = matrix_rotation_from_axis_angle(axis, angle);
+    this->tb_tocam = rot * this->rot_tb_tocam;
+    this->tb_upvec = rot * this->rot_tb_upvec;
 }
 
 /* ---------------------------------------------------------------- */
