@@ -146,7 +146,7 @@ CameraInfo::fill_calibration (float* mat, float width, float height) const
 /* ---------------------------------------------------------------- */
 
 void
-CameraInfo::fill_gl_projection (float * mat, float width, float height,
+CameraInfo::fill_gl_projection (float* mat, float width, float height,
     float znear, float zfar) const
 {
     float dim_aspect = width / height;
