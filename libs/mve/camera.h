@@ -141,7 +141,7 @@ public:
     /**
      * Stores OpenGl projection 4x4 matrix in array pointed to by mat.
      */
-    void fill_gl_projection (float * mat, float width, float height,
+    void fill_gl_projection (float* mat, float width, float height,
         float znear, float zfar) const;
 
     /**
