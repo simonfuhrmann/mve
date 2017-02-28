@@ -169,13 +169,13 @@ Quaternion<T>::to_rotation_matrix (T* matrix) const
     T const zr2 = this->v[3] * this->v[0] * T(2);
 
     matrix[0] = xxzz + rryy;
-    matrix[1] = xy2 + zr2;
-    matrix[2] = xz2 - yr2;
-    matrix[3] = xy2 - zr2;
+    matrix[1] = xy2 - zr2;
+    matrix[2] = xz2 + yr2;
+    matrix[3] = xy2 + zr2;
     matrix[4] = yyrrxxzz;
-    matrix[5] = yz2 + xr2;
-    matrix[6] = xz2 + yr2;
-    matrix[7] = yz2 - xr2;
+    matrix[5] = yz2 - xr2;
+    matrix[6] = xz2 - yr2;
+    matrix[7] = yz2 + xr2;
     matrix[8] = rryy - xxzz;
 }
 
