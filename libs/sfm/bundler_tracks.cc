@@ -17,6 +17,35 @@
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
+/*
+ * Merges tracks and updates viewports accordingly.
+ */
+void
+unify_tracks(int view1_tid, int view2_tid,
+    TrackList* tracks, ViewportList* viewports)
+{
+    /* Unify in larger track. */
+    if (tracks->at(view1_tid).features.size()
+        < tracks->at(view2_tid).features.size())
+        std::swap(view1_tid, view2_tid);
+
+    Track& track1 = tracks->at(view1_tid);
+    Track& track2 = tracks->at(view2_tid);
+
+    for (std::size_t k = 0; k < track2.features.size(); ++k)
+    {
+        int const view_id = track2.features[k].view_id;
+        int const feat_id = track2.features[k].feature_id;
+        viewports->at(view_id).track_ids[feat_id] = view1_tid;
+    }
+    track1.features.insert(track1.features.end(),
+        track2.features.begin(), track2.features.end());
+    /* Free old track's memory. clear() does not work. */
+    track2.features = FeatureReferenceList();
+}
+
+/* ---------------------------------------------------------------- */
+
 void
 Tracks::compute (PairwiseMatching const& matching,
     ViewportList* viewports, TrackList* tracks)
@@ -81,17 +110,7 @@ Tracks::compute (PairwiseMatching const& matching,
                  * A track ID is already associated with both ends of a match,
                  * however, is not consistent. Unify tracks.
                  */
-                Track& track1 = tracks->at(view1_tid);
-                Track& track2 = tracks->at(view2_tid);
-                for (std::size_t k = 0; k < track2.features.size(); ++k)
-                {
-                    int const view_id = track2.features[k].view_id;
-                    int const feat_id = track2.features[k].feature_id;
-                    viewports->at(view_id).track_ids[feat_id] = view1_tid;
-                    track1.features.push_back(track2.features[k]);
-                }
-                /* Free old track's memory. clear() does not work. */
-                track2.features = FeatureReferenceList();
+                unify_tracks(view1_tid, view2_tid, tracks, viewports);
             }
         }
     }
