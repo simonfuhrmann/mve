@@ -13,17 +13,18 @@ struct Camera
 {
     Camera (void);
 
-    double focal_length;
+    double focal_length = 0.0;
     double distortion[2];
     double translation[3];
     double rotation[9];
-    bool is_constant;
+    bool is_constant = false;
 };
 
 /** 3D point representation for bundle adjustment. */
 struct Point3D
 {
     double pos[3];
+    bool is_constant = false;
 };
 
 /** Observation of a 3D point for a camera. */
@@ -38,8 +39,6 @@ struct Observation
 
 inline
 Camera::Camera (void)
-    : focal_length(0.0)
-    , is_constant(false)
 {
     std::fill(this->distortion, this->distortion + 2, 0.0);
     std::fill(this->translation, this->translation + 3, 0.0);
