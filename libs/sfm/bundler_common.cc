@@ -22,6 +22,9 @@
 #define PREBUNDLE_SIGNATURE "MVE_PREBUNDLE\n"
 #define PREBUNDLE_SIGNATURE_LEN 14
 
+#define SURVEY_SIGNATURE "MVE_SURVEY\n"
+#define SURVEY_SIGNATURE_LEN 11
+
 SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
@@ -207,6 +210,59 @@ load_prebundle_from_file (std::string const& filename,
         in.close();
         throw util::Exception("Premature EOF");
     }
+    in.close();
+}
+
+void
+load_survey_from_file (std::string const& filename,
+    SurveyPointList* survey_points)
+{
+    std::ifstream in(filename.c_str());
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    char signature[SURVEY_SIGNATURE_LEN + 1];
+    in.read(signature, SURVEY_SIGNATURE_LEN);
+    signature[SURVEY_SIGNATURE_LEN] = '\0';
+    if (std::string(SURVEY_SIGNATURE) != signature)
+        throw std::invalid_argument("Invalid survey file signature");
+
+    std::size_t num_points = 0;
+    std::size_t num_observations = 0;
+    in >> num_points >> num_observations;
+    if (in.fail())
+    {
+        in.close();
+        throw util::Exception("Invalid survey file header");
+    }
+
+    survey_points->resize(num_points);
+    for (std::size_t i = 0; i < num_points; ++i)
+    {
+        SurveyPoint& survey_point = survey_points->at(i);
+        for (int j = 0; j < 3; ++j)
+            in >> survey_point.pos[j];
+    }
+
+    for (std::size_t i = 0; i < num_observations; ++i)
+    {
+        int point_id, view_id;
+        float x, y;
+        in >> point_id >> view_id >> x >> y;
+
+        if (static_cast<std::size_t>(point_id) > num_points)
+            throw util::Exception("Invalid survey point id");
+
+        SurveyPoint& survey_point = survey_points->at(point_id);
+        survey_point.observations.emplace_back(view_id, x, y);
+    }
+
+    if (in.fail())
+    {
+        in.close();
+        throw util::Exception("Parsing error");
+    }
+
     in.close();
 }
 

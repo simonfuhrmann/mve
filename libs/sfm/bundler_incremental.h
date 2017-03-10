@@ -58,7 +58,9 @@ public:
      *   the camera pose is regularly updated.
      * - tracks: The tracks are triangulated and regularly updated.
      */
-    void initialize (ViewportList* viewports, TrackList* tracks);
+    void initialize (ViewportList* viewports, TrackList* tracks,
+        SurveyPointList* survey_points = nullptr);
+
     /** Returns whether the incremental SfM has been initialized. */
     bool is_initialized (void) const;
 
@@ -77,6 +79,11 @@ public:
     /** Runs bundle adjustment on the structure (3D points) only. */
     void bundle_adjustment_points_only (void);
 
+    /** Tries to register the scene to the survey points. */
+    void try_registration (void);
+    /** Prints MSE of survey points. */
+    void print_registration_error (void) const;
+
     /** Transforms the bundle for numerical stability. */
     void normalize_scene (void);
     /** Computes a bundle from all viewports and reconstructed tracks. */
@@ -89,6 +96,8 @@ private:
     Options opts;
     ViewportList* viewports;
     TrackList* tracks;
+    SurveyPointList* survey_points;
+    bool registered = false;
 };
 
 /* ------------------------ Implementation ------------------------ */

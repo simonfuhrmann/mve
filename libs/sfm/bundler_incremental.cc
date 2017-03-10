@@ -12,6 +12,8 @@
 #include <utility>
 
 #include "util/timer.h"
+#include "math/transform.h"
+#include "math/matrix_svd.h"
 #include "math/matrix_tools.h"
 #include "sfm/triangulate.h"
 #include "sfm/bundle_adjustment.h"
@@ -21,10 +23,12 @@ SFM_NAMESPACE_BEGIN
 SFM_BUNDLER_NAMESPACE_BEGIN
 
 void
-Incremental::initialize (ViewportList* viewports, TrackList* tracks)
+Incremental::initialize (ViewportList* viewports, TrackList* tracks,
+    SurveyPointList* survey_points)
 {
     this->viewports = viewports;
     this->tracks = tracks;
+    this->survey_points = survey_points;
 
     if (this->viewports->empty())
         throw std::invalid_argument("No viewports given");
@@ -178,7 +182,76 @@ Incremental::reconstruct_next_view (int view_id)
         }
     }
 
+    if (this->survey_points != nullptr && !registered)
+        this->try_registration();
+
     return true;
+}
+
+/* ---------------------------------------------------------------- */
+
+void
+Incremental::try_registration () {
+    std::vector<math::Vec3d> p0;
+    std::vector<math::Vec3d> p1;
+
+    for (std::size_t i = 0; i < this->survey_points->size(); ++i)
+    {
+        SurveyPoint const& survey_point = this->survey_points->at(i);
+
+        std::vector<math::Vec2f> pos;
+        std::vector<CameraPose const*> poses;
+        for (std::size_t j = 0; j < survey_point.observations.size(); ++j)
+        {
+            SurveyObservation const& obs = survey_point.observations[j];
+            int const view_id = obs.view_id;
+            if (!this->viewports->at(view_id).pose.is_valid())
+                continue;
+
+            pos.push_back(obs.pos);
+            poses.push_back(&this->viewports->at(view_id).pose);
+        }
+
+        if (pos.size() < 2)
+            continue;
+
+        p0.push_back(triangulate_track(pos, poses));
+        p1.push_back(survey_point.pos);
+    }
+
+    if (p0.size() < 3)
+        return;
+
+    /* Determine transformation. */
+    math::Matrix3d R;
+    double s;
+    math::Vec3d t;
+    if (!math::determine_transform(p0, p1, &R, &s, &t))
+        return;
+
+    /* Transform every camera. */
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
+    {
+        Viewport& view = this->viewports->at(i);
+        CameraPose& pose = view.pose;
+        if (!pose.is_valid())
+            continue;
+
+        pose.t = -pose.R * R.transposed() * t + pose.t * s;
+        pose.R = pose.R * R.transposed();
+    }
+
+    /* Transform every point. */
+    for (std::size_t i = 0; i < this->tracks->size(); ++i)
+    {
+        Track& track = this->tracks->at(i);
+        if (!track.is_valid())
+            continue;
+
+        track.pos = R * s * track.pos + t;
+    }
+
+    this->registered = true;
 }
 
 /* ---------------------------------------------------------------- */
@@ -334,6 +407,34 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         }
     }
 
+    for (std::size_t i = 0; registered && i < this->survey_points->size(); ++i)
+    {
+        SurveyPoint const& survey_point = this->survey_points->at(i);
+
+        /* Add corresponding 3D point to BA. */
+        ba::Point3D point;
+        std::copy(survey_point.pos.begin(), survey_point.pos.end(), point.pos);
+        point.is_constant = true;
+        ba_points_3d.push_back(point);
+
+        /* Add all observations to BA. */
+        for (std::size_t j = 0; j < survey_point.observations.size(); ++j)
+        {
+            SurveyObservation const& obs = survey_point.observations[j];
+            int const view_id = obs.view_id;
+            if (!this->viewports->at(view_id).pose.is_valid())
+                continue;
+            if (single_camera_ba >= 0 && view_id != single_camera_ba)
+                continue;
+
+            ba::Observation point;
+            std::copy(obs.pos.begin(), obs.pos.end(), point.pos);
+            point.camera_id = ba_cameras_mapping[view_id];
+            point.point_id = ba_points_3d.size() - 1;
+            ba_points_2d.push_back(point);
+        }
+    }
+
     /* Run bundle adjustment. */
     ba::BundleAdjustment ba(ba_opts);
     ba.set_cameras(&ba_cameras);
@@ -471,6 +572,8 @@ Incremental::invalidate_large_error_tracks (void)
 void
 Incremental::normalize_scene (void)
 {
+    this->registered = false;
+
     /* Compute AABB for all camera centers. */
     math::Vec3d aabb_min(std::numeric_limits<double>::max());
     math::Vec3d aabb_max(-std::numeric_limits<double>::max());
@@ -517,9 +620,56 @@ Incremental::normalize_scene (void)
 
 /* ---------------------------------------------------------------- */
 
+void
+Incremental::print_registration_error (void) const
+{
+    double sum = 0;
+    int num_points = 0;
+    for (std::size_t i = 0; i < this->survey_points->size(); ++i)
+    {
+        SurveyPoint const& survey_point = this->survey_points->at(i);
+
+        std::vector<math::Vec2f> pos;
+        std::vector<CameraPose const*> poses;
+        for (std::size_t j = 0; j < survey_point.observations.size(); ++j)
+        {
+            SurveyObservation const& obs = survey_point.observations[j];
+            int const view_id = obs.view_id;
+            if (!this->viewports->at(view_id).pose.is_valid())
+                continue;
+
+            pos.push_back(obs.pos);
+            poses.push_back(&this->viewports->at(view_id).pose);
+        }
+
+        if (pos.size() < 2)
+            continue;
+
+        math::Vec3d recon = triangulate_track(pos, poses);
+        sum += (survey_point.pos - recon).square_norm();
+        num_points += 1;
+    }
+
+    if (num_points > 0)
+    {
+        double mse = sum / num_points;
+        std::cout << "Reconstructed " << num_points
+            << " survey points with a MSE of " << mse << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to reconstruct all survey points." << std::endl;
+    }
+}
+
+/* ---------------------------------------------------------------- */
+
 mve::Bundle::Ptr
 Incremental::create_bundle (void) const
 {
+    if (this->opts.verbose_output && this->registered)
+        this->print_registration_error();
+
     /* Create bundle data structure. */
     mve::Bundle::Ptr bundle = mve::Bundle::create();
     {

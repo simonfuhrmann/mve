@@ -325,6 +325,12 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
         this->analytic_jacobian_entries(cam, p3d,
             cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
 
+        if (p3d.is_constant)
+        {
+            std::fill(point_x_ptr, point_x_ptr + 3, 0.0);
+            std::fill(point_y_ptr, point_y_ptr + 3, 0.0);
+        }
+
         std::size_t row_x = i * 2, row_y = row_x + 1;
         std::size_t cam_col = obs.camera_id * 9;
         std::size_t point_col = obs.point_id * 3;
