@@ -369,9 +369,9 @@ template <typename T, int N>
 inline T
 matrix_trace(math::Matrix<T, N, N> const& mat)
 {
-    T ret = T(0.0);
-    for (int i = 0; i < N; ++i)
-        ret += mat(i, i);
+    T ret(0.0);
+    for (int i = 0; i < N * N; i += N + 1)
+        ret += mat[i];
     return ret;
 }
 
