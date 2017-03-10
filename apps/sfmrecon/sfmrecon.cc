@@ -43,6 +43,7 @@ struct AppSettings
     std::string undistorted_name = "undistorted";
     std::string exif_name = "exif";
     std::string prebundle_file = "prebundle.sfm";
+    std::string survey_file;
     std::string log_file;
     int max_image_size = 6000000;
     bool lowres_matching = true;
@@ -161,6 +162,10 @@ sfm_reconstruct (AppSettings const& conf)
         std::cerr << "Error loading scene: " << e.what() << std::endl;
         std::exit(EXIT_FAILURE);
     }
+
+    sfm::bundler::SurveyPointList survey;
+    if (!conf.survey_file.empty())
+        sfm::bundler::load_survey_from_file(conf.survey_file, &survey);
 
     /* Try to load the pairwise matching from the prebundle. */
     std::string const prebundle_path
@@ -302,7 +307,7 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* Initialize the incremental bundler and reconstruct first tracks. */
     sfm::bundler::Incremental incremental(incremental_opts);
-    incremental.initialize(&viewports, &tracks);
+    incremental.initialize(&viewports, &tracks, &survey);
     incremental.triangulate_new_tracks(2);
     incremental.invalidate_large_error_tracks();
 
@@ -483,6 +488,7 @@ main (int argc, char** argv)
     args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing [6000000]");
     args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle file [prebundle.sfm]");
+    args.add_option('\0', "survey", true, "Load survey from file []");
     args.add_option('\0', "log-file", true, "Log some timings to file []");
     args.add_option('\0', "no-prediction", false, "Disable matchability prediction");
     args.add_option('\0', "normalize", false, "Normalize scene after reconstruction");
@@ -517,6 +523,8 @@ main (int argc, char** argv)
             conf.max_image_size = i->get_arg<int>();
         else if (i->opt->lopt == "prebundle")
             conf.prebundle_file = i->arg;
+        else if (i->opt->lopt == "survey")
+            conf.survey_file = i->arg;
         else if (i->opt->lopt == "log-file")
             conf.log_file = i->arg;
         else if (i->opt->lopt == "no-prediction")
