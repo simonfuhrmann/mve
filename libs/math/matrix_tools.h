@@ -115,6 +115,13 @@ Vector<T,N>
 matrix_get_diagonal (Matrix<T,N,N> const& mat);
 
 /**
+ * Calculates the trace of the given matrix.
+ */
+template <typename T, int N>
+T
+matrix_trace(math::Matrix<T, N, N> const& mat);
+
+/**
  * Calculates the determinant of the given matrix.
  * This is specialized for 1x1, 2x2, 3x3 and 4x4 matrices only.
  */
@@ -356,6 +363,16 @@ matrix_get_diagonal (Matrix<T,N,N> const& mat)
     for (int i = 0, j = 0; i < N*N; i += N+1, j += 1)
         diag[j] = mat[i];
     return diag;
+}
+
+template <typename T, int N>
+inline T
+matrix_trace(math::Matrix<T, N, N> const& mat)
+{
+    T ret = T(0.0);
+    for (int i = 0; i < N; ++i)
+        ret += mat(i, i);
+    return ret;
 }
 
 template <typename T>
