@@ -10,6 +10,7 @@
 #ifndef SFM_SPARSE_MATRIX_HEADER
 #define SFM_SPARSE_MATRIX_HEADER
 
+#include <thread>
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
@@ -54,6 +55,8 @@ public:
     SparseMatrix transpose (void) const;
     SparseMatrix subtract (SparseMatrix const& rhs) const;
     SparseMatrix multiply (SparseMatrix const& rhs) const;
+    SparseMatrix sequential_multiply (SparseMatrix const& rhs) const;
+    SparseMatrix parallel_multiply (SparseMatrix const& rhs) const;
     DenseVector<T> multiply (DenseVector<T> const& rhs) const;
     SparseMatrix diagonal_matrix (void) const;
 
@@ -121,6 +124,7 @@ template <typename T>
 void
 SparseMatrix<T>::reserve (std::size_t num_elements)
 {
+    this->inner.reserve(num_elements);
     this->values.reserve(num_elements);
 }
 
@@ -256,6 +260,17 @@ template <typename T>
 SparseMatrix<T>
 SparseMatrix<T>::multiply (SparseMatrix const& rhs) const
 {
+#ifdef _OPENMP
+    return this->parallel_multiply(rhs);
+#else
+    return this->sequential_multiply(rhs);
+#endif
+}
+
+template <typename T>
+SparseMatrix<T>
+SparseMatrix<T>::sequential_multiply (SparseMatrix const& rhs) const
+{
     if (this->cols != rhs.rows)
         throw std::invalid_argument("Incompatible matrix dimensions");
 
@@ -295,6 +310,88 @@ SparseMatrix<T>::multiply (SparseMatrix const& rhs) const
             }
     }
     ret.outer[ret.cols] = ret.values.size();
+
+    return ret;
+}
+
+template <typename T>
+SparseMatrix<T>
+SparseMatrix<T>::parallel_multiply (SparseMatrix const& rhs) const
+{
+    if (this->cols != rhs.rows)
+        throw std::invalid_argument("Incompatible matrix dimensions");
+
+    std::size_t nnz = this->num_non_zero() + rhs.num_non_zero();
+    SparseMatrix ret(this->rows, rhs.cols);
+    ret.reserve(nnz);
+    std::fill(ret.outer.begin(), ret.outer.end(), 0);
+
+    std::size_t const chunk_size = 64;
+    std::size_t const num_chunks = ret.cols / chunk_size
+         + (ret.cols % chunk_size != 0);
+    std::size_t const max_threads = std::max(1u,
+        std::thread::hardware_concurrency());
+    std::size_t const num_threads = std::min(num_chunks, max_threads);
+
+#pragma omp parallel num_threads(num_threads)
+    {
+        /* Matrix-matrix multiplication. */
+        std::vector<T> ret_col(ret.rows, T(0));
+        std::vector<bool> ret_nonzero(ret.rows, false);
+        std::vector<T> thread_values;
+        thread_values.reserve(nnz / num_chunks);
+        std::vector<std::size_t> thread_inner;
+        thread_inner.reserve(nnz / num_chunks);
+
+#pragma omp for ordered schedule(static, 1)
+        for (std::size_t chunk = 0; chunk < num_chunks; ++chunk)
+        {
+            thread_inner.clear();
+            thread_values.clear();
+
+            std::size_t const begin = chunk * chunk_size;
+            std::size_t const end = std::min(begin + chunk_size, ret.cols);
+            for (std::size_t col = begin; col < end; ++col)
+            {
+                std::fill(ret_col.begin(), ret_col.end(), T(0));
+                std::fill(ret_nonzero.begin(), ret_nonzero.end(), false);
+                std::size_t const rhs_col_begin = rhs.outer[col];
+                std::size_t const rhs_col_end = rhs.outer[col + 1];
+                for (std::size_t i = rhs_col_begin; i < rhs_col_end; ++i)
+                {
+                    T const& rhs_col_value = rhs.values[i];
+                    std::size_t const lhs_col = rhs.inner[i];
+                    std::size_t const lhs_col_begin = this->outer[lhs_col];
+                    std::size_t const lhs_col_end = this->outer[lhs_col + 1];
+
+                    for (std::size_t j = lhs_col_begin; j < lhs_col_end; ++j)
+                    {
+                        std::size_t const id = this->inner[j];
+                        ret_col[id] += this->values[j] * rhs_col_value;
+                        ret_nonzero[id] = true;
+                    }
+                }
+                for (std::size_t i = 0; i < ret.rows; ++i)
+                    if (ret_nonzero[i])
+                    {
+                        ret.outer[col + 1] += 1;
+                        thread_inner.push_back(i);
+                        thread_values.push_back(ret_col[i]);
+                    }
+            }
+
+#pragma omp ordered
+            {
+                ret.inner.insert(ret.inner.end(),
+                    thread_inner.begin(), thread_inner.end());
+                ret.values.insert(ret.values.end(),
+                    thread_values.begin(), thread_values.end());
+            }
+        }
+    }
+
+    for (std::size_t col = 0; col < ret.cols; ++col)
+        ret.outer[col + 1] += ret.outer[col];
 
     return ret;
 }
