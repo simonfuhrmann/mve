@@ -36,34 +36,40 @@ RansacPoseP3P::estimate (Correspondences2D3D const& corresp,
     /* Pre-compute inverse K matrix to compute directions from corresp. */
     math::Matrix<double, 3, 3> inv_k_matrix = math::matrix_inverse(k_matrix);
 
-    std::vector<int> inliers;
-    inliers.reserve(corresp.size());
-    for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
+#pragma omp parallel
     {
-        /* Compute up to four poses [R|t] using P3P algorithm. */
-        PutativePoses poses;
-        this->compute_p3p(corresp, inv_k_matrix, &poses);
-
-        /* Check all putative solutions and count inliers. */
-        bool found_better_solution = false;
-        for (std::size_t i = 0; i < poses.size(); ++i)
+        std::vector<int> inliers;
+        inliers.reserve(corresp.size());
+#pragma omp for
+        for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
         {
-            this->find_inliers(corresp, k_matrix, poses[i], &inliers);
-            if (inliers.size() > result->inliers.size())
+            /* Compute up to four poses [R|t] using P3P algorithm. */
+            PutativePoses poses;
+            this->compute_p3p(corresp, inv_k_matrix, &poses);
+
+            /* Check all putative solutions and count inliers. */
+            bool found_better_solution = false;
+            for (std::size_t i = 0; i < poses.size(); ++i)
             {
-                result->pose = poses[i];
-                std::swap(result->inliers, inliers);
-                inliers.reserve(corresp.size());
-                found_better_solution = true;
+                this->find_inliers(corresp, k_matrix, poses[i], &inliers);
+#pragma omp critical
+                if (inliers.size() > result->inliers.size())
+                {
+                    result->pose = poses[i];
+                    std::swap(result->inliers, inliers);
+                    inliers.reserve(corresp.size());
+                    found_better_solution = true;
+                }
             }
-        }
 
-        if (found_better_solution && this->opts.verbose_output)
-        {
-            std::cout << "RANSAC-3: Iteration " << iteration
-                << ", inliers " << result->inliers.size() << " ("
-                << (100.0 * result->inliers.size() / corresp.size())
-                << "%)" << std::endl;
+            if (found_better_solution && this->opts.verbose_output)
+            {
+#pragma omp critical
+                std::cout << "RANSAC-3: Iteration " << iteration
+                    << ", inliers " << result->inliers.size() << " ("
+                    << (100.0 * result->inliers.size() / corresp.size())
+                    << "%)" << std::endl;
+            }
         }
     }
 }
