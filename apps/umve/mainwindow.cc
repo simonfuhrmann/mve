@@ -155,8 +155,10 @@ MainWindow::load_file (const std::string& filename)
 {
     try
     {
-        std::string ext4 = util::string::right(filename, 4);
-        std::string ext5 = util::string::right(filename, 5);
+        std::string ext4 = util::string::lowercase(
+            util::string::right(filename, 4));
+        std::string ext5 = util::string::lowercase(
+            util::string::right(filename, 5));
         if (ext4 == ".off" || ext4 == ".ply" || ext4 == ".obj")
         {
             this->tab_sceneinspect->load_file(filename);
