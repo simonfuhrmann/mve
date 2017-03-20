@@ -49,7 +49,7 @@ namespace
                 if (std::isfinite(matrix_block[i]))
                     *(iter++) = matrix_block[i];
                 else
-                    *(iter++) = 0;
+                    *(iter++) = 0.0;
         }
     }
 
