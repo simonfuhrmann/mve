@@ -46,7 +46,10 @@ namespace
 
             iter = iter_backup;
             for (int i = 0; i < bs2; ++i)
-                *(iter++) = matrix_block[i];
+                if (std::isfinite(matrix_block[i]))
+                    *(iter++) = matrix_block[i];
+                else
+                    *(iter++) = 0;
         }
     }
 
@@ -68,7 +71,12 @@ namespace
             math::Matrix<double, 3, 3> rot;
             for (int i = 0; i < 9; ++i)
                 rot[i] = *(iter++);
-            rot = math::matrix_inverse(rot);
+
+            double det = math::matrix_determinant(rot);
+            if (MATH_DOUBLE_EQ(det, 0.0))
+                continue;
+
+            rot = math::matrix_inverse(rot, det);
             iter = iter_backup;
             for (int i = 0; i < 9; ++i)
                 *(iter++) = rot[i];
