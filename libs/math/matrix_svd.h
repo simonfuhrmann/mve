@@ -27,6 +27,8 @@
 #include "math/matrix_tools.h"
 #include "math/matrix_qr.h"
 
+#define MATH_SVD_DEFAULT_ZERO_THRESHOLD 1e-12
+
 MATH_NAMESPACE_BEGIN
 
 /**
@@ -47,7 +49,8 @@ MATH_NAMESPACE_BEGIN
 template <typename T>
 void
 matrix_svd (T const* mat_a, int rows, int cols,
-    T* mat_u, T* vec_s, T* mat_v, T const& epsilon = T(1e-12));
+    T* mat_u, T* vec_s, T* mat_v,
+    T const& epsilon = T(MATH_SVD_DEFAULT_ZERO_THRESHOLD));
 
 /**
  * SVD for compile-time fixed-size matrices. The implementation of this
@@ -58,7 +61,7 @@ template <typename T, int M, int N>
 void
 matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
     Matrix<T, N, N>* mat_s, Matrix<T, N, N>* mat_v,
-    T const& epsilon = T(1e-12));
+    T const& epsilon = T(MATH_SVD_DEFAULT_ZERO_THRESHOLD));
 
 /**
  * Computes the Moore–Penrose pseudoinverse of matrix A using the SVD.
@@ -69,7 +72,8 @@ matrix_svd (Matrix<T, M, N> const& mat_a, Matrix<T, M, N>* mat_u,
 template <typename T, int M, int N>
 void
 matrix_pseudo_inverse (Matrix<T, M, N> const& A,
-    Matrix<T, N, M>* result, T const& epsilon = T(1e-12));
+    Matrix<T, N, M>* result,
+    T const& epsilon = T(MATH_SVD_DEFAULT_ZERO_THRESHOLD));
 
 MATH_NAMESPACE_END
 

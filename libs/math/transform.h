@@ -71,7 +71,7 @@ determine_transform(std::vector<math::Vector<T, N>> const& p0,
     /* Determine rotation and scale. */
     math::Matrix<T, N, N> U, S, V;
     math::matrix_svd(cov, &U, &S, &V);
-    if (S(N - 1, N - 1) < std::numeric_limits<T>::epsilon())
+    if (S(N - 1, N - 1) < T(MATH_SVD_DEFAULT_ZERO_THRESHOLD))
         return false;
 
     math::Matrix<T, N, N> R = V * U.transposed();
