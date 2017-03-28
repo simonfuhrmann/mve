@@ -1,5 +1,5 @@
 name: mve
-version: '20170210-0'
+version: '20170210-1'
 summary: Multi-View Environment
 description: |
   The Multi-View Environment, MVE, is an implementation of a complete
@@ -13,40 +13,40 @@ confinement: strict
 apps:
   umve:
     command: desktop-launch umve
-    plugs: [home, x11, mir, opengl, unity7]
+    plugs: [home, x11, mir, opengl, unity7, removable-media]
   bundle2pset:
     command: bundle2pset
-    plugs: [home]
+    plugs: [home, removable-media]
   dmrecon:
     command: dmrecon
-    plugs: [home]
+    plugs: [home, removable-media]
   fssrecon:
     command: fssrecon
-    plugs: [home]
+    plugs: [home, removable-media]
   makescene:
     command: makescene
-    plugs: [home]
+    plugs: [home, removable-media]
   mesh2pset:
     command: mesh2pset
-    plugs: [home]
+    plugs: [home, removable-media]
   meshalign:
     command: meshalign
-    plugs: [home]
+    plugs: [home, removable-media]
   meshclean:
     command: meshclean
-    plugs: [home]
+    plugs: [home, removable-media]
   meshconvert:
     command: meshconvert
-    plugs: [home]
+    plugs: [home, removable-media]
   scene2pset:
     command: scene2pset
-    plugs: [home]
+    plugs: [home, removable-media]
   sceneupgrade:
     command: sceneupgrade
-    plugs: [home]
+    plugs: [home, removable-media]
   sfmrecon:
     command: sfmrecon
-    plugs: [home]
+    plugs: [home, removable-media]
 
 parts:
   mve:
