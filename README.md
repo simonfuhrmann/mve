@@ -4,16 +4,14 @@ The Multi-View Environment is an effort to ease the work with multi-view
 datasets and to support the development of algorithms based on multiple
 views. It features Structure from Motion, Multi-View Stereo and Surface
 Reconstruction. MVE is developed at the TU Darmstadt. Visit the following
-websites for more details.
+website for more details.
 
- * http://www.gris.tu-darmstadt.de/projects/multiview-environment/
- * http://www.gris.tu-darmstadt.de/
- * http://www.tu-darmstadt.de/
+ * http://www.gcc.tu-darmstadt.de/home/proj/mve/
 
 This README covers compilation and basic information about the
 pipeline. For documentation, please refer to the Wiki pages on GitHub.
 
-  * https://github.com/simonfuhrmann/mve/wiki
+ * https://github.com/simonfuhrmann/mve/wiki
 
 
 # Building MVE and UMVE
@@ -45,12 +43,12 @@ Windows and OS X: Please refer to the Wiki pages for instructions.
 
 The MVE reconstruction pipeline is composed of the following components:
 
-* Creating a dataset, by converting input photos into the MVE File Format.
-* Structure from Motion, which reconstructs the camera parameters.
-* Multi-View Stereo, which reconstructs dense depth maps for each photo.
-* Surface Reconstruction, which reconstructs a surface mesh.
+ * Creating a dataset, by converting input photos into the MVE File Format.
+ * Structure from Motion, which reconstructs the camera parameters.
+ * Multi-View Stereo, which reconstructs dense depth maps for each photo.
+ * Surface Reconstruction, which reconstructs a surface mesh.
 
-The reconstruction tools can be found under `mve/apps/`. Please refer to the 
+The reconstruction tools can be found under `mve/apps/`. Please refer to the
 [MVE Users Guide](https://github.com/simonfuhrmann/mve/wiki/MVE-Users-Guide)
 for a more detailed description how to use these tools. Note that UMVE is
 merely an interface for scene inspection and does not support reconstuction.
