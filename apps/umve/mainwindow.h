@@ -29,7 +29,6 @@ class MainWindow : public QMainWindow
 private:
     QDockWidget* dock_scene;
     QDockWidget* dock_jobs;
-    //QDockWidget* dock_log;
     QTabWidget* tabs;
 
     QStatusBar* statusbar;
