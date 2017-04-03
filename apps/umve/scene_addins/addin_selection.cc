@@ -193,9 +193,11 @@ AddinSelection::show_selection_info (float left, float right, float top, float b
             str_points << "Point ID " << i << ", visible in:<br/>" << std::endl;
             for (std::size_t j = 0; j < features[i].refs.size(); ++j)
             {
-                mve::View::ConstPtr ref = views[features[i].refs[j].view_id];
-                if (ref == nullptr)
+                int const view_id = features[i].refs[j].view_id;
+                if (view_id < 0 || view_id >= static_cast<int>(views.size())
+                    || views[view_id] == nullptr)
                     continue;
+                mve::View::ConstPtr ref = views[view_id];
                 str_points << "&nbsp;&nbsp;View ID ";
                 str_points << ref->get_id() << ", " << ref->get_name();
                 if (!ref->is_camera_valid())
