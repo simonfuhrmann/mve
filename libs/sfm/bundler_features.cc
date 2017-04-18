@@ -38,8 +38,12 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
 
     /* Iterate the scene and compute features. */
 #pragma omp parallel for schedule(dynamic,1)
-    for (std::size_t i = 0; i < views.size(); ++i)
-    {
+#ifdef _MSC_VER
+    for (int64_t i = 0; i < views.size(); ++i)
+#else
+	for (std::size_t i = 0; i < views.size(); ++i)
+#endif
+	{
 #pragma omp critical
         {
             num_done += 1;
