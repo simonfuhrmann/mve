@@ -15,6 +15,8 @@
 #include <QWidget>
 #include <QCheckBox>
 #include <QBoxLayout>
+#include <QDoubleSpinBox>
+#include <QFormLayout>
 
 #include "mve/mesh.h"
 
@@ -43,6 +45,10 @@ private:
     QVBoxLayout* render_meshes_box;
     QCheckBox* render_lighting_cb;
     QCheckBox* render_wireframe_cb;
+    QCheckBox* render_normals_face_cb;
+    QCheckBox* render_normals_vert_cb;
+    QFormLayout* normals_form;
+    QDoubleSpinBox* normals_size;
     QCheckBox* render_color_cb;
     QMeshList* mesh_list;
 };

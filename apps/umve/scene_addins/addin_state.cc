@@ -93,6 +93,10 @@ AddinState::load_shaders (void)
         this->texture_shader = ogl::ShaderProgram::create();
     if (!this->overlay_shader)
         this->overlay_shader = ogl::ShaderProgram::create();
+    if (!this->normals_face_shader)
+        this->normals_face_shader = ogl::ShaderProgram::create();
+    if (!this->normals_vert_shader)
+        this->normals_vert_shader = ogl::ShaderProgram::create();
 
     /* Setup search paths for shader files. */
     std::string home_dir = util::fs::get_home_dir();
@@ -107,6 +111,8 @@ AddinState::load_shaders (void)
     bool found_wireframe = false;
     bool found_texture = false;
     bool found_overlay = false;
+    bool found_normals_face = false;
+    bool found_normals_vert = false;
     for (std::size_t i = 0; i < shader_paths.size(); ++i)
     {
         try
@@ -123,6 +129,18 @@ AddinState::load_shaders (void)
             if (!found_overlay)
                 found_overlay = this->overlay_shader->try_load_all
                     (shader_paths[i] + "overlay_330");
+            if (!found_normals_face)
+                found_normals_face =
+                    this->normals_face_shader->try_load_specific(
+                        shader_paths[i] + "normals_330.vert",
+                        shader_paths[i] + "normals_face_330.geom",
+                        shader_paths[i] + "normals_330.frag");
+            if (!found_normals_vert)
+                found_normals_vert =
+                    this->normals_vert_shader->try_load_specific(
+                        shader_paths[i] + "normals_330.vert",
+                        shader_paths[i] + "normals_vert_330.geom",
+                        shader_paths[i] + "normals_330.frag");
         }
         catch (util::Exception& e)
         {
@@ -179,6 +197,16 @@ AddinState::send_uniform (ogl::Camera const& cam)
     this->texture_shader->bind();
     this->texture_shader->send_uniform("viewmat", cam.view);
     this->texture_shader->send_uniform("projmat", cam.proj);
+
+    /* Setup face normals shader. */
+    this->normals_face_shader->bind();
+    this->normals_face_shader->send_uniform("viewmat", cam.view);
+    this->normals_face_shader->send_uniform("projmat", cam.proj);
+
+    /* Setup vertex normals shader. */
+    this->normals_vert_shader->bind();
+    this->normals_vert_shader->send_uniform("viewmat", cam.view);
+    this->normals_vert_shader->send_uniform("projmat", cam.proj);
 
     /* Setup overlay shader. */
     this->overlay_shader->bind();

@@ -27,7 +27,18 @@ AddinMeshesRenderer::AddinMeshesRenderer (void)
     this->render_lighting_cb = new QCheckBox("Mesh lighting");
     this->render_wireframe_cb = new QCheckBox("Render wireframe");
     this->render_color_cb = new QCheckBox("Render mesh color");
+    this->render_normals_face_cb = new QCheckBox("Face normals");
+    this->render_normals_vert_cb = new QCheckBox("Vertex normals");
     this->mesh_list = new QMeshList();
+
+    this->normals_size = new QDoubleSpinBox();
+    this->normals_size->setDecimals(2);
+    this->normals_size->setMaximum(1e6);
+    this->normals_size->setValue(5);
+
+    this->normals_form = new QFormLayout();
+    this->normals_form->setHorizontalSpacing(10);
+    this->normals_form->addRow(tr("Normals size"), this->normals_size);
 
     this->render_lighting_cb->setChecked(true);
     this->render_color_cb->setChecked(true);
@@ -37,6 +48,9 @@ AddinMeshesRenderer::AddinMeshesRenderer (void)
     this->render_meshes_box->addWidget(this->render_lighting_cb);
     this->render_meshes_box->addWidget(this->render_wireframe_cb);
     this->render_meshes_box->addWidget(this->render_color_cb);
+    this->render_meshes_box->addWidget(this->render_normals_face_cb);
+    this->render_meshes_box->addWidget(this->render_normals_vert_cb);
+    this->render_meshes_box->addLayout(this->normals_form);
     this->render_meshes_box->addSpacing(5);
     this->render_meshes_box->addWidget(this->mesh_list, 1);
 
@@ -45,6 +59,12 @@ AddinMeshesRenderer::AddinMeshesRenderer (void)
     this->connect(this->render_wireframe_cb, SIGNAL(clicked()),
         this, SLOT(repaint()));
     this->connect(this->render_color_cb, SIGNAL(clicked()),
+        this, SLOT(repaint()));
+    this->connect(this->render_normals_face_cb, SIGNAL(clicked()),
+        this, SLOT(repaint()));
+    this->connect(this->render_normals_vert_cb, SIGNAL(clicked()),
+        this, SLOT(repaint()));
+    this->connect(this->normals_size, SIGNAL(valueChanged(double)),
         this, SLOT(repaint()));
     this->connect(this->mesh_list, SIGNAL(signal_redraw()),
         this, SLOT(repaint()));
@@ -249,6 +269,42 @@ AddinMeshesRenderer::paint_impl (void)
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 glDisable(GL_BLEND);
             }
+
+            /* Render face normals */
+            if (this->render_normals_face_cb->isChecked()
+                && !mr.mesh->get_faces().empty()
+                && this->state->normals_face_shader != nullptr)
+            {
+                this->state->normals_face_shader->bind();
+                float len = std::exp2(this->normals_size->value())/1000.0f;
+                this->state->normals_face_shader->send_uniform("len", len);
+                mr.renderer->set_shader(this->state->normals_face_shader);
+                glEnable(GL_BLEND);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                mr.renderer->draw();
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glDisable(GL_BLEND);
+            }
+
+            /* Render vertex normals */
+            if (this->render_normals_vert_cb->isChecked()
+                && mr.mesh->has_vertex_normals()
+                && this->state->normals_vert_shader != nullptr)
+            {
+                this->state->normals_vert_shader->bind();
+                float len = std::exp2(this->normals_size->value())/1000.0f;
+                this->state->normals_vert_shader->send_uniform("len", len);
+                mr.renderer->set_shader(this->state->normals_vert_shader);
+                mr.renderer->set_primitive(GL_POINTS);
+                glEnable(GL_BLEND);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                mr.renderer->draw();
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glDisable(GL_BLEND);
+                if (!mr.mesh->get_faces().empty())
+                    mr.renderer->set_primitive(GL_TRIANGLES);
+            }
+
         }
     }
 }
