@@ -101,18 +101,24 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
 bool
 ShaderProgram::try_load_all (std::string const& basename)
 {
-    std::string vert_filename = basename + ".vert";
-    std::string geom_filename = basename + ".geom";
-    std::string frag_filename = basename + ".frag";
+    return try_load_specific(basename + ".vert", basename + ".geom",
+        basename + ".frag");
+}
 
+bool
+ShaderProgram::try_load_specific (std::string const& vert_filename,
+    std::string const& geom_filename, std::string const& frag_filename)
+{
     if (!util::fs::file_exists(vert_filename.c_str())
      || !util::fs::file_exists(frag_filename.c_str()))
     {
-        std::cerr << "Skipping shaders from " << basename << ".*" << std::endl;
+        std::cerr << "Skipping shaders " << vert_filename << " and "
+            << frag_filename << std::endl;
         return false;
     }
 
-    std::cerr << "Loading shaders from " << basename << ".*" << std::endl;
+    std::cout << "Loading shaders " << vert_filename << " and "
+        << frag_filename << std::endl;
 
     this->load_vert_file(vert_filename);
 

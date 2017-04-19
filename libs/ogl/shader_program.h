@@ -45,6 +45,12 @@ public:
      */
     bool try_load_all (std::string const& basename);
 
+    /**
+     * Try loading shaders with specific filenames.
+     */
+    bool try_load_specific (std::string const& vert_filename,
+        std::string const& geom_filename, std::string const& frag_filename);
+
     /** Loads a vertex shader from file. */
     void load_vert_file (std::string const& filename);
     /** Loads optional geometry shader from file. */
