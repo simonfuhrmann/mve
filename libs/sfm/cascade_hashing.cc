@@ -49,7 +49,11 @@ CascadeHashing::init (bundler::ViewportList* viewports)
     compute_avg_descriptors(this->processed_feature_sets, &sift_avg, &surf_avg);
 
 #pragma omp parallel for schedule(dynamic)
+#ifdef _MSC_VER
+    for (int64_t i = 0; i < viewports->size(); i++)
+#else
     for (std::size_t i = 0; i < viewports->size(); i++)
+#endif
     {
         LocalData* ld_sift = &this->local_data_sift[i];
         LocalData* ld_surf = &this->local_data_surf[i];
