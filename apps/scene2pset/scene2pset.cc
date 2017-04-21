@@ -195,6 +195,10 @@ main (int argc, char** argv)
             conf.ids.end(), view_id) == conf.ids.end())
             continue;
 
+        mve::CameraInfo const& cam = view->get_camera();
+        if (cam.flen == 0.0f)
+            continue;
+
         mve::FloatImage::Ptr dm = view->get_float_image(conf.dmname);
         if (dm == nullptr)
             continue;
@@ -226,7 +230,6 @@ main (int argc, char** argv)
             << "..." << std::endl;
 
         /* Triangulate depth map. */
-        mve::CameraInfo const& cam = view->get_camera();
         mve::TriangleMesh::Ptr mesh;
         mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
