@@ -7,6 +7,7 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
+#include <thread>
 #include <iostream>
 #include <iomanip>
 
@@ -206,7 +207,7 @@ BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
     if (vector_f->size() != this->observations->size() * 2)
         vector_f->resize(this->observations->size() * 2);
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (std::size_t i = 0; i < this->observations->size(); ++i)
     {
         Observation const& obs = this->observations->at(i);
@@ -312,49 +313,65 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
 
     SparseMatrixType::Triplets cam_triplets, point_triplets;
     if (jac_cam != nullptr)
-        cam_triplets.reserve(this->observations->size() * 9 * 2);
+        cam_triplets.resize(this->observations->size() * 9 * 2);
     if (jac_points != nullptr)
-        point_triplets.reserve(this->observations->size() * 3 * 2);
+        point_triplets.resize(this->observations->size() * 3 * 2);
 
-    double cam_x_ptr[9], cam_y_ptr[9], point_x_ptr[3], point_y_ptr[3];
-    for (std::size_t i = 0; i < this->observations->size(); ++i)
+#pragma omp parallel
     {
-        Observation const& obs = this->observations->at(i);
-        Point3D const& p3d = this->points->at(obs.point_id);
-        Camera const& cam = this->cameras->at(obs.camera_id);
-        this->analytic_jacobian_entries(cam, p3d,
-            cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
-
-        if (p3d.is_constant)
+        double cam_x_ptr[9], cam_y_ptr[9], point_x_ptr[3], point_y_ptr[3];
+#pragma omp for
+        for (std::size_t i = 0; i < this->observations->size(); ++i)
         {
-            std::fill(point_x_ptr, point_x_ptr + 3, 0.0);
-            std::fill(point_y_ptr, point_y_ptr + 3, 0.0);
+            Observation const& obs = this->observations->at(i);
+            Point3D const& p3d = this->points->at(obs.point_id);
+            Camera const& cam = this->cameras->at(obs.camera_id);
+            this->analytic_jacobian_entries(cam, p3d,
+                cam_x_ptr, cam_y_ptr, point_x_ptr, point_y_ptr);
+
+            if (p3d.is_constant)
+            {
+                std::fill(point_x_ptr, point_x_ptr + 3, 0.0);
+                std::fill(point_y_ptr, point_y_ptr + 3, 0.0);
+            }
+
+            std::size_t row_x = i * 2, row_y = row_x + 1;
+            std::size_t cam_col = obs.camera_id * 9;
+            std::size_t point_col = obs.point_id * 3;
+            std::size_t cam_offset = i * 9 * 2;
+            for (int j = 0; jac_cam != nullptr && j < 9; ++j)
+            {
+                cam_triplets[cam_offset + j * 2 + 0] =
+                    SparseMatrixType::Triplet(row_x, cam_col + j, cam_x_ptr[j]);
+                cam_triplets[cam_offset + j * 2 + 1] =
+                    SparseMatrixType::Triplet(row_y, cam_col + j, cam_y_ptr[j]);
+            }
+            std::size_t point_offset = i * 3 * 2;
+            for (int j = 0; jac_points != nullptr && j < 3; ++j)
+            {
+                point_triplets[point_offset + j * 2 + 0] =
+                    SparseMatrixType::Triplet(row_x, point_col + j, point_x_ptr[j]);
+                point_triplets[point_offset + j * 2 + 1] =
+                    SparseMatrixType::Triplet(row_y, point_col + j, point_y_ptr[j]);
+            }
         }
 
-        std::size_t row_x = i * 2, row_y = row_x + 1;
-        std::size_t cam_col = obs.camera_id * 9;
-        std::size_t point_col = obs.point_id * 3;
-        for (int j = 0; jac_cam != nullptr && j < 9; ++j)
+#pragma omp sections
         {
-            cam_triplets.emplace_back(row_x, cam_col + j, cam_x_ptr[j]);
-            cam_triplets.emplace_back(row_y, cam_col + j, cam_y_ptr[j]);
-        }
-        for (int j = 0; jac_points != nullptr && j < 3; ++j)
-        {
-            point_triplets.emplace_back(row_x, point_col + j, point_x_ptr[j]);
-            point_triplets.emplace_back(row_y, point_col + j, point_y_ptr[j]);
-        }
-    }
+#pragma omp section
+            if (jac_cam != nullptr)
+            {
+                jac_cam->allocate(jacobi_rows, camera_cols);
+                jac_cam->set_from_triplets(cam_triplets);
+            }
 
-    if (jac_cam != nullptr)
-    {
-        jac_cam->allocate(jacobi_rows, camera_cols);
-        jac_cam->set_from_triplets(cam_triplets);
-    }
-    if (jac_points != nullptr)
-    {
-        jac_points->allocate(jacobi_rows, point_cols);
-        jac_points->set_from_triplets(point_triplets);
+#pragma omp section
+            if (jac_points != nullptr)
+            {
+                jac_points->allocate(jacobi_rows, point_cols);
+                jac_points->set_from_triplets(point_triplets);
+            }
+        }
     }
 }
 
