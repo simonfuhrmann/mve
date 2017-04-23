@@ -40,7 +40,7 @@ struct Viewport
     /** Initial focal length estimate for the image. */
     float focal_length;
     /** Radial distortion parameter. */
-    float radial_distortion;
+    float radial_distortion[2];
 
     /** Camera pose for the viewport. */
     CameraPose pose;
@@ -85,6 +85,28 @@ struct Track
 /** The list of all tracks. */
 typedef std::vector<Track> TrackList;
 
+/* Observation of a survey point in a specific view. */
+struct SurveyObservation
+{
+    SurveyObservation (int view_id, float x, float y);
+
+    int view_id;
+    math::Vec2f pos;
+};
+
+/** The list of all survey point observations inside a survey point. */
+typedef std::vector<SurveyObservation> SurveyObservationList;
+
+/** Representation of a survey point. */
+struct SurveyPoint
+{
+    math::Vec3f pos;
+    SurveyObservationList observations;
+};
+
+/** The list of all survey poins. */
+typedef std::vector<SurveyPoint> SurveyPointList;
+
 /* ------------- Data Structures for Feature Matching ------------- */
 
 /** The matching result between two views. */
@@ -117,12 +139,43 @@ void
 load_prebundle_from_file (std::string const& filename,
     ViewportList* viewports, PairwiseMatching* matching);
 
+/**
+ * Loads survey points and their observations from file.
+ *
+ * Survey file are ASCII files that start with the signature
+ * MVE_SURVEY followed by a newline, followed by the number of survey points
+ * and survey point observations.
+ * Each survey point is a 3D point followed by a newline. Each survey point
+ * observation is a line starting with the index of the survey point, followed
+ * by the view id an the 2D location within the image. The (x, y) coordinates
+ * have to be normalized such that the center of the image is (0, 0) and the
+ * larger image dimension is one. This means that all image coordinates are
+ * between (-0.5,-0.5) and (0.5, 0.5)
+ *
+ * MVE_SURVEY
+ * <num_points> <num_observations>
+ * <survey_point> // x y z
+ * ...
+ * <survey_point_observation> // survey_point_id view_id x y
+ * ...
+ */
+void
+load_survey_from_file (std::string const& filename,
+    SurveyPointList* survey_points);
+
 /* ------------------------ Implementation ------------------------ */
 
 inline
 FeatureReference::FeatureReference (int view_id, int feature_id)
     : view_id(view_id)
     , feature_id(feature_id)
+{
+}
+
+inline
+SurveyObservation::SurveyObservation (int view_id, float x, float y)
+    : view_id(view_id)
+    , pos(x, y)
 {
 }
 
@@ -137,8 +190,8 @@ TwoViewMatching::operator< (TwoViewMatching const& rhs) const
 inline
 Viewport::Viewport (void)
     : focal_length(0.0f)
-    , radial_distortion(0.0f)
 {
+    std::fill(this->radial_distortion, this->radial_distortion + 2, 0.0f);
 }
 
 inline bool

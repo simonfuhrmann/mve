@@ -4,7 +4,7 @@
  * All rights reserved.
  *
  * This software may be modified and distributed under the terms
- * of the GPL 3 license. See the LICENSE.txt file for details.
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
 #include <fstream>
@@ -43,6 +43,7 @@ struct AppSettings
     std::string undistorted_name = "undistorted";
     std::string exif_name = "exif";
     std::string prebundle_file = "prebundle.sfm";
+    std::string survey_file;
     std::string log_file;
     int max_image_size = 6000000;
     bool lowres_matching = true;
@@ -162,6 +163,10 @@ sfm_reconstruct (AppSettings const& conf)
         std::exit(EXIT_FAILURE);
     }
 
+    sfm::bundler::SurveyPointList survey;
+    if (!conf.survey_file.empty())
+        sfm::bundler::load_survey_from_file(conf.survey_file, &survey);
+
     /* Try to load the pairwise matching from the prebundle. */
     std::string const prebundle_path
         = util::fs::join_path(scene->get_path(), conf.prebundle_file);
@@ -264,6 +269,7 @@ sfm_reconstruct (AppSettings const& conf)
     }
     else
     {
+        std::cout << "Reconstructing initial pair..." << std::endl;
         sfm::bundler::InitialPair init_pair(init_pair_opts);
         init_pair.initialize(viewports, tracks);
         init_pair.compute_pair(conf.initial_pair_1, conf.initial_pair_2,
@@ -301,7 +307,7 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* Initialize the incremental bundler and reconstruct first tracks. */
     sfm::bundler::Incremental incremental(incremental_opts);
-    incremental.initialize(&viewports, &tracks);
+    incremental.initialize(&viewports, &tracks, &survey);
     incremental.triangulate_new_tracks(2);
     incremental.invalidate_large_error_tracks();
 
@@ -421,8 +427,8 @@ sfm_reconstruct (AppSettings const& conf)
             if (original == nullptr)
                 continue;
             mve::ByteImage::Ptr undist
-                = mve::image::image_undistort_vsfm<uint8_t>
-                (original, cam.flen, cam.dist[0]);
+                = mve::image::image_undistort_k2k4<uint8_t>
+                (original, cam.flen, cam.dist[0], cam.dist[1]);
             view->set_image(undist, conf.undistorted_name);
         }
 
@@ -482,6 +488,7 @@ main (int argc, char** argv)
     args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing [6000000]");
     args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle file [prebundle.sfm]");
+    args.add_option('\0', "survey", true, "Load survey from file []");
     args.add_option('\0', "log-file", true, "Log some timings to file []");
     args.add_option('\0', "no-prediction", false, "Disable matchability prediction");
     args.add_option('\0', "normalize", false, "Normalize scene after reconstruction");
@@ -516,6 +523,8 @@ main (int argc, char** argv)
             conf.max_image_size = i->get_arg<int>();
         else if (i->opt->lopt == "prebundle")
             conf.prebundle_file = i->arg;
+        else if (i->opt->lopt == "survey")
+            conf.survey_file = i->arg;
         else if (i->opt->lopt == "log-file")
             conf.log_file = i->arg;
         else if (i->opt->lopt == "no-prediction")
