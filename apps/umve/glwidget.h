@@ -11,13 +11,13 @@
 #define UMVE_GL_WIDGET_HEADER
 
 #include <set>
-#include <QGLWidget>
+#include <QOpenGLWidget>
 #include <QMouseEvent>
 #include <QTimer>
 
 #include "ogl/context.h"
 
-class GLWidget : public QGLWidget
+class GLWidget : public QOpenGLWidget
 {
     Q_OBJECT
 
@@ -55,6 +55,7 @@ private:
     ogl::Context* context;
     int gl_width;
     int gl_height;
+    qreal device_pixel_ratio;
     bool cx_init;
     std::set<ogl::Context*> init_set;
     QTimer* repaint_timer;
@@ -77,8 +78,6 @@ GLWidget::sizeHint() const
 inline void
 GLWidget::repaint_gl (void)
 {
-    this->updateGL();
-    //this->repaint();
 }
 
 inline void

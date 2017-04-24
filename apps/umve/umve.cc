@@ -15,7 +15,6 @@
 #include "ogl/opengl.h"
 
 #include <QApplication>
-#include <QGLFormat>
 
 #include "util/file_system.h"
 #include "util/arguments.h"
@@ -74,14 +73,16 @@ main (int argc, char** argv)
     }
 
     /* Set OpenGL version that Qt should use when creating a context.*/
-    QGLFormat fmt;
+    QSurfaceFormat fmt;
     fmt.setVersion(3, 3);
+    fmt.setDepthBufferSize(24);
+    fmt.setStencilBufferSize(8);
 #if defined(_WIN32)
-    fmt.setProfile(QGLFormat::CompatibilityProfile);
+    fmt.setProfile(QSurfaceFormat::CompatibilityProfile);
 #else
-    fmt.setProfile(QGLFormat::CoreProfile);
+    fmt.setProfile(QSurfaceFormat::CoreProfile);
 #endif
-    QGLFormat::setDefaultFormat(fmt);
+    QSurfaceFormat::setDefaultFormat(fmt);
 
     /* Create application. */
     set_qt_style("Cleanlooks");

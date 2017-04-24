@@ -186,7 +186,7 @@ SceneInspect::on_save_screenshot (void)
     if (filename.size() == 0)
         return;
 
-    QImage img = this->gl_widget->grabFrameBuffer(false);
+    QImage img = this->gl_widget->grabFramebuffer();
     bool success = img.save(filename);
     if (!success)
         QMessageBox::critical(this, "Cannot save image",
