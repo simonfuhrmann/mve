@@ -525,8 +525,12 @@ Incremental::invalidate_large_error_tracks (void)
             math::Vec2f const& pos2d = viewport.features.positions[feature_id];
 
             /* Project 3D feature and compute reprojection error. */
-            math::Vec3d x = pose.K * (pose.R * pos3d + pose.t);
+            math::Vec3d x = pose.R * pos3d + pose.t;
             math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
+            double r2 = x2d.square_norm();
+            x2d *= (1.0 + r2 * (viewport.radial_distortion[0]
+                + viewport.radial_distortion[1] * r2))
+                * pose.get_focal_length();
             total_error += (pos2d - x2d).square_norm();
             num_valid += 1;
         }
