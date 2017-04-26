@@ -28,6 +28,7 @@ public:
 
         double trust_region_radius;
         int cg_max_iterations;
+        int camera_block_dim;
     };
 
     struct Status

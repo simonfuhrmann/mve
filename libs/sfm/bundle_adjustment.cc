@@ -224,7 +224,7 @@ BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
         Camera new_camera;
         if (delta_x != nullptr)
         {
-            std::size_t cam_id = obs.camera_id * 9;
+            std::size_t cam_id = obs.camera_id * this->num_cam_params;
             std::size_t pt_id = obs.point_id * 3;
 
             if (this->opts.bundle_mode & BA_CAMERAS)
@@ -234,7 +234,7 @@ BundleAdjustment::compute_reprojection_errors (DenseVectorType* vector_f,
                 dist = new_camera.distortion;
                 rot = new_camera.rotation;
                 trans = new_camera.translation;
-                pt_id += this->cameras->size() * 9;
+                pt_id += this->cameras->size() * this->num_cam_params;
             }
 
             if (this->opts.bundle_mode & BA_POINTS)
@@ -307,13 +307,15 @@ void
 BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
     SparseMatrixType* jac_points)
 {
-    std::size_t const camera_cols = this->cameras->size() * 9;
+    std::size_t const camera_cols = this->cameras->size()
+        * this->num_cam_params;
     std::size_t const point_cols = this->points->size() * 3;
     std::size_t const jacobi_rows = this->observations->size() * 2;
 
     SparseMatrixType::Triplets cam_triplets, point_triplets;
     if (jac_cam != nullptr)
-        cam_triplets.resize(this->observations->size() * 9 * 2);
+        cam_triplets.resize(this->observations->size() * 2
+            * this->num_cam_params);
     if (jac_points != nullptr)
         point_triplets.resize(this->observations->size() * 3 * 2);
 
@@ -336,10 +338,10 @@ BundleAdjustment::analytic_jacobian (SparseMatrixType* jac_cam,
             }
 
             std::size_t row_x = i * 2, row_y = row_x + 1;
-            std::size_t cam_col = obs.camera_id * 9;
+            std::size_t cam_col = obs.camera_id * this->num_cam_params;
             std::size_t point_col = obs.point_id * 3;
-            std::size_t cam_offset = i * 9 * 2;
-            for (int j = 0; jac_cam != nullptr && j < 9; ++j)
+            std::size_t cam_offset = i * this->num_cam_params * 2;
+            for (int j = 0; jac_cam != nullptr && j < this->num_cam_params; ++j)
             {
                 cam_triplets[cam_offset + j * 2 + 0] =
                     SparseMatrixType::Triplet(row_x, cam_col + j, cam_x_ptr[j]);
@@ -431,6 +433,36 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
     double const fz = cam.focal_length / pz;
     double const radius2 = ix * ix + iy * iy;
     double const rd_factor = 1.0 + (k[0] + k[1] * radius2) * radius2;
+
+    /* Compute exact camera and point entries if intrinsics are fixed */
+    if (this->opts.fixed_intrinsics)
+    {
+        cam_x_ptr[0] = fz * rd_factor;
+        cam_x_ptr[1] = 0.0;
+        cam_x_ptr[2] = -fz * rd_factor * ix;
+        cam_x_ptr[3] = -fz * rd_factor * ry * ix;
+        cam_x_ptr[4] = fz * rd_factor * (rz + rx * ix);
+        cam_x_ptr[5] = -fz * rd_factor * ry;
+
+        cam_y_ptr[0] = 0.0;
+        cam_y_ptr[1] = fz * rd_factor;
+        cam_y_ptr[2] = -fz * rd_factor * iy;
+        cam_y_ptr[3] = -fz * rd_factor * (rz + ry * iy);
+        cam_y_ptr[4] = fz * rd_factor * rx * iy;
+        cam_y_ptr[5] = fz * rd_factor * rx;
+
+        /*
+         * Compute point derivatives in x, y, and z.
+         */
+        point_x_ptr[0] = fz * rd_factor * (r[0] - r[6] * ix);
+        point_x_ptr[1] = fz * rd_factor * (r[1] - r[7] * ix);
+        point_x_ptr[2] = fz * rd_factor * (r[2] - r[8] * ix);
+
+        point_y_ptr[0] = fz * rd_factor * (r[3] - r[6] * iy);
+        point_y_ptr[1] = fz * rd_factor * (r[4] - r[7] * iy);
+        point_y_ptr[2] = fz * rd_factor * (r[5] - r[8] * iy);
+        return;
+    }
 
     /* The intrinsics are easy to compute exactly. */
     cam_x_ptr[0] = ix * rd_factor;
@@ -606,13 +638,14 @@ void
 BundleAdjustment::update_parameters (DenseVectorType const& delta_x)
 {
     /* Update cameras. */
-    std::size_t num_camera_params = 0;
+    std::size_t total_camera_params = 0;
     if (this->opts.bundle_mode & BA_CAMERAS)
     {
         for (std::size_t i = 0; i < this->cameras->size(); ++i)
             this->update_camera(this->cameras->at(i),
-                delta_x.data() + 9 * i, &this->cameras->at(i));
-        num_camera_params = this->cameras->size() * 9;
+                delta_x.data() + this->num_cam_params * i,
+                &this->cameras->at(i));
+        total_camera_params = this->cameras->size() * this->num_cam_params;
     }
 
     /* Update points. */
@@ -620,7 +653,7 @@ BundleAdjustment::update_parameters (DenseVectorType const& delta_x)
     {
         for (std::size_t i = 0; i < this->points->size(); ++i)
             this->update_point(this->points->at(i),
-                delta_x.data() + num_camera_params + i * 3,
+                delta_x.data() + total_camera_params + i * 3,
                 &this->points->at(i));
     }
 }
@@ -629,17 +662,28 @@ void
 BundleAdjustment::update_camera (Camera const& cam,
     double const* update, Camera* out)
 {
-    out->focal_length = cam.focal_length + update[0];
-    out->distortion[0] = cam.distortion[0] + update[1];
-    out->distortion[1] = cam.distortion[1] + update[2];
-    out->translation[0] = cam.translation[0] + update[3];
-    out->translation[1] = cam.translation[1] + update[4];
-    out->translation[2] = cam.translation[2] + update[5];
+    if (opts.fixed_intrinsics)
+    {
+        out->focal_length = cam.focal_length;
+        out->distortion[0] = cam.distortion[0];
+        out->distortion[1] = cam.distortion[1];
+    }
+    else
+    {
+        out->focal_length = cam.focal_length + update[0];
+        out->distortion[0] = cam.distortion[0] + update[1];
+        out->distortion[1] = cam.distortion[1] + update[2];
+    }
+
+    int const offset = this->opts.fixed_intrinsics ? 0 : 3;
+    out->translation[0] = cam.translation[0] + update[0 + offset];
+    out->translation[1] = cam.translation[1] + update[1 + offset];
+    out->translation[2] = cam.translation[2] + update[2 + offset];
 
     double rot_orig[9];
     std::copy(cam.rotation, cam.rotation + 9, rot_orig);
     double rot_update[9];
-    this->rodrigues_to_matrix(update + 6, rot_update);
+    this->rodrigues_to_matrix(update + 3 + offset, rot_update);
     math::matrix_multiply(rot_update, 3, 3, rot_orig, 3, out->rotation);
 }
 

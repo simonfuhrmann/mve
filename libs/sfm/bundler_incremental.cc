@@ -337,6 +337,7 @@ void
 Incremental::bundle_adjustment_intern (int single_camera_ba)
 {
     ba::BundleAdjustment::Options ba_opts;
+    ba_opts.fixed_intrinsics = this->opts.ba_fixed_intrinsics;
     ba_opts.verbose_output = true;
     if (single_camera_ba >= 0)
         ba_opts.bundle_mode = ba::BundleAdjustment::BA_CAMERAS;
@@ -454,7 +455,7 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         CameraPose& pose = view.pose;
         ba::Camera const& cam = ba_cameras[ba_cam_counter];
 
-        if (this->opts.verbose_output)
+        if (this->opts.verbose_output && !this->opts.ba_fixed_intrinsics)
         {
             std::cout << "Camera " << std::setw(3) << i
                 << ", focal length: "

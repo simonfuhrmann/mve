@@ -64,7 +64,7 @@ public:
 
         bool verbose_output;
         BAMode bundle_mode;
-        //bool fixed_intrinsics;
+        bool fixed_intrinsics;
         //bool shared_intrinsics;
         int lm_max_iterations;
         int lm_min_iterations;
@@ -130,6 +130,7 @@ private:
     std::vector<Camera>* cameras;
     std::vector<Point3D>* points;
     std::vector<Observation>* observations;
+    int const num_cam_params;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -165,7 +166,9 @@ BundleAdjustment::BundleAdjustment (Options const& options)
     , cameras(nullptr)
     , points(nullptr)
     , observations(nullptr)
+    , num_cam_params(options.fixed_intrinsics ? 6 : 9)
 {
+    this->opts.linear_opts.camera_block_dim = this->num_cam_params;
 }
 
 inline void
