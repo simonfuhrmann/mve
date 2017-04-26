@@ -138,9 +138,9 @@ inline
 BundleAdjustment::Options::Options (void)
     : verbose_output(false)
     , bundle_mode(BA_CAMERAS_AND_POINTS)
-    , lm_max_iterations(20)
+    , lm_max_iterations(50)
     , lm_min_iterations(0)
-    , lm_delta_threshold(1e-8)
+    , lm_delta_threshold(1e-4)
     , lm_mse_threshold(1e-8)
 {
 }
