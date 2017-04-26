@@ -117,12 +117,13 @@ BundleAdjustment::lm_optimize (void)
         LinearSolver::Status cg_status = pcg.solve(Jc, Jp, F, &delta_x);
 
         /* Update reprojection errors and MSE after linear step. */
-        double new_mse, delta_mse;
+        double new_mse, delta_mse, delta_mse_ratio;
         if (cg_status.success)
         {
             this->compute_reprojection_errors(&F_new, &delta_x);
             new_mse = this->compute_mse(F_new);
             delta_mse = current_mse - new_mse;
+            delta_mse_ratio = 1.0 - new_mse / current_mse;
             this->status.num_cg_iterations += cg_status.num_cg_iterations;
         }
         else
@@ -187,10 +188,9 @@ BundleAdjustment::lm_optimize (void)
         /* Check threshold on the norm of delta_x. */
         if (successful_iteration)
         {
-            double const delta_norm = delta_x.norm();
-            if (delta_norm < this->opts.lm_delta_threshold)
+            if (delta_mse_ratio < this->opts.lm_delta_threshold)
             {
-                LOG_I << "BA: Satisfied delta norm threshold of "
+                LOG_I << "BA: Satisfied delta mse ratio threshold of "
                     << this->opts.lm_delta_threshold << std::endl;
                 break;
             }
@@ -473,7 +473,7 @@ BundleAdjustment::analytic_jacobian_entries (Camera const& cam,
     cam_y_ptr[1] = cam.focal_length * iy * radius2;
     cam_y_ptr[2] = cam.focal_length * iy * radius2 * radius2;
 
-#define JACOBIAN_APPROX_CONST_RD 1
+#define JACOBIAN_APPROX_CONST_RD 0
 #define JACOBIAN_APPROX_PBA 0
 #if JACOBIAN_APPROX_CONST_RD
     /*

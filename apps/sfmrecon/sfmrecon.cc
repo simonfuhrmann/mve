@@ -54,7 +54,7 @@ struct AppSettings
     bool shared_intrinsics = false;
     bool intrinsics_from_views = false;
     int video_matching = 0;
-    float track_error_thres_factor = 25.0f;
+    float track_error_thres_factor = 10.0f;
     float new_track_error_thres = 0.01f;
     int initial_pair_1 = -1;
     int initial_pair_2 = -1;
@@ -324,12 +324,6 @@ sfm_reconstruct (AppSettings const& conf)
         std::vector<int> next_views;
         incremental.find_next_views(&next_views);
 
-        if (next_views.empty())
-        {
-            std::cout << "SfM reconstruction finished." << std::endl;
-            break;
-        }
-
         /* Reconstruct the next view. */
         int next_view_id = -1;
         for (std::size_t i = 0; i < next_views.size(); ++i)
@@ -347,20 +341,31 @@ sfm_reconstruct (AppSettings const& conf)
 
         if (next_view_id < 0)
         {
-            std::cout << "No valid next view. Exiting." << std::endl;
-            break;
+            if (full_ba_num_skipped == 0)
+            {
+                std::cout << "No valid next view." << std::endl;
+                std::cout << "SfM reconstruction finished." << std::endl;
+                break;
+            }
+            else
+            {
+                incremental.triangulate_new_tracks(conf.min_views_per_track);
+                std::cout << "Running full bundle adjustment..." << std::endl;
+                incremental.bundle_adjustment_full();
+                incremental.invalidate_large_error_tracks();
+                full_ba_num_skipped = 0;
+                continue;
+            }
         }
 
         /* Run single-camera bundle adjustment. */
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
-        incremental.triangulate_new_tracks(conf.min_views_per_track);
-        incremental.invalidate_large_error_tracks();
         num_cameras_reconstructed += 1;
 
         /* Run full bundle adjustment only after a couple of views. */
         int const full_ba_skip_views = conf.always_full_ba ? 0
-            : std::min(5, num_cameras_reconstructed / 15);
+            : std::min(100, num_cameras_reconstructed / 10);
         if (full_ba_num_skipped < full_ba_skip_views)
         {
             std::cout << "Skipping full bundle adjustment (skipping "
@@ -369,16 +374,12 @@ sfm_reconstruct (AppSettings const& conf)
         }
         else
         {
+            incremental.triangulate_new_tracks(conf.min_views_per_track);
             std::cout << "Running full bundle adjustment..." << std::endl;
             incremental.bundle_adjustment_full();
+            incremental.invalidate_large_error_tracks();
             full_ba_num_skipped = 0;
         }
-    }
-
-    if (full_ba_num_skipped > 0)
-    {
-        std::cout << "Running final bundle adjustment..." << std::endl;
-        incremental.bundle_adjustment_full();
     }
 
     std::cout << "SfM reconstruction took " << timer.get_elapsed()
@@ -498,8 +499,8 @@ main (int argc, char** argv)
     args.add_option('\0', "fixed-intrinsics", false, "Do not optimize camera intrinsics");
     args.add_option('\0', "shared-intrinsics", false, "Share intrinsics between all cameras");
     args.add_option('\0', "intrinsics-from-views", false, "Use intrinsics from MVE views [use EXIF]");
-    args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [10]");
-    args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [25]");
+    args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [0.01]");
+    args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [10]");
     args.add_option('\0', "use-2cam-tracks", false, "Triangulate tracks from only two cameras");
     args.add_option('\0', "initial-pair", true, "Manually specify initial pair IDs [-1,-1]");
     args.add_option('\0', "cascade-hashing", false, "Use cascade hashing for matching [false]");
