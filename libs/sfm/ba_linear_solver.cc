@@ -155,8 +155,10 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
 
     /* Compute the blocks of the Hessian. */
     SparseMatrixType B, C;
-    matrix_block_column_multiply(Jc, 9, &B);  // Jc^T * Jc
-    matrix_block_column_multiply(Jp, 3, &C);  // Jp^T * Jp
+    /* Jc^T * Jc */
+    matrix_block_column_multiply(Jc, this->opts.camera_block_dim, &B);
+    /* Jp^T * Jp */
+    matrix_block_column_multiply(Jp, 3, &C);
     SparseMatrixType E = JcT.multiply(Jp);
 
     /* Assemble two values vectors. */
@@ -185,7 +187,7 @@ LinearSolver::solve_schur (SparseMatrixType const& jac_cams,
     //SparseMatrixType precond = S.diagonal_matrix();
     //precond.cwise_invert();
     SparseMatrixType precond = B;
-    invert_block_matrix_NxN_inplace(&precond, 9);
+    invert_block_matrix_NxN_inplace(&precond, this->opts.camera_block_dim);
 
     /* Solve linear system. */
     DenseVectorType delta_y(Jc.num_cols());
