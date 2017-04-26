@@ -262,10 +262,12 @@ Incremental::triangulate_new_tracks (int min_num_views)
     Triangulate::Options triangulate_opts;
     triangulate_opts.error_threshold = this->opts.new_track_error_threshold;
     triangulate_opts.angle_threshold = this->opts.min_triangulation_angle;
+    triangulate_opts.min_num_views = min_num_views;
 
     Triangulate::Statistics stats;
     Triangulate triangulator(triangulate_opts);
 
+    std::size_t initial_tracks_size = this->tracks->size();
     for (std::size_t i = 0; i < this->tracks->size(); ++i)
     {
         /* Skip tracks that have already been triangulated. */
@@ -279,6 +281,8 @@ Incremental::triangulate_new_tracks (int min_num_views)
          */
         std::vector<math::Vec2f> pos;
         std::vector<CameraPose const*> poses;
+        std::vector<std::size_t> view_ids;
+        std::vector<std::size_t> feature_ids;
         for (std::size_t j = 0; j < track.features.size(); ++j)
         {
             int const view_id = track.features[j].view_id;
@@ -288,6 +292,8 @@ Incremental::triangulate_new_tracks (int min_num_views)
             pos.push_back(this->viewports->at(view_id)
                 .features.positions[feature_id]);
             poses.push_back(&this->viewports->at(view_id).pose);
+            view_ids.push_back(view_id);
+            feature_ids.push_back(feature_id);
         }
 
         /* Skip tracks with too few valid cameras. */
@@ -295,13 +301,42 @@ Incremental::triangulate_new_tracks (int min_num_views)
             continue;
 
         /* Accept track if triangulation was successful. */
+        std::vector<std::size_t> outlier;
         math::Vec3d track_pos;
-        if (triangulator.triangulate(poses, pos, &track_pos, &stats))
-            this->tracks->at(i).pos = track_pos;
+        if (!triangulator.triangulate(poses, pos, &track_pos, &stats, &outlier))
+            continue;
+        this->tracks->at(i).pos = track_pos;
+
+        /* Check if track contains outliers */
+        if (outlier.size() == 0)
+            continue;
+
+        /* Split outliers from track and generate new track */
+        Track & inlier_track = this->tracks->at(i);
+        Track outlier_track;
+        outlier_track.invalidate();
+        outlier_track.color = inlier_track.color;
+        for (std::size_t i = 0; i < outlier.size(); ++i)
+        {
+            int const view_id = view_ids[outlier[i]];
+            int const feature_id = feature_ids[outlier[i]];
+            /* Remove outlier from inlier track */
+            inlier_track.remove_view(view_id);
+            /* Add features to new track */
+            outlier_track.features.emplace_back(view_id, feature_id);
+            /* Change TrackID in viewports */
+            this->viewports->at(view_id).track_ids[feature_id] =
+                this->tracks->size();
+        }
+        this->tracks->push_back(outlier_track);
     }
 
     if (this->opts.verbose_output)
+    {
         triangulator.print_statistics(stats, std::cout);
+        std::cout << "  Splitted " << this->tracks->size()
+            - initial_tracks_size << " new tracks." << std::endl;
+    }
 }
 
 /* ---------------------------------------------------------------- */
