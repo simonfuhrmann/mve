@@ -62,10 +62,12 @@ public:
     {
         Options (void);
 
-        /** Threshold on the average reprojection error. */
+        /** Threshold on reprojection error for outlier detection. */
         double error_threshold;
         /** Threshold on the triangulation angle (in radians). */
         double angle_threshold;
+        /** Minimal number of views with small error (inliers). */
+        int min_num_views;
     };
 
     struct Statistics
@@ -86,8 +88,8 @@ public:
     explicit Triangulate (Options const& options);
     bool triangulate (std::vector<CameraPose const*> const& poses,
         std::vector<math::Vec2f> const& positions,
-        math::Vec3d* track_pos,
-        Statistics* stats) const;
+        math::Vec3d* track_pos, Statistics* stats,
+        std::vector<std::size_t>* outliers = nullptr) const;
     void print_statistics (Statistics const& stats, std::ostream& out) const;
 
 private:
@@ -101,6 +103,7 @@ inline
 Triangulate::Options::Options (void)
     : error_threshold(0.01)
     , angle_threshold(MATH_DEG2RAD(1.0))
+    , min_num_views(2)
 {
 }
 

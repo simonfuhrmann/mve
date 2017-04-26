@@ -8,6 +8,7 @@
  */
 
 #include <set>
+#include <atomic>
 #include <iostream>
 
 #include "util/system.h"
@@ -24,7 +25,7 @@ RansacPoseP3P::RansacPoseP3P (Options const& options)
 
 void
 RansacPoseP3P::estimate (Correspondences2D3D const& corresp,
-    math::Matrix<double, 3, 3> const& k_matrix, Result* result)
+    math::Matrix<double, 3, 3> const& k_matrix, Result* result) const
 {
     if (this->opts.verbose_output)
     {
@@ -35,35 +36,43 @@ RansacPoseP3P::estimate (Correspondences2D3D const& corresp,
 
     /* Pre-compute inverse K matrix to compute directions from corresp. */
     math::Matrix<double, 3, 3> inv_k_matrix = math::matrix_inverse(k_matrix);
+    std::atomic<int> num_iterations;
 
-    std::vector<int> inliers;
-    inliers.reserve(corresp.size());
-    for (int iteration = 0; iteration < this->opts.max_iterations; ++iteration)
+#pragma omp parallel
     {
-        /* Compute up to four poses [R|t] using P3P algorithm. */
-        PutativePoses poses;
-        this->compute_p3p(corresp, inv_k_matrix, &poses);
-
-        /* Check all putative solutions and count inliers. */
-        bool found_better_solution = false;
-        for (std::size_t i = 0; i < poses.size(); ++i)
+        std::vector<int> inliers;
+        inliers.reserve(corresp.size());
+#pragma omp for
+        for (int i = 0; i < this->opts.max_iterations; ++i)
         {
-            this->find_inliers(corresp, k_matrix, poses[i], &inliers);
-            if (inliers.size() > result->inliers.size())
+            int iteration = i;
+            if (this->opts.verbose_output)
+                iteration = num_iterations++;
+
+            /* Compute up to four poses [R|t] using P3P algorithm. */
+            PutativePoses poses;
+            this->compute_p3p(corresp, inv_k_matrix, &poses);
+
+            /* Check all putative solutions and count inliers. */
+            for (std::size_t j = 0; j < poses.size(); ++j)
             {
-                result->pose = poses[i];
-                std::swap(result->inliers, inliers);
-                inliers.reserve(corresp.size());
-                found_better_solution = true;
-            }
-        }
+                this->find_inliers(corresp, k_matrix, poses[j], &inliers);
+#pragma omp critical
+                if (inliers.size() > result->inliers.size())
+                {
+                    result->pose = poses[j];
+                    std::swap(result->inliers, inliers);
+                    inliers.reserve(corresp.size());
 
-        if (found_better_solution && this->opts.verbose_output)
-        {
-            std::cout << "RANSAC-3: Iteration " << iteration
-                << ", inliers " << result->inliers.size() << " ("
-                << (100.0 * result->inliers.size() / corresp.size())
-                << "%)" << std::endl;
+                    if (this->opts.verbose_output)
+                    {
+                        std::cout << "RANSAC-3: Iteration " << iteration
+                            << ", inliers " << result->inliers.size() << " ("
+                            << (100.0 * result->inliers.size() / corresp.size())
+                            << "%)" << std::endl;
+                    }
+                }
+            }
         }
     }
 }
@@ -71,7 +80,7 @@ RansacPoseP3P::estimate (Correspondences2D3D const& corresp,
 void
 RansacPoseP3P::compute_p3p (Correspondences2D3D const& corresp,
     math::Matrix<double, 3, 3> const& inv_k_matrix,
-    PutativePoses* poses)
+    PutativePoses* poses) const
 {
     if (corresp.size() < 3)
         throw std::invalid_argument("At least 3 correspondences required");
@@ -96,7 +105,7 @@ RansacPoseP3P::compute_p3p (Correspondences2D3D const& corresp,
 void
 RansacPoseP3P::find_inliers (Correspondences2D3D const& corresp,
     math::Matrix<double, 3, 3> const& k_matrix,
-    Pose const& pose, std::vector<int>* inliers)
+    Pose const& pose, std::vector<int>* inliers) const
 {
     inliers->resize(0);
     double const square_threshold = MATH_POW2(this->opts.threshold);

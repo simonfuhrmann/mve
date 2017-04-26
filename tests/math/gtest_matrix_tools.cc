@@ -116,6 +116,26 @@ TEST(MatrixToolsTest, MatrixMultiply)
         EXPECT_EQ(mat_ret[i], ret[i]);
 }
 
+TEST(MatrixToolsTest, MatrixTransposeMultiply1)
+{
+    int mat[] = { 0, 1, 2,  3, 4, 5 };
+    int oracle[] = { 9, 12, 15, 12, 17, 22, 15, 22, 29 };
+    int ret[9];
+    math::matrix_transpose_multiply(mat, 2, 3, ret);
+    for (int i = 0; i < 9; ++i)
+        EXPECT_EQ(oracle[i], ret[i]);
+}
+
+TEST(MatrixToolsTest, MatrixTransposeMultiply2)
+{
+    int mat[] = { 2, 3,  4, 5,  6, 7 };
+    int oracle[] = { 56, 68, 68, 83 };
+    int ret[4];
+    math::matrix_transpose_multiply(mat, 3, 2, ret);
+    for (int i = 0; i < 4; ++i)
+        EXPECT_EQ(oracle[i], ret[i]);
+}
+
 TEST(MatrixToolsTest, MatrixSwapRows)
 {
     /* Simple 2x2 matrix. */

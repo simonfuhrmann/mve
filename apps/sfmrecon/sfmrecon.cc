@@ -4,7 +4,7 @@
  * All rights reserved.
  *
  * This software may be modified and distributed under the terms
- * of the GPL 3 license. See the LICENSE.txt file for details.
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
 #include <fstream>
@@ -43,6 +43,7 @@ struct AppSettings
     std::string undistorted_name = "undistorted";
     std::string exif_name = "exif";
     std::string prebundle_file = "prebundle.sfm";
+    std::string survey_file;
     std::string log_file;
     int max_image_size = 6000000;
     bool lowres_matching = true;
@@ -53,7 +54,7 @@ struct AppSettings
     bool shared_intrinsics = false;
     bool intrinsics_from_views = false;
     int video_matching = 0;
-    float track_error_thres_factor = 25.0f;
+    float track_error_thres_factor = 10.0f;
     float new_track_error_thres = 0.01f;
     int initial_pair_1 = -1;
     int initial_pair_2 = -1;
@@ -162,6 +163,10 @@ sfm_reconstruct (AppSettings const& conf)
         std::exit(EXIT_FAILURE);
     }
 
+    sfm::bundler::SurveyPointList survey;
+    if (!conf.survey_file.empty())
+        sfm::bundler::load_survey_from_file(conf.survey_file, &survey);
+
     /* Try to load the pairwise matching from the prebundle. */
     std::string const prebundle_path
         = util::fs::join_path(scene->get_path(), conf.prebundle_file);
@@ -264,6 +269,7 @@ sfm_reconstruct (AppSettings const& conf)
     }
     else
     {
+        std::cout << "Reconstructing initial pair..." << std::endl;
         sfm::bundler::InitialPair init_pair(init_pair_opts);
         init_pair.initialize(viewports, tracks);
         init_pair.compute_pair(conf.initial_pair_1, conf.initial_pair_2,
@@ -301,7 +307,7 @@ sfm_reconstruct (AppSettings const& conf)
 
     /* Initialize the incremental bundler and reconstruct first tracks. */
     sfm::bundler::Incremental incremental(incremental_opts);
-    incremental.initialize(&viewports, &tracks);
+    incremental.initialize(&viewports, &tracks, &survey);
     incremental.triangulate_new_tracks(2);
     incremental.invalidate_large_error_tracks();
 
@@ -317,12 +323,6 @@ sfm_reconstruct (AppSettings const& conf)
         /* Find suitable next views for reconstruction. */
         std::vector<int> next_views;
         incremental.find_next_views(&next_views);
-
-        if (next_views.empty())
-        {
-            std::cout << "SfM reconstruction finished." << std::endl;
-            break;
-        }
 
         /* Reconstruct the next view. */
         int next_view_id = -1;
@@ -341,20 +341,31 @@ sfm_reconstruct (AppSettings const& conf)
 
         if (next_view_id < 0)
         {
-            std::cout << "No valid next view. Exiting." << std::endl;
-            break;
+            if (full_ba_num_skipped == 0)
+            {
+                std::cout << "No valid next view." << std::endl;
+                std::cout << "SfM reconstruction finished." << std::endl;
+                break;
+            }
+            else
+            {
+                incremental.triangulate_new_tracks(conf.min_views_per_track);
+                std::cout << "Running full bundle adjustment..." << std::endl;
+                incremental.bundle_adjustment_full();
+                incremental.invalidate_large_error_tracks();
+                full_ba_num_skipped = 0;
+                continue;
+            }
         }
 
         /* Run single-camera bundle adjustment. */
         std::cout << "Running single camera bundle adjustment..." << std::endl;
         incremental.bundle_adjustment_single_cam(next_view_id);
-        incremental.triangulate_new_tracks(conf.min_views_per_track);
-        incremental.invalidate_large_error_tracks();
         num_cameras_reconstructed += 1;
 
         /* Run full bundle adjustment only after a couple of views. */
         int const full_ba_skip_views = conf.always_full_ba ? 0
-            : std::min(5, num_cameras_reconstructed / 15);
+            : std::min(100, num_cameras_reconstructed / 10);
         if (full_ba_num_skipped < full_ba_skip_views)
         {
             std::cout << "Skipping full bundle adjustment (skipping "
@@ -363,16 +374,12 @@ sfm_reconstruct (AppSettings const& conf)
         }
         else
         {
+            incremental.triangulate_new_tracks(conf.min_views_per_track);
             std::cout << "Running full bundle adjustment..." << std::endl;
             incremental.bundle_adjustment_full();
+            incremental.invalidate_large_error_tracks();
             full_ba_num_skipped = 0;
         }
-    }
-
-    if (full_ba_num_skipped > 0)
-    {
-        std::cout << "Running final bundle adjustment..." << std::endl;
-        incremental.bundle_adjustment_full();
     }
 
     std::cout << "SfM reconstruction took " << timer.get_elapsed()
@@ -421,8 +428,8 @@ sfm_reconstruct (AppSettings const& conf)
             if (original == nullptr)
                 continue;
             mve::ByteImage::Ptr undist
-                = mve::image::image_undistort_vsfm<uint8_t>
-                (original, cam.flen, cam.dist[0]);
+                = mve::image::image_undistort_k2k4<uint8_t>
+                (original, cam.flen, cam.dist[0], cam.dist[1]);
             view->set_image(undist, conf.undistorted_name);
         }
 
@@ -482,6 +489,7 @@ main (int argc, char** argv)
     args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing [6000000]");
     args.add_option('u', "undistorted", true, "Undistorted image embedding [undistorted]");
     args.add_option('\0', "prebundle", true, "Load/store pre-bundle file [prebundle.sfm]");
+    args.add_option('\0', "survey", true, "Load survey from file []");
     args.add_option('\0', "log-file", true, "Log some timings to file []");
     args.add_option('\0', "no-prediction", false, "Disable matchability prediction");
     args.add_option('\0', "normalize", false, "Normalize scene after reconstruction");
@@ -491,8 +499,8 @@ main (int argc, char** argv)
     args.add_option('\0', "fixed-intrinsics", false, "Do not optimize camera intrinsics");
     args.add_option('\0', "shared-intrinsics", false, "Share intrinsics between all cameras");
     args.add_option('\0', "intrinsics-from-views", false, "Use intrinsics from MVE views [use EXIF]");
-    args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [10]");
-    args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [25]");
+    args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [0.01]");
+    args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [10]");
     args.add_option('\0', "use-2cam-tracks", false, "Triangulate tracks from only two cameras");
     args.add_option('\0', "initial-pair", true, "Manually specify initial pair IDs [-1,-1]");
     args.add_option('\0', "cascade-hashing", false, "Use cascade hashing for matching [false]");
@@ -516,6 +524,8 @@ main (int argc, char** argv)
             conf.max_image_size = i->get_arg<int>();
         else if (i->opt->lopt == "prebundle")
             conf.prebundle_file = i->arg;
+        else if (i->opt->lopt == "survey")
+            conf.survey_file = i->arg;
         else if (i->opt->lopt == "log-file")
             conf.log_file = i->arg;
         else if (i->opt->lopt == "no-prediction")

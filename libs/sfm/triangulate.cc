@@ -87,74 +87,93 @@ is_consistent_pose (Correspondence2D2D const& match,
 bool
 Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
     std::vector<math::Vec2f> const& positions,
-    math::Vec3d* track_pos,
-    Statistics* stats) const
+    math::Vec3d* track_pos, Statistics* stats,
+    std::vector<std::size_t>* outliers) const
 {
     if (poses.size() < 2)
         throw std::invalid_argument("At least two poses required");
     if (poses.size() != positions.size())
         throw std::invalid_argument("Poses and positions size mismatch");
 
-    /* Triangulate track. */
-    *track_pos = triangulate_track(positions, poses);
-
-    /* Check if track has small triangulation angle. */
-    double smallest_cos_angle = 1.0;
-    if (this->opts.angle_threshold > 0.0)
-    {
-        std::vector<math::Vec3d> rays(poses.size());
-        for (std::size_t i = 0; i < poses.size(); ++i)
+    /* Check all possible pose pairs for successful triangulation */
+    std::vector<std::size_t> best_outliers(positions.size());
+    math::Vec3f best_pos(0.0f);
+    for (std::size_t p1 = 0; p1 < poses.size(); ++p1)
+        for (std::size_t p2 = p1 + 1; p2 < poses.size(); ++p2)
         {
-            math::Vec3d camera_pos;
-            poses[i]->fill_camera_pos(&camera_pos);
-            rays[i] = (*track_pos - camera_pos).normalized();
-        }
+            /* Triangulate position from current pair */
+            std::vector<CameraPose const*> pose_pair;
+            std::vector<math::Vec2f> position_pair;
+            pose_pair.push_back(poses[p1]);
+            pose_pair.push_back(poses[p2]);
+            position_pair.push_back(positions[p1]);
+            position_pair.push_back(positions[p2]);
+            math::Vec3d tmp_pos = triangulate_track(position_pair, pose_pair);
 
-        for (std::size_t i = 0; i < rays.size(); ++i)
-            for (std::size_t j = 0; j < i; ++j)
+            /* Check if pair has small triangulation angle. */
+            if (this->opts.angle_threshold > 0.0)
             {
-                double const cos_angle = rays[i].dot(rays[j]);
-                smallest_cos_angle = std::min(smallest_cos_angle, cos_angle);
+                math::Vec3d camera_pos;
+                pose_pair[0]->fill_camera_pos(&camera_pos);
+                math::Vec3d ray0 = (tmp_pos - camera_pos).normalized();
+                pose_pair[1]->fill_camera_pos(&camera_pos);
+                math::Vec3d ray1 = (tmp_pos - camera_pos).normalized();
+                double const cos_angle = ray0.dot(ray1);
+                if (cos_angle > this->cos_angle_thres)
+                    continue;
             }
 
-        if (smallest_cos_angle > this->cos_angle_thres)
-        {
-            if (stats != nullptr)
-                stats->num_too_small_angle += 1;
-            return false;
-        }
-    }
+            /* Chek error in all input poses and find outliers */
+            std::vector<std::size_t> tmp_outliers;
+            for (std::size_t i = 0; i < poses.size(); ++i)
+            {
+                math::Vec3d x = poses[i]->R * tmp_pos + poses[i]->t;
 
-    /* Compute reprojection error of the track. */
-    double average_error = 0.0;
-    for (std::size_t i = 0; i < poses.size(); ++i)
+                /* Reject track if it appears behind the camera. */
+                if (x[2] <= 0.0)
+                {
+                    tmp_outliers.push_back(i);
+                    continue;
+                }
+
+                x = poses[i]->K * x;
+                math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
+                double error = (positions[i] - x2d).norm();
+                if (error > this->opts.error_threshold)
+                    tmp_outliers.push_back(i);
+            }
+
+            /* Select triangulation with lowest amount of outliers */
+            if (tmp_outliers.size() < best_outliers.size())
+            {
+                best_pos = tmp_pos;
+                std::swap(best_outliers, tmp_outliers);
+            }
+
+        }
+
+    /* If all pairs have small angles pos will be 0 here */
+    if (best_pos.norm() == 0.0f)
     {
-        math::Vec3d x = poses[i]->R * *track_pos + poses[i]->t;
-
-        /* Reject track if it appears behind the camera. */
-        if (x[2] < 0.0)
-        {
-            if (stats != nullptr)
-                stats->num_behind_camera += 1;
-            return false;
-        }
-
-        x = poses[i]->K * x;
-        math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
-        average_error += (positions[i] - x2d).norm();
+        if (stats != nullptr)
+            stats->num_too_small_angle += 1;
+        return false;
     }
-    average_error /= static_cast<double>(poses.size());
 
-    /* Reject track if the reprojection error is too large. */
-    if (average_error > this->opts.error_threshold)
+    /* Check if required number of inliers is found */
+    if (poses.size() < best_outliers.size() + this->opts.min_num_views)
     {
         if (stats != nullptr)
             stats->num_large_error += 1;
         return false;
     }
 
+    /* Return final position and outliers */
+    *track_pos = best_pos;
     if (stats != nullptr)
         stats->num_new_tracks += 1;
+    if (outliers != nullptr)
+        std::swap(*outliers, best_outliers);
 
     return true;
 }
