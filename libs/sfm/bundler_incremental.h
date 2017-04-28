@@ -45,6 +45,8 @@ public:
         bool ba_shared_intrinsics;
         /** Produce status messages on the console. */
         bool verbose_output;
+        /** Produce detailed BA messages on the console. */
+        bool verbose_ba;
     };
 
 public:
@@ -104,12 +106,13 @@ private:
 
 inline
 Incremental::Options::Options (void)
-    : track_error_threshold_factor(25.0)
-    , new_track_error_threshold(10.0)
+    : track_error_threshold_factor(10.0)
+    , new_track_error_threshold(0.01)
     , min_triangulation_angle(MATH_DEG2RAD(1.0))
     , ba_fixed_intrinsics(false)
     , ba_shared_intrinsics(false)
     , verbose_output(false)
+    , verbose_ba(false)
 {
 }
 

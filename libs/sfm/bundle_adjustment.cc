@@ -90,7 +90,7 @@ BundleAdjustment::lm_optimize (void)
         if (lm_iter + 1 > this->opts.lm_min_iterations
             && (current_mse < this->opts.lm_mse_threshold))
         {
-            LOG_I << "BA: Satisfied MSE threshold." << std::endl;
+            LOG_V << "BA: Satisfied MSE threshold." << std::endl;
             break;
         }
 
@@ -117,7 +117,7 @@ BundleAdjustment::lm_optimize (void)
         LinearSolver::Status cg_status = pcg.solve(Jc, Jp, F, &delta_x);
 
         /* Update reprojection errors and MSE after linear step. */
-        double new_mse, delta_mse, delta_mse_ratio;
+        double new_mse, delta_mse, delta_mse_ratio = 1.0;
         if (cg_status.success)
         {
             this->compute_reprojection_errors(&F_new, &delta_x);
@@ -180,7 +180,7 @@ BundleAdjustment::lm_optimize (void)
             continue;
         if (lm_iter + 1 >= this->opts.lm_max_iterations)
         {
-            LOG_I << "BA: Reached maximum LM iterations of "
+            LOG_V << "BA: Reached maximum LM iterations of "
                 << this->opts.lm_max_iterations << std::endl;
             break;
         }
@@ -190,7 +190,7 @@ BundleAdjustment::lm_optimize (void)
         {
             if (delta_mse_ratio < this->opts.lm_delta_threshold)
             {
-                LOG_I << "BA: Satisfied delta mse ratio threshold of "
+                LOG_V << "BA: Satisfied delta mse ratio threshold of "
                     << this->opts.lm_delta_threshold << std::endl;
                 break;
             }

@@ -51,7 +51,7 @@ struct AppSettings
     bool skip_sfm = false;
     bool always_full_ba = false;
     bool fixed_intrinsics = false;
-    bool shared_intrinsics = false;
+    //bool shared_intrinsics = false;
     bool intrinsics_from_views = false;
     int video_matching = 0;
     float track_error_thres_factor = 10.0f;
@@ -60,6 +60,7 @@ struct AppSettings
     int initial_pair_2 = -1;
     int min_views_per_track = 3;
     bool cascade_hashing = false;
+    bool verbose_ba = false;
 };
 
 void
@@ -298,8 +299,9 @@ sfm_reconstruct (AppSettings const& conf)
     incremental_opts.new_track_error_threshold = conf.new_track_error_thres;
     incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
     incremental_opts.ba_fixed_intrinsics = conf.fixed_intrinsics;
-    incremental_opts.ba_shared_intrinsics = conf.shared_intrinsics;
+    //incremental_opts.ba_shared_intrinsics = conf.shared_intrinsics;
     incremental_opts.verbose_output = true;
+    incremental_opts.verbose_ba = conf.verbose_ba;
 
     /* Initialize viewports with initial pair. */
     viewports[init_pair_result.view_1_id].pose = init_pair_result.view_1_pose;
@@ -497,13 +499,14 @@ main (int argc, char** argv)
     args.add_option('\0', "always-full-ba", false, "Run full bundle adjustment after every view");
     args.add_option('\0', "video-matching", true, "Only match to ARG previous frames [0]");
     args.add_option('\0', "fixed-intrinsics", false, "Do not optimize camera intrinsics");
-    args.add_option('\0', "shared-intrinsics", false, "Share intrinsics between all cameras");
+    //args.add_option('\0', "shared-intrinsics", false, "Share intrinsics between all cameras");
     args.add_option('\0', "intrinsics-from-views", false, "Use intrinsics from MVE views [use EXIF]");
     args.add_option('\0', "track-error-thres", true, "Error threshold for new tracks [0.01]");
     args.add_option('\0', "track-thres-factor", true, "Error threshold factor for tracks [10]");
     args.add_option('\0', "use-2cam-tracks", false, "Triangulate tracks from only two cameras");
     args.add_option('\0', "initial-pair", true, "Manually specify initial pair IDs [-1,-1]");
     args.add_option('\0', "cascade-hashing", false, "Use cascade hashing for matching [false]");
+    args.add_option('\0', "verbose-ba", false, "Print detailed BA information [false]");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -540,8 +543,8 @@ main (int argc, char** argv)
             conf.video_matching = i->get_arg<int>();
         else if (i->opt->lopt == "fixed-intrinsics")
             conf.fixed_intrinsics = true;
-        else if (i->opt->lopt == "shared-intrinsics")
-            conf.shared_intrinsics = true;
+        //else if (i->opt->lopt == "shared-intrinsics")
+        //    conf.shared_intrinsics = true;
         else if (i->opt->lopt == "intrinsics-from-views")
             conf.intrinsics_from_views = true;
         else if (i->opt->lopt == "track-error-thres")
@@ -566,6 +569,8 @@ main (int argc, char** argv)
         }
         else if (i->opt->lopt == "cascade-hashing")
             conf.cascade_hashing = true;
+        else if (i->opt->lopt == "verbose-ba")
+            conf.verbose_ba = true;
         else
         {
             std::cerr << "Error: Unexpected option: "
