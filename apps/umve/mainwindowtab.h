@@ -12,7 +12,9 @@
 
 #include <QWidget>
 
-class MainWindowTab : public QWidget
+#include "dlldefines.h"
+
+class UMVE_API MainWindowTab : public QWidget
 {
     Q_OBJECT
 
