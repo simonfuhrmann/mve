@@ -85,10 +85,7 @@ Scene::cache_cleanup (void)
 std::size_t
 Scene::get_total_mem_usage (void)
 {
-    std::size_t ret = 0;
-    ret += this->get_view_mem_usage();
-    ret += this->get_bundle_mem_usage();
-    return ret;
+    return this->get_view_mem_usage() + this->get_bundle_mem_usage();
 }
 
 /* ---------------------------------------------------------------- */
