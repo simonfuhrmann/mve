@@ -30,18 +30,9 @@ Scene::load_scene (std::string const& base_path)
 /* ---------------------------------------------------------------- */
 
 void
-Scene::save_scene (void)
-{
-    this->save_bundle();
-    this->save_views();
-}
-
-/* ---------------------------------------------------------------- */
-
-void
 Scene::save_bundle (void)
 {
-    if (this->bundle == nullptr || !this->bundle_dirty)
+    if (!(this->bundle && this->bundle_dirty))
         return;
     std::string filename = util::fs::join_path(this->basedir, "synth_0.out");
     save_mve_bundle(this->bundle, filename);
@@ -54,25 +45,11 @@ void
 Scene::save_views (void)
 {
     std::cout << "Saving views to MVE files..." << std::flush;
-    for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i] != nullptr && this->views[i]->is_dirty())
-            this->views[i]->save_view();
+
+    for (auto& view : views)
+        if (view && view->is_dirty())
+            view->save_view();
     std::cout << " done." << std::endl;
-}
-
-/* ---------------------------------------------------------------- */
-
-bool
-Scene::is_dirty (void) const
-{
-    if (this->bundle_dirty)
-        return true;
-
-    for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i] != nullptr && this->views[i]->is_dirty())
-            return true;
-
-    return false;
 }
 
 /* ---------------------------------------------------------------- */
@@ -86,17 +63,16 @@ Scene::cache_cleanup (void)
     std::size_t released = 0;
     std::size_t affected_views = 0;
     std::size_t total_views = 0;
-    for (std::size_t i = 0; i < this->views.size(); ++i)
+    for (auto& view : this->views)
     {
-        if (this->views[i] == nullptr)
-            continue;
-
-        total_views += 1;
-        std::size_t num = this->views[i]->cache_cleanup();
-        if (num)
+        if (view)
         {
-            released += num;
-            affected_views += 1;
+            ++total_views;
+            if (auto num = view->cache_cleanup())
+            {
+                released += num;
+                ++affected_views;
+            }
         }
     }
 
@@ -120,11 +96,10 @@ Scene::get_total_mem_usage (void)
 std::size_t
 Scene::get_view_mem_usage (void)
 {
-    std::size_t ret = 0;
-    for (std::size_t i = 0; i < this->views.size(); ++i)
-        if (this->views[i] != nullptr)
-            ret += this->views[i]->get_byte_size();
-    return ret;
+    return std::accumulate(views.begin(), views.end(), std::size_t{0},
+        [](std::size_t acc, const View::Ptr& view) {
+            return acc + (view ? view->get_byte_size() : 0);
+        });
 }
 
 /* ---------------------------------------------------------------- */
@@ -132,7 +107,7 @@ Scene::get_view_mem_usage (void)
 std::size_t
 Scene::get_bundle_mem_usage (void)
 {
-    return (this->bundle != nullptr ? this->bundle->get_byte_size() : 0);
+    return (this->bundle ? this->bundle->get_byte_size() : 0);
 }
 
 /* ---------------------------------------------------------------- */
@@ -163,14 +138,12 @@ Scene::init_views (void)
     /* Load views in a temp list. */
     ViewList temp_list;
     int max_id = 0;
-    for (std::size_t i = 0; i < views_dir.size(); ++i)
+    for (const auto& view_file : views_dir)
     {
-        if (views_dir[i].name.size() < 4)
-            continue;
-        if (util::string::right(views_dir[i].name, 4) != ".mve")
+        if (view_file.name.size() < 4 || util::string::right(view_file.name, 4) != ".mve")
             continue;
         View::Ptr view = View::create();
-        view->load_view(views_dir[i].get_absolute_name());
+        view->load_view(view_file.get_absolute_name());
         temp_list.push_back(view);
         max_id = std::max(max_id, view->get_id());
     }
@@ -182,21 +155,19 @@ Scene::init_views (void)
     this->views.clear();
     if (!temp_list.empty())
         this->views.resize(max_id + 1);
-    for (std::size_t i = 0; i < temp_list.size(); ++i)
+    for (const auto& temp_view : temp_list)
     {
-        std::size_t id = temp_list[i]->get_id();
-
-        if (this->views[id] != nullptr)
+        auto& view =  views[temp_view->get_id()];
+        if ( view )
         {
             std::cout << "Warning loading MVE file "
-                << this->views[id]->get_directory() << std::endl
-                << "  View with ID " << id << " already present"
+                << view << std::endl
+                << "  View with ID " << view->get_id() << " already present"
                 << ", skipping file."
                 << std::endl;
             continue;
         }
-
-        this->views[id] = temp_list[i];
+        view = temp_view;
     }
 
     std::cout << "Initialized " << temp_list.size()

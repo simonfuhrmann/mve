@@ -38,9 +38,6 @@ public:
     typedef std::vector<View::Ptr> ViewList;
 
 public:
-    /** Constructs an unmanaged scene, which should not be copied. */
-    Scene (void);
-
     /** Constructs a smart pointered scene. */
     static Scene::Ptr create (void);
     /** Constructs and loads a scene from the given directory. */
@@ -95,6 +92,9 @@ private:
     bool bundle_dirty;
 
 private:
+    /** Constructs an unmanaged scene, which should not be copied. */
+    Scene (void);
+
     void init_views (void);
 };
 
@@ -136,6 +136,20 @@ inline View::Ptr
 Scene::get_view_by_id (std::size_t id)
 {
     return (id < this->views.size() ? this->views[id] : View::Ptr());
+}
+
+inline void
+Scene::save_scene (void)
+{
+  this->save_bundle();
+  this->save_views();
+}
+
+inline bool
+Scene::is_dirty (void) const
+{
+  constexpr auto is_dirty = [](const View::Ptr& view) { return view && view->is_dirty(); };
+  return this->bundle_dirty || std::any_of(views.begin(), views.end(), is_dirty);
 }
 
 inline std::string const&
