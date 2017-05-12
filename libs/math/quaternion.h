@@ -45,6 +45,9 @@ public:
     /** Sets the quaternion from axis and angle. */
     void set (Vector<T,3> const& axis, T const& angle);
 
+    /** Sets the quaternion from an orthonormal rotation matrix. */
+    void set_from_rotation_matrix (T const* matrix);
+
     /** Provides the axis and angle of the quaternion. */
     void get_axis_angle (T* axis, T& angle);
 
@@ -129,6 +132,49 @@ Quaternion<T>::set (Vector<T,3> const& axis, T const& angle)
     this->v[1] = axis[0] * sa;
     this->v[2] = axis[1] * sa;
     this->v[3] = axis[2] * sa;
+}
+
+template <typename T>
+inline void
+Quaternion<T>::set_from_rotation_matrix (T const* rot)
+{
+    float trace = rot[0] + rot[4] + rot[8];
+    if (trace > 0)
+    {
+        float s = T(0.5) / std::sqrt(trace + T(1.0));
+        // w x y z
+        this->v[0] = T(0.25) / s;
+        this->v[1] = (rot[7] - rot[5]) * s;
+        this->v[2] = (rot[2] - rot[6]) * s;
+        this->v[3] = (rot[3] - rot[1]) * s;
+    }
+    else
+    {
+        if (rot[0] > rot[4] && rot[0] > rot[8])
+        {
+            float s = T(2.0) * std::sqrt(T(1.0) + rot[0] - rot[4] - rot[8]);
+            this->v[0] = (rot[7] - rot[5]) / s;
+            this->v[1] = T(0.25) * s;
+            this->v[2] = (rot[1] + rot[3]) / s;
+            this->v[3] = (rot[2] + rot[6]) / s;
+        }
+        else if (rot[4] > rot[8])
+        {
+            float s = T(2.0) * std::sqrt(T(1.0) + rot[4] - rot[0] - rot[8]);
+            this->v[0] = (rot[2] - rot[6]) / s;
+            this->v[1] = (rot[1] + rot[3]) / s;
+            this->v[2] = T(0.25) * s;
+            this->v[3] = (rot[5] + rot[7]) / s;
+        }
+        else
+        {
+            float s = T(2.0) * std::sqrt(T(1.0) + rot[8] - rot[0] - rot[4]);
+            this->v[0] = (rot[3] - rot[1]) / s;
+            this->v[1] = (rot[2] + rot[6]) / s;
+            this->v[2] = (rot[5] + rot[7]) / s;
+            this->v[3] = T(0.25) * s;
+        }
+  }
 }
 
 template <typename T>
