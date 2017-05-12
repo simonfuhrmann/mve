@@ -294,11 +294,14 @@ private:
     void load_image_intern (ImageProxy* proxy, bool init_only);
     void save_image_intern (ImageProxy* proxy);
 
-    BlobProxy* find_blob_intern (std::string const& name);
     void initialize_blob (BlobProxy* proxy, bool update);
     ByteImage::Ptr load_blob (BlobProxy* proxy, bool update);
     void load_blob_intern (BlobProxy* proxy, bool init_only);
     void save_blob_intern (BlobProxy* proxy);
+
+    template<typename Container>
+    static
+    typename Container::iterator find_by_name(Container& collection, const std::string& name);
 
 protected:
     typedef std::vector<std::string> FilenameList;
@@ -409,6 +412,22 @@ View::get_float_image (std::string const& name)
 {
     return std::dynamic_pointer_cast<FloatImage>
         (this->get_image(name, IMAGE_TYPE_FLOAT));
+}
+
+inline bool
+View::has_blob (std::string const& name)
+{
+    return View::find_by_name(blobs, name) != blobs.end();
+}
+
+template<typename Container>
+typename Container::iterator
+View::find_by_name(Container& container, const std::string& name)
+{
+    using Element = decltype(container[0]);
+    const auto equal_name = [&name](Element& e)->bool { return e.name == name; };
+    auto found = std::find_if(container.begin(), container.end(), equal_name);
+    return found != container.end() ? found : container.end();
 }
 
 MVE_NAMESPACE_END
