@@ -139,6 +139,9 @@ public:
     static View::Ptr create (void);
     static View::Ptr create (std::string const& path);
 
+    View (const View&) = delete;
+    View operator= (const View&) = delete;
+
     /* --------------------- I/O interface -------------------- */
 
     /** Initializes the view from a directory. */
@@ -271,10 +274,7 @@ public:
     /** Prints a formatted list of internal data. */
     void debug_print (void);
 
-    /* ------------------ Convenience Functions ------------------- */
-
-
-public: // TODO: Make protected.
+protected:
     /** Creates an uninitialized view. */
     View (void);
 
