@@ -178,8 +178,7 @@ main (int argc, char** argv)
     mve::TriangleMesh::ConfidenceList& vconfs(pset->get_vertex_confidences());
 
     /* Load scene. */
-    mve::Scene::Ptr scene(mve::Scene::create());
-    scene->load_scene(conf.scenedir);
+    mve::Scene::Ptr scene = mve::Scene::create(conf.scenedir);
 
     /* Iterate over views and get points. */
     mve::Scene::ViewList& views(scene->get_views());

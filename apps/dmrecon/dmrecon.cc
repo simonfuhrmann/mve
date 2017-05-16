@@ -226,10 +226,10 @@ main (int argc, char** argv)
         conf.mvs.quiet = true;
 
     /* Load MVE scene. */
-    mve::Scene::Ptr scene = mve::Scene::create();
+    mve::Scene::Ptr scene;
     try
     {
-        scene->load_scene(conf.scene_path);
+        scene = mve::Scene::create(conf.scene_path);
         scene->get_bundle();
     }
     catch (std::exception& e)
