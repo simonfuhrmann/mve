@@ -86,6 +86,9 @@ public:
     /** Returns key point memory usage. */
     std::size_t get_bundle_mem_usage (void);
 
+protected:
+    Scene (void);
+
 private:
     std::string basedir;
     ViewList views;
@@ -93,7 +96,6 @@ private:
     bool bundle_dirty;
 
 private:
-    Scene (void);
     void init_views (void);
 };
 

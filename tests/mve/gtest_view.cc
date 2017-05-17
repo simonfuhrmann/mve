@@ -57,9 +57,9 @@ TEST(ViewTest, IsDirtyTest)
 {
     mve::ByteImage::Ptr image = mve::ByteImage::create(100, 100, 1);
     mve::ByteImage::Ptr blob = mve::ByteImage::create(100, 1, 1);
-    mve::View::Ptr view1 = mve::View::create(),
-                   view2 = mve::View::create(),
-                   view3 = mve::View::create();
+    mve::View::Ptr view1 = mve::View::create();
+    mve::View::Ptr view2 = mve::View::create();
+    mve::View::Ptr view3 = mve::View::create();
 
     EXPECT_FALSE(view1->is_dirty());
     view1->set_image(image, "image");
