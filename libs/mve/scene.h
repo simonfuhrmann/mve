@@ -38,13 +38,11 @@ public:
     typedef std::vector<View::Ptr> ViewList;
 
 public:
-    /** Constructs an unmanaged scene, which should not be copied. */
-    Scene (void);
-
-    /** Constructs a smart pointered scene. */
-    static Scene::Ptr create (void);
     /** Constructs and loads a scene from the given directory. */
     static Scene::Ptr create (std::string const& path);
+
+    Scene(const Scene&) = delete;
+    Scene& operator=(const Scene&) = delete;
 
     /** Loads the scene from the given directory. */
     void load_scene (std::string const& base_path);
@@ -88,6 +86,9 @@ public:
     /** Returns key point memory usage. */
     std::size_t get_bundle_mem_usage (void);
 
+protected:
+    Scene (void);
+
 private:
     std::string basedir;
     ViewList views;
@@ -104,12 +105,6 @@ inline
 Scene::Scene (void)
     : bundle_dirty(false)
 {
-}
-
-inline Scene::Ptr
-Scene::create (void)
-{
-    return Scene::Ptr(new Scene);
 }
 
 inline Scene::Ptr

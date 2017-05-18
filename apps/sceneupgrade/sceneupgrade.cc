@@ -226,9 +226,9 @@ convert_view (AppSettings const& conf, std::string const& fname)
     if (!util::fs::rename(fname.c_str(), fname_orig.c_str()))
         throw util::FileException(fname, std::strerror(errno));
 
-    mve::View view;
-    view.load_view_from_mve_file(fname_orig);
-    view.save_view_as(fname);
+    mve::View::Ptr view = mve::View::create();
+    view->load_view_from_mve_file(fname_orig);
+    view->save_view_as(fname);
 
     if (!conf.keep_original && !util::fs::unlink(fname_orig.c_str()))
     {
