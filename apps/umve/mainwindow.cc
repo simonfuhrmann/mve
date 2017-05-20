@@ -131,9 +131,9 @@ MainWindow::load_plugins (void)
 void
 MainWindow::load_scene (std::string const& path)
 {
-    mve::Scene::Ptr scene(mve::Scene::create());
+    mve::Scene::Ptr scene;
     try
-    { scene->load_scene(path); }
+    { scene = mve::Scene::create(path); }
     catch (std::exception& e)
     {
         QMessageBox::information(this, tr("Error loading scene"),
