@@ -426,19 +426,21 @@ dirname (std::string const& path)
 std::string
 basename (std::string const& path)
 {
+    std::string sanitized = sanitize_path(path);
+    
     /* Skip group of slashes at the end. */
-    std::size_t len = path.size();
-    while (len > 0 && path[len - 1] == '/')
+    std::size_t len = sanitized.size();
+    while (len > 0 && sanitized[len - 1] == '/')
         len -= 1;
     if (len == 0)
         return "";
 
     /* Skip basename. */
     std::size_t base = len - 1;
-    while (base > 0 && path[base - 1] != '/')
+    while (base > 0 && sanitized[base - 1] != '/')
         base -= 1;
 
-    return path.substr(base, len - base);
+    return sanitized.substr(base, len - base);
 }
 
 /* ---------------------------------------------------------------- */
