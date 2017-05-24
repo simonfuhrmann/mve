@@ -15,6 +15,8 @@
 #include <cstring> // std::strerror
 #include <cstdio> // std::rename
 #include <algorithm>
+#include <thread>
+#include <chrono>
 
 #if defined(_WIN32)
 #   include <direct.h>
@@ -586,92 +588,61 @@ Directory::scan (std::string const& path)
  * --------------------- File locking mechanism ----------------------
  */
 
-FileLock::FileLock (std::string const& filename)
+void
+FileLock::lock (int retries, int sleep)
 {
-    switch (this->acquire_retry(filename))
-    {
-        case LOCK_CREATED: break;
-        default: throw util::Exception(this->reason);
-    }
-}
+    if (!this->lockable())
+        throw util::Exception("Not lockable");
 
-FileLock::Status
-FileLock::acquire (std::string const& filename)
-{
-    /* Check if lock file exists. */
-    this->lockfile = filename + ".lock";
-    this->reason.clear();
-    if (fs::file_exists(this->lockfile.c_str()))
-    {
-        this->reason = "Previous lock existing";
-        return FileLock::LOCK_EXISTS;
-    }
-
-    /* Finally create the lock file. */
-    std::ofstream touch(this->lockfile.c_str(), std::ios::binary);
-    if (!touch.good())
-    {
-        this->reason = "Error locking: ";
-        this->reason += std::strerror(errno);
-        return FileLock::LOCK_CREATE_ERROR;
-    }
-    touch.close();
-
-    /* Return success, lock is created. */
-    return FileLock::LOCK_CREATED;
-}
-
-FileLock::Status
-FileLock::acquire_retry (std::string const& filename, int retries, int sleep)
-{
-    /* Try to acquire file lock for 'retry' times. */
-    while (retries > 0)
-    {
-        Status status = this->acquire(filename);
-        if (status != FileLock::LOCK_EXISTS)
-            return status;
-
-        system::sleep(sleep);
-        retries -= 1;
-
-        /* Fail if all retries have been used. */
-        if (retries <= 0)
-        {
-            this->reason = "Previous lock persisting";
-            return FileLock::LOCK_PERSISTENT;
-        }
-    }
-
-    /* Return success, lock is created. */
-    return FileLock::LOCK_CREATED;
+    this->wait_lock(retries, sleep);
+    if (!this->try_lock())
+        throw util::Exception("Previous lock existing");
 }
 
 bool
-FileLock::is_locked (std::string const& filename)
+FileLock::try_lock ()
 {
-    std::string lockfname = filename + ".lock";
-    return fs::file_exists(lockfname.c_str());
+    if (!this->lockable() || this->is_locked())
+        return false;
+
+    const char* lockname = (std::string(this->filename) + ".lock").c_str();
+    std::ofstream touch(lockname, std::ios::binary);
+    return touch.good();
 }
 
 bool
-FileLock::wait_lock (std::string const& filename, int retries, int sleep)
+FileLock::is_locked ()
 {
-    while (retries > 0 && this->is_locked(filename))
+    if (!this->lockable())
+        return false;
+
+    const char* lockname = (std::string(this->filename) + ".lock").c_str();
+    return fs::file_exists(lockname);
+}
+
+bool
+FileLock::wait_lock (int retries, int sleep)
+{
+    while (retries > 0 && this->is_locked())
     {
-        system::sleep(sleep);
-        retries -= 1;
-        if (retries <= 0)
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
+        if (--retries <= 0)
             return false;
     }
     return true;
 }
 
 bool
-FileLock::release (void)
+FileLock::lockable (void)
 {
-    if (this->lockfile.empty())
-        return false;
-    return fs::unlink(this->lockfile.c_str());
+    return !!this->filename;
+}
+
+void
+FileLock::unlock (void)
+{
+    if (is_locked())
+        fs::unlink((std::string(this->filename) + ".lock").c_str());
 }
 
 UTIL_FS_NAMESPACE_END

@@ -162,71 +162,54 @@ public:
 class FileLock
 {
 public:
-    enum Status
-    {
-        /** The lock has been created successfully. */
-        LOCK_CREATED,
-        /** The lock has NOT been created because a lock already exists. */
-        LOCK_EXISTS,
-        /** The lock has NOT been created because an existing lock persisted. */
-        LOCK_PERSISTENT,
-        /** The lock has NOT been created because of file system issues. */
-        LOCK_CREATE_ERROR
-    };
-
-public:
+    /**
+     * Creates an empty lock. An empty lock is always unlocked and cannot be
+     * locked.
+     */
     FileLock (void);
 
     /**
-     * Acquires a lock for the given filename. If the lock already exists,
-     * the operation is re-attempted using default values. If the lock
-     * cannot be created an exception is thrown.
+     * Creates an lock for a given filename.
      */
-    FileLock (std::string const& filename);
-
-    /** Removes the lock if it exists. */
-    ~FileLock (void);
+    FileLock (const char* filename);
 
     /**
-     * Tries to acquire a lock for the given filename and returns a status.
+     * Tries to acquire the lock. If the lock already exists, the operation is
+     * re-attempted using default values. If the lock cannot be created an
+     * exception is thrown.
      */
-    Status acquire (std::string const& filename);
+    void lock (int retries = 50, int sleep = 100);
 
     /**
-     * Tries to acquire a lock for the given filename.
-     * If a lock exists, the operation is re-attempted 'retry' times
-     * with 'sleep' milli seconds delay between the attempts.
+     * Tries to acquire the lock. If the lock cannot be created false is
+     * returned.
      */
-    Status acquire_retry (std::string const& filename,
-        int retries = 50, int sleep = 100);
+    bool try_lock ();
 
     /**
-     * Returns true if a lock for the given filename exists.
+     * Returns true if the lock exists.
      */
-    bool is_locked (std::string const& filename);
+    bool is_locked ();
 
     /**
-     * Waits until a lock for given filename is released. If filename is
-     * not locked, the method returns true immediately. If the lock is not
-     * released within the specified bounds, the method returns false.
+     * Waits until the lock is released. If filename is not locked, the method
+     * returns true immediately. If the lock is not released within the
+     * specified bounds, the method returns false.
      */
-    bool wait_lock (std::string const& filename,
-        int retries = 50, int sleep = 100);
+    bool wait_lock (int retries = 50, int sleep = 100);
+
+    /**
+     * Returns true if the lock is lockable. Only empty locks are not lockable.
+     */
+    bool lockable();
 
     /**
      * Removes the lock if it exists.
-     * If removing the lock fails, the method returns false.
      */
-    bool release (void);
-
-    /**
-     * If locking failes, this returns the reason for failure.
-     */
-    std::string const& get_reason (void) const;
+    void unlock (void);
 
 private:
-    std::string lockfile;
-    std::string reason;
+    const char* filename;
 };
 
 /*
@@ -257,20 +240,13 @@ Directory::Directory (std::string const& path)
 }
 
 inline
-FileLock::FileLock (void)
+FileLock::FileLock (void) : filename("")
 {
 }
 
 inline
-FileLock::~FileLock (void)
+FileLock::FileLock (const char* file) : filename(file)
 {
-    this->release();
-}
-
-inline std::string const&
-FileLock::get_reason (void) const
-{
-    return this->reason;
 }
 
 UTIL_FS_NAMESPACE_END
