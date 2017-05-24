@@ -1,10 +1,18 @@
 MVE_ROOT = ../..
 
-CONFIG += qt opengl release c++11
+CONFIG += qt opengl release
+
 QT += opengl
 
 QMAKE_LFLAGS += -rdynamic -fopenmp
 QMAKE_CXXFLAGS += -fPIC -fopenmp
+
+# With C++11 support
+greaterThan(QT_MAJOR_VERSION, 4) {    
+    CONFIG += c++11
+} else {
+    QMAKE_CXXFLAGS += -std=c++11
+}
 
 SOURCES += [^_]*.cc viewinspect/*.cc scene_inspect/*.cc scene_addins/*.cc
 HEADERS += *.h viewinspect/*.h scene_inspect/*.h scene_addins/*.h

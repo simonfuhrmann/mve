@@ -55,8 +55,15 @@ void
 ScrollImage::max_image_size (void)
 {
     QSize imgsize(this->image->pixmap()->size());
+// QSize appended scaled() interface since 5.0
+#if QT_VERSION >= 0x050000 
     QSize newsize = imgsize.scaled(this->maximumViewportSize(),
         Qt::KeepAspectRatio);
+#else
+    QSize newsize(imgsize.width(), imgsize.height());
+    newsize.scale(this->maximumViewportSize(),
+        Qt::KeepAspectRatio);
+#endif
     this->image->set_scale_factor(static_cast<float>(newsize.width())
         / imgsize.width());
     this->image->resize(newsize);
