@@ -80,6 +80,13 @@ void
 save_photosynther_bundle (Bundle::ConstPtr bundle,
     std::string const& filename);
 
+
+/**
+ * Writes a NVM bundle file.
+ */
+void
+save_nvm_bundle (Bundle::ConstPtr bundle, const std::vector<NVMCameraInfo> &camera_info, bool usedist, std::string const& filename);
+
 MVE_NAMESPACE_END
 
 #endif /* MVE_BUNDLE_IO_HEADER */

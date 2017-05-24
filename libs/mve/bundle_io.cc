@@ -17,6 +17,7 @@
 #include "util/string.h"
 #include "util/exception.h"
 #include "math/matrix.h"
+#include "math/matrix_tools.h"
 #include "math/vector.h"
 #include "mve/bundle_io.h"
 
@@ -60,6 +61,14 @@ namespace
         rot[7] = 2.0f * q[2] * q[3] + 2.0f * q[1] * q[0];
         rot[8] = 1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2];
         return rot;
+    }
+
+    void get_quaternion_from_rot(const math::Matrix3d &values, double *rot)
+    {
+        double w = rot[0] = std::sqrt(1.0 + values(0, 0) + values(1, 1) + values(2, 2)) / 2.0;
+        rot[1] = (values(2, 1) - values(1, 2)) / (4.0 * w);
+        rot[2] = (values(0, 2) - values(2, 0)) / (4.0 * w);
+        rot[3] = (values(1, 0) - values(0, 1)) / (4.0 * w);
     }
 }  // namespace
 
@@ -476,6 +485,79 @@ save_photosynther_bundle (Bundle::ConstPtr bundle, std::string const& filename)
         }
         out << "\n";
     }
+
+    out.close();
+}
+
+void
+save_nvm_bundle (Bundle::ConstPtr bundle, const std::vector<NVMCameraInfo> &camera_info, bool usedist, std::string const& filename)
+{
+    Bundle::Features const& features = bundle->get_features();
+    Bundle::Cameras const& cameras = bundle->get_cameras();
+
+    std::cout << "Writing bundle (" << cameras.size() << " cameras, "
+        << features.size() << " features): " << filename << "...\n";
+
+    std::ofstream out(filename.c_str(), std::ios::binary);
+    if (!out.good())
+        throw util::FileException(filename, std::strerror(errno));
+
+    out.precision(15);
+
+    out << "NVM_V3 \n\n";
+    out << cameras.size() << '\n';
+
+    /* Write all cameras to bundle file. */
+    for (std::size_t i = 0; i < cameras.size(); ++i)
+    {
+        CameraInfo const& cam = cameras[i];
+
+        out << camera_info[i].filename << ' ';
+
+        bool camera_valid = true;
+        for (int j = 0; camera_valid && j < 3; ++j) {
+            if (MATH_ISINF(cam.trans[j]) || MATH_ISNAN(cam.trans[j]))
+                camera_valid = false;
+        }
+        for (int j = 0; camera_valid && j < 9; ++j) {
+            if (MATH_ISINF(cam.rot[j]) || MATH_ISNAN(cam.rot[j]))
+                camera_valid = false;
+        }
+
+        if (cam.flen == 0.0f || !camera_valid)  {
+            out << "0 0 0 0 0 0 0 0 0 0\n";
+            continue;
+        }
+
+        double rotq[4];
+        math::Matrix3d rot(math::Matrix3f(cam.rot));
+        get_quaternion_from_rot(rot, rotq);
+        math::Matrix3d rotinv = math::matrix_inverse(rot);
+        math::Vec3d center = -(rotinv * math::Vec3f(cam.trans));
+
+        out << cam.flen << ' ' << rotq[0] << ' ' << rotq[1] << ' ' << rotq[2] << ' ' << rotq[3] << ' ' << center[0] << ' ' << center[1] << ' ' << center[2] << ' ' << (usedist ? cam.dist[0] : 0.0f) << " 0\n";
+    }
+
+    out << '\n' << features.size() << '\n';
+
+    /* Write all features to bundle file. */
+    for (std::size_t i = 0; i < features.size(); ++i)
+    {
+        const Bundle::Feature3D &feature = features[i];
+        for (int j = 0; j < 3; ++j) {
+            out << feature.pos[j] << ' ';
+        }
+        for (int j = 0; j < 3; ++j) {
+            out << (int)(feature.color[j] * 255.0f + 0.5f) << ' ';
+        }
+        out << feature.refs.size();
+        for (const Bundle::Feature2D &ref : feature.refs) {
+            out << ' ' << ref.view_id << ' ' << ref.feature_id << ' ' << ref.pos[0] << ' ' << ref.pos[1];
+        }
+        out << '\n';
+    }
+
+    out << "\n\n0\n\n#exported by mve\n0";
 
     out.close();
 }
