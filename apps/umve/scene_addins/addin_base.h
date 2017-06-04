@@ -14,6 +14,7 @@
 #include <QMessageBox>
 
 #include "mve/mesh.h"
+#include "ogl/opengl.h"
 #include "ogl/context.h"
 
 #include "scene_addins/addin_state.h"
