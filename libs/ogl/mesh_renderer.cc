@@ -40,6 +40,9 @@ MeshRenderer::set_mesh (mve::TriangleMesh::ConstPtr mesh)
         VertexBuffer::Ptr vbo = ogl::VertexBuffer::create();
         vbo->set_indices(&faces[0], (GLsizei)faces.size());
         this->set_index_vbo(vbo);
+        this->set_primitive(GL_TRIANGLES);
+    } else {
+        this->set_primitive(GL_POINTS);
     }
 
     /* Init normal VBO if normals are given. */
