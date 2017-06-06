@@ -803,6 +803,105 @@ find_max_scene_id (std::string const& view_path)
 
 /* ---------------------------------------------------------------- */
 
+/* Find corresponding cam file to image file i in sorted directory. */
+bool
+find_corresponding_cam_file(util::fs::Directory const & dir, std::size_t i,
+    std::string * acfname)
+{
+    std::string prefix = remove_file_extension(dir[i].name);
+
+    /* Look at files behind the given file until the prefix changes. */
+    for (std::size_t j = i + 1; j < dir.size(); ++j)
+    {
+        if (dir[j].is_dir)
+            continue;
+
+        std::string const & fname = dir[j].name;
+
+        std::size_t pos = fname.find_last_of('.');
+        if (pos == std::string::npos)
+            continue;
+
+        if (fname.substr(0, pos) != prefix)
+            break;
+
+        std::string ext = fname.substr(pos + 1, fname.size());
+        if (util::string::lowercase(ext) == "cam")
+        {
+            *acfname = dir[j].get_absolute_name();
+            return true;
+        }
+    }
+
+    /* Look at files before the given file until the prefix changes. */
+    for (int j = i - 1; 0 <= j; --j)
+    {
+        if (dir[j].is_dir)
+            continue;
+
+        std::string const & fname = dir[j].name;
+
+        std::size_t pos = fname.find_last_of('.');
+        if (pos == std::string::npos)
+            continue;
+
+        if (fname.substr(0, pos) != prefix)
+            break;
+
+        std::string ext = fname.substr(pos + 1, fname.size());
+        if (util::string::lowercase(ext) == "cam")
+        {
+            *acfname = dir[j].get_absolute_name();
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/* ---------------------------------------------------------------- */
+
+mve::CameraInfo
+load_cam_file(std::string const & filename)
+{
+    std::ifstream in(filename.c_str(), std::ios::binary);
+
+    if (!in.good())
+        throw util::FileException(util::fs::basename(filename), std::strerror(errno));
+
+    std::string cam_int_str, cam_ext_str;
+    std::getline(in, cam_ext_str);
+    std::getline(in, cam_int_str);
+
+    util::Tokenizer tok_ext, tok_int;
+    tok_ext.split(cam_ext_str);
+    tok_int.split(cam_int_str);
+
+    if (tok_ext.size() != 12 || tok_int.size() < 1)
+        throw util::Exception("Invalid cam file");
+
+    mve::CameraInfo cam;
+    cam.set_translation_from_string(tok_ext.concat(0, 3));
+    cam.set_rotation_from_string(tok_ext.concat(3, 0));
+
+    std::stringstream ss(cam_int_str);
+    ss >> cam.flen;
+    if (ss.peek() && !ss.eof())
+        ss >> cam.dist[0];
+    if (ss.peek() && !ss.eof())
+        ss >> cam.dist[1];
+    if (ss.peek() && !ss.eof())
+        ss >> cam.paspect;
+    if (ss.peek() && !ss.eof())
+        ss >> cam.ppoint[0];
+    if (ss.peek() && !ss.eof())
+        ss >> cam.ppoint[1];
+
+    return cam;
+}
+
+/* ---------------------------------------------------------------- */
+
 void
 import_images (AppSettings const& conf)
 {
@@ -855,6 +954,10 @@ import_images (AppSettings const& conf)
         std::string fname = dir[i].name;
         std::string afname = dir[i].get_absolute_name();
 
+        /* Ignore cam files. */
+        if (fname.size() > 3 && util::string::right(fname, 4) == ".cam")
+            continue;
+
         std::string exif;
         mve::ImageBase::Ptr image = load_any_image(afname, &exif);
         if (image == nullptr)
@@ -870,6 +973,27 @@ import_images (AppSettings const& conf)
         mve::View::Ptr view = mve::View::create();
         view->set_id(id);
         view->set_name(remove_file_extension(fname));
+
+        std::string acfname;
+        if (find_corresponding_cam_file(dir, i, &acfname))
+        {
+            try
+            {
+                view->set_camera(load_cam_file(acfname));
+            }
+            catch (util::FileException &e)
+            {
+#pragma omp critical
+                std::cerr << e.filename << ": " << e.what() << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+            catch (util::Exception &e)
+            {
+#pragma omp critical
+                std::cerr << acfname << ": " << e.what() << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+        }
 
         /* Rescale and add original image. */
         int orig_width = image->width();
