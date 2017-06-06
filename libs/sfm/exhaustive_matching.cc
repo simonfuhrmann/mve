@@ -7,6 +7,8 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
+#include <limits>
+
 #include "sfm/exhaustive_matching.h"
 
 SFM_NAMESPACE_BEGIN
@@ -21,8 +23,8 @@ namespace
         {
             float value = descr.data[i];
             value = math::clamp(value, 0.0f, 1.0f);
-            value = math::round(value * 255.0f);
-            data[i] = static_cast<unsigned char>(value);
+            value = math::round(value * std::numeric_limits<unsigned short>::max());
+            data[i] = static_cast<unsigned short>(value);
         }
     }
 
@@ -33,8 +35,8 @@ namespace
         {
             float value = descr.data[i];
             value = math::clamp(value, -1.0f, 1.0f);
-            value = math::round(value * 127.0f);
-            data[i] = static_cast<signed char>(value);
+            value = math::round(value * std::numeric_limits<signed short>::max());
+            data[i] = static_cast<signed short>(value);
         }
     }
 #else // DISCRETIZE_DESCRIPTORS
