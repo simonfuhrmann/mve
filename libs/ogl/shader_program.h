@@ -300,17 +300,6 @@ ShaderProgram::unbind (void) const
     check_gl_error();
 }
 
-inline void
-ShaderProgram::ensure_linked (void)
-{
-    if (this->need_to_link)
-    {
-        glLinkProgram(this->prog_id);
-        check_gl_error();
-        this->need_to_link = false;
-    }
-}
-
 inline GLint
 ShaderProgram::get_program_property (int pname)
 {
