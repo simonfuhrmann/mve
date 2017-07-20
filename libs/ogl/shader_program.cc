@@ -96,6 +96,28 @@ ShaderProgram::compile_shader (GLuint shader_id, std::string const& code)
     }
 }
 
+void
+ShaderProgram::ensure_linked (void)
+{
+    if (this->need_to_link)
+    {
+        glLinkProgram(this->prog_id);
+        check_gl_error();
+        if (this->get_program_property(GL_LINK_STATUS) == GL_FALSE)
+        {
+            GLint log_size = this->get_program_property(GL_INFO_LOG_LENGTH);
+            if (log_size == 0)
+                throw util::Exception("Failed to link program (no message).");
+
+            std::string log;
+            log.append(log_size + 1, '\0');
+            glGetProgramInfoLog(this->prog_id, log_size + 1, nullptr, &log[0]);
+            throw util::Exception(log);
+        }
+        this->need_to_link = false;
+    }
+}
+
 /* ---------------------------------------------------------------- */
 
 bool
