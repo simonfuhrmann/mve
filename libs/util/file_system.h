@@ -55,6 +55,9 @@ bool set_cwd (char const* pathname);
 /** Creates a new directory. */
 bool mkdir (char const* pathname/*, mode_t mode*/);
 
+/** Removes an empty directory */
+bool rmdir (char const* pathname);
+
 /** Unlinks (deletes) the given file. */
 bool unlink (char const* pathname);
 

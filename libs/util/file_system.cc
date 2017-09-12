@@ -156,6 +156,17 @@ mkdir (char const* pathname/*, mode_t mode*/)
 /* ---------------------------------------------------------------- */
 
 bool
+rmdir (char const* pathname)
+{
+#ifdef _WIN32
+        return ::_rmdir(pathname) >= 0;
+#else // _WIN32
+        return ::rmdir(pathname) >= 0;
+#endif // _WIN32
+}
+/* ---------------------------------------------------------------- */
+
+bool
 unlink (char const* pathname)
 {
 #ifdef _WIN32
