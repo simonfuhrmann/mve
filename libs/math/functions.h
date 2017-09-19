@@ -10,7 +10,13 @@
 #ifndef MATH_FUNCTIONS_HEADER
 #define MATH_FUNCTIONS_HEADER
 
+#include <bitset>
 #include <cmath>
+#include <cinttypes>
+
+#ifdef _MSC_VER
+#   include <intrin.h>
+#endif
 
 #include "math/defines.h"
 #include "math/vector.h"
@@ -151,6 +157,42 @@ sinc (T const& x)
 {
     return (x == T(0) ? T(1) : std::sin(x) / x);
 }
+
+/* ----------------------------- Popcount ------------------------- */
+
+/** Returns the number of one bits of an integer. */
+template <typename T>
+std::size_t constexpr
+popcount (T const x)
+{
+    static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value,
+        "T must be an unsigned integral type.");
+    return std::bitset<sizeof(T) * 8>(x).count();
+}
+
+#ifdef _MSC_VER // MSVS fails to optimize std::bitset::count
+std::size_t inline
+popcount (std::uint32_t const x)
+{
+#   if !(__amd64__ || __x86_64__ || _WIN64 || _M_X64)
+    __pragma (message("Warning: CPU support for _mm_popcnt_u32 is assumed, "
+        "but could not be verified."))
+#   endif
+    return static_cast<std::size_t>(_mm_popcnt_u32(x));
+}
+
+std::size_t inline
+popcount (std::uint64_t const x)
+{
+#   if __amd64__ || __x86_64__ || _WIN64 || _M_X64
+    return static_cast<std::size_t >(_mm_popcnt_u64(x));
+#   else
+    std::uint32_t const low_bits = static_cast<std::uint32_t>(x);
+    std::uint32_t const high_bits = static_cast<std::uint32_t>(x >> 32);
+    return popcount(low_bits) + popcount(high_bits);
+#   endif
+}
+#endif
 
 /* ------------------------------ Misc ---------------------------- */
 
