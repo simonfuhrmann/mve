@@ -469,7 +469,7 @@ load_jpg_file (std::string const& filename, std::string* exif)
         }
 
         /* Read JPEG header. */
-        int ret = jpeg_read_header(&cinfo, false);
+        int ret = jpeg_read_header(&cinfo, /*false*/0);
         if (ret != JPEG_HEADER_OK)
             throw util::Exception("JPEG header not recognized");
 
@@ -542,7 +542,7 @@ load_jpg_file_headers (std::string const& filename)
         jpeg_stdio_src(&cinfo, fp);
 
         /* Read JPEG header. */
-        int ret = jpeg_read_header(&cinfo, false);
+        int ret = jpeg_read_header(&cinfo, /*false*/0);
         if (ret != JPEG_HEADER_OK)
             throw util::Exception("JPEG header not recognized");
 
