@@ -67,3 +67,18 @@ TEST(MathFunctionsTest, FastPowTest)
     EXPECT_EQ(512, math::fastpow(2, 9));
     EXPECT_EQ(1024, math::fastpow(2, 10));
 }
+
+TEST(MathFunctionsTest, PopcountReturnsTheNumberOfOneBitsInAnUnsignedInteger)
+{
+    EXPECT_EQ(0, math::popcount(std::uint32_t(0x0)));
+    EXPECT_EQ(0, math::popcount(std::uint64_t(0x0)));
+
+    EXPECT_EQ(32, math::popcount(std::uint32_t(-1)));
+    EXPECT_EQ(64, math::popcount(std::uint64_t(-1)));
+
+    EXPECT_EQ(16, math::popcount(std::uint32_t(0xF0F0F0F0)));
+    EXPECT_EQ(32, math::popcount(std::uint64_t(0xF0F0F0F0F0F0F0F0)));
+
+    EXPECT_EQ(9, math::popcount(std::uint32_t(0x13030303)));
+    EXPECT_EQ(17, math::popcount(std::uint64_t(0x1303030303030303)));
+}
