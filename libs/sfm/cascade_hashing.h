@@ -166,11 +166,6 @@ private:
         std::vector<math::Vec64f> const& surf_zero_mean_descs,
         GlobalData const& cashash_global_data, Options const& cashash_opts);
 
-    /** Convert discretized SIFT/SURF descriptors to zero mean. */
-    void preprocess (ProcessedFeatureSets const& pfs,
-        std::vector<math::Vec128f>* sift_zero_mean_descs,
-        std::vector<math::Vec64f>* surf_zero_mean_descs);
-
     /** Compute average descriptors of given feature sets. */
     void compute_avg_descriptors (ProcessedFeatureSets const& pfs,
         math::Vec128f* sift_avg, math::Vec64f* surf_avg);
