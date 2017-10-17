@@ -33,9 +33,9 @@
 #endif
 
 #include "math/algo.h"
-#include "util/endian.h"
 #include "util/exception.h"
 #include "util/string.h"
+#include "util/system.h"
 #include "mve/image_io.h"
 
 /* Loader limits for reading PPM files. */

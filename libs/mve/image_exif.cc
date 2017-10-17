@@ -34,7 +34,7 @@
 #include <cmath>
 #include <limits>
 
-#include "util/endian.h"
+#include "util/system.h"
 #include "util/string.h"
 #include "mve/image_exif.h"
 

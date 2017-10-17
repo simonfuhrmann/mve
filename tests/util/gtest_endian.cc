@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util/endian.h"
+#include "util/system.h"
 
 TEST(EndianTest, TestByteSwap)
 {
