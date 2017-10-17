@@ -14,7 +14,7 @@
 
 #include "util/exception.h"
 #include "util/tokenizer.h"
-#include "util/string.h"
+#include "util/strings.h"
 
 #include "scene_addins/camera_sequence.h"
 

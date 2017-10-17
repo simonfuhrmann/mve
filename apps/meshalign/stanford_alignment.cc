@@ -13,7 +13,7 @@
 #include <fstream>
 
 #include "util/file_system.h"
-#include "util/string.h"
+#include "util/strings.h"
 #include "util/exception.h"
 #include "util/tokenizer.h"
 #include "mve/mesh.h"

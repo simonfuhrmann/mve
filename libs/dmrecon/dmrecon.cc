@@ -20,7 +20,7 @@
 #include "mve/image.h"
 #include "mve/image_tools.h"
 #include "util/file_system.h"
-#include "util/string.h"
+#include "util/strings.h"
 #include "dmrecon/settings.h"
 #include "dmrecon/dmrecon.h"
 #include "dmrecon/global_view_selection.h"

@@ -13,7 +13,7 @@
 #include <cstring>
 #include <map>
 
-#include "util/string.h"
+#include "util/strings.h"
 #include "util/tokenizer.h"
 #include "util/exception.h"
 #include "util/file_system.h"

@@ -13,7 +13,7 @@
 
 #include "util/system.h"
 #include "util/arguments.h"
-#include "util/string.h"
+#include "util/strings.h"
 #include "mve/mesh_io.h"
 #include "mve/mesh_io_ply.h"
 

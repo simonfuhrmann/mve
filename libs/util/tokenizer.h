@@ -15,7 +15,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include "util/string.h"
+#include "util/strings.h"
 #include "util/defines.h"
 
 UTIL_NAMESPACE_BEGIN

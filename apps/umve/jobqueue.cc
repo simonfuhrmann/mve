@@ -11,7 +11,7 @@
 #include <iostream>
 #include <QThreadPool>
 
-#include "util/string.h"
+#include "util/strings.h"
 #include "jobqueue.h"
 
 JobQueue*

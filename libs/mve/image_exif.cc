@@ -35,7 +35,7 @@
 #include <limits>
 
 #include "util/system.h"
-#include "util/string.h"
+#include "util/strings.h"
 #include "mve/image_exif.h"
 
 MVE_NAMESPACE_BEGIN
