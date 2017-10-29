@@ -36,7 +36,7 @@ triangulate_match (Correspondence2D2D const& match,
  */
 math::Vector<double, 3>
 triangulate_track (std::vector<math::Vec2f> const& pos,
-    std::vector<CameraPose const*> poses);
+    std::vector<CameraPose const*> const& poses);
 
 /**
  * Given a two-view pose configuration and a correspondence, this function
