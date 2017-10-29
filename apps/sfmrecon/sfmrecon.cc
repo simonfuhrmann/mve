@@ -180,14 +180,15 @@ sfm_reconstruct (AppSettings const& conf)
         features_and_matching(scene, conf, &viewports, &pairwise_matching);
 
         std::cout << "Saving pre-bundle to file..." << std::endl;
-        sfm::bundler::save_prebundle_to_file(viewports, pairwise_matching, prebundle_path);
+        sfm::bundler::save_prebundle_to_file(
+            viewports, pairwise_matching,prebundle_path);
     }
     else if (!conf.skip_sfm)
     {
         log_message(conf, "Loading pairwise matching from file.");
         std::cout << "Loading pairwise matching from file..." << std::endl;
-        sfm::bundler::load_prebundle_from_file(prebundle_path,
-            &viewports, &pairwise_matching);
+        sfm::bundler::load_prebundle_from_file(
+            prebundle_path, &viewports, &pairwise_matching);
     }
 
     if (conf.skip_sfm)
@@ -511,7 +512,7 @@ main (int argc, char** argv)
 
     /* Setup defaults. */
     AppSettings conf;
-    conf.scene_path = args.get_nth_nonopt(0);
+    conf.scene_path = util::fs::sanitize_path(args.get_nth_nonopt(0));
 
     /* Read arguments. */
     for (util::ArgResult const* i = args.next_option();
