@@ -67,21 +67,11 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         Viewport* viewport = &viewports->at(i);
         viewport->features.set_options(this->opts.feature_options);
         viewport->features.compute_features(image);
-        std::size_t num_feats = viewport->features.positions.size();
-
-        /* Normalize image coordinates. */
-        float const fwidth = static_cast<float>(viewport->features.width);
-        float const fheight = static_cast<float>(viewport->features.height);
-        float const fnorm = std::max(fwidth, fheight);
-        for (std::size_t j = 0; j < viewport->features.positions.size(); ++j)
-        {
-            math::Vec2f& pos = viewport->features.positions[j];
-            pos[0] = (pos[0] + 0.5f - fwidth / 2.0f) / fnorm;
-            pos[1] = (pos[1] + 0.5f - fheight / 2.0f) / fnorm;
-        }
+        viewport->features.normalize_feature_positions();
 
 #pragma omp critical
         {
+            std::size_t const num_feats = viewport->features.positions.size();
             std::cout << "\rView ID "
                 << util::string::get_filled(view->get_id(), 4, '0') << " ("
                 << image->width() << "x" << image->height() << "), "
