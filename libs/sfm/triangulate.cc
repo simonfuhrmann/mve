@@ -109,6 +109,10 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
             position_pair.push_back(positions[p1]);
             position_pair.push_back(positions[p2]);
             math::Vec3d tmp_pos = triangulate_track(position_pair, pose_pair);
+            if (MATH_ISNAN(tmp_pos[0]) || MATH_ISINF(tmp_pos[0]) ||
+                MATH_ISNAN(tmp_pos[1]) || MATH_ISINF(tmp_pos[1]) ||
+                MATH_ISNAN(tmp_pos[2]) || MATH_ISINF(tmp_pos[2]))
+                continue;
 
             /* Check if pair has small triangulation angle. */
             if (this->opts.angle_threshold > 0.0)
@@ -123,7 +127,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
                     continue;
             }
 
-            /* Chek error in all input poses and find outliers */
+            /* Chek error in all input poses and find outliers. */
             std::vector<std::size_t> tmp_outliers;
             for (std::size_t i = 0; i < poses.size(); ++i)
             {
@@ -143,7 +147,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
                     tmp_outliers.push_back(i);
             }
 
-            /* Select triangulation with lowest amount of outliers */
+            /* Select triangulation with lowest amount of outliers. */
             if (tmp_outliers.size() < best_outliers.size())
             {
                 best_pos = tmp_pos;
@@ -152,7 +156,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
 
         }
 
-    /* If all pairs have small angles pos will be 0 here */
+    /* If all pairs have small angles pos will be 0 here. */
     if (best_pos.norm() == 0.0f)
     {
         if (stats != nullptr)
@@ -160,7 +164,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
         return false;
     }
 
-    /* Check if required number of inliers is found */
+    /* Check if required number of inliers is found. */
     if (poses.size() < best_outliers.size() + this->opts.min_num_views)
     {
         if (stats != nullptr)
@@ -168,7 +172,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
         return false;
     }
 
-    /* Return final position and outliers */
+    /* Return final position and outliers. */
     *track_pos = best_pos;
     if (stats != nullptr)
         stats->num_new_tracks += 1;

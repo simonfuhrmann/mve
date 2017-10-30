@@ -88,7 +88,7 @@ public:
     explicit Triangulate (Options const& options);
     bool triangulate (std::vector<CameraPose const*> const& poses,
         std::vector<math::Vec2f> const& positions,
-        math::Vec3d* track_pos, Statistics* stats,
+        math::Vec3d* track_pos, Statistics* stats = nullptr,
         std::vector<std::size_t>* outliers = nullptr) const;
     void print_statistics (Statistics const& stats, std::ostream& out) const;
 
