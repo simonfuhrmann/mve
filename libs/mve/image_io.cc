@@ -97,10 +97,10 @@ load_file (std::string const& filename)
     }
     catch (util::FileException& e)
     {
-        throw util::Exception("Error opening file: ", e.what());
+        throw util::Exception(filename + ": ", e.what());
     }
 
-    throw util::Exception("Cannot determine image format");
+    throw util::Exception(filename, ": Cannot determine image format");
 }
 
 ImageHeaders
@@ -129,10 +129,10 @@ load_file_headers (std::string const& filename)
     }
     catch (util::FileException& e)
     {
-        throw util::Exception("Error opening file: ", e.what());
+        throw util::Exception(filename + ": ", e.what());
     }
 
-    throw util::Exception("Cannot determine image format");
+    throw util::Exception(filename, ": Cannot determine image format");
 }
 
 void
