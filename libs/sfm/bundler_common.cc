@@ -266,5 +266,56 @@ load_survey_from_file (std::string const& filename,
     in.close();
 }
 
+/* ---------------------- Feature undistortion -------------------- */
+
+namespace {
+    double distort_squared_radius (double const r2, double const k1,
+        double const k2)
+    {
+        // Compute the distorted squared radius:
+        // (radius * distortion_coeff)^2 = r^2 * coeff^2
+        double coeff = 1.0 + r2 * k1 + r2 * r2 * k2;
+        return r2 * coeff * coeff;
+    }
+
+    double solve_undistorted_squared_radius (double const r2,
+        double const k1, double const k2)
+    {
+        // We use bisection as we can easily find a pretty good initial guess,
+        // and we don't want to compute all roots for a 5th degree polynomial.
+
+        // Guess initial interval upper and lower bound
+        double lbound = r2, ubound = r2;
+        while (distort_squared_radius(lbound, k1, k2) > r2)
+            lbound /= 1.05;
+        while (distort_squared_radius(ubound, k1, k2) < r2)
+            ubound *= 1.05;
+
+        // Perform a bisection until epsilon accuracy is reached
+        while (std::numeric_limits<double>::epsilon() < ubound - lbound)
+        {
+            double const mid = 0.5 * (lbound + ubound);
+            if (distort_squared_radius(mid, k1, k2) > r2)
+                ubound = mid;
+            else
+                lbound = mid;
+        }
+        // Return center of interval
+        return 0.5 * (lbound + ubound);
+    }
+}
+
+math::Vec2f
+undistort_feature (math::Vec2f const& f, double const k1, double const k2,
+    float const focal_length)
+{
+    // Convert to camera coords
+    double const r2 = f.square_norm() / MATH_POW2(focal_length);
+    double scale = 1.0;
+    if (r2 > 0.0)
+        scale = std::sqrt(solve_undistorted_squared_radius(r2, k1, k2) / r2);
+    return f * scale;
+}
+
 SFM_BUNDLER_NAMESPACE_END
 SFM_NAMESPACE_END
