@@ -732,10 +732,8 @@ Incremental::create_bundle (void) const
             cam.ppoint[1] = pose.K[5] + 0.5f;
             std::copy(pose.R.begin(), pose.R.end(), cam.rot);
             std::copy(pose.t.begin(), pose.t.end(), cam.trans);
-            cam.dist[0] = viewport.radial_distortion[0]
-                * MATH_POW2(pose.get_focal_length());
-            cam.dist[1] = viewport.radial_distortion[1]
-                * MATH_POW2(pose.get_focal_length());
+            cam.dist[0] = viewport.radial_distortion[0];
+            cam.dist[1] = viewport.radial_distortion[1];
         }
 
         /* Populate the features in the Bundle. */
