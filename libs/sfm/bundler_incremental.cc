@@ -152,8 +152,8 @@ Incremental::reconstruct_next_view (int view_id)
 
     /*
      * Remove outliers from tracks and tracks from viewport.
-     * TODO: Once single cam BA has been performed and parameters for this
-     * camera are optimized, evaluate outlier tracks and try to restore them.
+     * Once single cam BA has been performed and parameters for this
+     * camera are optimized, tracks are evaluated again and restored.
      */
     for (std::size_t i = 0; i < ransac_result.inliers.size(); ++i)
         track_ids[ransac_result.inliers[i]] = -1;
@@ -163,6 +163,8 @@ Incremental::reconstruct_next_view (int view_id)
             continue;
         this->tracks->at(track_ids[i]).remove_view(view_id);
         this->viewports->at(view_id).track_ids[feature_ids[i]] = -1;
+        this->viewports->at(view_id).backup_tracks.emplace(
+            feature_ids[i], track_ids[i]);
     }
     track_ids.clear();
     feature_ids.clear();
@@ -186,6 +188,44 @@ Incremental::reconstruct_next_view (int view_id)
         this->try_registration();
 
     return true;
+}
+
+void
+Incremental::try_restore_tracks_for_views (void)
+{
+    for (std::size_t i = 0; i < this->viewports->size(); ++i)
+    {
+        Viewport& viewport = this->viewports->at(i);
+        if (!viewport.pose.is_valid())
+            continue;
+        FeatureSet const& features = viewport.features;
+        math::Matrix<double, 3, 4> P;
+        viewport.pose.fill_p_matrix(&P);
+        for (auto const& feature_track : viewport.backup_tracks)
+        {
+            int const feature_id = feature_track.first;
+            int const track_id = feature_track.second;
+            if (track_id < 0 || !this->tracks->at(track_id).is_valid()
+                || viewport.track_ids[feature_id] >= 0)
+                continue;
+            math::Vec3f const& pos3d = this->tracks->at(track_id).pos;
+            math::Vec2f const& pos2d = undistort_feature(
+                features.positions[feature_id],
+                static_cast<double>(viewport.radial_distortion[0]),
+                static_cast<double>(viewport.radial_distortion[1]),
+                viewport.focal_length);
+
+            math::Vec4d const pos3dh(pos3d[0], pos3d[1], pos3d[2], 1.0);
+            math::Vec3d proj = P * pos3dh;
+            math::Vec2f cam_point(proj[0] / proj[2], proj[1] / proj[2]);
+            if ((cam_point - pos2d).norm()
+                < this->opts.new_track_error_threshold)
+            {
+                viewport.track_ids[feature_id] = track_id;
+                this->tracks->at(track_id).features.emplace_back(i, feature_id);
+            }
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- */
@@ -288,9 +328,13 @@ Incremental::triangulate_new_tracks (int min_num_views)
             int const view_id = track.features[j].view_id;
             if (!this->viewports->at(view_id).pose.is_valid())
                 continue;
+            Viewport const& viewport = this->viewports->at(view_id);
             int const feature_id = track.features[j].feature_id;
-            pos.push_back(this->viewports->at(view_id)
-                .features.positions[feature_id]);
+            pos.push_back(undistort_feature(
+                viewport.features.positions[feature_id],
+                static_cast<double>(viewport.radial_distortion[0]),
+                static_cast<double>(viewport.radial_distortion[1]),
+                viewport.focal_length));
             poses.push_back(&this->viewports->at(view_id).pose);
             view_ids.push_back(view_id);
             feature_ids.push_back(feature_id);

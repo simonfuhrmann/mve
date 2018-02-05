@@ -70,6 +70,8 @@ public:
     void find_next_views (std::vector<int>* next_views);
     /** Incrementally adds the given view to the bundle. */
     bool reconstruct_next_view (int view_id);
+    /** Restore tracks for views after intrinsics are optimized. */
+    void try_restore_tracks_for_views (void);
     /** Triangulates tracks without 3D position and at least N views. */
     void triangulate_new_tracks (int min_num_views);
     /** Deletes tracks with a large reprojection error. */
