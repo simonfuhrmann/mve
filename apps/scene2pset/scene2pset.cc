@@ -8,6 +8,7 @@
  */
 
 #include <iostream>
+#include <fstream> //TODO: Remove when writing to file is done in a dedicated function.
 #include <stdexcept>
 #include <algorithm>
 #include <vector>
@@ -104,12 +105,14 @@ main (int argc, char** argv)
     args.add_option('p', "poisson-normals", false, "Scale normals according to confidence");
     args.add_option('S', "scale-factor", true, "Factor for computing scale values [2.5]");
     args.add_option('F', "fssr", true, "FSSR output, sets -nsc and -di with scale ARG");
+    args.add_option('C', "correspondence", false, "Output correspondence data");
     args.parse(argc, argv);
 
     /* Init default settings. */
     AppSettings conf;
     conf.scenedir = args.get_nth_nonopt(0);
     conf.outmesh = args.get_nth_nonopt(1);
+    bool output_correspondence = false;
 
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
@@ -142,6 +145,7 @@ main (int argc, char** argv)
                     : "undist-L" + util::string::get<int>(scale);
                 break;
             }
+            case 'C': output_correspondence = true; break;
 
             default: throw std::runtime_error("Unknown option");
         }
@@ -230,11 +234,51 @@ main (int argc, char** argv)
 
         /* Triangulate depth map. */
         mve::TriangleMesh::Ptr mesh;
-        mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
+
+        mve::Image<unsigned int> vertex_ids;
+        if (output_correspondence)
+            mesh = mve::geom::depthmap_triangulate(dm, ci, cam, 5.0f, &vertex_ids); 
+        else
+            mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
+
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
         mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
+        
+        /*********/
+        
+        if (output_correspondence)
+        {
+            int pixel_amount = vertex_ids.get_pixel_amount();
+            std::vector<math::Vec3f> mapping_2D_3D (pixel_amount);
+            unsigned int curr_vertex_id;
+            
+            for (int j = 0; j < pixel_amount; ++j)
+            {
+                curr_vertex_id = vertex_ids.at(j);
+                if (curr_vertex_id == MATH_MAX_UINT)
+                    mapping_2D_3D[j] = math::Vec3f(NAN);
+                else
+                    mapping_2D_3D[j] = mverts[curr_vertex_id];
+            }
+
+            std::ofstream correspondence_file;
+            std::string file_name;
+            file_name = view->get_directory() + "/correspondence_" +
+                        "L" + std::to_string(int(conf.scale_factor)) + "_" + 
+                        std::to_string(vertex_ids.width()) + "X" + 
+                        std::to_string(vertex_ids.height()) + ".csv";
+
+            correspondence_file.open (file_name);
+            for (unsigned long j = 0; j < mapping_2D_3D.size(); ++j)
+                correspondence_file << std::to_string(mapping_2D_3D[j][0]) + ", " +
+                                       std::to_string(mapping_2D_3D[j][1]) + ", " +
+                                       std::to_string(mapping_2D_3D[j][2]) + "\n"; 
+            correspondence_file.close();
+        }
+
+        /*********/
 
         if (conf.with_normals)
             mesh->ensure_normals();

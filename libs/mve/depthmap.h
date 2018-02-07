@@ -109,19 +109,23 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
  * A helper function that triangulates the given depth map with optional
  * color image (which generates additional per-vertex colors) in local
  * image coordinates.
+ * If vertex_ids != nullptr, pixel-vertex_ID mapping is provided.
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
-    math::Matrix3f const& invproj, float dd_factor = 5.0f);
+    math::Matrix3f const& invproj, float dd_factor = 5.0f, 
+    mve::Image<unsigned int>* vertex_ids = nullptr);
 
 /**
  * A helper function that triangulates the given depth map with optional
  * color image (which generates additional per-vertex colors) and transforms
  * the mesh into the global coordinate system.
+ * If vertex_ids != nullptr, pixel-vertex_ID mapping is provided.
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
-    CameraInfo const& cam, float dd_factor = 5.0f);
+    CameraInfo const& cam, float dd_factor = 5.0f,
+    mve::Image<unsigned int>* vertex_ids = nullptr);
 
 /**
  * Algorithm to triangulate range grids.
