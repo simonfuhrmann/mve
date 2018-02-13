@@ -8,7 +8,7 @@
  */
 
 #include <iostream>
-#include <fstream> //TODO: Remove when writing to file is done in a dedicated function.
+#include <fstream>
 #include <stdexcept>
 #include <algorithm>
 #include <vector>
@@ -75,6 +75,38 @@ aabb_from_string (std::string const& str,
     }
     std::cout << "Using AABB: (" << (*aabb_min) << ") / ("
         << (*aabb_max) << ")" << std::endl;
+}
+
+void
+export_dense_correspondence (mve::View::Ptr view, mve::TriangleMesh::Ptr mesh, 
+    mve::Image<unsigned int>* vertex_ids, int scale_factor)
+{
+    mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices()); 
+
+    std::ofstream correspondence_file;
+    correspondence_file.open (view->get_directory() + "/correspondence_" + std::to_string(view->get_id()) + ".csv");
+    correspondence_file << "view_id, scale, width, height"      << "\n";
+    correspondence_file << std::to_string(view->get_id())       +  "\n";
+    correspondence_file << std::to_string(scale_factor)         +  "\n";
+    correspondence_file << std::to_string(vertex_ids->width())  +  "\n";
+    correspondence_file << std::to_string(vertex_ids->height()) +  "\n";
+
+    int pixel_amount = vertex_ids->get_pixel_amount();
+    math::Vec3f curr_pixel_mapping;
+    unsigned int curr_vertex_id;
+    for (int j = 0; j < pixel_amount; ++j)
+    {
+        curr_vertex_id = vertex_ids->at(j);
+        if (curr_vertex_id == MATH_MAX_UINT)
+            curr_pixel_mapping = math::Vec3f(NAN);
+        else
+            curr_pixel_mapping = mverts[curr_vertex_id];
+
+        correspondence_file << std::to_string(curr_pixel_mapping[0]) + ", " +
+                               std::to_string(curr_pixel_mapping[1]) + ", " +
+                               std::to_string(curr_pixel_mapping[2]) + "\n"; 
+    }
+    correspondence_file.close();
 }
 
 int
@@ -237,7 +269,10 @@ main (int argc, char** argv)
 
         mve::Image<unsigned int> vertex_ids;
         if (output_correspondence)
+        {
             mesh = mve::geom::depthmap_triangulate(dm, ci, cam, 5.0f, &vertex_ids); 
+            export_dense_correspondence(view, mesh, &vertex_ids, conf.scale_factor);
+        }
         else
             mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
 
@@ -245,40 +280,6 @@ main (int argc, char** argv)
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
         mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
-        
-        /*********/
-        
-        if (output_correspondence)
-        {
-            int pixel_amount = vertex_ids.get_pixel_amount();
-            std::vector<math::Vec3f> mapping_2D_3D (pixel_amount);
-            unsigned int curr_vertex_id;
-            
-            for (int j = 0; j < pixel_amount; ++j)
-            {
-                curr_vertex_id = vertex_ids.at(j);
-                if (curr_vertex_id == MATH_MAX_UINT)
-                    mapping_2D_3D[j] = math::Vec3f(NAN);
-                else
-                    mapping_2D_3D[j] = mverts[curr_vertex_id];
-            }
-
-            std::ofstream correspondence_file;
-            std::string file_name;
-            file_name = view->get_directory() + "/correspondence_" +
-                        "L" + std::to_string(int(conf.scale_factor)) + "_" + 
-                        std::to_string(vertex_ids.width()) + "X" + 
-                        std::to_string(vertex_ids.height()) + ".csv";
-
-            correspondence_file.open (file_name);
-            for (unsigned long j = 0; j < mapping_2D_3D.size(); ++j)
-                correspondence_file << std::to_string(mapping_2D_3D[j][0]) + ", " +
-                                       std::to_string(mapping_2D_3D[j][1]) + ", " +
-                                       std::to_string(mapping_2D_3D[j][2]) + "\n"; 
-            correspondence_file.close();
-        }
-
-        /*********/
 
         if (conf.with_normals)
             mesh->ensure_normals();
