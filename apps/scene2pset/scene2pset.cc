@@ -44,6 +44,7 @@ struct AppSettings
     float min_valid_fraction = 0.0f;
     float scale_factor = 2.5f; /* "Radius" of MVS patch (usually 5x5). */
     std::vector<int> ids;
+    bool output_correspondence = false;
 };
 
 void
@@ -137,15 +138,13 @@ main (int argc, char** argv)
     args.add_option('p', "poisson-normals", false, "Scale normals according to confidence");
     args.add_option('S', "scale-factor", true, "Factor for computing scale values [2.5]");
     args.add_option('F', "fssr", true, "FSSR output, sets -nsc and -di with scale ARG");
-    args.add_option('C', "correspondence", false, "Output correspondence data");
+    args.add_option('C', "correspondence", false, "Output correspondence data (only in the absence of -m and -b)");
     args.parse(argc, argv);
 
     /* Init default settings. */
     AppSettings conf;
     conf.scenedir = args.get_nth_nonopt(0);
     conf.outmesh = args.get_nth_nonopt(1);
-    bool output_correspondence = false;
-
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
@@ -177,7 +176,7 @@ main (int argc, char** argv)
                     : "undist-L" + util::string::get<int>(scale);
                 break;
             }
-            case 'C': output_correspondence = true; break;
+            case 'C': conf.output_correspondence = true; break;
 
             default: throw std::runtime_error("Unknown option");
         }
@@ -268,9 +267,9 @@ main (int argc, char** argv)
         mve::TriangleMesh::Ptr mesh;
 
         mve::Image<unsigned int> vertex_ids;
-        if (output_correspondence)
+        if (conf.output_correspondence && conf.aabb.empty() && conf.mask.empty())
         {
-            mesh = mve::geom::depthmap_triangulate(dm, ci, cam, 5.0f, &vertex_ids); 
+            mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::dd_factor_default, &vertex_ids); 
             export_dense_correspondence(view, mesh, &vertex_ids, conf.scale_factor);
         }
         else
