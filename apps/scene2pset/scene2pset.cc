@@ -47,6 +47,45 @@ struct AppSettings
     bool output_correspondence = false;
 };
 
+struct CorrespondenceViewMetadata
+{
+    unsigned int view_id; 
+    unsigned int width;  // After downsampling. 
+    unsigned int height; // After downsampling.
+    unsigned long first_idx;
+};
+
+struct CorrespondenceData
+{
+    std::vector<math::Vec2ui> data;
+    std::vector<CorrespondenceViewMetadata> metadata;
+};
+
+void append_correspondence_data_from_view(CorrespondenceData& corr_data, 
+    const mve::Image<unsigned int>& vertex_ids, const int view_id)
+{   
+    CorrespondenceViewMetadata curr_view_metadata;
+    curr_view_metadata.view_id = view_id;
+    curr_view_metadata.width = vertex_ids.width();
+    curr_view_metadata.height = vertex_ids.height();
+    curr_view_metadata.first_idx = corr_data.data.size();
+    corr_data.metadata.push_back(curr_view_metadata);
+
+    #define WIDTH curr_view_metadata.width
+
+    std::vector<math::Vec2ui> curr_view_data;
+    unsigned int pixel_amount = vertex_ids.get_pixel_amount();
+    for (unsigned int i=1 ; i<pixel_amount ; ++i)
+        if (vertex_ids.at(i) != MATH_MAX_UINT)
+            curr_view_data.push_back(math::Vec2ui(i%WIDTH,int(i/WIDTH)));
+    corr_data.data.insert(corr_data.data.end(), curr_view_data.begin(), curr_view_data.end());
+}
+
+void save_correspondence_data(const CorrespondenceData& corr_data, const AppSettings& conf)
+{
+    
+}
+
 void
 poisson_scale_normals (mve::TriangleMesh::ConfidenceList const& confs,
     mve::TriangleMesh::NormalList* normals)
@@ -76,38 +115,6 @@ aabb_from_string (std::string const& str,
     }
     std::cout << "Using AABB: (" << (*aabb_min) << ") / ("
         << (*aabb_max) << ")" << std::endl;
-}
-
-void
-export_dense_correspondence (mve::View::Ptr view, mve::TriangleMesh::Ptr mesh, 
-    mve::Image<unsigned int>* vertex_ids, int scale_factor)
-{
-    mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices()); 
-
-    std::ofstream correspondence_file;
-    correspondence_file.open (view->get_directory() + "/correspondence_" + std::to_string(view->get_id()) + ".csv");
-    correspondence_file << "view_id, scale, width, height"      << "\n";
-    correspondence_file << std::to_string(view->get_id())       +  "\n";
-    correspondence_file << std::to_string(scale_factor)         +  "\n";
-    correspondence_file << std::to_string(vertex_ids->width())  +  "\n";
-    correspondence_file << std::to_string(vertex_ids->height()) +  "\n";
-
-    int pixel_amount = vertex_ids->get_pixel_amount();
-    math::Vec3f curr_pixel_mapping;
-    unsigned int curr_vertex_id;
-    for (int j = 0; j < pixel_amount; ++j)
-    {
-        curr_vertex_id = vertex_ids->at(j);
-        if (curr_vertex_id == MATH_MAX_UINT)
-            curr_pixel_mapping = math::Vec3f(NAN);
-        else
-            curr_pixel_mapping = mverts[curr_vertex_id];
-
-        correspondence_file << std::to_string(curr_pixel_mapping[0]) + ", " +
-                               std::to_string(curr_pixel_mapping[1]) + ", " +
-                               std::to_string(curr_pixel_mapping[2]) + "\n"; 
-    }
-    correspondence_file.close();
 }
 
 int
@@ -217,6 +224,10 @@ main (int argc, char** argv)
 
     /* Iterate over views and get points. */
     mve::Scene::ViewList& views(scene->get_views());
+
+    /* Prepare correspondence data */
+    CorrespondenceData corr_data;
+
 #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
@@ -268,10 +279,7 @@ main (int argc, char** argv)
 
         mve::Image<unsigned int> vertex_ids;
         if (conf.output_correspondence && conf.aabb.empty() && conf.mask.empty())
-        {
             mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::dd_factor_default, &vertex_ids); 
-            export_dense_correspondence(view, mesh, &vertex_ids, conf.scale_factor);
-        }
         else
             mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
 
@@ -333,6 +341,8 @@ main (int argc, char** argv)
                     vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
                 if (conf.with_conf)
                     vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
+                if (conf.output_correspondence && conf.mask.empty())
+                    append_correspondence_data_from_view(corr_data, vertex_ids, view->get_id());
             }
         }
         else
