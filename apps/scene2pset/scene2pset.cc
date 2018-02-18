@@ -73,17 +73,41 @@ void append_correspondence_data_from_view(CorrespondenceData& corr_data,
 
     #define WIDTH curr_view_metadata.width
 
-    std::vector<math::Vec2ui> curr_view_data;
     unsigned int pixel_amount = vertex_ids.get_pixel_amount();
-    for (unsigned int i=1 ; i<pixel_amount ; ++i)
+    unsigned int filled_pixel_amount = pixel_amount - 
+        std::count(vertex_ids.get_data().begin(), vertex_ids.get_data().end(), MATH_MAX_UINT);
+    std::vector<math::Vec2ui> curr_view_data (filled_pixel_amount);
+    for (unsigned int i=0 ; i<pixel_amount ; ++i)
         if (vertex_ids.at(i) != MATH_MAX_UINT)
-            curr_view_data.push_back(math::Vec2ui(i%WIDTH,int(i/WIDTH)));
+            curr_view_data[vertex_ids.at(i)] = (math::Vec2ui(i%WIDTH,int(i/WIDTH)));
     corr_data.data.insert(corr_data.data.end(), curr_view_data.begin(), curr_view_data.end());
 }
 
 void save_correspondence_data(const CorrespondenceData& corr_data, const AppSettings& conf)
 {
-    
+    std::string corr_data_fname     = conf.outmesh + "_correspondence-data.csv";
+    std::string corr_metadata_fname = conf.outmesh + "_correspondence-metadata.csv";
+
+    std::ofstream corr_data_file;
+    std::ofstream corr_metadata_file;
+
+    corr_data_file.open(corr_data_fname);
+    corr_metadata_file.open(corr_metadata_fname);
+
+    corr_data_file << "x, y\n";
+    for (unsigned int i=0 ; i<corr_data.data.size() ; ++i)
+        corr_data_file << std::to_string(corr_data.data[i][0]) + ", " +
+                          std::to_string(corr_data.data[i][1]) + "\n" ;
+
+    corr_metadata_file << "View_ID, Width, Height, First_Vertex_Index\n";
+    for (unsigned int i=0 ; i<corr_data.metadata.size() ; ++i)
+        corr_metadata_file << std::to_string(corr_data.metadata[i].view_id  ) + ", " +
+                              std::to_string(corr_data.metadata[i].width)     + ", " +
+                              std::to_string(corr_data.metadata[i].height)    + ", " +
+                              std::to_string(corr_data.metadata[i].first_idx) + "\n" ;
+
+    corr_data_file.close();
+    corr_metadata_file.close();
 }
 
 void
@@ -448,6 +472,8 @@ main (int argc, char** argv)
     {
         mve::geom::save_mesh(pset, conf.outmesh);
     }
+    if (conf.output_correspondence && conf.aabb.empty() && conf.mask.empty())
+        save_correspondence_data(corr_data, conf);
 
     return EXIT_SUCCESS;
 }
