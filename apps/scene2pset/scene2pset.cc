@@ -53,6 +53,10 @@ struct CorrespondenceViewMetadata
     unsigned int width;  // After downsampling. 
     unsigned int height; // After downsampling.
     unsigned long first_idx;
+
+    CorrespondenceViewMetadata (unsigned int view_id, unsigned int width, unsigned int height, unsigned long first_idx):
+        view_id(view_id), width(width), height(height), first_idx(first_idx) {}
+
 };
 
 struct CorrespondenceData
@@ -61,29 +65,25 @@ struct CorrespondenceData
     std::vector<CorrespondenceViewMetadata> metadata;
 };
 
-void append_correspondence_data_from_view(CorrespondenceData& corr_data, 
+void
+append_correspondence_data_from_view(CorrespondenceData& corr_data, 
     const mve::Image<unsigned int>& vertex_ids, const int view_id)
 {   
-    CorrespondenceViewMetadata curr_view_metadata;
-    curr_view_metadata.view_id = view_id;
-    curr_view_metadata.width = vertex_ids.width();
-    curr_view_metadata.height = vertex_ids.height();
-    curr_view_metadata.first_idx = corr_data.data.size();
-    corr_data.metadata.push_back(curr_view_metadata);
-
-    #define WIDTH curr_view_metadata.width
-
+    const unsigned int width = vertex_ids.width();
+    corr_data.metadata.emplace_back(view_id, width, vertex_ids.height(), corr_data.data.size());
+    
     unsigned int pixel_amount = vertex_ids.get_pixel_amount();
     unsigned int filled_pixel_amount = pixel_amount - 
         std::count(vertex_ids.get_data().begin(), vertex_ids.get_data().end(), MATH_MAX_UINT);
     std::vector<math::Vec2ui> curr_view_data (filled_pixel_amount);
     for (unsigned int i=0 ; i<pixel_amount ; ++i)
         if (vertex_ids.at(i) != MATH_MAX_UINT)
-            curr_view_data[vertex_ids.at(i)] = (math::Vec2ui(i%WIDTH,int(i/WIDTH)));
+            curr_view_data[vertex_ids.at(i)] = math::Vec2ui(i%width,int(i/width));
     corr_data.data.insert(corr_data.data.end(), curr_view_data.begin(), curr_view_data.end());
 }
 
-void save_correspondence_data(const CorrespondenceData& corr_data, const AppSettings& conf)
+void
+save_correspondence_data(const CorrespondenceData& corr_data, const AppSettings& conf)
 {
     std::string corr_data_fname     = conf.outmesh + "_correspondence-data.csv";
     std::string corr_metadata_fname = conf.outmesh + "_correspondence-metadata.csv";
@@ -96,15 +96,19 @@ void save_correspondence_data(const CorrespondenceData& corr_data, const AppSett
 
     corr_data_file << "x, y\n";
     for (unsigned int i=0 ; i<corr_data.data.size() ; ++i)
+    {
         corr_data_file << std::to_string(corr_data.data[i][0]) + ", " +
                           std::to_string(corr_data.data[i][1]) + "\n" ;
+    }
 
     corr_metadata_file << "View_ID, Width, Height, First_Vertex_Index\n";
     for (unsigned int i=0 ; i<corr_data.metadata.size() ; ++i)
+    {
         corr_metadata_file << std::to_string(corr_data.metadata[i].view_id  ) + ", " +
                               std::to_string(corr_data.metadata[i].width)     + ", " +
                               std::to_string(corr_data.metadata[i].height)    + ", " +
                               std::to_string(corr_data.metadata[i].first_idx) + "\n" ;
+    }
 
     corr_data_file.close();
     corr_metadata_file.close();
