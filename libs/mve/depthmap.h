@@ -71,7 +71,7 @@ MVE_NAMESPACE_END
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
 
-const float dd_factor_default = 5.0f;
+const float DD_FACTOR_DEFAULT = 5.0f;
 
 /**
  * Function that calculates the pixel footprint (pixel width)
@@ -105,7 +105,7 @@ pixel_3dpos (std::size_t x, std::size_t y, float depth,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
-    float dd_factor = dd_factor_default, mve::Image<unsigned int>* vids = nullptr);
+    float dd_factor = DD_FACTOR_DEFAULT, mve::Image<unsigned int>* vids = nullptr);
 
 /**
  * A helper function that triangulates the given depth map with optional
@@ -115,7 +115,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
-    math::Matrix3f const& invproj, float dd_factor = dd_factor_default, 
+    math::Matrix3f const& invproj, float dd_factor = DD_FACTOR_DEFAULT, 
     mve::Image<unsigned int>* vertex_ids = nullptr);
 
 /**
@@ -126,7 +126,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
-    CameraInfo const& cam, float dd_factor = dd_factor_default,
+    CameraInfo const& cam, float dd_factor = DD_FACTOR_DEFAULT,
     mve::Image<unsigned int>* vertex_ids = nullptr);
 
 /**
