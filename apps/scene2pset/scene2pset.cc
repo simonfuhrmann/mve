@@ -8,6 +8,7 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <algorithm>
 #include <vector>
@@ -43,7 +44,78 @@ struct AppSettings
     float min_valid_fraction = 0.0f;
     float scale_factor = 2.5f; /* "Radius" of MVS patch (usually 5x5). */
     std::vector<int> ids;
+    bool output_correspondence = false;
 };
+
+struct CorrespondenceViewMetadata
+{
+    unsigned int view_id; 
+    unsigned int width; 
+    unsigned int height; 
+    unsigned long first_idx;
+};
+
+struct CorrespondenceData
+{
+    std::vector<math::Vec2ui> data;
+    std::vector<CorrespondenceViewMetadata> metadata;
+};
+
+void
+append_correspondence_data_from_view(const mve::Image<unsigned int>& vertex_ids, const int view_id, CorrespondenceData* corr_data)
+{   
+    const unsigned int width = vertex_ids.width();
+    CorrespondenceViewMetadata curr_view_metadata;
+    curr_view_metadata.view_id = view_id;
+    curr_view_metadata.width = width;
+    curr_view_metadata.height = vertex_ids.height();
+    curr_view_metadata.first_idx = corr_data->data.size();
+    corr_data->metadata.push_back(curr_view_metadata);
+    
+    const unsigned int pixel_amount = vertex_ids.get_pixel_amount();
+    const unsigned int filled_pixel_amount = pixel_amount - 
+        std::count(vertex_ids.get_data().begin(), vertex_ids.get_data().end(), MATH_MAX_UINT);
+    std::vector<math::Vec2ui> curr_view_data (filled_pixel_amount);
+    for (unsigned int i = 0; i < pixel_amount; ++i)
+        if (vertex_ids.at(i) != MATH_MAX_UINT)
+            curr_view_data[vertex_ids.at(i)] = math::Vec2ui(i%width,int(i/width));
+    corr_data->data.insert(corr_data->data.end(), curr_view_data.begin(), curr_view_data.end());
+}
+
+void
+save_correspondence_data(const CorrespondenceData& corr_data, const AppSettings& conf)
+{
+    std::string corr_data_fname = conf.outmesh + "_correspondence-data.csv";
+    std::string corr_metadata_fname = conf.outmesh + "_correspondence-metadata.csv";
+
+    std::ofstream corr_data_file(corr_data_fname);
+    std::ofstream corr_metadata_file(corr_metadata_fname);
+
+    if (!corr_data_file.good() || !corr_metadata_file.good())
+    {
+        std::cerr << "Error: Could not open correspondence file(s)." << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    corr_data_file << "x, y\n";
+    for (unsigned int i = 0; i < corr_data.data.size(); ++i)
+    {
+        corr_data_file << corr_data.data[i][0] << ", " <<
+            corr_data.data[i][1] << "\n" ;
+    }
+
+    corr_metadata_file << "View_ID, Width, Height, First_Vertex_Index\n";
+    for (unsigned int i = 0; i < corr_data.metadata.size(); ++i)
+    {
+        corr_metadata_file << corr_data.metadata[i].view_id << ", " <<
+            corr_data.metadata[i].width << ", " <<
+            corr_data.metadata[i].height << ", " <<
+            corr_data.metadata[i].first_idx << "\n" ;
+    }
+
+    corr_data_file.close();
+    corr_metadata_file.close();
+}
 
 void
 poisson_scale_normals (mve::TriangleMesh::ConfidenceList const& confs,
@@ -103,14 +175,16 @@ main (int argc, char** argv)
     args.add_option('f', "min-fraction", true, "Minimum fraction of valid depth values [0.0]");
     args.add_option('p', "poisson-normals", false, "Scale normals according to confidence");
     args.add_option('S', "scale-factor", true, "Factor for computing scale values [2.5]");
+    args.add_option('C', "correspondence", false, 
+        "Output correspondences (in absence of -m and -b only)");
     args.add_option('F', "fssr", true, "FSSR output, sets -nsc and -di with scale ARG");
+
     args.parse(argc, argv);
 
     /* Init default settings. */
     AppSettings conf;
     conf.scenedir = args.get_nth_nonopt(0);
     conf.outmesh = args.get_nth_nonopt(1);
-
     /* Scan arguments. */
     while (util::ArgResult const* arg = args.next_result())
     {
@@ -130,6 +204,7 @@ main (int argc, char** argv)
             case 'f': conf.min_valid_fraction = arg->get_arg<float>(); break;
             case 'p': conf.poisson_normals = true; break;
             case 'S': conf.scale_factor = arg->get_arg<float>(); break;
+            case 'C': conf.output_correspondence = true; break;
             case 'F':
             {
                 conf.with_conf = true;
@@ -182,6 +257,10 @@ main (int argc, char** argv)
 
     /* Iterate over views and get points. */
     mve::Scene::ViewList& views(scene->get_views());
+
+    /* Prepare correspondence data */
+    CorrespondenceData corr_data;
+
 #pragma omp parallel for schedule(dynamic)
     for (std::size_t i = 0; i < views.size(); ++i)
     {
@@ -230,7 +309,10 @@ main (int argc, char** argv)
 
         /* Triangulate depth map. */
         mve::TriangleMesh::Ptr mesh;
-        mesh = mve::geom::depthmap_triangulate(dm, ci, cam);
+
+        mve::Image<unsigned int> vertex_ids;
+        mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::DD_FACTOR_DEFAULT, &vertex_ids); 
+
         mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
         mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
         mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
@@ -289,6 +371,8 @@ main (int argc, char** argv)
                     vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
                 if (conf.with_conf)
                     vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
+                if (conf.output_correspondence && conf.mask.empty())
+                    append_correspondence_data_from_view(vertex_ids, view->get_id(), &corr_data);
             }
         }
         else
@@ -394,6 +478,8 @@ main (int argc, char** argv)
     {
         mve::geom::save_mesh(pset, conf.outmesh);
     }
+    if (conf.output_correspondence && conf.aabb.empty() && conf.mask.empty())
+        save_correspondence_data(corr_data, conf);
 
     return EXIT_SUCCESS;
 }
