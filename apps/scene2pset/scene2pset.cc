@@ -100,17 +100,17 @@ save_correspondence_data(const CorrespondenceData& corr_data, const AppSettings&
     corr_data_file << "x, y\n";
     for (unsigned int i = 0; i < corr_data.data.size(); ++i)
     {
-        corr_data_file << std::to_string(corr_data.data[i][0]) << ", " <<
-            std::to_string(corr_data.data[i][1]) << "\n" ;
+        corr_data_file << corr_data.data[i][0] << ", " <<
+            corr_data.data[i][1] << "\n" ;
     }
 
     corr_metadata_file << "View_ID, Width, Height, First_Vertex_Index\n";
     for (unsigned int i = 0; i < corr_data.metadata.size(); ++i)
     {
-        corr_metadata_file << std::to_string(corr_data.metadata[i].view_id) << ", " <<
-            std::to_string(corr_data.metadata[i].width) << ", " <<
-            std::to_string(corr_data.metadata[i].height) << ", " <<
-            std::to_string(corr_data.metadata[i].first_idx) << "\n" ;
+        corr_metadata_file << corr_data.metadata[i].view_id << ", " <<
+            corr_data.metadata[i].width << ", " <<
+            corr_data.metadata[i].height << ", " <<
+            corr_data.metadata[i].first_idx << "\n" ;
     }
 
     corr_data_file.close();
