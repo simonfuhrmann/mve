@@ -582,8 +582,8 @@ save_jpg_file (ByteImage::ConstPtr image, std::string const& filename, int quali
     if (!fp)
         throw util::FileException(filename, std::strerror(errno));
 
-    struct jpeg_compress_struct cinfo;
-    struct jpeg_error_mgr jerr;
+    jpeg_compress_struct cinfo;
+    jpeg_error_mgr jerr;
 
     /* Setup error handler and info object. */
     cinfo.err = jpeg_std_error(&jerr);
@@ -594,17 +594,7 @@ save_jpg_file (ByteImage::ConstPtr image, std::string const& filename, int quali
     cinfo.image_width = image->width();
     cinfo.image_height = image->height();
     cinfo.input_components = image->channels();
-    switch (image->channels())
-    {
-        case 1: cinfo.in_color_space = JCS_GRAYSCALE; break;
-        case 3: cinfo.in_color_space = JCS_RGB; break;
-        default:
-        {
-            jpeg_destroy_compress(&cinfo);
-            std::fclose(fp);
-            throw util::Exception("Invalid image color space");
-        }
-    }
+    cinfo.in_color_space = (image->channels() == 1 ? JCS_GRAYSCALE : JCS_RGB);
 
     /* Set default compression parameters. */
     jpeg_set_defaults(&cinfo);
