@@ -555,6 +555,8 @@ Directory::scan (std::string const& path)
 #ifdef _WIN32
     WIN32_FIND_DATA data;
     HANDLE hf = FindFirstFile((path + "/*").c_str(), &data);
+    if (hf == INVALID_HANDLE_VALUE)
+        throw Exception("Cannot open directory");
 
     do
     {
