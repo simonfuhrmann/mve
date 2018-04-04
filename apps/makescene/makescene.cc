@@ -767,6 +767,9 @@ import_bundle (AppSettings const& conf)
         import_bundle_noah_ps(conf);
         return;
     }
+
+    std::cerr << "Error: No bundle found." << std::endl;
+    std::exit(EXIT_FAILURE);
 }
 
 /* ---------------------------------------------------------------- */
