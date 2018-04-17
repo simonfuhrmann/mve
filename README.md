@@ -6,7 +6,7 @@ views. It features Structure from Motion, Multi-View Stereo and Surface
 Reconstruction. MVE is developed at the TU Darmstadt. Visit the following
 website for more details.
 
- * http://www.gcc.tu-darmstadt.de/home/proj/mve/
+ * https://www.gcc.tu-darmstadt.de/home/proj/mve/
 
 This README covers compilation and basic information about the
 pipeline. For documentation, please refer to the Wiki pages on GitHub.
