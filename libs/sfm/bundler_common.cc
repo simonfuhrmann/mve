@@ -281,27 +281,32 @@ namespace {
     double solve_undistorted_squared_radius (double const r2,
         double const k1, double const k2)
     {
+        // Guess initial interval upper and lower bound
+        double lbound = r2, ubound = r2;
+        while (distort_squared_radius(lbound, k1, k2) > r2) {
+            ubound = lbound;
+            lbound /= 1.05;
+        }
+        while (distort_squared_radius(ubound, k1, k2) < r2) {
+            lbound = ubound;
+            ubound *= 1.05;
+        }
+
         // We use bisection as we can easily find a pretty good initial guess,
         // and we don't want to compute all roots for a 5th degree polynomial.
 
-        // Guess initial interval upper and lower bound
-        double lbound = r2, ubound = r2;
-        while (distort_squared_radius(lbound, k1, k2) > r2)
-            lbound /= 1.05;
-        while (distort_squared_radius(ubound, k1, k2) < r2)
-            ubound *= 1.05;
-
         // Perform a bisection until epsilon accuracy is reached
-        while (std::numeric_limits<double>::epsilon() < ubound - lbound)
+        double mid = 0.5 * (lbound + ubound);
+        while (mid != lbound && mid != ubound)
         {
-            double const mid = 0.5 * (lbound + ubound);
             if (distort_squared_radius(mid, k1, k2) > r2)
                 ubound = mid;
             else
                 lbound = mid;
+            mid = 0.5 * (lbound + ubound);
         }
         // Return center of interval
-        return 0.5 * (lbound + ubound);
+        return mid;
     }
 }
 
