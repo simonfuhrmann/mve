@@ -283,11 +283,13 @@ namespace {
     {
         // Guess initial interval upper and lower bound
         double lbound = r2, ubound = r2;
-        while (distort_squared_radius(lbound, k1, k2) > r2) {
+        while (distort_squared_radius(lbound, k1, k2) > r2)
+        {
             ubound = lbound;
             lbound /= 1.05;
         }
-        while (distort_squared_radius(ubound, k1, k2) < r2) {
+        while (distort_squared_radius(ubound, k1, k2) < r2)
+        {
             lbound = ubound;
             ubound *= 1.05;
         }
