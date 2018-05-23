@@ -15,6 +15,7 @@ struct Camera
 
     double focal_length = 0.0;
     double distortion[2];
+    double principal_point[2];
     double translation[3];
     double rotation[9];
     bool is_constant = false;
@@ -41,6 +42,7 @@ inline
 Camera::Camera (void)
 {
     std::fill(this->distortion, this->distortion + 2, 0.0);
+    std::fill(this->principal_point, this->principal_point + 2, 0.0);
     std::fill(this->translation, this->translation + 3, 0.0);
     std::fill(this->rotation, this->rotation + 9, 0.0);
 }
