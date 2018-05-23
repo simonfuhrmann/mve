@@ -46,6 +46,10 @@ public:
     void set_k_matrix (double flen, double px, double py);
     /** Returns the focal length as average of x and y focal length. */
     double get_focal_length (void) const;
+    /** Returns the principal point (x factor). */
+    double get_px (void) const;
+    /** Returns the principal point (y factor). */
+    double get_py (void) const;
     /** Returns the camera position (requires valid camera). */
     void fill_camera_pos (math::Vector<double, 3>* camera_pos) const;
     /** Returns true if K matrix is valid (non-zero focal length). */
@@ -95,6 +99,18 @@ inline double
 CameraPose::get_focal_length (void) const
 {
     return (this->K[0] + this->K[4]) / 2.0;
+}
+
+inline double
+CameraPose::get_px (void) const
+{
+    return this->K[2];
+}
+
+inline double
+CameraPose::get_py (void) const
+{
+    return this->K[5];
 }
 
 inline void
