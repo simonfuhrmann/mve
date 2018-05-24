@@ -105,7 +105,8 @@ pixel_3dpos (std::size_t x, std::size_t y, float depth,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
-    float dd_factor = DD_FACTOR_DEFAULT, mve::Image<unsigned int>* vids = nullptr);
+    float dd_factor = DD_FACTOR_DEFAULT,
+    mve::Image<unsigned int>* vids = nullptr);
 
 /**
  * A helper function that triangulates the given depth map with optional
