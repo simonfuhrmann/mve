@@ -1,0 +1,24 @@
+# compiled objects
+*.o
+
+# compiled archives
+*.a
+
+# generated makefiles
+*.dep
+
+# apps
+apps/bundle2pset/bundle2pset
+apps/dmrecon/dmrecon
+apps/featurerecon/featurerecon
+apps/fssrecon/fssrecon
+apps/makescene/makescene
+apps/mesh2pset/mesh2pset
+apps/meshalign/meshalign
+apps/meshclean/meshclean
+apps/meshconvert/meshconvert
+apps/prebundle/prebundle
+apps/scene2pset/scene2pset
+apps/sceneupgrade/sceneupgrade
+apps/sfmrecon/sfmrecon
+apps/umve/umve
