@@ -122,7 +122,9 @@ Incremental::reconstruct_next_view (int view_id)
 
     /* Initialize a temporary camera. */
     CameraPose temp_camera;
-    temp_camera.set_k_matrix(viewport.focal_length, 0.0, 0.0);
+    temp_camera.set_k_matrix(viewport.focal_length,
+        viewport.principal_point[0] - 0.5f,
+        viewport.principal_point[1] - 0.5f);
 
     /* Compute pose from 2D-3D correspondences using P3P. */
     util::WallTimer timer;
@@ -209,6 +211,8 @@ Incremental::try_restore_tracks_for_views (void)
                 || viewport.track_ids[feature_id] >= 0)
                 continue;
             math::Vec3f const& pos3d = this->tracks->at(track_id).pos;
+            // TODO: implement viewport principal point
+            // viewport.pose.get_px() / viewport.pose.get_py()
             math::Vec2f const& pos2d = undistort_feature(
                 features.positions[feature_id],
                 static_cast<double>(viewport.radial_distortion[0]),
@@ -330,6 +334,8 @@ Incremental::triangulate_new_tracks (int min_num_views)
                 continue;
             Viewport const& viewport = this->viewports->at(view_id);
             int const feature_id = track.features[j].feature_id;
+            // TODO: implement viewport principal point
+            // viewport.pose.get_px() / viewport.pose.get_py()
             pos.push_back(undistort_feature(
                 viewport.features.positions[feature_id],
                 static_cast<double>(viewport.radial_distortion[0]),
@@ -446,6 +452,8 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         std::copy(pose.R.begin(), pose.R.end(), cam.rotation);
         std::copy(view.radial_distortion,
             view.radial_distortion + 2, cam.distortion);
+        cam.principal_point[0] = view.principal_point[0];
+        cam.principal_point[1] = view.principal_point[1];
         ba_cameras_mapping[i] = ba_cameras.size();
         ba_cameras.push_back(cam);
     }
@@ -550,7 +558,8 @@ Incremental::bundle_adjustment_intern (int single_camera_ba)
         std::copy(cam.translation, cam.translation + 3, pose.t.begin());
         std::copy(cam.rotation, cam.rotation + 9, pose.R.begin());
         std::copy(cam.distortion, cam.distortion + 2, view.radial_distortion);
-        pose.set_k_matrix(cam.focal_length, 0.0, 0.0);
+        pose.set_k_matrix(cam.focal_length,
+            cam.principal_point[0] - 0.5f, cam.principal_point[1] - 0.5f);
         ba_cam_counter += 1;
     }
 
@@ -605,6 +614,8 @@ Incremental::invalidate_large_error_tracks (void)
             math::Vec2f const& pos2d = viewport.features.positions[feature_id];
 
             /* Project 3D feature and compute reprojection error. */
+            // TODO: implement principal point
+            // pose.get_px() / pose.get_py()
             math::Vec3d x = pose.R * pos3d + pose.t;
             math::Vec2d x2d(x[0] / x[2], x[1] / x[2]);
             double r2 = x2d.square_norm();

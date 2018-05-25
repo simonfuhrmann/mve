@@ -256,9 +256,11 @@ InitialPair::compute_pose (CandidatePair const& candidate,
     /* Populate K-matrices. */
     Viewport const& view_1 = this->viewports->at(candidate.view_1_id);
     Viewport const& view_2 = this->viewports->at(candidate.view_2_id);
-    pose1->set_k_matrix(view_1.focal_length, 0.0, 0.0);
+    pose1->set_k_matrix(view_1.focal_length,
+        view_1.principal_point[0] - 0.5f, view_1.principal_point[1] - 0.5f);
     pose1->init_canonical_form();
-    pose2->set_k_matrix(view_2.focal_length, 0.0, 0.0);
+    pose2->set_k_matrix(view_2.focal_length,
+        view_2.principal_point[0] - 0.5f, view_2.principal_point[1] - 0.5f);
 
     /* Compute essential matrix from fundamental matrix (HZ (9.12)). */
     EssentialMatrix E = pose2->K.transposed() * fundamental * pose1->K;

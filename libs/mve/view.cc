@@ -139,6 +139,8 @@ View::load_view_from_mve_file  (std::string const& filename)
             && tokens.size() >= 2 && tokens.size() <= 7)
         {
             this->set_value("camera.focal_length", tokens[1]);
+            if (tokens.size() > 2)
+                this->set_value("camera.radial_distortion", tokens.concat(2, 2));
             if (tokens.size() > 4)
                 this->set_value("camera.pixel_aspect", tokens[4]);
             if (tokens.size() > 6)
@@ -382,6 +384,9 @@ View::set_camera (CameraInfo const& camera)
     /* Re-generate the "camera" section. */
     this->set_value("camera.focal_length",
         util::string::get_digits(camera.flen, 10));
+    this->set_value("camera.radial_distortion",
+        util::string::get_digits(camera.dist[0], 10) + " "
+        + util::string::get_digits(camera.dist[1], 10));
     this->set_value("camera.pixel_aspect",
         util::string::get_digits(camera.paspect, 10));
     this->set_value("camera.principal_point",
@@ -592,6 +597,7 @@ View::load_meta_data (std::string const& path)
 
     /* Get camera data from key/value pairs. */
     std::string cam_fl = this->get_value("camera.focal_length");
+    std::string cam_dist = this->get_value("camera.radial_distortion");
     std::string cam_pa = this->get_value("camera.pixel_aspect");
     std::string cam_pp = this->get_value("camera.principal_point");
     std::string cam_rot = this->get_value("camera.rotation");
@@ -600,6 +606,12 @@ View::load_meta_data (std::string const& path)
     this->meta_data.camera = CameraInfo();
     if (!cam_fl.empty())
         this->meta_data.camera.flen = util::string::convert<float>(cam_fl);
+    if (!cam_dist.empty())
+    {
+        std::stringstream ss(cam_dist);
+        ss >> this->meta_data.camera.dist[0];
+        ss >> this->meta_data.camera.dist[1];
+    }
     if (!cam_pa.empty())
         this->meta_data.camera.paspect = util::string::convert<float>(cam_pa);
     if (!cam_pp.empty())
@@ -692,7 +704,7 @@ View::populate_images_and_blobs (std::string const& path)
             proxy.name = name;
             this->blobs.push_back(proxy);
         }
-        else
+        else if (ext4 != ".ply") // silently ignore ply files
         {
             std::cerr << "View: Unrecognized extension "
                 << file.name << ", skipping." << std::endl;
