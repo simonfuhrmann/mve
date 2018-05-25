@@ -960,7 +960,7 @@ main (int argc, char** argv)
         "specified, images are added to an existing scene.\n\n"
 
         "Initial camera intrinsics can be set in \"images-only\" mode: "
-        " normalized focal length (f), radial distortion coefficients (k1,k2), "
+        "normalized focal length (f), radial distortion coefficients (k1,k2), "
         "normalized principal point (ppx,ppy) and pixel aspect ratio (pa).");
     args.add_option('o', "original", false, "Import original images");
     args.add_option('b', "bundle-id", true, "Bundle ID (Photosynther and Bundler only) [0]");
