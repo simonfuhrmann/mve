@@ -70,6 +70,7 @@ struct AppSettings
     bool images_only = false;
     bool append_images = false;
     int max_pixels = std::numeric_limits<int>::max();
+    std::string init_intrinsics;
 
     /* Computed values. */
     std::string bundle_path;
@@ -890,6 +891,31 @@ import_images (AppSettings const& conf)
         /* Add EXIF data to view if available. */
         add_exif_to_view(view, exif);
 
+        /* Set initial intrinsics */
+        if (!conf.init_intrinsics.empty())
+        {
+            util::Tokenizer tokenizer;
+            mve::CameraInfo camera;
+
+            tokenizer.split(conf.init_intrinsics, ',');
+
+            if (tokenizer.size() > 0)
+                camera.flen = tokenizer.get_as<float>(0);
+            if (tokenizer.size() >= 3)
+            {
+                camera.dist[0] = tokenizer.get_as<float>(1);
+                camera.dist[1] = tokenizer.get_as<float>(2);
+            }
+            if (tokenizer.size() >= 5)
+            {
+                camera.ppoint[0] = tokenizer.get_as<float>(3);
+                camera.ppoint[1] = tokenizer.get_as<float>(4);
+            }
+            if (tokenizer.size() >= 6)
+                camera.paspect = tokenizer.get_as<float>(5);
+            view->set_camera(camera);
+        }
+
         /* Save view to disc. */
         std::string mve_fname = make_image_name(id);
 #pragma omp critical
@@ -935,13 +961,18 @@ main (int argc, char** argv)
 
         "With the \"images-only\" option, all images in the INPUT directory "
         "are imported without camera information. If \"append-images\" is "
-        "specified, images are added to an existing scene.");
+        "specified, images are added to an existing scene.\n\n"
+
+        "Initial camera intrinsics can be set in \"images-only\" mode: "
+        "normalized focal length (f), radial distortion coefficients (k1,k2), "
+        "normalized principal point (ppx,ppy) and pixel aspect ratio (pa).");
     args.add_option('o', "original", false, "Import original images");
     args.add_option('b', "bundle-id", true, "Bundle ID (Photosynther and Bundler only) [0]");
     args.add_option('k', "keep-invalid", false, "Keeps images with invalid cameras");
     args.add_option('i', "images-only", false, "Imports images from INPUT_DIR only");
     args.add_option('a', "append-images", false, "Appends images to an existing scene");
     args.add_option('m', "max-pixels", true, "Limit image size by iterative half-sizing");
+    args.add_option('c', "init-intrinsics", true, "Initial camera intrinsics (f,k1,k2,ppx,ppy,pa)");
     args.parse(argc, argv);
 
     /* Setup defaults. */
@@ -965,6 +996,8 @@ main (int argc, char** argv)
             conf.append_images = true;
         else if (i->opt->lopt == "max-pixels")
             conf.max_pixels = i->get_arg<int>();
+        else if (i->opt->lopt == "init-intrinsics")
+            conf.init_intrinsics = i->get_arg<std::string>();
         else
             throw std::invalid_argument("Unexpected option");
     }
