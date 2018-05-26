@@ -899,9 +899,13 @@ import_images (AppSettings const& conf)
 
             tokenizer.split(conf.init_intrinsics, ',');
 
-            camera.flen = tokenizer.get_as<float>(0);
-            camera.dist[0] = tokenizer.get_as<float>(1);
-            camera.dist[1] = tokenizer.get_as<float>(2);
+            if (tokenizer.size() > 0)
+                camera.flen = tokenizer.get_as<float>(0);
+            if (tokenizer.size() >= 3)
+            {
+                camera.dist[0] = tokenizer.get_as<float>(1);
+                camera.dist[1] = tokenizer.get_as<float>(2);
+            }
             if (tokenizer.size() >= 5)
             {
                 camera.ppoint[0] = tokenizer.get_as<float>(3);
