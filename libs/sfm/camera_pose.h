@@ -28,6 +28,9 @@ SFM_NAMESPACE_BEGIN
  *   K = | 0  f  py |    and the principal point px and py.
  *       | 0  0   1 |
  *
+ * As the feature coordinates are normalized before pose estimation, the
+ * principal point (px, py) is set to 0.0.
+ *
  * For pose estimation, the calibration matrix is assumed to be known. This
  * might not be the case, but even a good guess of the focal length and the
  * principal point set to the image center can produce reasonably good

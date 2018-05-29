@@ -67,7 +67,8 @@ Features::compute (mve::Scene::Ptr scene, ViewportList* viewports)
         Viewport* viewport = &viewports->at(i);
         viewport->features.set_options(this->opts.feature_options);
         viewport->features.compute_features(image);
-        viewport->features.normalize_feature_positions();
+        viewport->features.normalize_feature_positions(
+            viewport->principal_point[0], viewport->principal_point[1]);
 
 #pragma omp critical
         {

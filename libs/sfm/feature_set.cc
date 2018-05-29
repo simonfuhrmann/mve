@@ -40,7 +40,7 @@ FeatureSet::compute_features (mve::ByteImage::Ptr image)
 }
 
 void
-FeatureSet::normalize_feature_positions (void)
+FeatureSet::normalize_feature_positions (float px, float py)
 {
     /* Normalize image coordinates. */
     float const fwidth = static_cast<float>(this->width);
@@ -49,8 +49,8 @@ FeatureSet::normalize_feature_positions (void)
     for (std::size_t i = 0; i < this->positions.size(); ++i)
     {
         math::Vec2f& pos = this->positions[i];
-        pos[0] = (pos[0] + 0.5f - fwidth / 2.0f) / fnorm;
-        pos[1] = (pos[1] + 0.5f - fheight / 2.0f) / fnorm;
+        pos[0] = (pos[0] + 0.5f - fwidth * px) / fnorm;
+        pos[1] = (pos[1] + 0.5f - fheight * py) / fnorm;
     }
 }
 
