@@ -42,6 +42,8 @@ struct Viewport
     float focal_length;
     /** Radial distortion parameter. */
     float radial_distortion[2];
+    /** Principal point parameter. */
+    float principal_point[2];
 
     /** Camera pose for the viewport. */
     CameraPose pose;
@@ -201,6 +203,7 @@ Viewport::Viewport (void)
     : focal_length(0.0f)
 {
     std::fill(this->radial_distortion, this->radial_distortion + 2, 0.0f);
+    std::fill(this->principal_point, this->principal_point + 2, 0.5f);
 }
 
 inline bool

@@ -115,21 +115,12 @@ Intrinsics::init_from_views (mve::View::Ptr view, Viewport* viewport)
         return;
     }
 
-    /*
-     * The current implementation sets the focal length from the view
-     * but uses defaults for radial distortion and principle point.
-     *
-     * TODO: Also use pre-defined radial distortion and principal point.
-     *
-     * RD: To support radial distortion, read "camera.radial_distortion"
-     *     from the view and set it here. It must be in PBA format.
-     * PP: To support principle point, use CameraInfo::ppoint and set it in
-     *     the viewport. Note that a new field is required for this, and it
-     *     needs to be processed elsewhere.
-     */
+    /* Sets the focal length, radial distortion and principal point from the view. */
     viewport->focal_length = camera.flen;
-    viewport->radial_distortion[0] = 0.0f;
-    viewport->radial_distortion[1] = 0.0f;
+    viewport->radial_distortion[0] = camera.dist[0];
+    viewport->radial_distortion[1] = camera.dist[1];
+    viewport->principal_point[0] = camera.ppoint[0];
+    viewport->principal_point[1] = camera.ppoint[1];
 }
 
 void
