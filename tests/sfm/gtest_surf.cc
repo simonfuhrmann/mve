@@ -236,6 +236,7 @@ TEST_F(SurfTest, TestDescriptorUpright)
     this->set_image(create_gradient_xy_image(50, true));
     this->descriptor_computation(&descr, false);
     for (int i = 0; i < 64; ++i)
+    {
         if (i % 4 == 0)
             EXPECT_LT(descr.data[i], -1e-5f);  // sum dx
         else if (i % 4 == 1)
@@ -243,11 +244,15 @@ TEST_F(SurfTest, TestDescriptorUpright)
         else if (i % 4 == 2)
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dx|
         else if (i % 4 == 2)
+        {
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dy|
+        }
+    }
 
     this->set_image(create_gradient_xy_image(50, true));
     this->descriptor_computation(&descr, true);
     for (int i = 0; i < 64; ++i)
+    {
         if (i % 4 == 0)
             EXPECT_LT(descr.data[i], -1e-5f);  // sum dx
         else if (i % 4 == 1)
@@ -255,7 +260,10 @@ TEST_F(SurfTest, TestDescriptorUpright)
         else if (i % 4 == 2)
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dx|
         else if (i % 4 == 2)
+        {
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dy|
+        }
+    }
 }
 
 TEST_F(SurfTest, TestDescriptorComputation)
@@ -279,14 +287,17 @@ TEST_F(SurfTest, TestDescriptorComputation)
     this->set_image(create_gradient_x_image(50, false));
     this->descriptor_computation(&descr, true);
     for (int i = 0; i < 64; ++i)
+    {
         if (i % 2 == 0)
             EXPECT_GT(descr.data[i], 1e-5f);
         else
             EXPECT_NEAR(0.0f, descr.data[i], 1e-5f);
+    }
 
     this->set_image(create_gradient_y_image(50, true));
     this->descriptor_computation(&descr, true);
     for (int i = 0; i < 64; ++i)
+    {
         if (i % 4 == 0)
             EXPECT_NEAR(0.0f, descr.data[i], 1e-5f);  // sum dx
         else if (i % 4 == 1)
@@ -294,11 +305,15 @@ TEST_F(SurfTest, TestDescriptorComputation)
         else if (i % 4 == 2)
             EXPECT_NEAR(0.0f, descr.data[i], 1e-5f); // sum |dx|
         else if (i % 4 == 2)
+        {
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dy|
+        }
+    }
 
     this->set_image(create_gradient_xy_image(50, true));
     this->descriptor_computation(&descr, true);
     for (int i = 0; i < 64; ++i)
+    {
         if (i % 4 == 0)
             EXPECT_LT(descr.data[i], -1e-5f);  // sum dx
         else if (i % 4 == 1)
@@ -306,7 +321,10 @@ TEST_F(SurfTest, TestDescriptorComputation)
         else if (i % 4 == 2)
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dx|
         else if (i % 4 == 2)
+        {
             EXPECT_GT(descr.data[i], 1e-5f); // sum |dy|
+        }
+    }
 }
 
 TEST_F(SurfTest, TestRotationInvariance)
@@ -322,8 +340,10 @@ TEST_F(SurfTest, TestRotationInvariance)
     this->descriptor_computation(&descr, false);
 
     for (int i = 0; i < 64; ++i)
+    {
         if (i % 2 == 0)
             EXPECT_GT(descr.data[i], 1e-5f);
         else
             EXPECT_NEAR(0.0f, descr.data[i], 1e-5f);
+    }
 }

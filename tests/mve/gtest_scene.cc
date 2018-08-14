@@ -520,18 +520,18 @@ views_match (mve::Scene::ViewList const& lhs, mve::Scene::ViewList const& rhs)
 bool
 bundle_cameras_match (mve::Bundle::Ptr lhs, mve::Bundle::ConstPtr rhs)
 {
-    auto constexpr is_invallid = [](mve::CameraInfo const& camera) -> bool
+    auto is_invalid = [](mve::CameraInfo const& camera) -> bool
     {
         return camera.flen == 0.0f;
     };
 
-    auto constexpr match = [](float l, float r) -> bool
+    auto match = [](float l, float r) -> bool
     {
         constexpr float epsilon = 1e-3f;
         return (r == 0.0f) ? l < epsilon : (std::abs((l / r) - 1.0f) < epsilon);
     };
 
-    auto const match_n =
+    auto match_n =
         [&match](float const l[], float const r[], std::size_t count) -> bool
     {
         for (std::size_t i = 0; i < count; ++i)
@@ -549,8 +549,8 @@ bundle_cameras_match (mve::Bundle::Ptr lhs, mve::Bundle::ConstPtr rhs)
         mve::CameraInfo const& left_cam = lhs->get_cameras()[i];
         mve::CameraInfo const& right_cam = rhs->get_cameras()[i];
 
-        if (is_invallid(left_cam))
-            return is_invallid(right_cam);
+        if (is_invalid(left_cam))
+            return is_invalid(right_cam);
 
         if (!match(left_cam.flen, right_cam.flen)
             || !match_n(left_cam.dist, right_cam.dist, 2)
@@ -564,20 +564,15 @@ bundle_cameras_match (mve::Bundle::Ptr lhs, mve::Bundle::ConstPtr rhs)
 
 OnScopeExit::~OnScopeExit (void)
 {
-    bool exception_happened = false;
     for (std::string const& path : this->paths)
     {
-        try
+        try { this->unlink_recursive(path); }
+        catch (...)
         {
-            this->unlink_recursive(path);
-        } catch (...)
-        {
-            exception_happened = true;
             std::cout <<  "Exception during cleanup!" << std::endl;
+            std::exit(1);
         }
     }
-    if (exception_happened)
-        throw std::runtime_error("Exception during file cleanup.");
 }
 
 void
