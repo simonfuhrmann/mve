@@ -54,3 +54,11 @@ TEST(VectorTest, MiscOperations)
     EXPECT_EQ(Vec3f(3.0f, 2.0f, 1.0f).sort_desc(), Vec3f(3.0f, 2.0f, 1.0f));
     EXPECT_EQ(Vec3f(1.0f, 3.0f, 2.0f).sort_desc(), Vec3f(3.0f, 2.0f, 1.0f));
 }
+
+TEST(VectorTest, IsNan)
+{
+    using namespace math;
+    EXPECT_FALSE(math::isnan(Vec3f(1.0f, 2.0f, 3.0f)));
+    EXPECT_TRUE(math::isnan(Vec3f(1.0f, 2.0f, 0.0f / 0.0f)));
+    EXPECT_TRUE(math::isnan(Vec3f(0.0f / 0.0f, 2.0f, 3.0f)));
+}

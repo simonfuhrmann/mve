@@ -798,6 +798,15 @@ operator- (T const& s, Vector<T,N> const& v)
     return -v + s;
 }
 
+/** Tests if any of the vector values is NaN. */
+template <typename T, int N>
+inline bool
+isnan (Vector<T,N> const& v)
+{
+    return std::any_of(v.begin(), v.end(),
+        [](T const& value) { return std::isnan(value); });
+}
+
 MATH_NAMESPACE_END
 
 /* --------------------- Ouput stream adapter --------------------- */
