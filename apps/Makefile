@@ -11,6 +11,7 @@ all:
 	$(MAKE) -C meshalign
 	$(MAKE) -C meshclean
 	$(MAKE) -C sceneupgrade
+	$(MAKE) -C prebundle
 
 clean:
 	$(MAKE) -C bundle2pset $@
@@ -25,6 +26,7 @@ clean:
 	$(MAKE) -C meshalign $@
 	$(MAKE) -C meshclean $@
 	$(MAKE) -C sceneupgrade $@
+	$(MAKE) -C prebundle $@
 
 BINDIR ?= $(HOME)/bin/
 APPDIR := $(shell pwd)
@@ -42,6 +44,7 @@ links:
 	ln -si $(APPDIR)/meshalign/meshalign $(BINDIR)
 	ln -si $(APPDIR)/meshclean/meshclean $(BINDIR)
 	ln -si $(APPDIR)/sceneupgrade/sceneupgrade $(BINDIR)
+	ln -si $(APPDIR)/prebundle/prebundle $(BINDIR)
 	ln -si $(APPDIR)/umve/umve $(BINDIR)
 
 .PHONY: all clean links
