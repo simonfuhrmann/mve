@@ -8,14 +8,14 @@ branches:
      - master
 
 before_install:
-   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
+   - if [ "$CXX" = "g++" ]; then export CXX="g++-6"; fi
 
 addons:
    apt:
      sources:
        - ubuntu-toolchain-r-test
      packages:
-       - g++-4.8
+       - g++-6
 
 before_script:
    - wget https://github.com/google/googletest/archive/master.zip -O /tmp/gtest.zip
