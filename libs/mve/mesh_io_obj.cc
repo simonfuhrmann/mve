@@ -265,7 +265,7 @@ load_obj_mesh (std::string const& filename,
 
                 ObjVertex v;
                 v.vertex_id = util::string::convert<unsigned int>(tok[0]);
-                if (tok.size() > 2 && !tok[1].empty())
+                if (tok.size() >= 2 && !tok[1].empty())
                     v.texcoord_id = util::string::convert<unsigned int>(tok[1]);
                 if (tok.size() == 3 && !tok[2].empty())
                     v.normal_id = util::string::convert<unsigned int>(tok[2]);

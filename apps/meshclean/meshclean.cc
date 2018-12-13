@@ -72,7 +72,7 @@ main (int argc, char** argv)
     args.set_helptext_indent(25);
     args.set_usage(argv[0], "[ OPTS ] IN_MESH OUT_MESH");
     args.add_option('t', "threshold", true, "Threshold on the geometry confidence [1.0]");
-    args.add_option('p', "percentile", true, "Use the nth percentile (0 - 100) as confidence threshold [disabled]");
+    args.add_option('p', "percentile", true, "Use percentile [0-100] as confidence threshold [off]");
     args.add_option('c', "component-size", true, "Minimum number of vertices per component [1000]");
     args.add_option('n', "no-clean", false, "Prevents cleanup of degenerated faces");
     args.add_option('\0', "delete-scale", false, "Delete scale attribute from mesh");
