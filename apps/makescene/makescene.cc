@@ -24,6 +24,7 @@
 #include <string>
 #include <algorithm>
 #include <atomic>
+#include <unordered_map>
 
 #include "math/matrix.h"
 #include "math/matrix_tools.h"
@@ -535,9 +536,36 @@ import_bundle_noah_ps (AppSettings const& conf)
         util::fs::join_path(conf.output_path, "synth_0.out"));
 
     /* Save MVE views. */
-    int num_valid_cams = 0;
-    int undist_imported = 0;
+    std::atomic<int> num_valid_cams(0);
+    std::atomic<int> undist_imported(0);
     mve::Bundle::Cameras const& cams = bundle->get_cameras();
+
+    /* We precompute the IDs of the photo synth cameras
+     * in advance since they are sequential and the process
+     * loop is parallel */
+    std::unordered_map<size_t, int> photo_synth_cam_ids;
+
+    if (bundler_fmt == BUNDLE_FORMAT_PHOTOSYNTHER)
+    {
+        for (std::size_t i = 0; i < cams.size(); ++i)
+        {
+            /* Skip invalid cameras... */
+            mve::CameraInfo cam = cams[i];
+            if (cam.flen == 0.0f && conf.skip_invalid)
+            {
+                continue;
+            }
+
+            photo_synth_cam_ids[i] = num_valid_cams;
+
+            if (cam.flen != 0.0f)
+                num_valid_cams += 1;
+        }
+    }
+
+    num_valid_cams = 0;
+
+    #pragma omp parallel for
     for (std::size_t i = 0; i < cams.size(); ++i)
     {
         /*
@@ -645,11 +673,11 @@ import_bundle_noah_ps (AppSettings const& conf)
             std::string undist_new_filename
                 = util::fs::join_path(undist_path, "forStereo_"
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(num_valid_cams, 4) + ".png");
+                + util::string::get_filled(photo_synth_cam_ids[i], 4) + ".png");
             std::string undist_old_filename
                 = util::fs::join_path(undist_path, "undistorted_"
                 + util::string::get_filled(conf.bundle_id, 4) + "_"
-                + util::string::get_filled(num_valid_cams, 4) + ".jpg");
+                + util::string::get_filled(photo_synth_cam_ids[i], 4) + ".jpg");
 
             /* Try the newer file name and fall back if not existing. */
             try
