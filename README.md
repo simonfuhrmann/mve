@@ -1,4 +1,4 @@
-# Introduction
+# Introduction ![Build Status](https://travis-ci.org/simonfuhrmann/mve.svg?branch=master)
 
 The Multi-View Environment is an effort to ease the work with multi-view
 datasets and to support the development of algorithms based on multiple
