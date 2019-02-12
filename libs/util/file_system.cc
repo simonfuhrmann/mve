@@ -334,7 +334,7 @@ get_binary_path (void)
         ::strncpy(path, real, PATH_MAX);
     }
 
-#elif defined(__linux)
+#elif defined(__linux) || defined(__CYGWIN__)
 
     ssize_t n_chars = ::readlink("/proc/self/exe", path, PATH_MAX);
 
