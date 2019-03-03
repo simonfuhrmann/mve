@@ -106,9 +106,8 @@ read_noah_imagelist (std::string const& filename, StringVector& files)
 
     while (true)
     {
-        std::string file, dummy;
-        in >> file;
-        std::getline(in, dummy);
+        std::string file;
+        std::getline(in, file);
         if (file.empty())
             break;
         files.push_back(file);
