@@ -633,8 +633,6 @@ import_bundle_noah_ps (AppSettings const& conf)
         view->set_name(view_name);
         view->set_camera(cam);
 
-        /* FIXME: Handle exceptions while loading images? */
-
         /* Load undistorted and original image, create thumbnail. */
         mve::ByteImage::Ptr original, undist, thumb;
         std::string exif;
@@ -646,8 +644,8 @@ import_bundle_noah_ps (AppSettings const& conf)
             original = load_8bit_image(orig_fname, &exif);
             if (original == nullptr)
             {
-                std::cerr << "Error loading: " << orig_fname << std::endl;
-                std::exit(EXIT_FAILURE);
+                std::cerr << "Error loading: " << orig_fname << " (skipping)" << std::endl;
+                continue;
             }
             thumb = create_thumbnail(original);
 
@@ -688,13 +686,13 @@ import_bundle_noah_ps (AppSettings const& conf)
             }
             catch (util::FileException &e)
             {
-                std::cerr << e.filename << ": " << e.what() << std::endl;
-                std::exit(EXIT_FAILURE);
+                std::cerr << e.filename << ": " << e.what() << " (skipping)" << std::endl;
+                continue;
             }
             catch (util::Exception &e)
             {
-                std::cerr << e.what() << std::endl;
-                std::exit(EXIT_FAILURE);
+                std::cerr << e.what() << " (skipping)" << std::endl;
+                continue;
             }
 
             /* Create thumbnail. */
