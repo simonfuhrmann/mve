@@ -47,6 +47,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "mve/defines.h"
 #include "mve/camera.h"
@@ -300,6 +301,7 @@ private:
     void load_blob_intern (BlobProxy* proxy, bool init_only);
     void save_blob_intern (BlobProxy* proxy);
 
+    std::mutex sv_cc_mutex; // protect save_view and cache_clean
 protected:
     typedef std::vector<std::string> FilenameList;
 

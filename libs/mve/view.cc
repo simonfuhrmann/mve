@@ -225,6 +225,8 @@ View::save_view_as (std::string const& user_path)
 int
 View::save_view (void)
 {
+    std::lock_guard<std::mutex> lock(this->sv_cc_mutex);
+
     if (this->path.empty())
         throw std::runtime_error("View not initialized");
 
@@ -305,6 +307,8 @@ View::is_dirty (void) const
 int
 View::cache_cleanup (void)
 {
+    std::lock_guard<std::mutex> lock(this->sv_cc_mutex);
+        
     int released = 0;
     for (std::size_t i = 0; i < this->images.size(); ++i)
     {
