@@ -774,12 +774,12 @@ View::load_image_intern (ImageProxy* proxy, bool init_only)
     {
         //std::cout << "View: Initializing image " << filename << std::endl;
         image::ImageHeaders headers = image::load_file_headers(filename);
-        proxy->is_dirty = false;
         proxy->width = headers.width;
         proxy->height = headers.height;
         proxy->channels = headers.channels;
         proxy->type = headers.type;
         proxy->is_initialized = true;
+        proxy->is_dirty = false;
         return;
     }
 
@@ -795,12 +795,12 @@ View::load_image_intern (ImageProxy* proxy, bool init_only)
     else
         throw std::runtime_error("Unexpected image type");
 
-    proxy->is_dirty = false;
     proxy->width = proxy->image->width();
     proxy->height = proxy->image->height();
     proxy->channels = proxy->image->channels();
     proxy->type = proxy->image->get_type();
     proxy->is_initialized = true;
+    proxy->is_dirty = false;
 }
 
 namespace
@@ -874,13 +874,13 @@ View::save_image_intern (ImageProxy* proxy)
     }
 
     /* Fully update the proxy. */
-    proxy->is_dirty = false;
     proxy->filename = filename;
     proxy->width = proxy->image->width();
     proxy->height = proxy->image->height();
     proxy->channels = proxy->image->channels();
     proxy->type = proxy->image->get_type();
     proxy->is_initialized = true;
+    proxy->is_dirty = false;
 }
 
 /* ---------------------------------------------------------------- */
@@ -994,9 +994,9 @@ View::save_blob_intern (BlobProxy* proxy)
     this->replace_file(fname_orig, fname_new);
 
     /* Fully update the proxy. */
-    proxy->is_dirty = false;
     proxy->size = proxy->blob->get_byte_size();
     proxy->is_initialized = true;
+    proxy->is_dirty = false;
 }
 
 /* ---------------------------------------------------------------- */
