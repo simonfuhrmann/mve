@@ -122,6 +122,13 @@ load_file_headers (std::string const& filename)
         catch (util::Exception&) {}
 #endif
 
+#ifndef MVE_NO_TIFF_SUPPORT
+      try
+      { return load_tiff_file_headers(filename); }
+      catch (util::FileException&) { throw; }
+      catch (util::Exception&) {}
+#endif
+
         try
         { return load_mvei_file_headers(filename); }
         catch (util::FileException&) { throw; }
@@ -678,6 +685,28 @@ load_tiff_file (std::string const& filename)
         TIFFClose(tif);
         throw;
     }
+}
+
+ImageHeaders
+load_tiff_file_headers (std::string const& filename)
+{
+    uint32 tiff_width, tiff_height, tiff_channels;
+    TIFF* tif = TIFFOpen(filename.c_str(), "r");
+    if (!tif) {
+        throw util::FileException(filename, std::strerror(errno));
+    }
+    TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &tiff_width);
+    TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &tiff_height);
+    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &tiff_channels);
+    TIFFClose(tif);
+
+    /* Set TIFF header info. */
+    ImageHeaders headers;
+    headers.width = int(tiff_width);
+    headers.height = int(tiff_height);
+    headers.channels = int(tiff_channels);
+
+    return headers;
 }
 
 void
