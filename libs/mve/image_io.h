@@ -162,6 +162,13 @@ ByteImage::Ptr
 load_tiff_file (std::string const& filename);
 
 /**
+ * Loads TIFF file headers only.
+ * May throw util::FileException and util::Exception.
+ */
+ImageHeaders
+load_tiff_file_headers (std::string const& filename);
+
+/**
  * Writes a TIFF to file. Supports any number of channels.
  * May throw util::FileException and util::Exception.
  */
