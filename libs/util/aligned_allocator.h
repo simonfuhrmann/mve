@@ -57,10 +57,10 @@ public:
     void destroy (pointer p);
 
     template <class T_other, size_t alignment_other>
-    bool operator== (AlignedAllocator<T_other, alignment_other> const&);
+    bool operator== (AlignedAllocator<T_other, alignment_other> const&) const;
 
     template <class T_other, size_t alignment_other>
-    bool operator!= (AlignedAllocator<T_other, alignment_other> const&);
+    bool operator!= (AlignedAllocator<T_other, alignment_other> const&) const;
 };
 
 /* ------------------------ Implementation ------------------------ */
@@ -134,7 +134,7 @@ template <typename T, size_t alignment>
 template <class T_other, size_t alignment_other>
 inline bool
 AlignedAllocator<T, alignment>::operator==
-    (AlignedAllocator<T_other, alignment_other> const&)
+    (AlignedAllocator<T_other, alignment_other> const&) const
 {
     return true;
 }
@@ -143,7 +143,7 @@ template <typename T, size_t alignment>
 template <class T_other, size_t alignment_other>
 inline bool
 AlignedAllocator<T, alignment>::operator!=
-    (AlignedAllocator<T_other, alignment_other> const&)
+    (AlignedAllocator<T_other, alignment_other> const&) const
 {
     return false;
 }
