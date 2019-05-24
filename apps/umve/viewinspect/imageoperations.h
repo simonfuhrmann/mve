@@ -22,7 +22,7 @@
 
 #include "selectedview.h"
 
-class JobDMRecon;
+struct JobDMRecon;
 
 class ImageOperationsWidget : public QWidget
 {

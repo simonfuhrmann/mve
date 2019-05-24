@@ -791,7 +791,7 @@ save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
 FloatImage::Ptr
 load_pfm_file (std::string const& filename)
 {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename.c_str(), std::ios::binary);
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 
@@ -904,7 +904,7 @@ save_pfm_file (FloatImage::ConstPtr image, std::string const& filename)
 ImageBase::Ptr
 load_ppm_file_intern (std::string const& filename, bool bit8)
 {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename.c_str(), std::ios::binary);
     if (!in.good())
         throw util::FileException(filename, std::strerror(errno));
 

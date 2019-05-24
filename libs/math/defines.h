@@ -10,6 +10,8 @@
 #ifndef MATH_DEFINES_HEADER
 #define MATH_DEFINES_HEADER
 
+#include <limits>
+
 #define MATH_NAMESPACE_BEGIN namespace math {
 #define MATH_NAMESPACE_END }
 
@@ -59,8 +61,8 @@ MATH_NAMESPACE_END
 #define MATH_LN10       2.30258509299404568401799145468436421   // log_e(10)
 
 /* Infinity values. Consider using +/-FLT_MAX, or +/-DBL_MAX. */
-#define MATH_POS_INF (1.0 / 0.0)
-#define MATH_NEG_INF (1.0 / -0.0)
+#define MATH_POS_INF (std::numeric_limits<double>::infinity())
+#define MATH_NEG_INF (-MATH_POS_INF)
 
 /* Fast power macros. */
 #define MATH_POW2(x) ((x) * (x))
