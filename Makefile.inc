@@ -14,6 +14,13 @@ CXXFLAGS += -pthread
 UNAME = $(shell uname)
 ifeq (${UNAME},Darwin)
     OPENMP =
+else
+    ifeq (${UNAME},Linux)
+        ALPINE=$(wildcard /etc/alpine-release)
+        ifneq (${ALPINE},)
+            LDLIBS += -lexecinfo
+        endif
+    endif
 endif
 
 COMPILE.cc = ${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
