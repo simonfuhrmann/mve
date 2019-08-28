@@ -1,17 +1,14 @@
-FROM alpine:3.10
+ARG ALPINE_VERSION=3.10
+FROM alpine:${ALPINE_VERSION}
 
 COPY . /mve
 
 RUN apk add --no-cache \
-    make \
-    g++ \
-    jpeg-dev \
-    libpng-dev \
-    tiff-dev \
-    mesa-dev \
-    libexecinfo-dev
-
-RUN echo $(ls /usr/include) \
+        make \
+        g++ \
+        jpeg-dev \
+        libpng-dev \
+        tiff-dev \
+        mesa-dev \
     && cd /mve \
     && make all
-    

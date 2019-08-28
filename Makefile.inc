@@ -16,9 +16,10 @@ ifeq (${UNAME},Darwin)
     OPENMP =
 else
     ifeq (${UNAME},Linux)
+        # musl compiler is missing libexec, skip on alpine
         ALPINE=$(wildcard /etc/alpine-release)
         ifneq (${ALPINE},)
-            LDLIBS += -lexecinfo
+            CXXFLAGS += -DSYSTEM_SKIP_LIBEXEC
         endif
     endif
 endif
