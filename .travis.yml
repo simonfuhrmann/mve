@@ -23,6 +23,8 @@ before_script:
    - unzip /tmp/gtest.zip
    - export GTEST_PATH=$PWD/googletest-master/googletest
    - mkdir $GTEST_PATH/build
+   - cmake --version
+   - cmake --help
    - cmake -S $GTEST_PATH -B $GTEST_PATH/build
    - make -C $GTEST_PATH/build gtest_main
 
