@@ -29,6 +29,9 @@ before_script:
    - popd
 
 script:
-    - make -j4
+    - make -j4 -Clibs/util
+    - make -j4 -Clibs/mve
+    - make -j4 -Clibs/sfm
+    - make -j4 -Clibs/fssr
     - make -j4 test
     - ./tests/test
