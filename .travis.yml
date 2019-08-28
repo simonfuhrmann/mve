@@ -16,14 +16,19 @@ addons:
        - ubuntu-toolchain-r-test
      packages:
        - g++-6
+       - cmake
 
 before_script:
    - wget https://github.com/google/googletest/archive/master.zip -O /tmp/gtest.zip
    - unzip /tmp/gtest.zip
-   - make -C $PWD/googletest-master/googletest/make
    - export GTEST_PATH=$PWD/googletest-master/googletest
+   - mkdir $GTEST_PATH/build
+   - pushd $GTEST_PATH/build
+   - cmake ..
+   - make gtest_main
+   - popd
 
 script:
-    - make
-    - make test
+    - make -j4
+    - make -j4 test
     - ./tests/test
