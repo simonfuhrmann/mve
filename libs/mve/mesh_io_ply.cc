@@ -323,7 +323,11 @@ load_ply_mesh (std::string const& filename)
                     f_format.push_back(PLY_F_VERTEX_INDICES);
                 else if (header[1] == "int")
                     f_format.push_back(PLY_F_IGNORE_UINT32);
+                else if (header[1] == "uint")
+                    f_format.push_back(PLY_F_IGNORE_UINT32);
                 else if (header[1] == "uchar")
+                    f_format.push_back(PLY_F_IGNORE_UINT8);
+                else if (header[1] == "bool")
                     f_format.push_back(PLY_F_IGNORE_UINT8);
                 else if (header[1] == "float")
                     f_format.push_back(PLY_F_IGNORE_FLOAT);
