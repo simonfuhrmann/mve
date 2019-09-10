@@ -308,6 +308,16 @@ load_ply_mesh (std::string const& filename)
                     /* Ignore int data types. */
                     v_format.push_back(PLY_V_IGNORE_UINT32);
                 }
+                else if (header[1] == "uint")
+                {
+                    /* Ignore uint data types. */
+                    v_format.push_back(PLY_V_IGNORE_UINT32);
+                }
+                else if (header[1] == "bool")
+                {
+                    /* Ignore bool data types. */
+                    v_format.push_back(PLY_V_IGNORE_UINT8);
+                }
                 else
                 {
                     /* Panic on unhandled data types. */
