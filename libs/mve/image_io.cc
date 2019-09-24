@@ -683,7 +683,7 @@ load_tiff_file_headers (std::string const& filename)
     uint32 tiff_width, tiff_height, tiff_channels;
     TIFF* tif = TIFFOpen(filename.c_str(), "r");
     if (!tif) {
-        throw util::FileException(filename, std::strerror(errno));
+        throw util::Exception(filename, std::strerror(errno));
     }
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &tiff_width);
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &tiff_height);
