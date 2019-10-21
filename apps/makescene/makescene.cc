@@ -366,12 +366,33 @@ import_bundle_nvm (AppSettings const& conf)
 
         /* Load original image. */
         std::string exif;
-        mve::ByteImage::Ptr image = load_8bit_image(nvm_cam.filename, &exif);
+        mve::ImageBase::Ptr image = load_any_image(nvm_cam.filename, &exif);
         if (image == nullptr)
         {
             std::cout << "Error loading: " << nvm_cam.filename
                 << " (skipping " << fname << ")" << std::endl;
             continue;
+        }
+
+        switch (image->get_type()) {
+            case mve::IMAGE_TYPE_FLOAT:{
+                mve::FloatImage::Ptr temp = std::dynamic_pointer_cast<mve::FloatImage>(image);
+                float vmin, vmax;
+                find_min_max_percentile(temp, &vmin, &vmax);
+                image = mve::image::float_to_byte_image(temp, vmin, vmax);
+                break;
+            }
+            case mve::IMAGE_TYPE_UINT16:{
+                mve::RawImage::Ptr temp = std::dynamic_pointer_cast<mve::RawImage>(image);
+                uint16_t vmin, vmax;
+                find_min_max_percentile(temp, &vmin, &vmax);
+                image = mve::image::raw_to_byte_image(temp, vmin, vmax);
+                break;
+            }
+            case mve::IMAGE_TYPE_UINT8:
+            default:
+                /* No conversion needed */
+                break;
         }
 
         /* Add original image. */
@@ -390,7 +411,7 @@ import_bundle_nvm (AppSettings const& conf)
         mve_cam.flen = mve_cam.flen / static_cast<float>(maxdim);
 
         mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
-            (image, mve_cam.flen, nvm_cam.radial_distortion);
+            (std::dynamic_pointer_cast<mve::ByteImage const>(image), mve_cam.flen, nvm_cam.radial_distortion);
         undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
         view->set_image(undist, "undistorted");
         view->set_camera(mve_cam);
