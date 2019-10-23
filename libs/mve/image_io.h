@@ -155,6 +155,13 @@ save_jpg_file (ByteImage::ConstPtr image,
 #ifndef MVE_NO_TIFF_SUPPORT
 
 /**
+ * Loads TIFF file headers only.
+ * May throw util::FileException and util::Exception.
+ */
+ImageHeaders
+load_tiff_file_headers (std::string const& filename);
+
+/**
  * Loads a TIFF file.
  * May throw util::FileException and util::Exception.
  */
