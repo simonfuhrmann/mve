@@ -643,8 +643,8 @@ load_tiff_file_headers (std::string const& filename)
     TIFFSetErrorHandler(tiff_error_handler);
 
     TIFF* tif = TIFFOpen(filename.c_str(), "r");
-    if (!tif)
-        throw util::Exception("TIFF file format not recognized");
+    if (tif == nullptr)
+        throw util::FileException(filename, "TIFF file format not recognized");
 
     try
     {
@@ -661,8 +661,8 @@ load_tiff_file_headers (std::string const& filename)
         headers.channels = channels;
         headers.type = IMAGE_TYPE_UNKNOWN;
 
-        if (bits == 8){
-            switch(sampleFormat){
+        if (bits == 8) {
+            switch(sampleFormat) {
                 case SAMPLEFORMAT_UINT:
                     headers.type = IMAGE_TYPE_UINT8;
                     break;
@@ -675,8 +675,8 @@ load_tiff_file_headers (std::string const& filename)
                 default:
                     break;
             }
-        }else if (bits == 16){
-            switch(sampleFormat){
+        } else if (bits == 16) {
+            switch(sampleFormat) {
                 case SAMPLEFORMAT_UINT:
                     headers.type = IMAGE_TYPE_UINT16;
                     break;
@@ -689,8 +689,8 @@ load_tiff_file_headers (std::string const& filename)
                 default:
                     break;
             }
-        }else if (bits == 32){
-            switch(sampleFormat){
+        } else if (bits == 32) {
+            switch(sampleFormat) {
                 case SAMPLEFORMAT_UINT:
                     headers.type = IMAGE_TYPE_UINT32;
                     break;
@@ -703,8 +703,8 @@ load_tiff_file_headers (std::string const& filename)
                 default:
                     break;
             }
-        }else if (bits == 64){
-            switch(sampleFormat){
+        } else if (bits == 64) {
+            switch(sampleFormat) {
                 case SAMPLEFORMAT_UINT:
                     headers.type = IMAGE_TYPE_UINT64;
                     break;
