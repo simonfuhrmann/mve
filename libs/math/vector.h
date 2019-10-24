@@ -72,6 +72,12 @@ typedef Vector<std::size_t,3> Vec3st;
 typedef Vector<std::size_t,4> Vec4st;
 typedef Vector<std::size_t,5> Vec5st;
 typedef Vector<std::size_t,6> Vec6st;
+typedef Vector<unsigned short,1> Vec1us;
+typedef Vector<unsigned short,2> Vec2us;
+typedef Vector<unsigned short,3> Vec3us;
+typedef Vector<unsigned short,4> Vec4us;
+typedef Vector<unsigned short,5> Vec5us;
+typedef Vector<unsigned short,6> Vec6us;
 
 /**
  * Vector class for arbitrary dimensions and types.
