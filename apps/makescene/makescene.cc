@@ -166,9 +166,12 @@ load_float_image (std::string const& fname)
 {
     std::string lcfname(util::string::lowercase(fname));
     std::string ext4 = util::string::right(lcfname, 4);
+    std::string ext5 = util::string::right(lcfname, 5);
     try
     {
-        if (ext4 == ".pfm")
+        if (ext4 == ".tif" || ext5 == ".tiff")
+            return mve::image::load_tiff_float_file(fname);
+        else if (ext4 == ".pfm")
             return mve::image::load_pfm_file(fname);
     }
     catch (...)

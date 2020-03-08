@@ -883,6 +883,83 @@ save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename)
         throw util::Exception("Error writing TIFF image");
 }
 
+FloatImage::Ptr
+load_tiff_float_file (std::string const& filename)
+{
+    if (sizeof(float) != 4)
+        throw util::Exception("Need 32bit data type for TIFF image.");
+
+    TIFFSetWarningHandler(nullptr);
+    TIFFSetErrorHandler(tiff_error_handler);
+
+    TIFF* tif = TIFFOpen(filename.c_str(), "r");
+    if (!tif)
+        throw util::Exception("TIFF file format not recognized");
+
+    try
+    {
+        /* Read width and height from TIFF and create MVE image. */
+        uint32 width, height;
+        uint16 channels, bits;
+        TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
+        TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
+        TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
+        TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bits);
+        if (bits != 32)
+            throw util::Exception("TIFF file bits per sample don't match");
+
+        FloatImage::Ptr image = Image<float>::create(width, height, channels);
+
+        /* Scanline based TIFF reading. */
+        uint32 rowstride = TIFFScanlineSize(tif) / sizeof(float);
+        Image<float>::ImageData& data = image->get_data();
+        for (uint32 row = 0; row < height; row++)
+        {
+            tdata_t row_pointer = &data[row * rowstride];
+            TIFFReadScanline(tif, row_pointer, row);
+        }
+
+        TIFFClose(tif);
+        return image;
+    }
+    catch (std::exception& e)
+    {
+        TIFFClose(tif);
+        throw;
+    }
+}
+
+void
+save_tiff_float_file (FloatImage::ConstPtr image, std::string const& filename)
+{
+    if (image == nullptr)
+        throw std::invalid_argument("Null image given");
+
+    TIFF* tif = TIFFOpen(filename.c_str(), "w");
+    if (!tif)
+        throw util::FileException(filename, "Unknown TIFF file error");
+
+    uint32_t width = image->width();
+    uint32_t height = image->height();
+    uint32_t channels = image->channels();
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, height);
+    TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, channels);
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8 * sizeof(float));
+    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_DEFLATE);
+    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+
+    tdata_t buffer = const_cast<float*>(image->get_data_pointer());
+    int64_t ret = TIFFWriteEncodedStrip(tif, 0, buffer,
+        image->get_value_amount() * sizeof(float));
+
+    TIFFClose(tif);
+
+    if (ret < 0)
+        throw util::Exception("Error writing TIFF image");
+}
+
 #endif /* MVE_NO_TIFF_SUPPORT */
 
 /* ---------------------------------------------------------------- */
