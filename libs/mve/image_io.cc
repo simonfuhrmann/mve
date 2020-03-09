@@ -949,6 +949,7 @@ save_tiff_float_file (FloatImage::ConstPtr image, std::string const& filename)
     TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_DEFLATE);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+    TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
 
     tdata_t buffer = const_cast<float*>(image->get_data_pointer());
     int64_t ret = TIFFWriteEncodedStrip(tif, 0, buffer,
