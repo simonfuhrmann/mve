@@ -189,6 +189,20 @@ load_tiff_16_file (std::string const& filename);
 void
 save_tiff_16_file (RawImage::ConstPtr image, std::string const& filename);
 
+/**
+ * Loads a 32bit float TIFF file.
+ * May throw util::FileException and util::Exception.
+ */
+FloatImage::Ptr
+load_tiff_float_file (std::string const& filename);
+
+/**
+ * Writes a 32bit float TIFF to file. Supports any number of channels.
+ * May throw util::FileException and util::Exception.
+ */
+void
+save_tiff_float_file (FloatImage::ConstPtr image, std::string const& filename);
+
 #endif /* MVE_NO_TIFF_SUPPORT */
 
 /* -------------------------- PFM support ------------------------- */
