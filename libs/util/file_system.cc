@@ -590,6 +590,12 @@ Directory::scan (std::string const& path)
         this->back().path = path;
         this->back().name = ep->d_name;
         this->back().is_dir = (ep->d_type == DT_DIR);
+        if (ep->d_type == DT_UNKNOWN)
+        {
+            struct stat path_stat;
+            if (::stat(join_path(path, ep->d_name).c_str(), &path_stat) >= 0)
+                this->back().is_dir = S_ISDIR(path_stat.st_mode);
+        }
     }
     ::closedir(dp);
 #endif
