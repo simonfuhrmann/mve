@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #include "util/defines.h"
 
@@ -237,6 +238,20 @@ betoh (T const& x)
 #else
 #   error "Couldn't determine host endianess!"
 #endif
+
+template <typename T>
+T read_binary_little_endian(std::istream* stream) {
+  T data_little_endian;
+  stream->read(reinterpret_cast<char*>(&data_little_endian), sizeof(T));
+  return letoh(data_little_endian);
+}
+
+template <typename T>
+void read_binary_little_endian(std::istream* stream, std::vector<T>* data) {
+  for (size_t i = 0; i < data->size(); ++i) {
+    (*data)[i] = read_binary_little_endian<T>(stream);
+  }
+}
 
 UTIL_SYSTEM_NAMESPACE_END
 UTIL_NAMESPACE_END
