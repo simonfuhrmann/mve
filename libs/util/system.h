@@ -15,6 +15,7 @@
 #include <thread>
 #include <chrono>
 #include <vector>
+#include <istream>
 
 #include "util/defines.h"
 
@@ -83,6 +84,11 @@ letoh (T const& x);
 template <typename T>
 inline T
 betoh (T const& x);
+
+/** Reads little endian according to host order conversion. */
+template <typename T>
+inline T
+read_binary_little_endian(std::istream* stream);
 
 /* ---------------------------------------------------------------- */
 
@@ -240,17 +246,12 @@ betoh (T const& x)
 #endif
 
 template <typename T>
-T read_binary_little_endian(std::istream* stream) {
-  T data_little_endian;
-  stream->read(reinterpret_cast<char*>(&data_little_endian), sizeof(T));
-  return letoh(data_little_endian);
-}
-
-template <typename T>
-void read_binary_little_endian(std::istream* stream, std::vector<T>* data) {
-  for (size_t i = 0; i < data->size(); ++i) {
-    (*data)[i] = read_binary_little_endian<T>(stream);
-  }
+inline T
+read_binary_little_endian(std::istream* stream)
+{
+    T data_little_endian;
+    stream->read(reinterpret_cast<char*>(&data_little_endian), sizeof(T));
+    return letoh(data_little_endian);
 }
 
 UTIL_SYSTEM_NAMESPACE_END
