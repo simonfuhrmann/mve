@@ -337,15 +337,25 @@ make_image_name (int id)
 /* ---------------------------------------------------------------- */
 
 void
-import_bundle_nvm (AppSettings const& conf)
+import_bundle_nvm_or_colmap (AppSettings const& conf, bool load_nvm = true)
 {
-    std::vector<mve::NVMCameraInfo> nvm_cams;
-    mve::Bundle::Ptr bundle = mve::load_nvm_bundle(conf.input_path, &nvm_cams);
+    std::vector<mve::AdditionalCameraInfo> cam_infos;
+    mve::Bundle::Ptr bundle;
+    if (load_nvm)
+        bundle = mve::load_nvm_bundle(conf.input_path, &cam_infos);
+    else
+        bundle = mve::load_colmap_bundle(conf.input_path, &cam_infos);
+
     mve::Bundle::Cameras& cameras = bundle->get_cameras();
 
-    if (nvm_cams.size() != cameras.size())
+    if (cam_infos.size() != cameras.size())
     {
-        std::cerr << "Error: NVM info inconsistent with bundle!" << std::endl;
+        if (load_nvm)
+            std::cerr << "Error: NVM info inconsistent with bundle!" 
+                << std::endl;
+        else
+            std::cerr << "Error: Colmap info inconsistent with bundle!" 
+                << std::endl;
         return;
     }
 
@@ -360,7 +370,7 @@ import_bundle_nvm (AppSettings const& conf)
     for (std::size_t i = 0; i < cameras.size(); ++i)
     {
         mve::CameraInfo& mve_cam = cameras[i];
-        mve::NVMCameraInfo const& nvm_cam = nvm_cams[i];
+        mve::AdditionalCameraInfo const& cam_info = cam_infos[i];
         std::string fname = "view_" + util::string::get_filled(i, 4) + ".mve";
 
         mve::View::Ptr view = mve::View::create();
@@ -369,10 +379,10 @@ import_bundle_nvm (AppSettings const& conf)
 
         /* Load original image. */
         std::string exif;
-        mve::ImageBase::Ptr image = load_any_image(nvm_cam.filename, &exif);
+        mve::ImageBase::Ptr image = load_any_image(cam_info.filename, &exif);
         if (image == nullptr)
         {
-            std::cout << "Error loading: " << nvm_cam.filename
+            std::cout << "Error loading: " << cam_info.filename
                 << " (skipping " << fname << ")" << std::endl;
             continue;
         }
@@ -401,8 +411,8 @@ import_bundle_nvm (AppSettings const& conf)
         /* Add original image. */
         if (conf.import_orig)
         {
-            if (has_jpeg_extension(nvm_cam.filename))
-                view->set_image_ref(nvm_cam.filename, "original");
+            if (has_jpeg_extension(cam_info.filename))
+                view->set_image_ref(cam_info.filename, "original");
             else
                 view->set_image(image, "original");
         }
@@ -414,7 +424,9 @@ import_bundle_nvm (AppSettings const& conf)
         mve_cam.flen = mve_cam.flen / static_cast<float>(maxdim);
 
         mve::ByteImage::Ptr undist = mve::image::image_undistort_vsfm<uint8_t>
-            (std::dynamic_pointer_cast<mve::ByteImage const>(image), mve_cam.flen, nvm_cam.radial_distortion);
+            (std::dynamic_pointer_cast<mve::ByteImage const>(image), 
+            mve_cam.flen, 
+            cam_info.radial_distortion);
         undist = limit_image_size<uint8_t>(undist, conf.max_pixels);
         view->set_image(undist, "undistorted");
         view->set_camera(mve_cam);
@@ -785,6 +797,36 @@ is_noah_bundler_format (AppSettings const& conf)
     return util::fs::file_exists(bundle_fname.c_str());
 }
 
+bool
+is_colmap_sfm_bundle_format (AppSettings const& conf)
+{
+    std::string cameras_txt_filename = util::fs::join_path(conf.input_path, 
+        "cameras.txt");
+    std::string cameras_bin_filename = util::fs::join_path(conf.input_path, 
+        "cameras.bin");
+    if (!util::fs::file_exists(cameras_txt_filename.c_str()) && 
+        !util::fs::file_exists(cameras_bin_filename.c_str()))
+        return false;
+
+    std::string images_txt_filename = util::fs::join_path(conf.input_path, 
+        "images.txt");
+    std::string images_bin_filename = util::fs::join_path(conf.input_path, 
+        "images.bin");
+    if (!util::fs::file_exists(images_txt_filename.c_str()) && 
+        !util::fs::file_exists(images_bin_filename.c_str()))
+        return false;
+
+    std::string points_3D_txt_filename = util::fs::join_path(conf.input_path, 
+        "points3D.txt");
+    std::string points_3D_bin_filename = util::fs::join_path(conf.input_path, 
+        "points3D.bin");
+    if (!util::fs::file_exists(points_3D_txt_filename.c_str()) && 
+        !util::fs::file_exists(points_3D_bin_filename.c_str()))
+        return false;
+
+    return true;
+}
+
 /* ---------------------------------------------------------------- */
 
 void
@@ -797,7 +839,7 @@ import_bundle (AppSettings const& conf)
     if (is_visual_sfm_bundle_format(conf))
     {
         std::cout << "Info: Detected VisualSFM bundle format." << std::endl;
-        import_bundle_nvm(conf);
+        import_bundle_nvm_or_colmap(conf, true);
         return;
     }
 
@@ -815,6 +857,18 @@ import_bundle (AppSettings const& conf)
     {
         std::cout << "Info: Detected Noah bundler format." << std::endl;
         import_bundle_noah_ps(conf);
+        return;
+    }
+
+    /**
+     * Try to detect Colmap bundle format.
+     * In this case the input folder contains files with extension ".txt" or 
+     * ".bin".
+     */
+    if (is_colmap_sfm_bundle_format(conf))
+    {
+        std::cout << "Info: Detected colmap bundler format." << std::endl;
+        import_bundle_nvm_or_colmap(conf, false);
         return;
     }
 

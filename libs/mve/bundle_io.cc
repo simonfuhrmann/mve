@@ -12,7 +12,10 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <map>
+#include <cassert>
 
+#include "util/system.h"
 #include "util/file_system.h"
 #include "util/strings.h"
 #include "util/exception.h"
@@ -65,7 +68,7 @@ namespace
 
 Bundle::Ptr
 load_nvm_bundle (std::string const& filename,
-    std::vector<NVMCameraInfo>* camera_info)
+    std::vector<AdditionalCameraInfo>* camera_info)
 {
     std::ifstream in(filename.c_str());
     if (!in.good())
@@ -97,7 +100,7 @@ load_nvm_bundle (std::string const& filename,
     Bundle::Ptr bundle = Bundle::create();
     Bundle::Cameras& bundle_cams = bundle->get_cameras();
     bundle_cams.reserve(num_views);
-    std::vector<NVMCameraInfo> nvm_cams;
+    std::vector<AdditionalCameraInfo> nvm_cams;
     nvm_cams.reserve(num_views);
 
     /* Read views. */
@@ -105,7 +108,7 @@ load_nvm_bundle (std::string const& filename,
     std::string nvm_path = util::fs::dirname(filename);
     for (int i = 0; i < num_views; ++i)
     {
-        NVMCameraInfo nvm_cam;
+        AdditionalCameraInfo nvm_cam;
         CameraInfo bundle_cam;
 
         /* Filename and focal length. */
@@ -478,6 +481,568 @@ save_photosynther_bundle (Bundle::ConstPtr bundle, std::string const& filename)
     }
 
     out.close();
+}
+
+/* -------------- Support for Colmap --------------- */
+
+// See colmap/src/util/types.h
+typedef uint32_t camera_t;
+typedef uint32_t image_t;
+typedef uint64_t image_pair_t;
+typedef uint32_t point2D_t;
+typedef uint64_t point3D_t;
+
+std::map<camera_t,std::string> camera_model_code_to_name;
+
+void
+define_camera_models() {
+    camera_model_code_to_name.emplace(0, "SIMPLE_PINHOLE");
+    camera_model_code_to_name.emplace(1, "PINHOLE");
+    camera_model_code_to_name.emplace(2, "SIMPLE_RADIAL");
+    camera_model_code_to_name.emplace(3, "RADIAL");
+    camera_model_code_to_name.emplace(4, "OPENCV");
+    camera_model_code_to_name.emplace(5, "OPENCV_FISHEYE");
+    camera_model_code_to_name.emplace(6, "FULL_OPENCV");
+    camera_model_code_to_name.emplace(7, "FOV");
+    camera_model_code_to_name.emplace(8, "SIMPLE_RADIAL_FISHEYE");
+    camera_model_code_to_name.emplace(9, "RADIAL_FISHEYE");
+    camera_model_code_to_name.emplace(10, "THIN_PRISM_FISHEYE");
+}
+
+void
+check_stream(std::ifstream & in, std::string const& filename)
+{
+    if (!in.good())
+        throw util::FileException(filename, std::strerror(errno));
+}
+
+void
+consume_comment_lines(std::ifstream & in)
+{
+    while (in.peek() == '#')
+    {
+        std::string temp;
+        std::getline(in, temp);
+    }
+}
+
+void
+create_camera_info_from_params(CameraInfo& camera_info,
+    std::string const& model,
+    std::vector<float> const& params,
+    uint32_t width,
+    uint32_t height)
+{
+    // https://github.com/colmap/colmap/blob/dev/src/base/camera_models.h
+    // https://github.com/simonfuhrmann/mve/blob/master/libs/mve/camera.cc
+    if (model == "SIMPLE_PINHOLE")
+    {
+        // Simple pinhole: f, cx, cy
+        camera_info.flen = params[0];
+        camera_info.ppoint[0] = params[1] / width;
+        camera_info.ppoint[1] = params[2] / height;
+    }
+    else if (model == "PINHOLE")
+    {
+        // Pinhole: fx, fy, cx, cy
+        float fx = params[0];
+        float fy = params[1];
+        camera_info.flen = fx;
+        camera_info.paspect = fy / fx;
+        camera_info.ppoint[0] = params[2] / width;
+        camera_info.ppoint[1] = params[3] / height;
+    }
+    else if (model == "SIMPLE_RADIAL")
+    {
+        // Simple radial: f, cx, cy, k
+        camera_info.flen = params[0];
+        camera_info.ppoint[0] = params[1] / width;
+        camera_info.ppoint[1] = params[2] / height;
+        camera_info.dist[0] = params[3];
+    }
+    else 
+    {
+        throw util::Exception("Unsupported camera model provided");
+    }
+}
+
+void
+load_colmap_cameras_txt(std::string const& cameras_filename,
+    std::map<uint32_t, CameraInfo>& camera_colmap_id_to_info)
+{
+    std::cout << "Colmap: Loading camera.txt file..." << std::endl;
+    std::ifstream in_cameras(cameras_filename.c_str());
+    check_stream(in_cameras, cameras_filename);
+    consume_comment_lines(in_cameras);
+    std::string camera_line;
+    uint32_t camera_colmap_id;  // starts at 1
+    std::string model_name;
+    uint32_t width, height;
+    std::vector<float> params;
+    while(getline(in_cameras, camera_line))
+    {
+        std::stringstream camera_line_ss(camera_line);
+        camera_line_ss >> camera_colmap_id >> model_name >> width >> height;
+        if (camera_line_ss.eof())
+            throw util::Exception("Missing parameters");
+        params.clear();
+        float param;
+        while (camera_line_ss >> param)
+            params.push_back(param);
+        CameraInfo camera_info;
+        create_camera_info_from_params(
+            camera_info, model_name, params, width, height);
+        camera_colmap_id_to_info[camera_colmap_id] = camera_info;
+    }
+    in_cameras.close();
+}
+
+void
+initialize_bundle_cam(CameraInfo& model,
+    math::Vec4d& quat,
+    math::Vec3d& trans,
+    CameraInfo* bundle_cam)
+{
+    bundle_cam->flen = model.flen;
+    bundle_cam->paspect = model.paspect;
+    bundle_cam->ppoint[0] = model.ppoint[0];
+    bundle_cam->ppoint[1] = model.ppoint[1];
+    bundle_cam->dist[0] = model.dist[0];
+    bundle_cam->dist[1] = model.dist[1];
+    math::Matrix3f rot = get_rot_from_quaternion(&quat[0]);
+    std::copy(rot.begin(), rot.end(), bundle_cam->rot);
+    std::copy(trans.begin(), trans.end(), bundle_cam->trans);
+}
+
+void
+initialize_cam_info(CameraInfo& model,
+    std::string const& image_path,
+    std::string& image_name,
+    AdditionalCameraInfo* colmap_cam_info)
+{
+    colmap_cam_info->filename = image_name;
+    colmap_cam_info->radial_distortion = model.dist[0];
+    if (!util::fs::is_absolute(colmap_cam_info->filename))
+        colmap_cam_info->filename = util::fs::join_path(image_path,
+            colmap_cam_info->filename);
+}
+
+void
+load_colmap_images_txt(std::string const& images_filename,
+    std::string const& image_path,
+    std::map<uint32_t, CameraInfo>& camera_colmap_id_to_model,
+    Bundle::Ptr& bundle,
+    std::map< int, std::vector<Bundle::Feature2D> >* view_id_to_features_2d,
+    std::vector<AdditionalCameraInfo>* camera_info)
+{
+    std::cout << "Colmap: Loading images.txt file..." << std::endl;
+    std::cout << "Colmap: image_path " << image_path << std::endl;
+    std::ifstream in_images(images_filename.c_str());
+    check_stream(in_images, images_filename);
+    consume_comment_lines(in_images);
+
+    Bundle::Cameras& bundle_cams = bundle->get_cameras();
+    std::vector<AdditionalCameraInfo> colmap_cams_info;
+    std::string image_line;
+    std::string point_2d_line;
+    math::Vec4d quat;
+    math::Vec3d trans;
+    int view_id;                    // starts at 0
+    uint32_t view_colmap_id;        // starts at 1
+    uint32_t camera_colmap_id;      // starts at 1
+    int feature_3d_colmap_id;  // starts at 1
+    std::string image_name;
+    while (std::getline(in_images, image_line))
+    {
+        AdditionalCameraInfo colmap_cam_info;
+        CameraInfo bundle_cam;
+        std::stringstream image_line_ss(image_line);
+        image_line_ss >> view_colmap_id
+            >> quat[0] >> quat[1] >> quat[2] >> quat[3]
+            >> trans[0] >> trans[1] >> trans[2]
+            >> camera_colmap_id >> image_name;
+        view_id = view_colmap_id - 1;
+        image_name = util::fs::sanitize_path(image_name);
+        CameraInfo model = camera_colmap_id_to_model.at(camera_colmap_id);
+        initialize_bundle_cam(model, quat, trans, &bundle_cam);
+        initialize_cam_info(model, image_path, image_name, &colmap_cam_info);
+
+        std::string point_2d_line;
+        std::getline(in_images, point_2d_line);
+        std::stringstream point_2d_line_ss(point_2d_line);
+        while (!point_2d_line_ss.eof())
+        {
+            Bundle::Feature2D ref;
+            ref.view_id = view_id;
+            point_2d_line_ss >> ref.pos[0] >> ref.pos[1];
+            point_2d_line_ss >> feature_3d_colmap_id;
+            // A POINT2D that does not correspond to a POINT3D has a POINT3D_ID 
+            // of -1
+            if (feature_3d_colmap_id == -1)
+                ref.feature_id = -1;
+            else
+                ref.feature_id = feature_3d_colmap_id - 1;
+            (*view_id_to_features_2d)[view_id].push_back(ref);
+        }
+        bundle_cams.push_back(bundle_cam);
+        colmap_cams_info.push_back(colmap_cam_info);
+    }    
+    if (camera_info != nullptr)
+        std::swap(*camera_info, colmap_cams_info);
+    in_images.close();
+}
+
+void
+load_colmap_points_3D_txt(std::string const& points3D_filename,
+    std::map< int, std::vector<Bundle::Feature2D> >& view_id_to_features_2d,
+    Bundle::Ptr& bundle)
+{
+    std::cout << "Colmap: Loading points3D.txt file..." << std::endl;
+    std::ifstream in_points3D(points3D_filename.c_str());
+    check_stream(in_points3D, points3D_filename);
+    consume_comment_lines(in_points3D);
+    Bundle::Features& features = bundle->get_features();
+
+    std::size_t num_views = bundle->get_cameras().size();
+    int num_points_3d = 0;
+    std::string point_3d_line;
+    while (std::getline(in_points3D, point_3d_line))
+    {
+        std::stringstream point_3d_line_ss(point_3d_line);
+        Bundle::Feature3D feature_3d;
+        int r,g,b;
+        float e;
+        int feature_3d_id;          // starts at 0
+        int feature_3d_colmap_id;   // starts at 1
+        point_3d_line_ss >> feature_3d_colmap_id;
+        feature_3d_id = feature_3d_colmap_id - 1;
+        point_3d_line_ss >> feature_3d.pos[0]
+            >> feature_3d.pos[1]
+            >> feature_3d.pos[2];
+        point_3d_line_ss >> r >> g >> b;
+        feature_3d.color[0] = r / 255.0f;
+        feature_3d.color[1] = g / 255.0f;
+        feature_3d.color[2] = b / 255.0f;
+        point_3d_line_ss >> e;
+        if (point_3d_line_ss.eof())
+            continue;
+
+        std::size_t num_refs = 0;
+        std::vector<int> view_ids;
+        std::vector<Bundle::Feature2D> refs;
+        while (!point_3d_line_ss.eof())
+        {
+            int view_colmap_id;      // starts at 1
+            int feature_2d_idx;      // starts at 0
+            point_3d_line_ss >> view_colmap_id >> feature_2d_idx;
+            int view_id = view_colmap_id - 1;
+            // Make sure that each point only has a single observation per 
+            // image, since MVE does not support multiple observations.
+            if (std::find(view_ids.begin(), view_ids.end(), view_id) != 
+                view_ids.end())
+                continue;
+            view_ids.push_back(view_id);
+            Bundle::Feature2D corresponding_feature = view_id_to_features_2d.at(
+                view_id).at(feature_2d_idx);
+            assert(corresponding_feature.feature_id == feature_3d_id);
+            Bundle::Feature2D ref;
+            ref.view_id = view_id;
+            ref.feature_id = feature_2d_idx;
+            ref.pos[0] = corresponding_feature.pos[0];
+            ref.pos[1] = corresponding_feature.pos[1];
+            refs.push_back(ref);
+            ++num_refs;
+        }
+
+        /* There should be at least 2 cameras that see the point. */
+        if (num_refs < 2 || num_refs > num_views)
+        {
+            throw util::Exception("Invalid number of feature refs: ",
+                util::string::get(num_refs));
+        }
+        feature_3d.refs = refs;
+        features.push_back(feature_3d);
+        ++num_points_3d;
+    }
+    in_points3D.close();
+}
+
+void
+read_colmap_cameras_bin_params(std::vector<float>& params,
+    std::string const& model, std::ifstream& in_cameras)
+{
+    if (model == "SIMPLE_PINHOLE")
+        params.resize(3);
+    else if (model == "PINHOLE" || model == "SIMPLE_RADIAL")
+        params.resize(4);
+    else
+        throw util::Exception("Unsupported camera model provided");
+    for (std::size_t param_idx = 0; param_idx < params.size(); ++param_idx)
+        params[param_idx] = util::system::read_binary_little_endian<double>(
+            &in_cameras);
+}
+
+void
+load_colmap_cameras_bin(std::string const& cameras_filename,
+    std::map<uint32_t, CameraInfo>& camera_colmap_id_to_info)
+{
+    using util::system::read_binary_little_endian;
+    std::cout << "Colmap: Loading cameras.bin file..." << std::endl;
+    define_camera_models();
+    std::ifstream in_cameras(cameras_filename.c_str());
+
+    uint32_t camera_colmap_id;  // starts at 1
+    std::string model_name;
+    uint32_t width, height;
+    std::vector<float> params;
+    uint64_t num_cam_models = read_binary_little_endian<uint64_t>(&in_cameras);
+    for (uint64_t model_idx = 0; model_idx < num_cam_models; ++model_idx)
+    {
+        camera_colmap_id = read_binary_little_endian<camera_t>(&in_cameras);
+        camera_t model_code = read_binary_little_endian<int>(&in_cameras);
+        model_name = camera_model_code_to_name.at(model_code);
+        width = (uint32_t)read_binary_little_endian<uint64_t>(&in_cameras);
+        height = (uint32_t)read_binary_little_endian<uint64_t>(&in_cameras);
+        read_colmap_cameras_bin_params(params, model_name, in_cameras);
+        CameraInfo camera_info;
+        create_camera_info_from_params(
+            camera_info, model_name, params, width, height);
+        camera_colmap_id_to_info[camera_colmap_id] = camera_info;
+    }
+    in_cameras.close();
+}
+
+void
+read_image_name(std::istream* in_images, std::string* image_name)
+{
+    (*image_name) = "";
+    char nameChar;
+    do
+    {
+        in_images->read(&nameChar, 1);
+        if (nameChar != '\0')
+            (*image_name) += nameChar;
+    }
+    while (nameChar != '\0');
+}
+
+void
+load_colmap_images_bin(std::string const& images_filename,
+    std::string const& image_path,
+    std::map<uint32_t, CameraInfo>& camera_colmap_id_to_model,
+    Bundle::Ptr& bundle,
+    std::map< int, std::vector<Bundle::Feature2D> >* view_id_to_features_2d,
+    std::vector<AdditionalCameraInfo>* camera_info)
+{
+    using util::system::read_binary_little_endian;
+    std::cout << "Colmap: Loading images.bin file..." << std::endl;
+    std::cout << "Colmap: image_path " << image_path << std::endl;
+    std::ifstream in_images(images_filename.c_str());
+    check_stream(in_images, images_filename);
+
+    Bundle::Cameras& bundle_cams = bundle->get_cameras();
+    std::vector<AdditionalCameraInfo> colmap_cams_info;
+    uint64_t num_views = read_binary_little_endian<uint64_t>(&in_images);
+    bundle_cams.reserve(num_views);
+    colmap_cams_info.reserve(num_views);
+
+    math::Vec4d quat;
+    math::Vec3d trans;
+    int view_id;                    // starts at 0
+    uint32_t view_colmap_id;        // starts at 1
+    uint32_t camera_colmap_id;      // starts at 1
+    int feature_3d_colmap_id;       // starts at 1
+    std::string image_name;
+    for (std::size_t view_index = 0; view_index < num_views; ++view_index)
+    {
+        AdditionalCameraInfo colmap_cam_info;
+        CameraInfo bundle_cam;
+        view_colmap_id = read_binary_little_endian<image_t>(&in_images);
+        view_id = view_colmap_id - 1;
+        quat[0] = read_binary_little_endian<double>(&in_images);
+        quat[1] = read_binary_little_endian<double>(&in_images);
+        quat[2] = read_binary_little_endian<double>(&in_images);
+        quat[3] = read_binary_little_endian<double>(&in_images);
+        trans[0] = read_binary_little_endian<double>(&in_images);
+        trans[1] = read_binary_little_endian<double>(&in_images);
+        trans[2] = read_binary_little_endian<double>(&in_images);
+        camera_colmap_id = read_binary_little_endian<camera_t>(&in_images);
+        read_image_name(&in_images, &image_name);
+        image_name = util::fs::sanitize_path(image_name);
+        CameraInfo model = camera_colmap_id_to_model.at(camera_colmap_id);
+        initialize_bundle_cam(model, quat, trans, &bundle_cam);
+        initialize_cam_info(model, image_path, image_name, &colmap_cam_info);
+
+        const std::size_t num_points_2D = read_binary_little_endian<uint64_t>(
+            &in_images);
+        for (std::size_t point_2d_idx = 0; point_2d_idx < num_points_2D; 
+            ++point_2d_idx) 
+        {
+            Bundle::Feature2D ref;
+            ref.view_id = view_id;
+            ref.pos[0] = (float)read_binary_little_endian<double>(&in_images);
+            ref.pos[1] = (float)read_binary_little_endian<double>(&in_images);
+            // A POINT2D that does not correspond to a POINT3D has a POINT3D_ID 
+            // of -1
+            feature_3d_colmap_id = (uint32_t)read_binary_little_endian<
+                point3D_t>(&in_images);
+            if (feature_3d_colmap_id == -1)
+                ref.feature_id = -1;
+            else
+                ref.feature_id = feature_3d_colmap_id - 1;
+            (*view_id_to_features_2d)[view_id].push_back(ref);
+        }
+        bundle_cams.push_back(bundle_cam);
+        colmap_cams_info.push_back(colmap_cam_info);
+    }
+    if (camera_info != nullptr)
+        std::swap(*camera_info, colmap_cams_info);
+    in_images.close();
+}
+
+void
+load_colmap_points_3D_bin(std::string const& points3D_filename,
+    std::map< int, std::vector<Bundle::Feature2D> >& view_id_to_features_2d,
+    Bundle::Ptr& bundle)
+{
+    using util::system::read_binary_little_endian;
+    std::cout << "Colmap: Loading points3D.bin file..." << std::endl;
+    std::ifstream in_points3D(points3D_filename.c_str());
+    check_stream(in_points3D, points3D_filename);
+
+    uint64_t num_features = read_binary_little_endian<uint64_t>(&in_points3D);
+    Bundle::Features& features = bundle->get_features();
+    features.reserve(num_features);
+    std::size_t num_views = bundle->get_cameras().size();
+    for (std::size_t feature_3d_idx = 0; feature_3d_idx < num_features; 
+        ++feature_3d_idx)
+    {
+        Bundle::Feature3D feature_3d;
+        int r,g,b;
+        int feature_3d_id;          // starts at 0
+        int feature_3d_colmap_id;   // starts at 1
+        feature_3d_colmap_id = (uint32_t)read_binary_little_endian<point3D_t>(
+            &in_points3D);
+        feature_3d_id = feature_3d_colmap_id - 1; // Fix Colmap id
+        feature_3d.pos[0] = read_binary_little_endian<double>(&in_points3D);
+        feature_3d.pos[1] = read_binary_little_endian<double>(&in_points3D);
+        feature_3d.pos[2] = read_binary_little_endian<double>(&in_points3D);
+        r = read_binary_little_endian<uint8_t>(&in_points3D);
+        g = read_binary_little_endian<uint8_t>(&in_points3D);
+        b = read_binary_little_endian<uint8_t>(&in_points3D);
+        read_binary_little_endian<double>(&in_points3D);   // read error
+        feature_3d.color[0] = r / 255.0f;
+        feature_3d.color[1] = g / 255.0f;
+        feature_3d.color[2] = b / 255.0f;
+
+        std::size_t num_refs = read_binary_little_endian<uint64_t>(
+            &in_points3D);
+        std::vector<int> view_ids;
+        std::vector<Bundle::Feature2D> refs;
+        for (std::size_t ref_idx = 0; ref_idx < num_refs; ++ref_idx)
+        {
+            uint32_t view_colmap_id;    // starts at 1
+            int feature_2d_idx;         // starts at 0
+            view_colmap_id = read_binary_little_endian<image_t>(&in_points3D);
+            int view_id = view_colmap_id - 1;
+            feature_2d_idx = read_binary_little_endian<point2D_t>(&in_points3D);
+            // Make sure that each point only has a single observation per 
+            // image, since MVE does not support multiple observations.
+            if (std::find(view_ids.begin(), view_ids.end(), 
+                view_id) != view_ids.end())
+                continue;
+            view_ids.push_back(view_id);
+            Bundle::Feature2D corresponding_feature = view_id_to_features_2d.at(
+                view_id).at(feature_2d_idx);
+            assert(corresponding_feature.feature_id == feature_3d_id);
+            Bundle::Feature2D ref;
+            ref.view_id = view_id;
+            ref.feature_id = feature_2d_idx;
+            ref.pos[0] = corresponding_feature.pos[0];
+            ref.pos[1] = corresponding_feature.pos[1];
+            refs.push_back(ref);
+        }
+        num_refs = refs.size();
+
+        /* There should be at least 2 cameras that see the point. */
+        if (num_refs < 2 || num_refs > num_views) 
+        {
+            throw util::Exception("Invalid number of feature refs: ",
+                util::string::get(num_refs));
+        }
+        feature_3d.refs = refs;
+        features.push_back(feature_3d);
+    }
+    in_points3D.close();
+}
+
+Bundle::Ptr
+load_colmap_bundle (std::string const& foldername, 
+    std::vector<AdditionalCameraInfo>* camera_info)
+{
+    using util::fs::join_path;
+    // https://github.com/colmap/colmap/blob/dev/src/base/reconstruction.cc
+    // void Reconstruction::ReadText(const std::string& path)
+    // void Reconstruction::ReadBinary(const std::string& path)
+
+    std::string image_path(join_path(util::fs::dirname(foldername), "images"));
+
+    std::string cameras_txt_filename = join_path(foldername, "cameras.txt");
+    std::string cameras_bin_filename = join_path(foldername, "cameras.bin");
+
+    std::string images_txt_filename = join_path(foldername, "images.txt");
+    std::string images_bin_filename = join_path(foldername, "images.bin");
+
+    std::string points_3D_txt_filename = join_path(foldername, "points3D.txt");
+    std::string points_3D_bin_filename = join_path(foldername, "points3D.bin");
+
+    std::cout << "Colmap: Loading directory..." << std::endl;
+    std::cout << foldername << std::endl;
+
+    std::map<uint32_t, CameraInfo> camera_colmap_id_to_info;
+    if (util::fs::file_exists(cameras_txt_filename.c_str()))
+        load_colmap_cameras_txt(
+            cameras_txt_filename,
+            camera_colmap_id_to_info);
+    else
+        load_colmap_cameras_bin(
+            cameras_bin_filename,
+            camera_colmap_id_to_info);
+
+    Bundle::Ptr bundle_colmap = Bundle::create();
+    std::map< int, std::vector<Bundle::Feature2D> > view_id_to_features_2d;
+    std::vector<AdditionalCameraInfo> colmap_camera_info;
+    if (util::fs::file_exists(images_txt_filename.c_str()))
+        load_colmap_images_txt(
+            images_txt_filename,
+            image_path,
+            camera_colmap_id_to_info,
+            bundle_colmap,
+            &view_id_to_features_2d,
+            &colmap_camera_info);
+    else
+        load_colmap_images_bin(
+            images_bin_filename,
+            image_path,
+            camera_colmap_id_to_info,
+            bundle_colmap,
+            &view_id_to_features_2d,
+            &colmap_camera_info);
+
+    if (util::fs::file_exists(points_3D_txt_filename.c_str()))
+        load_colmap_points_3D_txt(
+            points_3D_txt_filename,
+            view_id_to_features_2d,
+            bundle_colmap);
+    else
+        load_colmap_points_3D_bin(
+            points_3D_bin_filename,
+            view_id_to_features_2d,
+            bundle_colmap);
+
+    *camera_info = colmap_camera_info;
+
+    return bundle_colmap;
 }
 
 MVE_NAMESPACE_END
