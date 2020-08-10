@@ -32,7 +32,7 @@ save_mve_bundle (Bundle::ConstPtr bundle, std::string const& filename);
 /**
  * Per-camera NVM specific information.
  */
-struct NVMCameraInfo
+struct AdditionalCameraInfo
 {
     /** Path the the original image file. */
     std::string filename;
@@ -50,7 +50,7 @@ struct NVMCameraInfo
  */
 Bundle::Ptr
 load_nvm_bundle (std::string const& filename,
-    std::vector<NVMCameraInfo>* camera_info = nullptr);
+    std::vector<AdditionalCameraInfo>* camera_info = nullptr);
 
 /* ------------------ Support for Noah's Bundler  ----------------- */
 
@@ -79,6 +79,12 @@ load_photosynther_bundle (std::string const& filename);
 void
 save_photosynther_bundle (Bundle::ConstPtr bundle,
     std::string const& filename);
+
+/* -------------- Support for Colmap --------------- */
+
+Bundle::Ptr
+load_colmap_bundle (std::string const& filename,
+    std::vector<AdditionalCameraInfo>* camera_info = nullptr);
 
 MVE_NAMESPACE_END
 
