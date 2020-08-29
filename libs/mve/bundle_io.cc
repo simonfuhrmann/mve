@@ -22,6 +22,8 @@
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "mve/bundle_io.h"
+#include "mve/image_tools.h"
+
 
 MVE_NAMESPACE_BEGIN
 
@@ -552,17 +554,15 @@ create_camera_info_from_params(CameraInfo& camera_info,
         camera_info.ppoint[0] = params[2] / width;
         camera_info.ppoint[1] = params[3] / height;
     }
-    else if (model == "SIMPLE_RADIAL")
-    {
-        // Simple radial: f, cx, cy, k
-        camera_info.flen = params[0];
-        camera_info.ppoint[0] = params[1] / width;
-        camera_info.ppoint[1] = params[2] / height;
-        camera_info.dist[0] = params[3];
-    }
     else 
     {
-        throw util::Exception("Unsupported camera model provided");
+        std::string msg = "Unsupported camera model with radial distortion "
+            "detected! If possible, re-run the SfM reconstruction with the "
+            "SIMPLE_PINHOLE or the PINHOLE camera model (recommended). "
+            "Otherwise, use the undistortion step in Colmap to obtain "
+            "undistorted images and corresponding camera models without radial "
+            "distortion.";
+        throw util::Exception(msg.c_str());
     }
 }
 
@@ -618,18 +618,42 @@ void
 initialize_cam_info(CameraInfo& model,
     std::string const& image_path,
     std::string& image_name,
+    std::string const& depth_path,
+    std::string& depth_map_name,
     AdditionalCameraInfo* colmap_cam_info)
 {
     colmap_cam_info->filename = image_name;
+    colmap_cam_info->depth_map_name = depth_map_name;
     colmap_cam_info->radial_distortion = model.dist[0];
     if (!util::fs::is_absolute(colmap_cam_info->filename))
         colmap_cam_info->filename = util::fs::join_path(image_path,
             colmap_cam_info->filename);
+    if (!util::fs::is_absolute(colmap_cam_info->depth_map_name))
+        colmap_cam_info->depth_map_name = util::fs::join_path(depth_path,
+            colmap_cam_info->depth_map_name);
+}
+
+void
+determine_depth_map_path(std::string const& depth_path, std::string& image_name,
+    std::string* depth_map_name)
+{
+    std::string geometric_depth_map_name = util::fs::join_path(
+        depth_path, image_name + ".geometric.bin");
+    std::string photometric_depth_map_name = util::fs::join_path(
+        depth_path, image_name + ".photometric.bin");
+
+    if (util::fs::file_exists(geometric_depth_map_name.c_str()))
+        *depth_map_name = geometric_depth_map_name;
+    else if (util::fs::file_exists(photometric_depth_map_name.c_str()))
+        *depth_map_name = photometric_depth_map_name;
+    else
+        *depth_map_name = "";
 }
 
 void
 load_colmap_images_txt(std::string const& images_filename,
     std::string const& image_path,
+    std::string const& depth_path,
     std::map<uint32_t, CameraInfo>& camera_colmap_id_to_model,
     Bundle::Ptr& bundle,
     std::map< int, std::vector<Bundle::Feature2D> >* view_id_to_features_2d,
@@ -637,6 +661,7 @@ load_colmap_images_txt(std::string const& images_filename,
 {
     std::cout << "Colmap: Loading images.txt file..." << std::endl;
     std::cout << "Colmap: image_path " << image_path << std::endl;
+    std::cout << "Colmap: depth_path " << depth_path << std::endl;
     std::ifstream in_images(images_filename.c_str());
     check_stream(in_images, images_filename);
     consume_comment_lines(in_images);
@@ -652,6 +677,7 @@ load_colmap_images_txt(std::string const& images_filename,
     uint32_t camera_colmap_id;      // starts at 1
     int feature_3d_colmap_id;  // starts at 1
     std::string image_name;
+    std::string depth_map_name;
     while (std::getline(in_images, image_line))
     {
         AdditionalCameraInfo colmap_cam_info;
@@ -665,7 +691,9 @@ load_colmap_images_txt(std::string const& images_filename,
         image_name = util::fs::sanitize_path(image_name);
         CameraInfo model = camera_colmap_id_to_model.at(camera_colmap_id);
         initialize_bundle_cam(model, quat, trans, &bundle_cam);
-        initialize_cam_info(model, image_path, image_name, &colmap_cam_info);
+        determine_depth_map_path(depth_path, image_name, &depth_map_name);
+        initialize_cam_info(model, image_path, image_name, depth_path, 
+            depth_map_name, &colmap_cam_info);
 
         std::string point_2d_line;
         std::getline(in_images, point_2d_line);
@@ -829,6 +857,7 @@ read_image_name(std::istream* in_images, std::string* image_name)
 void
 load_colmap_images_bin(std::string const& images_filename,
     std::string const& image_path,
+    std::string const& depth_path,
     std::map<uint32_t, CameraInfo>& camera_colmap_id_to_model,
     Bundle::Ptr& bundle,
     std::map< int, std::vector<Bundle::Feature2D> >* view_id_to_features_2d,
@@ -837,6 +866,7 @@ load_colmap_images_bin(std::string const& images_filename,
     using util::system::read_binary_little_endian;
     std::cout << "Colmap: Loading images.bin file..." << std::endl;
     std::cout << "Colmap: image_path " << image_path << std::endl;
+    std::cout << "Colmap: depth_path " << depth_path << std::endl;
     std::ifstream in_images(images_filename.c_str());
     check_stream(in_images, images_filename);
 
@@ -853,6 +883,7 @@ load_colmap_images_bin(std::string const& images_filename,
     uint32_t camera_colmap_id;      // starts at 1
     int feature_3d_colmap_id;       // starts at 1
     std::string image_name;
+    std::string depth_map_name;
     for (std::size_t view_index = 0; view_index < num_views; ++view_index)
     {
         AdditionalCameraInfo colmap_cam_info;
@@ -871,7 +902,9 @@ load_colmap_images_bin(std::string const& images_filename,
         image_name = util::fs::sanitize_path(image_name);
         CameraInfo model = camera_colmap_id_to_model.at(camera_colmap_id);
         initialize_bundle_cam(model, quat, trans, &bundle_cam);
-        initialize_cam_info(model, image_path, image_name, &colmap_cam_info);
+        determine_depth_map_path(depth_path, image_name, &depth_map_name);
+        initialize_cam_info(model, image_path, image_name, depth_path, 
+            depth_map_name, &colmap_cam_info);
 
         const std::size_t num_points_2D = read_binary_little_endian<uint64_t>(
             &in_images);
@@ -977,7 +1010,7 @@ load_colmap_points_3D_bin(std::string const& points3D_filename,
 }
 
 Bundle::Ptr
-load_colmap_bundle (std::string const& foldername, 
+load_colmap_bundle (std::string const& workspace_path,
     std::vector<AdditionalCameraInfo>* camera_info)
 {
     using util::fs::join_path;
@@ -985,19 +1018,29 @@ load_colmap_bundle (std::string const& foldername,
     // void Reconstruction::ReadText(const std::string& path)
     // void Reconstruction::ReadBinary(const std::string& path)
 
-    std::string image_path(join_path(util::fs::dirname(foldername), "images"));
+    std::string model_path = join_path(workspace_path, "sparse");
+    std::string image_path = join_path(workspace_path, "images");
+    std::string stereo_path = join_path(workspace_path, "stereo");
+    std::string depth_path = join_path(stereo_path, "depth_maps");
 
-    std::string cameras_txt_filename = join_path(foldername, "cameras.txt");
-    std::string cameras_bin_filename = join_path(foldername, "cameras.bin");
+    std::string cameras_txt_filename = join_path(model_path, "cameras.txt");
+    std::string cameras_bin_filename = join_path(model_path, "cameras.bin");
 
-    std::string images_txt_filename = join_path(foldername, "images.txt");
-    std::string images_bin_filename = join_path(foldername, "images.bin");
+    std::string images_txt_filename = join_path(model_path, "images.txt");
+    std::string images_bin_filename = join_path(model_path, "images.bin");
 
-    std::string points_3D_txt_filename = join_path(foldername, "points3D.txt");
-    std::string points_3D_bin_filename = join_path(foldername, "points3D.bin");
+    std::string points_3D_txt_filename = join_path(model_path, "points3D.txt");
+    std::string points_3D_bin_filename = join_path(model_path, "points3D.bin");
 
-    std::cout << "Colmap: Loading directory..." << std::endl;
-    std::cout << foldername << std::endl;
+    std::cout << "Colmap: Loading workspace..." << std::endl;
+    std::cout << workspace_path << std::endl;
+    // The depth maps are optional
+    if (!util::fs::dir_exists(model_path.c_str()))
+        throw util::Exception("Sparse model directory missing: ",
+            model_path);
+    if (!util::fs::dir_exists(image_path.c_str()))
+        throw util::Exception("Undistored image directory missing: ",
+            image_path);
 
     std::map<uint32_t, CameraInfo> camera_colmap_id_to_info;
     if (util::fs::file_exists(cameras_txt_filename.c_str()))
@@ -1016,6 +1059,7 @@ load_colmap_bundle (std::string const& foldername,
         load_colmap_images_txt(
             images_txt_filename,
             image_path,
+            depth_path,
             camera_colmap_id_to_info,
             bundle_colmap,
             &view_id_to_features_2d,
@@ -1024,6 +1068,7 @@ load_colmap_bundle (std::string const& foldername,
         load_colmap_images_bin(
             images_bin_filename,
             image_path,
+            depth_path,
             camera_colmap_id_to_info,
             bundle_colmap,
             &view_id_to_features_2d,
@@ -1043,6 +1088,122 @@ load_colmap_bundle (std::string const& foldername,
     *camera_info = colmap_camera_info;
 
     return bundle_colmap;
+}
+
+/* -------------- Support for Colmap Depth Maps --------------- */
+
+mve::FloatImage::Ptr
+parse_colmap_depth_map(const std::string& path)
+{
+    using util::system::read_binary_little_endian;
+    std::ifstream text_file(path, std::ios::binary);
+
+    if (!util::fs::file_exists(path.c_str()))
+    {
+        throw util::Exception("Depth map not found in ", path);
+    }
+
+    size_t depth_map_width = 0;
+    size_t depth_map_height = 0;
+    size_t depth_map_depth = 0;
+    char unused_char;
+    text_file >> depth_map_width >> unused_char >> depth_map_height
+        >> unused_char >> depth_map_depth >> unused_char;
+    std::streampos pos = text_file.tellg();
+    text_file.close();
+
+    assert(depth_map_width > 0);
+    assert(depth_map_height > 0);
+    assert(depth_map_depth == 1);
+
+    std::ifstream binary_file(path, std::ios::binary);
+    binary_file.seekg(pos);
+
+    mve::FloatImage::Ptr depth_img = mve::FloatImage::create(
+        depth_map_width, depth_map_height, 1);
+
+    for (int i = 0; i < depth_img->get_pixel_amount(); ++i)
+        depth_img->at(i) = read_binary_little_endian<float>(
+            &binary_file);
+
+    binary_file.close();
+    return depth_img;
+}
+
+void
+convert_depth_map_semantics(mve::CameraInfo& mve_cam, int original_width,
+    int original_height, mve::FloatImage::Ptr depth_image)
+{
+    // The meaning of the depth map values in MVE and Colmap differs.
+    // In MVE the depth value is defined w.r.t. unit vectors.
+    // In Colmap the depth value is defined w.r.t. canonical vectors (i.e.
+    // the z-component is equal to 1).
+    size_t max_extent = std::max(original_width, original_height);
+    float fx = mve_cam.flen * max_extent;
+    float fy = fx * mve_cam.paspect;
+    float cx = mve_cam.ppoint[0] * original_width;
+    float cy = mve_cam.ppoint[1] * original_height;
+
+    size_t depth_map_width = depth_image->width();
+    size_t depth_map_height = depth_image->height();
+
+    float u_step_size = original_width / depth_map_width;
+    float v_step_size = original_height / depth_map_height;
+
+    for (int idx = 0; idx < depth_image->get_pixel_amount(); ++idx)
+    {
+        size_t u = idx % depth_map_width;
+        size_t v = idx / depth_map_width;
+        // No offset of 0.5 here, since Colmap depth values are defined w.r.t.
+        // shifted pixel values
+        float u_img = u_step_size * (float)u;
+        float v_img = v_step_size * (float)v;
+        // The cannoncial vectors are defined according to p.155 of
+        // "Multiple View Geometry" by Hartley and Zisserman
+        math::Vec3f canonical_ray{
+            (u_img - cx) / fx,
+            (v_img - cy) / fy,
+            1.0};
+        float norm = canonical_ray.norm();
+        depth_image->at(idx) = depth_image->at(idx) * norm;
+    }
+}
+
+mve::FloatImage::Ptr
+load_colmap_depth_map(int scale, mve::CameraInfo& mve_cam, int original_width,
+    int original_height,
+    mve::AdditionalCameraInfo const& cam_info)
+{
+    assert(scale >= 0);
+
+    mve::FloatImage::Ptr depth_image = parse_colmap_depth_map(
+        cam_info.depth_map_name);
+
+    int depth_width = depth_image->width();
+    int depth_height = depth_image->height();
+
+    convert_depth_map_semantics(mve_cam, original_width, original_height,
+        depth_image);
+
+    if (depth_width == original_width && depth_height == original_height)
+    {
+        // Lossless resizing
+        for (int i = 0; i < scale; ++i)
+            depth_image = mve::image::rescale_half_size_subsample<
+                float>(depth_image);
+    }
+    else
+    {
+        std::ostringstream string_stream;
+        string_stream
+            << "Colmap depth map of size " << depth_width << " x "
+            << depth_height << " does not match the corresponding undistorted "
+            << "image of size " << original_width << " x " << original_height
+            << ". Re-compute the depth maps using Colmap without limiting the "
+            << "depth map size.";
+        throw util::Exception(string_stream.str().c_str());
+    }
+    return depth_image;
 }
 
 MVE_NAMESPACE_END
