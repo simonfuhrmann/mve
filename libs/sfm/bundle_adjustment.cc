@@ -289,7 +289,7 @@ BundleAdjustment::rodrigues_to_matrix (double const* r, double* m)
     /* Obtain angle from vector length. */
     double a = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
     /* Precompute sine and cosine terms. */
-    double ct = (a == 0.0) ? 0.5f : (1.0f - std::cos(a)) / (2.0 * a);
+    double ct = (a == 0.0) ? 0.5f : (1.0f - std::cos(a)) / (a * a);
     double st = (a == 0.0) ? 1.0 : std::sin(a) / a;
     /* R = I + st * K + ct * K^2 (with cross product matrix K). */
     m[0] = 1.0 - (r[1] * r[1] + r[2] * r[2]) * ct;
