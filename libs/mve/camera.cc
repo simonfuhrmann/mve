@@ -124,19 +124,9 @@ CameraInfo::set_transformation (float const* mat)
 void
 CameraInfo::fill_calibration (float* mat, float width, float height) const
 {
-    float dim_aspect = width / height;
-    float image_aspect = dim_aspect * this->paspect;
-    float ax, ay;
-    if (image_aspect < 1.0f) /* Portrait. */
-    {
-        ax = this->flen * height / this->paspect;
-        ay = this->flen * height;
-    }
-    else /* Landscape. */
-    {
-        ax = this->flen * width;
-        ay = this->flen * width * this->paspect;
-    }
+    size_t max_extent = std::max(width, height);
+    float ax = this->flen * max_extent;
+    float ay = ax * this->paspect;
 
     mat[0] =   ax; mat[1] = 0.0f; mat[2] = width * this->ppoint[0];
     mat[3] = 0.0f; mat[4] =   ay; mat[5] = height * this->ppoint[1];
@@ -149,19 +139,9 @@ void
 CameraInfo::fill_gl_projection (float* mat, float width, float height,
     float znear, float zfar) const
 {
-    float dim_aspect = width / height;
-    float image_aspect = dim_aspect * this->paspect;
-    float ax, ay;
-    if (image_aspect < 1.0f) /* Portrait. */
-    {
-        ax = this->flen / image_aspect;
-        ay = this->flen;
-    }
-    else /* Landscape */
-    {
-        ax = this->flen;
-        ay = this->flen * image_aspect;
-    }
+    size_t max_extent = std::max(width, height);
+    float ax = this->flen * max_extent;
+    float ay = ax * this->paspect;
 
     std::fill(mat, mat + 16, 0.0f);
 
@@ -180,19 +160,9 @@ void
 CameraInfo::fill_inverse_calibration (float* mat,
     float width, float height) const
 {
-    float dim_aspect = width / height;
-    float image_aspect = dim_aspect * this->paspect;
-    float ax, ay;
-    if (image_aspect < 1.0f) /* Portrait. */
-    {
-        ax = this->flen * height / this->paspect;
-        ay = this->flen * height;
-    }
-    else /* Landscape. */
-    {
-        ax = this->flen * width;
-        ay = this->flen * width * this->paspect;
-    }
+    size_t max_extent = std::max(width, height);
+    float ax = this->flen * max_extent;
+    float ay = ax * this->paspect;
 
     mat[0] = 1.0f / ax; mat[1] = 0.0f; mat[2] = -width * this->ppoint[0] / ax;
     mat[3] = 0.0f; mat[4] = 1.0f / ay; mat[5] = -height * this->ppoint[1] / ay;
