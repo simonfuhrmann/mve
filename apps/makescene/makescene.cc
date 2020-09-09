@@ -422,8 +422,12 @@ import_bundle_nvm_or_colmap (AppSettings const& conf, bool load_nvm = true)
         add_exif_to_view(view, exif);
 
         /* Normalize focal length, add undistorted image. */
-        int const maxdim = std::max(image->width(), image->height());
-        mve_cam.flen = mve_cam.flen / static_cast<float>(maxdim);
+        if (load_nvm)
+        {
+            // In the case of Colmap, the focal length is already normalized
+            int const maxdim = std::max(image->width(), image->height());
+            mve_cam.flen = mve_cam.flen / static_cast<float>(maxdim);
+        }
 
         mve::ByteImage::Ptr undist;
         if (load_nvm)
