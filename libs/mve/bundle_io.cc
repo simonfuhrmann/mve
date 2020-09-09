@@ -23,6 +23,7 @@
 #include "math/vector.h"
 #include "mve/bundle_io.h"
 #include "mve/image_tools.h"
+#include "mve/depthmap.h"
 
 
 MVE_NAMESPACE_BEGIN
@@ -549,8 +550,15 @@ create_camera_info_from_params(CameraInfo& camera_info,
         // Pinhole: fx, fy, cx, cy
         float fx = params[0];
         float fy = params[1];
-        camera_info.flen = fx;
-        camera_info.paspect = fy / fx;
+        float dim_aspect = static_cast<float>(width) / height;
+        float pixel_aspect = fy / fx;
+        float img_aspect = dim_aspect * pixel_aspect;
+        if (img_aspect < 1.0f) {
+            camera_info.flen = fy / height;
+        } else {
+            camera_info.flen = fx / width;
+        }
+        camera_info.paspect = pixel_aspect;
         camera_info.ppoint[0] = params[2] / width;
         camera_info.ppoint[1] = params[3] / height;
     }
@@ -1130,45 +1138,6 @@ parse_colmap_depth_map(const std::string& path)
     return depth_img;
 }
 
-void
-convert_depth_map_semantics(mve::CameraInfo& mve_cam, int original_width,
-    int original_height, mve::FloatImage::Ptr depth_image)
-{
-    // The meaning of the depth map values in MVE and Colmap differs.
-    // In MVE the depth value is defined w.r.t. unit vectors.
-    // In Colmap the depth value is defined w.r.t. canonical vectors (i.e.
-    // the z-component is equal to 1).
-    size_t max_extent = std::max(original_width, original_height);
-    float fx = mve_cam.flen * max_extent;
-    float fy = fx * mve_cam.paspect;
-    float cx = mve_cam.ppoint[0] * original_width;
-    float cy = mve_cam.ppoint[1] * original_height;
-
-    size_t depth_map_width = depth_image->width();
-    size_t depth_map_height = depth_image->height();
-
-    float u_step_size = original_width / depth_map_width;
-    float v_step_size = original_height / depth_map_height;
-
-    for (int idx = 0; idx < depth_image->get_pixel_amount(); ++idx)
-    {
-        size_t u = idx % depth_map_width;
-        size_t v = idx / depth_map_width;
-        // No offset of 0.5 here, since Colmap depth values are defined w.r.t.
-        // shifted pixel values
-        float u_img = u_step_size * (float)u;
-        float v_img = v_step_size * (float)v;
-        // The cannoncial vectors are defined according to p.155 of
-        // "Multiple View Geometry" by Hartley and Zisserman
-        math::Vec3f canonical_ray{
-            (u_img - cx) / fx,
-            (v_img - cy) / fy,
-            1.0};
-        float norm = canonical_ray.norm();
-        depth_image->at(idx) = depth_image->at(idx) * norm;
-    }
-}
-
 mve::FloatImage::Ptr
 load_colmap_depth_map(int scale, mve::CameraInfo& mve_cam, int original_width,
     int original_height,
@@ -1182,8 +1151,11 @@ load_colmap_depth_map(int scale, mve::CameraInfo& mve_cam, int original_width,
     int depth_width = depth_image->width();
     int depth_height = depth_image->height();
 
-    convert_depth_map_semantics(mve_cam, original_width, original_height,
-        depth_image);
+    math::Matrix3f inv_calib;
+    mve_cam.fill_inverse_calibration(*inv_calib, original_width,
+        original_height);
+    mve::image::depthmap_convert_conventions<float>(depth_image, inv_calib, 
+        true);
 
     if (depth_width == original_width && depth_height == original_height)
     {
