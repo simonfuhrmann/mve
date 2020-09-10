@@ -377,7 +377,8 @@ import_bundle_nvm_or_colmap (AppSettings const& conf, bool load_nvm = true)
 
         mve::View::Ptr view = mve::View::create();
         view->set_id(i);
-        view->set_name(util::string::get_filled(i, 4, '0'));
+        view->set_name(remove_file_extension(util::fs::basename(
+            cam_info.filename)));
 
         /* Load original image. */
         std::string exif;
