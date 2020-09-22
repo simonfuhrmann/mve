@@ -51,7 +51,7 @@ The MVE reconstruction pipeline is composed of the following components:
 The reconstruction tools can be found under `mve/apps/`. Please refer to the
 [MVE Users Guide](https://github.com/simonfuhrmann/mve/wiki/MVE-Users-Guide)
 for a more detailed description how to use these tools. Note that UMVE is
-merely an interface for scene inspection and does not support reconstuction.
+merely an interface for scene inspection and does not support reconstruction.
 
 
 # Licensing
