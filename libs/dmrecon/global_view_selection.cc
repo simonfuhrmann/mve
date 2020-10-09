@@ -88,6 +88,9 @@ GlobalViewSelection::benefitFromView(std::size_t i)
         // Parallax with other selected views that see the same feature
         IndexSet::const_iterator citV;
         for (citV = selected.begin(); citV != selected.end(); ++citV) {
+            if (!views[*citV]->seesFeature(nFeatIDs[k])) {
+                continue;
+            }
             plx = parallax(ftPos, views[*citV], tmpV);
             if (plx < settings.minParallax)
                 score *= sqr(plx / 10.f);
