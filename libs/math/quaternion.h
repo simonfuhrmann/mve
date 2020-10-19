@@ -181,21 +181,21 @@ template <typename T>
 void
 Quaternion<T>::get_axis_angle (T* axis, T& angle)
 {
-    T len = this->norm();
+    const T len = std::sqrt(MATH_POW2(this->v[1])
+        + MATH_POW2(this->v[2]) + MATH_POW2(this->v[3]));
     if (len == T(0))
     {
         axis[0] = T(1);
         axis[1] = T(0);
         axis[2] = T(0);
         angle = T(0);
+        return;
     }
-    else
-    {
-        axis[0] = this->v[1] / len;
-        axis[1] = this->v[2] / len;
-        axis[2] = this->v[3] / len;
-        angle = T(2) * std::acos(this->v[0]);
-    }
+
+    axis[0] = this->v[1] / len;
+    axis[1] = this->v[2] / len;
+    axis[2] = this->v[3] / len;
+    angle = T(2) * std::acos(this->v[0]);
 }
 
 template <typename T>
