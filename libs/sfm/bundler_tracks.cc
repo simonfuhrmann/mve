@@ -159,6 +159,7 @@ Tracks::remove_invalid_tracks (ViewportList* viewports, TrackList* tracks)
     {
         if (tracks->at(i).features.empty())
         {
+            num_invalid_tracks += 1;
             delete_tracks[i] = true;
             continue;
         }
