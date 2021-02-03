@@ -127,7 +127,7 @@ Triangulate::triangulate (std::vector<CameraPose const*> const& poses,
                     continue;
             }
 
-            /* Chek error in all input poses and find outliers. */
+            /* Check error in all input poses and find outliers. */
             std::vector<std::size_t> tmp_outliers;
             for (std::size_t i = 0; i < poses.size(); ++i)
             {
