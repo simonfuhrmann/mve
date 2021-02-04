@@ -23,7 +23,6 @@ before_script:
    - wget https://github.com/google/googletest/archive/master.zip -O /tmp/gtest.zip
    - unzip /tmp/gtest.zip
    - export GTEST_PATH=$PWD/googletest-master
-   - sed -i 's%"$<BUILD_INTERFACE:${gtest_build_include_dirs}>"%"$<BUILD_INTERFACE:${gtest_SOURCE_DIR}/include>"\n    "$<BUILD_INTERFACE:${gtest_SOURCE_DIR}>"%g' $GTEST_PATH/googletest/CMakeLists.txt
    - mkdir $GTEST_PATH/build
    - pushd $GTEST_PATH/build
    - cmake ..
