@@ -5,7 +5,7 @@ vpath libgtest_main.a ${GTEST_PATH}/build/lib
 vpath libgtest.a ${GTEST_PATH}/build/lib
 
 SOURCES = $(wildcard math/gtest_*.cc) $(wildcard mve/gtest_*.cc) $(wildcard sfm/gtest_*.cc) $(wildcard util/gtest_*.cc) $(wildcard fssr/gtest_*.cc)
-INCLUDES = -I${MVE_ROOT}/libs -I${GTEST_PATH}/include
+INCLUDES = -I${MVE_ROOT}/libs -I${GTEST_PATH}/googletest/include
 CXXWARNINGS = -Wall -Wextra -pedantic -Wno-sign-compare
 CXXFLAGS = -std=c++11 -pthread ${CXXWARNINGS} ${INCLUDES}
 LDLIBS += -lpng -ltiff -ljpeg
