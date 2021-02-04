@@ -6,7 +6,6 @@ sudo: false
 branches:
    only:
      - master
-     - travis_test
 
 before_install:
    - if [ "$CXX" = "g++" ]; then export CXX="g++-6"; fi
