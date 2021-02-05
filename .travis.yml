@@ -21,7 +21,7 @@ addons:
 before_script:
    - wget https://github.com/google/googletest/archive/master.zip -O /tmp/gtest.zip
    - unzip /tmp/gtest.zip
-   - export GTEST_PATH=$PWD/googletest-master/googletest
+   - export GTEST_PATH=$PWD/googletest-master
    - mkdir $GTEST_PATH/build
    - pushd $GTEST_PATH/build
    - cmake ..
