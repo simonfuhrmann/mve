@@ -47,7 +47,7 @@ typedef std::pair<float, FocalLengthMethod> FocalLengthEstimate;
  *  - The camera did not specify the focal length in EXIF
  *  - The lens specifies the wrong focal length due to lens incompatibility
  *  - The camera is not in the database and the 35mm equivalent is missing
- *  - The camera used digial zoom changing the effective focal length
+ *  - The camera used digital zoom changing the effective focal length
  *
  * The resulting focal length is in normalized format, that is the quotient
  * of the image focal length by the sensor size. E.g. a photo taken at 70mm
