@@ -39,7 +39,7 @@ public:
 
     /**
      * Representation of a 3D feature with position and color. Every feature
-     * also corresponds to a set of views form which it is seen. In general,
+     * also corresponds to a set of views from which it is seen. In general,
      * a 3D feature is seen by at least two cameras. However, if cameras are
      * deleted from the bundle, there may only be one or zero cameras left.
      */
