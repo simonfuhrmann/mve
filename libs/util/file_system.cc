@@ -196,7 +196,8 @@ get_app_data_dir (void)
     std::string p = join_path(get_home_dir(), ".local/share");
     if (p.size() >= PATH_MAX)
         throw util::Exception("Cannot determine home directory");
-    std::strncpy(app_data_path, p.c_str(), PATH_MAX);
+    std::strncpy(app_data_path, p.c_str(), PATH_MAX - 1);
+    app_data_path[PATH_MAX - 1] = '\0';
 #endif // _WIN32
 
   return app_data_path;
@@ -223,7 +224,8 @@ get_home_dir (void)
     struct passwd* user_info = ::getpwuid(user_id);
     if (user_info == nullptr || user_info->pw_dir == nullptr)
         throw util::Exception("Cannot determine home directory");
-    std::strncpy(home_path, user_info->pw_dir, PATH_MAX);
+    std::strncpy(home_path, user_info->pw_dir, PATH_MAX - 1);
+    home_path[PATH_MAX - 1] = '\0';
 #endif // _WIN32
 
   return home_path;
