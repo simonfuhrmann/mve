@@ -161,7 +161,7 @@ DMRecon::start()
         if (!settings.quiet)
             std::cout << "MVS took " << mvs_time << " seconds." << std::endl;
     }
-    catch (util::Exception e)
+    catch (util::Exception& e)
     {
         if (!settings.quiet)
             std::cout << "Reconstruction failed: " << e << std::endl;
