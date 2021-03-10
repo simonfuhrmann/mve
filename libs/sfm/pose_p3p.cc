@@ -102,11 +102,10 @@ pose_p3p_kneip (
         std::copy(e1.begin(), e1.end(), T.begin() + 0);
         std::copy(e2.begin(), e2.end(), T.begin() + 3);
         std::copy(e3.begin(), e3.end(), T.begin() + 6);
-        f3 = T * f3;
     }
 
-    /* Change camera frame and point order if f3[2] > 0. */
-    if (f3[2] > 0.0)
+    /* Change camera frame and point order if new z > 0. */
+    if (T.row(2).dot(f3) > 0.0)
     {
         std::swap(p1, p2);
         std::swap(f1, f2);
@@ -117,8 +116,8 @@ pose_p3p_kneip (
         std::copy(e1.begin(), e1.end(), T.begin() + 0);
         std::copy(e2.begin(), e2.end(), T.begin() + 3);
         std::copy(e3.begin(), e3.end(), T.begin() + 6);
-        f3 = T * f3;
     }
+    f3 = T * f3;
 
     /* Create world frame. */
     math::Matrix3d N;
