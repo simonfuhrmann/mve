@@ -24,8 +24,13 @@ add_library(mve_math INTERFACE)
 
 set_target_properties(mve_mve PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
+
 target_include_directories(mve_math INTERFACE
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+    	"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>"
+		# this to be able to include as <mve/math/...>, recommended
+		"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+		# this to be able to include as <math/...>, not recommended
+		"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
 
 # Targets:
@@ -43,7 +48,7 @@ install(
 # Headers:
 #   * math/*.h -> <prefix>/include/math/*.h
 install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/math"
-    DESTINATION "${include_install_dir}"
+    DIRECTORY "${PROJECT_SOURCE_DIR}/libs/math"
+    DESTINATION "${include_install_dir}/mve"
     FILES_MATCHING PATTERN "*.h"
 )

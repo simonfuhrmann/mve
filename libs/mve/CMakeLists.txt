@@ -53,7 +53,11 @@ set(MVE_SOURCES
 add_library(mve_mve ${MVE_SOURCES})
 
 target_include_directories(mve_mve PUBLIC
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+    	"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>"
+		# this to be able to include as <mve/mve/...>, recommended
+		"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+		# this to be able to include as <mve/...>, not recommended
+		"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
 if(NOT MVE_NO_PNG_SUPPORT)
 	target_include_directories(mve_mve PRIVATE ${PNG_INCLUDE_DIRS})
@@ -113,7 +117,7 @@ install(
 # Headers:
 #   * mve/*.h -> <prefix>/include/mve/*.h
 install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/mve"
-    DESTINATION "${include_install_dir}"
+    DIRECTORY "${PROJECT_SOURCE_DIR}/libs/mve"
+    DESTINATION "${include_install_dir}/mve"
     FILES_MATCHING PATTERN "*.h"
 )

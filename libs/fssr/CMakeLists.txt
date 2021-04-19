@@ -25,7 +25,11 @@ set(FSSR_SOURCES
 add_library(mve_fssr ${FSSR_SOURCES})
 
 target_include_directories(mve_fssr PUBLIC
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>"
+	# this to be able to include as <mve/fssr/...>, recommended
+	"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+	# this to be able to include as <fssr/...>, not recommended
+	"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
 set_target_properties(mve_fssr PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
@@ -53,7 +57,7 @@ install(
 # Headers:
 #   * ffsr/*.h -> <prefix>/include/ffsr/*.h
 install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/fssr"
-    DESTINATION "${include_install_dir}"
+    DIRECTORY "${PROJECT_SOURCE_DIR}/libs/fssr"
+    DESTINATION "${include_install_dir}/mve"
     FILES_MATCHING PATTERN "*.h"
 )

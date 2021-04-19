@@ -22,7 +22,9 @@ set(UTIL_SOURCES
 add_library(mve_util ${UTIL_SOURCES})
 
 target_include_directories(mve_util PUBLIC
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>"
+	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/mve>
+	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/>)
 
 set_target_properties(mve_util PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
@@ -41,7 +43,7 @@ install(
 # Headers:
 #   * util/*.h -> <prefix>/include/util/*.h
 install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/util"
-    DESTINATION "${include_install_dir}"
+    DIRECTORY "${PROJECT_SOURCE_DIR}/libs/util"
+    DESTINATION "${include_install_dir}/mve"
     FILES_MATCHING PATTERN "*.h"
 )

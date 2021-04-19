@@ -35,7 +35,11 @@ endif()
 add_library(mve_ogl ${OGL_SOURCES})
 
 target_include_directories(mve_ogl PUBLIC ${OPENGL_INCLUDE_DIR}
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>"
+        # this to be able to include as <mve/ogl/...>, recommended
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+        # this to be able to include as <ogl/...>, not recommended
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
 if(WIN32)
 target_include_directories(mve_ogl PUBLIC ${GLEW_INCLUDE_DIRS})
@@ -64,7 +68,7 @@ install(
 # Headers:
 #   * ogl/*.h -> <prefix>/include/ogl/*.h
 install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/ogl"
-    DESTINATION "${include_install_dir}"
+    DIRECTORY "${PROJECT_SOURCE_DIR}/libs/ogl"
+    DESTINATION "${include_install_dir}/mve"
     FILES_MATCHING PATTERN "*.h"
 )

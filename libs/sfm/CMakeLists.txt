@@ -64,7 +64,11 @@ set(SFM_SOURCES
 add_library(mve_sfm ${SFM_SOURCES})
 
 target_include_directories(mve_sfm PUBLIC
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>"
+        # this to be able to include as <mve/sfm/...>, recommended
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+        # this to be able to include as <sfm/...>, not recommended
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
 target_compile_options(mve_sfm PUBLIC -msse2 -msse3 -mpopcnt)
 
@@ -93,7 +97,7 @@ install(
 # Headers:
 #   * sfm/*.h -> <prefix>/include/sfm/*.h
 install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/sfm"
-    DESTINATION "${include_install_dir}"
+    DIRECTORY "${PROJECT_SOURCE_DIR}/libs/sfm"
+    DESTINATION "${include_install_dir}/mve"
     FILES_MATCHING PATTERN "*.h"
 )
