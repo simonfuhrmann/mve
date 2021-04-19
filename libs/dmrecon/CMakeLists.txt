@@ -34,7 +34,7 @@ target_include_directories(mve_dmrecon PUBLIC
 target_compile_options(mve_dmrecon PUBLIC -msse2 -msse3 -mpopcnt)
 
 set_target_properties(mve_dmrecon PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
+set_target_properties(mve_dmrecon PROPERTIES DEBUG_POSTFIX "d")
 
 target_link_libraries(mve_dmrecon PUBLIC mve_mve mve_math PRIVATE mve_util)
 

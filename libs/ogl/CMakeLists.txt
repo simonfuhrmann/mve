@@ -46,7 +46,7 @@ if(WIN32)
 endif()
 
 set_target_properties(mve_ogl PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
+set_target_properties(mve_ogl PROPERTIES DEBUG_POSTFIX "d")
 
 target_link_libraries(mve_ogl PUBLIC mve_mve mve_math mve_util ${OPENGL_LIBRARIES})
 if(WIN32)

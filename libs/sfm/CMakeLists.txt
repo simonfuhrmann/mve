@@ -78,7 +78,7 @@ if(OPENMP_FOUND)
 endif()
 
 set_target_properties(mve_sfm PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
+set_target_properties(mve_sfm PROPERTIES DEBUG_POSTFIX "d")
 
 target_link_libraries(mve_sfm PUBLIC mve_mve mve_math mve_util PRIVATE Threads::Threads)
 

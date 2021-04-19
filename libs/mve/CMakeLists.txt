@@ -76,6 +76,7 @@ set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
 #     CXX_STANDARD 11
 #     CXX_STANDARD_REQUIRED YES
 # )
+set_target_properties(mve_mve PROPERTIES DEBUG_POSTFIX "d")
 
 target_link_libraries(mve_mve PUBLIC mve_util mve_math)
 if(NOT MVE_NO_PNG_SUPPORT)

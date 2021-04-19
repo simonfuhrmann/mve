@@ -32,7 +32,7 @@ target_include_directories(mve_fssr PUBLIC
 	"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
 set_target_properties(mve_fssr PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
+set_target_properties(mve_fssr PROPERTIES DEBUG_POSTFIX "d")
 
 if(OPENMP_FOUND)
    target_compile_options(mve_fssr PUBLIC "${OpenMP_CXX_FLAGS}")
