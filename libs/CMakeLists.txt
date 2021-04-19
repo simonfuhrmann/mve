@@ -10,7 +10,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED yes)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(MVE_BUILD_WITH_SSE2 "Build MVE with SSE2 support" ON)
 option(MVE_BUILD_WITH_SSE3 "Build MVE with SSE3 support" ON)

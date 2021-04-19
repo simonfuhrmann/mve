@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 project(mveApps)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED yes)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(TARGET mve_util)
   add_library(mve::mve_util ALIAS mve_util)
