@@ -33,9 +33,8 @@ set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
 install(
     TARGETS mve_util
     EXPORT "${targets_export_name}"
-    LIBRARY DESTINATION "lib"
-    ARCHIVE DESTINATION "lib"
-    RUNTIME DESTINATION "bin"
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION "${include_install_dir}"
 )
 

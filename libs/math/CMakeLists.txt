@@ -34,9 +34,9 @@ target_include_directories(mve_math INTERFACE
 install(
     TARGETS mve_math
     EXPORT "${targets_export_name}"
-    LIBRARY DESTINATION "lib"
-    ARCHIVE DESTINATION "lib"
-    RUNTIME DESTINATION "bin"
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION "${include_install_dir}"
 )
 

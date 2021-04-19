@@ -84,9 +84,9 @@ target_link_libraries(mve_sfm PUBLIC mve_mve mve_math mve_util)
 install(
     TARGETS mve_sfm
     EXPORT "${targets_export_name}"
-    LIBRARY DESTINATION "lib"
-    ARCHIVE DESTINATION "lib"
-    RUNTIME DESTINATION "bin"
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION "${include_install_dir}"
 )
 
