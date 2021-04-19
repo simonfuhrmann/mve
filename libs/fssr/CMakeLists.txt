@@ -22,7 +22,7 @@ set(FSSR_SOURCES
 	triangulation.cc
 	voxel.cc)
 
-add_library(mve_fssr STATIC ${FSSR_SOURCES})
+add_library(mve_fssr ${FSSR_SOURCES})
 
 target_include_directories(mve_fssr PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")

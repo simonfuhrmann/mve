@@ -32,7 +32,7 @@ if(WIN32)
     find_package(GLEW REQUIRED)
 endif()
 
-add_library(mve_ogl STATIC ${OGL_SOURCES})
+add_library(mve_ogl ${OGL_SOURCES})
 
 target_include_directories(mve_ogl PUBLIC ${OPENGL_INCLUDE_DIR}
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")

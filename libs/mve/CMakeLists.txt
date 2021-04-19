@@ -50,7 +50,7 @@ set(MVE_SOURCES
 	view.cc
 	volume.cc)
 
-add_library(mve_mve STATIC ${MVE_SOURCES})
+add_library(mve_mve ${MVE_SOURCES})
 
 target_include_directories(mve_mve PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")

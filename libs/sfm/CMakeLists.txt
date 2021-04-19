@@ -61,7 +61,7 @@ set(SFM_SOURCES
         triangulate.cc
         visualizer.cc)
 
-add_library(mve_sfm STATIC ${SFM_SOURCES})
+add_library(mve_sfm ${SFM_SOURCES})
 
 target_include_directories(mve_sfm PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")

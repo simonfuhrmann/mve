@@ -19,7 +19,7 @@ set(UTIL_SOURCES
 	ini_parser.cc
 	system.cc)
 
-add_library(mve_util STATIC ${UTIL_SOURCES})
+add_library(mve_util ${UTIL_SOURCES})
 
 target_include_directories(mve_util PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")

@@ -22,7 +22,7 @@ set(DMRECON_SOURCES
         patch_sampler.cc
         single_view.cc)
 
-add_library(mve_dmrecon STATIC ${DMRECON_SOURCES})
+add_library(mve_dmrecon ${DMRECON_SOURCES})
 
 target_include_directories(mve_dmrecon PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
