@@ -42,6 +42,7 @@ target_include_directories(mve_ogl PUBLIC ${GLEW_INCLUDE_DIRS})
 endif()
 
 set_target_properties(mve_ogl PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
 
 target_link_libraries(mve_ogl PUBLIC mve_mve mve_math mve_util ${OPENGL_LIBRARIES})
 if(WIN32)

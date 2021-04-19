@@ -25,6 +25,7 @@ target_include_directories(mve_util PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
 
 set_target_properties(mve_util PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
 
 # Targets:
 #   * <prefix>/lib/libmve_util.a

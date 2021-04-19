@@ -66,6 +66,7 @@ if(NOT MVE_NO_TIFF_SUPPORT)
 endif()
 
 set_target_properties(mve_mve PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
 
 # set_target_properties(mve_mve PROPERTIES
 #     CXX_STANDARD 11
