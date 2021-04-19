@@ -25,6 +25,7 @@ endif()
 if(NOT MVE_NO_TIFF_SUPPORT)
     find_package(TIFF REQUIRED)
 endif()
+
 find_package(OpenMP QUIET)
 
 find_package(Threads REQUIRED)
@@ -74,6 +75,7 @@ configure_package_config_file(
     INSTALL_DESTINATION "${config_install_dir}"
 )
 
+export(EXPORT ${targets_export_name} FILE "${generated_dir}/${targets_export_name}.cmake")
 
 # Config
 #   * <prefix>/lib/cmake/mve/mveConfig.cmake
@@ -86,7 +88,7 @@ install(
 # Config
 #   * <prefix>/lib/cmake/mve/mveTargets.cmake
 install(
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     NAMESPACE "${namespace}"
     DESTINATION "${config_install_dir}"
 )

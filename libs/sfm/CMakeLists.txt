@@ -87,7 +87,7 @@ target_link_libraries(mve_sfm PUBLIC mve_mve mve_math mve_util PRIVATE Threads::
 #   * header location after install: <prefix>/include/*/*.h
 install(
     TARGETS mve_sfm
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}

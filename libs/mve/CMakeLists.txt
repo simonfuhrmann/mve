@@ -107,7 +107,7 @@ endif()
 #   * header location after install: <prefix>/include/*/*.h
 install(
     TARGETS mve_mve
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}

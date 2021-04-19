@@ -47,7 +47,7 @@ target_link_libraries(mve_fssr PUBLIC mve_mve mve_math
 #   * header location after install: <prefix>/include/*/*.h
 install(
     TARGETS mve_fssr
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}

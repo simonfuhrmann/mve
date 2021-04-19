@@ -38,7 +38,7 @@ target_include_directories(mve_math INTERFACE
 #   * header location after install: <prefix>/include/math/*.h
 install(
     TARGETS mve_math
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}

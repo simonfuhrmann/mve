@@ -43,7 +43,7 @@ target_link_libraries(mve_dmrecon PUBLIC mve_mve mve_math PRIVATE mve_util)
 #   * header location after install: <prefix>/include/*/*.h
 install(
     TARGETS mve_dmrecon
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}

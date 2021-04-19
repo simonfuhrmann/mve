@@ -34,7 +34,7 @@ set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
 #   * header location after install: <prefix>/include/*/*.h
 install(
     TARGETS mve_util
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION "${include_install_dir}"

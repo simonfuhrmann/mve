@@ -58,7 +58,7 @@ endif()
 #   * header location after install: <prefix>/include/ogl/*.h
 install(
     TARGETS mve_ogl
-    EXPORT "${targets_export_name}"
+    EXPORT ${targets_export_name}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}
