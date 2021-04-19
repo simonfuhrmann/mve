@@ -42,7 +42,7 @@ target_include_directories(mve_ogl PUBLIC ${OPENGL_INCLUDE_DIR}
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
 if(WIN32)
-target_include_directories(mve_ogl PUBLIC ${GLEW_INCLUDE_DIRS})
+    target_include_directories(mve_ogl PUBLIC ${GLEW_INCLUDE_DIRS})
 endif()
 
 set_target_properties(mve_ogl PROPERTIES VERSION ${PROJECT_VERSION})
