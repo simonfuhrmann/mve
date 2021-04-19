@@ -29,6 +29,7 @@ if(NOT MVE_NO_TIFF_SUPPORT)
 endif()
 find_package(OpenMP QUIET)
 
+find_package(Threads REQUIRED)
 
 ####
 
