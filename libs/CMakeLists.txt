@@ -1,5 +1,3 @@
-project(mve VERSION 1.0.0)
-
 # Warning flags
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
