@@ -35,8 +35,8 @@ find_package(Threads REQUIRED)
 #   * <prefix>/lib/cmake/<PROJECT-NAME>
 #   * <prefix>/lib/
 #   * <prefix>/include/
-set(config_install_dir "lib/cmake/${PROJECT_NAME}")
-set(include_install_dir "include")
+set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+set(include_install_dir "${CMAKE_INSTALL_INCLUDEDIR}")
 
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
@@ -55,7 +55,7 @@ add_subdirectory(sfm)
 add_subdirectory(dmrecon)
 add_subdirectory(ogl)
 
-# Include module with fuction 'write_basic_package_version_file'
+# Include module with function 'write_basic_package_version_file'
 include(CMakePackageConfigHelpers)
 
 # Configure '<PROJECT-NAME>ConfigVersion.cmake'
