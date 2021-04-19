@@ -31,5 +31,5 @@ target_link_libraries(umve PUBLIC Qt5::Core
         mve::mve_sfm)
 
 
-install(TARGETS umve DESTINATION bin)
-install(DIRECTORY shaders DESTINATION bin)
+install(TARGETS umve DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY shaders DESTINATION ${CMAKE_INSTALL_BINDIR})
