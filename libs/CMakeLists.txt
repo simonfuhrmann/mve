@@ -12,9 +12,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(MVE_BUILD_WITH_SSE2 "Build MVE with SSE2 support" ON)
 option(MVE_BUILD_WITH_SSE3 "Build MVE with SSE3 support" ON)
-option(MVE_NO_PNG_SUPPORT "Bulid MVE without PNG support" OFF)
-option(MVE_NO_JPEG_SUPPORT "Bulid MVE without JPEG support" OFF)
-option(MVE_NO_TIFF_SUPPORT "Bulid MVE without TIFF support" OFF)
+option(MVE_NO_PNG_SUPPORT "Build MVE without PNG support" OFF)
+option(MVE_NO_JPEG_SUPPORT "Build MVE without JPEG support" OFF)
+option(MVE_NO_TIFF_SUPPORT "Build MVE without TIFF support" OFF)
 
 if(NOT MVE_NO_JPEG_SUPPORT)
     find_package(JPEG REQUIRED)
