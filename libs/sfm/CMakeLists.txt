@@ -80,7 +80,10 @@ endif()
 set_target_properties(mve_sfm PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(mve_sfm PROPERTIES DEBUG_POSTFIX "d")
 
-target_link_libraries(mve_sfm PUBLIC mve_mve mve_math mve_util PRIVATE Threads::Threads)
+target_link_libraries(mve_sfm PUBLIC mve_mve mve_math mve_util)
+if(NOT WIN32)
+    target_link_libraries(mve_sfm PRIVATE Threads::Threads)
+endif()
 
 # Targets:
 #   * <prefix>/lib/libmve_sfm.a

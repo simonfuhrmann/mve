@@ -28,7 +28,9 @@ endif()
 
 find_package(OpenMP QUIET)
 
-find_package(Threads REQUIRED)
+if(NOT WIN32)
+    find_package(Threads REQUIRED)
+endif()
 
 ####
 
