@@ -10,8 +10,11 @@ qt5_add_resources(RESOURCES_RCC umve.qrc)
 
 add_executable(umve ${UMVE_SOURCES} ${HEADERS_MOC} ${RESOURCES_RCC})
 
-target_include_directories(umve PUBLIC OPENGL_INCLUDE_DIR 
+target_include_directories(umve PUBLIC ${OPENGL_INCLUDE_DIR}
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>")
+
+# needed because otherwise somehow opengl is imported without  GL_GLEXT_PROTOTYPES
+target_compile_definitions(umve PUBLIC GL_GLEXT_PROTOTYPES)
 
 set_target_properties(umve PROPERTIES ENABLE_EXPORTS TRUE)
 
