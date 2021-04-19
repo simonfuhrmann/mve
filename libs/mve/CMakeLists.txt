@@ -59,34 +59,18 @@ target_include_directories(mve_mve PUBLIC
 		# this to be able to include as <mve/...>, not recommended
 		"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
-if(NOT MVE_NO_PNG_SUPPORT)
-	target_include_directories(mve_mve PRIVATE ${PNG_INCLUDE_DIRS})
-endif()
-if(NOT MVE_NO_JPEG_SUPPORT)
-	target_include_directories(mve_mve PRIVATE ${JPEG_INCLUDE_DIR})
-endif()
-if(NOT MVE_NO_TIFF_SUPPORT)
-	target_include_directories(mve_mve PRIVATE ${TIFF_INCLUDE_DIR})
-endif()
-
 set_target_properties(mve_mve PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(mve_util PROPERTIES DEBUG_POSTFIX "d")
-
-# set_target_properties(mve_mve PROPERTIES
-#     CXX_STANDARD 11
-#     CXX_STANDARD_REQUIRED YES
-# )
 set_target_properties(mve_mve PROPERTIES DEBUG_POSTFIX "d")
 
 target_link_libraries(mve_mve PUBLIC mve_util mve_math)
 if(NOT MVE_NO_PNG_SUPPORT)
-    target_link_libraries(mve_mve PRIVATE ${PNG_LIBRARIES})
+    target_link_libraries(mve_mve PRIVATE PNG::PNG)
 endif()
 if(NOT MVE_NO_JPEG_SUPPORT)
-    target_link_libraries(mve_mve PRIVATE ${JPEG_LIBRARIES})
+    target_link_libraries(mve_mve PRIVATE JPEG::JPEG)
 endif()
 if(NOT MVE_NO_TIFF_SUPPORT)
-    target_link_libraries(mve_mve PRIVATE ${TIFF_LIBRARIES})
+    target_link_libraries(mve_mve PRIVATE TIFF::TIFF)
 endif()
 
 if(NOT MVE_NO_PNG_SUPPORT)
