@@ -7,4 +7,9 @@ if(NOT WIN32)
     target_link_libraries(dmrecon PUBLIC Threads::Threads)
 endif()
 
+if(OPENMP_FOUND)
+    target_link_libraries(dmrecon PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
+
 install(TARGETS dmrecon DESTINATION ${CMAKE_INSTALL_BINDIR})

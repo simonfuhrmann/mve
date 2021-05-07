@@ -35,8 +35,7 @@ set_target_properties(mve_fssr PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(mve_fssr PROPERTIES DEBUG_POSTFIX "d")
 
 if(OPENMP_FOUND)
-   target_compile_options(mve_fssr PUBLIC "${OpenMP_CXX_FLAGS}")
-   target_link_libraries(mve_fssr PUBLIC ${OpenMP_CXX_FLAGS})
+   target_link_libraries(mve_fssr PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 target_link_libraries(mve_fssr PUBLIC mve_mve mve_math 
