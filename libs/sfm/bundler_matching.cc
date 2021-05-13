@@ -72,7 +72,7 @@ Matching::compute (PairwiseMatching* pairwise_matching)
     }
 
 #pragma omp parallel for schedule(dynamic)
-    for (std::size_t i = 0; i < num_pairs; ++i)
+    for (int i = 0; i < static_cast<int>(num_pairs); ++i)
     {
 #pragma omp critical
         {

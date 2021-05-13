@@ -45,7 +45,7 @@ InitialPair::compute_pair (Result* result)
     std::size_t found_pair_id = std::numeric_limits<std::size_t>::max();
     std::vector<float> pair_scores(candidates.size(), 0.0f);
 #pragma omp parallel for schedule(dynamic)
-    for (std::size_t i = 0; i < candidates.size(); ++i)
+    for (int i = 0; i < static_cast<int>(candidates.size()); ++i)
     {
         if (found_pair)
             continue;

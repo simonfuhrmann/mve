@@ -59,7 +59,7 @@ ExhaustiveMatching::init (bundler::ViewportList* viewports)
     this->processed_feature_sets.resize(viewports->size());
 
 #pragma omp parallel for schedule(dynamic)
-    for (size_t i = 0; i < viewports->size(); i++)
+    for (int i = 0; i < static_cast<int>(viewports->size()); i++)
     {
         FeatureSet const& fs = (*viewports)[i].features;
         ProcessedFeatureSet& pfs = this->processed_feature_sets[i];

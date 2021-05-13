@@ -355,7 +355,7 @@ import_bundle_nvm (AppSettings const& conf)
     /* Create and write views. */
     std::cout << "Writing MVE views..." << std::endl;
 #pragma omp parallel for schedule(dynamic, 1)
-    for (std::size_t i = 0; i < cameras.size(); ++i)
+    for (int i = 0; i < static_cast<int>(cameras.size()); ++i)
     {
         mve::CameraInfo& mve_cam = cameras[i];
         mve::NVMCameraInfo const& nvm_cam = nvm_cams[i];
@@ -806,7 +806,7 @@ import_images (AppSettings const& conf)
     std::atomic_int id_cnt(max_scene_id + 1);
     std::atomic_int num_imported(0);
 #pragma omp parallel for ordered schedule(dynamic,1)
-    for (std::size_t i = 0; i < dir.size(); ++i)
+    for (int i = 0; i < static_cast<int>(dir.size()); ++i)
     {
         if (dir[i].is_dir)
         {
