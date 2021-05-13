@@ -70,7 +70,10 @@ target_include_directories(mve_sfm PUBLIC
         # this to be able to include as <sfm/...>, not recommended
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/mve")
 
-target_compile_options(mve_sfm PUBLIC -msse2 -msse3 -mpopcnt)
+if(MVE_BUILD_WITH_SSE2)
+  if(NOT MSVC)
+    target_compile_options(mve_sfm PUBLIC -msse2 -msse3 -mpopcnt)
+endif()
 
 if(OPENMP_FOUND)
    target_compile_options(mve_sfm PUBLIC "${OpenMP_CXX_FLAGS}")
