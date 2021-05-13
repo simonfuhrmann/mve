@@ -33,6 +33,13 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(BUILD_SHARED_LIBS)
+  if(WIN32)
+    # Export all symbols from the dynamic libraries by default (avoid dllexport markup)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
+endif()
+
 if(NOT MVE_NO_JPEG_SUPPORT)
     find_package(JPEG REQUIRED)
 endif()
