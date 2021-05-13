@@ -20,11 +20,6 @@ set(MATH_HEADERS
 
 add_library(mve_math INTERFACE)
 
-# target_sources(mve_math INTERFACE ${MATH_HEADERS})
-
-set_target_properties(mve_math PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(mve_math PROPERTIES DEBUG_POSTFIX "d")
-
 target_include_directories(mve_math INTERFACE
     	"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>"
 		# this to be able to include as <mve/math/...>, recommended

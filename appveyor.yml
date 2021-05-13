@@ -1,0 +1,39 @@
+version: '1.0.{build}'
+
+image: Visual Studio 2017
+
+platform:
+  - x64
+
+configuration:
+  - Release
+  - Debug
+
+install:
+    # - cmd: >-
+    #       call cudaInstallAppveyor.cmd
+
+    - vcpkg upgrade --no-dry-run
+    - vcpkg list
+    - vcpkg install
+        libpng
+        libjpeg-turbo
+        tiff
+        glew
+        gtest
+          --triplet %PLATFORM%-windows
+    - vcpkg list
+
+before_build:
+    - md build
+    - cd build
+    - cmake -G "Visual Studio 15 2017" -A x64 -T v140,host=x64 -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DMVE_BUILD_UMVE:BOOL=OFF -DMVE_BUILD_APPS:BOOL=ON -DMVE_BUILD_TESTS:BOOL=ON ..
+    - ls -l
+
+build:
+  verbosity: detailed
+  project: $(APPVEYOR_BUILD_FOLDER)\build\mve.sln
+  parallel: true
+
+cache:
+  c:\tools\vcpkg\installed\
