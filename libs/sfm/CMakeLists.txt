@@ -73,6 +73,7 @@ target_include_directories(mve_sfm PUBLIC
 if(MVE_BUILD_WITH_SSE2)
   if(NOT MSVC)
     target_compile_options(mve_sfm PUBLIC -msse2 -msse3 -mpopcnt)
+  endif()
 endif()
 
 if(OPENMP_FOUND)
