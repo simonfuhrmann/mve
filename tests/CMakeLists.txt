@@ -1,4 +1,4 @@
-find_package(GTest REQUIRED CONFIG)
+find_package(GTest REQUIRED)
 
 add_subdirectory(fssr)
 add_subdirectory(math)

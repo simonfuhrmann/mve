@@ -1,29 +1,93 @@
 os: linux
 language: cpp
 compiler: gcc
-sudo: false
-
-branches:
-   only:
-     - master
-
-before_install:
-   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
+dist: focal
 
 addons:
    apt:
-     sources:
-       - ubuntu-toolchain-r-test
      packages:
-       - g++-4.8
+       - cmake
+       - libgtest-dev
+       - g++
+       - libpng-dev
+       - libjpeg-turbo8-dev
+       - libtiff-dev
+       - libglew-dev
+       - qt5-default
+       - libqt5opengl5-dev
+       - libqt5svg5-dev
+       - libqt5widgets5
+
+matrix:
+  include:
+    - env: BUILD_TYPE="Release"
+    - env: BUILD_TYPE="Debug"
+
+env:
+  global:
+    - NUM_CPU="`grep processor /proc/cpuinfo | wc -l`"; echo $NUM_CPU"
+    - BUILD_SYSTEM="`uname -s`"
+    - BUILD_PROCESSOR="`uname -p`"
+    - MVE_SOURCE=${TRAVIS_BUILD_DIR}
+    - MVE_BUILD=${TRAVIS_BUILD_DIR}/build
+    - MVE_INSTALL=${MVE_BUILD}/install
+    - MVE_SOURCE_APP=$MVE_SOURCE/apps
+    - MVE_BUILD_APP=${MVE_SOURCE_APP}/build
+    # CMAKE
+    - GTEST_URL="https://github.com/google/googletest/archive/master.zip"
+    - GTEST_ROOT=${TRAVIS_BUILD_DIR}/cmake
+    - GTEST_SOURCE=${GTEST_ROOT}/googletest-master/googletest
+    - GTEST_INSTALL=${GTEST_ROOT}/install
 
 before_script:
-   - wget https://github.com/google/googletest/archive/master.zip -O /tmp/gtest.zip
-   - unzip /tmp/gtest.zip
-   - make -C $PWD/googletest-master/googletest/make
-   - export GTEST_PATH=$PWD/googletest-master/googletest
+#    # install gtest
+#    - >
+#      if [ "$(ls -A ${GTEST_INSTALL})" ]; then
+#        echo "GTest found in cache.";
+#        ls -A ${GTEST_INSTALL}
+#        export PATH=${GTEST_INSTALL}/bin:${PATH};
+#      else
+#        mkdir --parent ${GTEST_INSTALL}
+#        ls -A ${GTEST_INSTALL}
+#        cd ${GTEST_ROOT}
+#        travis_retry wget --no-check-certificate --quiet  https://github.com/google/googletest/archive/master.zip
+#        unzip master.zip
+#        cd ${GTEST_SOURCE}
+#        mkdir build && cd build
+#        cmake .. -DGTEST_INSTALL_PREFIX:PATH=${GTEST_INSTALL}
+#        make install -j$(nproc)
+#      fi
+    - mkdir --parent ${MVE_BUILD}
+    - cd ${MVE_BUILD}
+    - >
+      cmake \
+        -DGTEST_INSTALL_PREFIX:PATH=${MVE_INSTALL} \
+        -DMVE_BUILD_UMVE:BOOL=ON \
+        -DMVE_BUILD_APPS:BOOL=ON \
+        -DMVE_BUILD_TESTS:BOOL=ON \
+        -DGTest_DIR:PATH=${GTEST_INSTALL}/lib/cmake/GTest \
+        -DCMAKE_BUILD_TYPE:BOOL=${BUILD_TYPE} \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        . ${MVE_SOURCE}
 
 script:
-    - make
+    - make install -j$(nproc) VERBOSE=1
     - make test
-    - ./tests/test
+
+    # Test if it compiles as third party
+    - cd ${MVE_SOURCE_APP}
+    - mkdir --parent ${MVE_BUILD_APP}
+    - cd ${MVE_BUILD_APP}
+    - >
+      cmake -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DMVE_BUILD_UMVE:BOOL=ON \
+        -DGTEST_INSTALL_PREFIX:PATH=`pwd`/install \
+        . ${MVE_SOURCE_APP}
+    - make install -j 2 VERBOSE=1
+
+# Before uploading the new cache archive
+before_cache:
+  - ccache -s
+
+cache:
+  ccache: true
