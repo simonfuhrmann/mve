@@ -33,36 +33,14 @@ env:
     - MVE_INSTALL=${MVE_BUILD}/install
     - MVE_SOURCE_APP=$MVE_SOURCE/apps
     - MVE_BUILD_APP=${MVE_SOURCE_APP}/build
-    # CMAKE
-    - GTEST_URL="https://github.com/google/googletest/archive/master.zip"
-    - GTEST_ROOT=${TRAVIS_BUILD_DIR}/cmake
-    - GTEST_SOURCE=${GTEST_ROOT}/googletest-master/googletest
-    - GTEST_INSTALL=${GTEST_ROOT}/install
 
 before_script:
-#    # install gtest
-#    - >
-#      if [ "$(ls -A ${GTEST_INSTALL})" ]; then
-#        echo "GTest found in cache.";
-#        ls -A ${GTEST_INSTALL}
-#        export PATH=${GTEST_INSTALL}/bin:${PATH};
-#      else
-#        mkdir --parent ${GTEST_INSTALL}
-#        ls -A ${GTEST_INSTALL}
-#        cd ${GTEST_ROOT}
-#        travis_retry wget --no-check-certificate --quiet  https://github.com/google/googletest/archive/master.zip
-#        unzip master.zip
-#        cd ${GTEST_SOURCE}
-#        mkdir build && cd build
-#        cmake .. -DGTEST_INSTALL_PREFIX:PATH=${GTEST_INSTALL}
-#        make install -j$(nproc)
-#      fi
     - mkdir --parent ${MVE_BUILD}
     - cd ${MVE_BUILD}
     - >
       cmake \
-        -DGTEST_INSTALL_PREFIX:PATH=${MVE_INSTALL} \
-        -DMVE_BUILD_UMVE:BOOL=ON \
+        -DCMAKE_INSTALL_PREFIX:PATH=${MVE_INSTALL} \
+        -DMVE_BUILD_UMVE:BOOL=OFF \
         -DMVE_BUILD_APPS:BOOL=ON \
         -DMVE_BUILD_TESTS:BOOL=ON \
         -DGTest_DIR:PATH=${GTEST_INSTALL}/lib/cmake/GTest \
@@ -80,8 +58,9 @@ script:
     - cd ${MVE_BUILD_APP}
     - >
       cmake -DBUILD_SHARED_LIBS:BOOL=ON \
-        -DMVE_BUILD_UMVE:BOOL=ON \
-        -DGTEST_INSTALL_PREFIX:PATH=`pwd`/install \
+        -DMVE_BUILD_UMVE:BOOL=OFF \
+        -Dmve_DIR:PATH=${MVE_INSTALL}/lib/cmake/mve \
+        -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install \
         . ${MVE_SOURCE_APP}
     - make install -j 2 VERBOSE=1
 
