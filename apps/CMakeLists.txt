@@ -4,6 +4,7 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   project(mveApps LANGUAGES CXX)
 
   option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+  option(MVE_BUILD_UMVE "Build UMVE module" OFF)
 
   include(GNUInstallDirs)
 
