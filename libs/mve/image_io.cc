@@ -56,33 +56,49 @@ MVE_IMAGE_NAMESPACE_BEGIN
 ByteImage::Ptr
 load_file (std::string const& filename)
 {
+    using namespace util::string;
+    std::string fext4 = lowercase(right(filename, 4));
+    std::string fext5 = lowercase(right(filename, 5));
+
     try
     {
 #ifndef MVE_NO_PNG_SUPPORT
-        try
-        { return load_png_file(filename); }
-        catch (util::FileException& e) { throw; }
-        catch (util::Exception& e) {}
+        if (fext4 == ".png") {
+            try
+            { return load_png_file(filename); }
+            catch (util::FileException& e) { throw; }
+            catch (util::Exception& e) {}
+        }
 #endif
 
 #ifndef MVE_NO_JPEG_SUPPORT
-        try
-        { return load_jpg_file(filename); }
-        catch (util::FileException& e) { throw; }
-        catch (util::Exception& e) {}
+        if (fext4 == ".jpg" || fext5 == ".jpeg") {
+            try
+            {
+                return load_jpg_file(filename);
+            }
+            catch (util::FileException& e) { throw; }
+            catch (util::Exception& e) {}
+        }
 #endif
 
 #ifndef MVE_NO_TIFF_SUPPORT
-        try
-        { return load_tiff_file(filename); }
-        catch (util::FileException& e) { throw; }
-        catch (util::Exception& e) {}
+        if (fext4 == ".tif" || fext5 == ".tiff") {
+            try
+            { return load_tiff_file(filename); }
+            catch (util::FileException& e) { throw; }
+            catch (util::Exception& e) {}
+        }
 #endif
 
-        try
-        { return load_ppm_file(filename); }
-        catch (util::FileException& e) { throw; }
-        catch (util::Exception& e) {}
+        if (fext4 == ".ppm") {
+            try
+            {
+                return load_ppm_file(filename);
+            }
+            catch (util::FileException& e) { throw; }
+            catch (util::Exception& e) {}
+        }
 
         try
         {
@@ -106,27 +122,37 @@ load_file (std::string const& filename)
 ImageHeaders
 load_file_headers (std::string const& filename)
 {
+    using namespace util::string;
+    std::string fext4 = lowercase(right(filename, 4));
+    std::string fext5 = lowercase(right(filename, 5));
+
     try
     {
 #ifndef MVE_NO_PNG_SUPPORT
-        try
-        { return load_png_file_headers(filename); }
-        catch (util::FileException&) { throw; }
-        catch (util::Exception&) {}
+        if (fext4 == ".png"){
+            try
+            { return load_png_file_headers(filename); }
+            catch (util::FileException&) { throw; }
+            catch (util::Exception&) {}
+        }
 #endif
 
 #ifndef MVE_NO_JPEG_SUPPORT
-        try
-        { return load_jpg_file_headers(filename); }
-        catch (util::FileException&) { throw; }
-        catch (util::Exception&) {}
+        if (fext4 == ".jpg" || fext5 == ".jpeg"){
+            try
+            { return load_jpg_file_headers(filename); }
+            catch (util::FileException&) { throw; }
+            catch (util::Exception&) {}
+        }
 #endif
 
 #ifndef MVE_NO_TIFF_SUPPORT
-        try
-        { return load_tiff_file_headers(filename); }
-        catch (util::FileException&) { throw; }
-        catch (util::Exception&) {}
+        if (fext4 == ".tif" || fext5 == ".tiff"){
+            try
+            { return load_tiff_file_headers(filename); }
+            catch (util::FileException&) { throw; }
+            catch (util::Exception&) {}
+        }
 #endif
 
         try
