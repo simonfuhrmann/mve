@@ -648,8 +648,8 @@ load_tiff_file_headers (std::string const& filename)
 
     try
     {
-        uint32 width, height;
-        uint16 channels, bits, sampleFormat;
+        uint32_t width, height;
+        uint16_t channels, bits, sampleFormat;
         TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
         TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
         TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
@@ -746,8 +746,8 @@ load_tiff_file (std::string const& filename)
     try
     {
         /* Read width and height from TIFF and create MVE image. */
-        uint32 width, height;
-        uint16 channels, bits;
+        uint32_t width, height;
+        uint16_t channels, bits;
         TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
         TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
         TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
@@ -757,9 +757,9 @@ load_tiff_file (std::string const& filename)
         ByteImage::Ptr image = ByteImage::create(width, height, channels);
 
         /* Scanline based TIFF reading. */
-        uint32 rowstride = TIFFScanlineSize(tif);
+        uint32_t rowstride = TIFFScanlineSize(tif);
         ByteImage::ImageData& data = image->get_data();
-        for (uint32 row = 0; row < height; row++)
+        for (uint32_t row = 0; row < height; row++)
         {
             tdata_t row_pointer = &data[row * rowstride];
             TIFFReadScanline(tif, row_pointer, row);
@@ -822,8 +822,8 @@ load_tiff_16_file (std::string const& filename)
     try
     {
         /* Read width and height from TIFF and create MVE image. */
-        uint32 width, height;
-        uint16 channels, bits;
+        uint32_t width, height;
+        uint16_t channels, bits;
         TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
         TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
         TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
@@ -834,9 +834,9 @@ load_tiff_16_file (std::string const& filename)
         RawImage::Ptr image = Image<uint16_t>::create(width, height, channels);
 
         /* Scanline based TIFF reading. */
-        uint32 rowstride = TIFFScanlineSize(tif) / sizeof(uint16_t);
+        uint32_t rowstride = TIFFScanlineSize(tif) / sizeof(uint16_t);
         Image<uint16_t>::ImageData& data = image->get_data();
-        for (uint32 row = 0; row < height; row++)
+        for (uint32_t row = 0; row < height; row++)
         {
             tdata_t row_pointer = &data[row * rowstride];
             TIFFReadScanline(tif, row_pointer, row);
@@ -899,8 +899,8 @@ load_tiff_float_file (std::string const& filename)
     try
     {
         /* Read width and height from TIFF and create MVE image. */
-        uint32 width, height;
-        uint16 channels, bits;
+        uint32_t width, height;
+        uint16_t channels, bits;
         TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
         TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
         TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
@@ -911,9 +911,9 @@ load_tiff_float_file (std::string const& filename)
         FloatImage::Ptr image = Image<float>::create(width, height, channels);
 
         /* Scanline based TIFF reading. */
-        uint32 rowstride = TIFFScanlineSize(tif) / sizeof(float);
+        uint32_t rowstride = TIFFScanlineSize(tif) / sizeof(float);
         Image<float>::ImageData& data = image->get_data();
-        for (uint32 row = 0; row < height; row++)
+        for (uint32_t row = 0; row < height; row++)
         {
             tdata_t row_pointer = &data[row * rowstride];
             TIFFReadScanline(tif, row_pointer, row);
