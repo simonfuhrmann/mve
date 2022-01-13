@@ -644,7 +644,7 @@ rescale_half_size_gaussian (typename Image<T>::ConstPtr img, float sigma)
     for (int64_t y = 0; y < oh; ++y)
     {
         /* Init the four row pointers. */
-        int64_t const y2 = y / 2;
+        int64_t const y2 = y * 2;
         T const* row[4];
         row[0] = &img->at(std::max<int64_t>(0, y2 - 1) * rowstride);
         row[1] = &img->at(y2 * rowstride);
@@ -654,7 +654,7 @@ rescale_half_size_gaussian (typename Image<T>::ConstPtr img, float sigma)
         for (int64_t x = 0; x < ow; ++x)
         {
             /* Init four pixel positions for each row. */
-            int64_t x2 = x / 2;
+            int64_t x2 = x * 2;
             int64_t xi[4];
             xi[0] = std::max<int64_t>(0, x2 - 1) * ic;
             xi[1] = x2 * ic;
