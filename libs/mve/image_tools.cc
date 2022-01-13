@@ -27,7 +27,7 @@ byte_to_float_image (ByteImage::ConstPtr image)
 
     FloatImage::Ptr img = FloatImage::create();
     img->allocate(image->width(), image->height(), image->channels());
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
     {
         float value = (float)image->at(i) / 255.0f;
         img->at(i) = std::min(1.0f, std::max(0.0f, value));
@@ -45,7 +45,7 @@ byte_to_double_image (ByteImage::ConstPtr image)
 
     DoubleImage::Ptr img = DoubleImage::create();
     img->allocate(image->width(), image->height(), image->channels());
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
     {
         double value = static_cast<double>(image->at(i)) / 255.0;
         img->at(i) = std::min(1.0, std::max(0.0, value));
@@ -63,7 +63,7 @@ float_to_byte_image (FloatImage::ConstPtr image, float vmin, float vmax)
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
     {
         float value = std::min(vmax, std::max(vmin, image->at(i)));
         value = 255.0f * (value - vmin) / (vmax - vmin);
@@ -82,7 +82,7 @@ double_to_byte_image (DoubleImage::ConstPtr image, double vmin, double vmax)
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
     {
         double value = std::min(vmax, std::max(vmin, image->at(i)));
         value = 255.0 * (value - vmin) / (vmax - vmin);
@@ -101,7 +101,7 @@ int_to_byte_image (IntImage::ConstPtr image)
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
     {
         img->at(i) = math::clamp(std::abs(image->at(i)), 0, 255);
     }
@@ -118,7 +118,7 @@ raw_to_byte_image (RawImage::ConstPtr image, uint16_t vmin, uint16_t vmax)
 
     ByteImage::Ptr img = ByteImage::create();
     img->allocate(image->width(), image->height(), image->channels());
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
     {
         uint16_t value = std::min(vmax, std::max(vmin, image->at(i)));
         value = 255.0 * static_cast<double>(value - vmin)
@@ -138,7 +138,7 @@ raw_to_float_image (RawImage::ConstPtr image)
 
     FloatImage::Ptr img = FloatImage::create();
     img->allocate(image->width(), image->height(), image->channels());
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
     {
         float const value = static_cast<float>(image->at(i)) / 65535.0f;
         img->at(i) = std::min(1.0f, std::max(0.0f, value));
@@ -174,10 +174,10 @@ gamma_correct (ByteImage::Ptr image, float power)
         throw std::invalid_argument("Null image given");
 
     uint8_t lookup[256];
-    for (int i = 0; i < 256; ++i)
+    for (int64_t i = 0; i < 256; ++i)
         lookup[i] = static_cast<uint8_t>(std::pow(i / 255.0f, power)
             * 255.0f + 0.5f);
-    for (int i = 0; i < image->get_value_amount(); ++i)
+    for (int64_t i = 0; i < image->get_value_amount(); ++i)
         image->at(i) = lookup[image->at(i)];
 }
 

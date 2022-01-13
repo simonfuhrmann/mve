@@ -96,9 +96,9 @@ View::load_view_from_mve_file  (std::string const& filename)
             ImageProxy proxy;
             proxy.is_dirty = true;
             proxy.name = tokens[1];
-            proxy.width = util::string::convert<int>(tokens[2]);
-            proxy.height = util::string::convert<int>(tokens[3]);
-            proxy.channels = util::string::convert<int>(tokens[4]);
+            proxy.width = util::string::convert<int64_t>(tokens[2]);
+            proxy.height = util::string::convert<int64_t>(tokens[3]);
+            proxy.channels = util::string::convert<int64_t>(tokens[4]);
             proxy.type = mve::ImageBase::get_type_for_string(tokens[5]);
             proxy.is_initialized = true;
             proxy.image = mve::image::create_for_type
@@ -113,9 +113,8 @@ View::load_view_from_mve_file  (std::string const& filename)
             BlobProxy proxy;
             proxy.is_dirty = true;
             proxy.name = tokens[1];
-            proxy.size = util::string::convert<int>(tokens[2]);
+            proxy.size = util::string::convert<uint64_t>(tokens[2]);
             proxy.is_initialized = true;
-            // FIXME: This limits BLOBs to 2^31 bytes.
             proxy.blob = mve::ByteImage::create(proxy.size, 1, 1);
             this->blobs.push_back(proxy);
             embedding_buffers.push_back(ReadBuffer(
@@ -322,10 +321,6 @@ View::cache_cleanup (void)
         proxy.blob.reset();
         released += 1;
     }
-
-    //std::cout << "View: Released " << released
-    //    << " cache entries." << std::endl;
-
     return released;
 }
 

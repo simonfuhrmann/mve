@@ -26,7 +26,7 @@ MVE_IMAGE_NAMESPACE_BEGIN
  * Zero depth values are considered unreconstructed.
  */
 FloatImage::Ptr
-depthmap_cleanup (FloatImage::ConstPtr dm, std::size_t thres);
+depthmap_cleanup (FloatImage::ConstPtr dm, int64_t thres);
 
 /**
  * Removes the backplane according to the confidence map IN-PLACE.
@@ -79,7 +79,7 @@ const float DD_FACTOR_DEFAULT = 5.0f;
  * with inverse K matrix 'invproj'.
  */
 float
-pixel_footprint (std::size_t x, std::size_t y, float depth,
+pixel_footprint (int64_t x, int64_t y, float depth,
     math::Matrix3f const& invproj);
 
 /**
@@ -87,7 +87,7 @@ pixel_footprint (std::size_t x, std::size_t y, float depth,
  * pixel (x,y) and 'depth' for a depth map with inverse K matrix 'invproj'.
  */
 math::Vec3f
-pixel_3dpos (std::size_t x, std::size_t y, float depth,
+pixel_3dpos (int64_t x, int64_t y, float depth,
     math::Matrix3f const& invproj);
 
 /**
@@ -116,7 +116,7 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
  */
 TriangleMesh::Ptr
 depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
-    math::Matrix3f const& invproj, float dd_factor = DD_FACTOR_DEFAULT, 
+    math::Matrix3f const& invproj, float dd_factor = DD_FACTOR_DEFAULT,
     mve::Image<unsigned int>* vertex_ids = nullptr);
 
 /**

@@ -24,16 +24,16 @@ MVE_IMAGE_NAMESPACE_BEGIN
 void
 depthmap_cleanup_grow (FloatImage::ConstPtr dm, FloatImage::Ptr ret,
     std::vector<bool>& visited,
-    std::size_t x, std::size_t y, std::size_t thres)
+    int64_t x, int64_t y, std::size_t thres)
 {
-    typedef std::list<std::size_t> PixelQueue;
-    typedef std::set<std::size_t> PixelBag;
+    typedef std::list<int64_t> PixelQueue;
+    typedef std::set<int64_t> PixelBag;
 
-    std::size_t w = dm->width();
-    std::size_t h = dm->height();
-    std::size_t idx = y * w + x;
-    std::size_t max_idx = w * h;
-    std::size_t const MAX_ST = (std::size_t)-1;
+    int64_t w = dm->width();
+    int64_t h = dm->height();
+    int64_t idx = y * w + x;
+    int64_t max_idx = w * h;
+    int64_t const MAX_ST = -1;
 
     PixelQueue queue;
     PixelBag collected;
@@ -49,11 +49,11 @@ depthmap_cleanup_grow (FloatImage::ConstPtr dm, FloatImage::Ptr ret,
     while (!queue.empty())
     {
         /* Take queue element and process... */
-        std::size_t cur = queue.back();
+        int64_t cur = queue.back();
         queue.pop_back();
 
         /* Define 4-neighborhood for region growing. Y-1, Y+1, X-1, X+1. */
-        std::size_t n[4];
+        int64_t n[4];
         n[0] = (cur < w ? MAX_ST : cur - w);
         n[1] = (cur < max_idx - w ? cur + w : MAX_ST);
         n[2] = (cur % w > 0 ? cur - 1 : MAX_ST);
@@ -87,18 +87,18 @@ depthmap_cleanup_grow (FloatImage::ConstPtr dm, FloatImage::Ptr ret,
 /* ---------------------------------------------------------------- */
 
 FloatImage::Ptr
-depthmap_cleanup (FloatImage::ConstPtr dm, std::size_t thres)
+depthmap_cleanup (FloatImage::ConstPtr dm, int64_t thres)
 {
     FloatImage::Ptr ret(FloatImage::create(*dm));
 
-    int const width = ret->width();
-    int const height = ret->height();
+    int64_t const width = ret->width();
+    int64_t const height = ret->height();
     std::vector<bool> visited;
     visited.resize(width * height, false);
 
-    int i = 0;
-    for (int y = 0; y < height; ++y)
-        for (int x = 0; x < width; ++x, ++i)
+    int64_t i = 0;
+    for (int64_t y = 0; y < height; ++y)
+        for (int64_t x = 0; x < width; ++x, ++i)
         {
             if (dm->at(i, 0) == 0.0f)
                 continue;
@@ -121,8 +121,8 @@ depthmap_confidence_clean (FloatImage::Ptr dm, FloatImage::ConstPtr cm)
     if (dm->width() != cm->width() || dm->height() != cm->height())
         throw std::invalid_argument("Image dimensions do not match");
 
-    int cnt = dm->get_pixel_amount();
-    for (int i = 0; i < cnt; ++i)
+    int64_t cnt = dm->get_pixel_amount();
+    for (int64_t i = 0; i < cnt; ++i)
         if (cm->at(i, 0) <= 0.0f)
             dm->at(i, 0) = 0.0f;
 }
@@ -136,7 +136,7 @@ MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
 
 float
-pixel_footprint (std::size_t x, std::size_t y, float depth,
+pixel_footprint (int64_t x, int64_t y, float depth,
     math::Matrix3f const& invproj)
 {
     math::Vec3f v = invproj * math::Vec3f
@@ -147,7 +147,7 @@ pixel_footprint (std::size_t x, std::size_t y, float depth,
 /* ---------------------------------------------------------------- */
 
 math::Vec3f
-pixel_3dpos (std::size_t x, std::size_t y, float depth,
+pixel_3dpos (int64_t x, int64_t y, float depth,
     math::Matrix3f const& invproj)
 {
     math::Vec3f ray = invproj * math::Vec3f
@@ -162,16 +162,15 @@ dm_make_triangle (TriangleMesh* mesh, mve::Image<unsigned int>& vidx,
     FloatImage const* dm, math::Matrix3f const& invproj,
     std::size_t i, int* tverts)
 {
-    int const width = vidx.width();
-    //int const height = vidx.height();
+    int64_t const width = vidx.width();
     mve::TriangleMesh::VertexList& verts(mesh->get_vertices());
     mve::TriangleMesh::FaceList& faces(mesh->get_faces());
 
-    for (int j = 0; j < 3; ++j)
+    for (int64_t j = 0; j < 3; ++j)
     {
-        int iidx = i + (tverts[j] % 2) + width * (tverts[j] / 2);
-        int x = iidx % width;
-        int y = iidx / width;
+        int64_t iidx = i + (tverts[j] % 2) + width * (tverts[j] / 2);
+        int64_t x = iidx % width;
+        int64_t y = iidx / width;
         if (vidx.at(iidx) == MATH_MAX_UINT)
         {
             /* Add vertex for depth pixel. */
@@ -214,8 +213,8 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     if (dm == nullptr)
         throw std::invalid_argument("Null depthmap given");
 
-    int const width = dm->width();
-    int const height = dm->height();
+    int64_t const width = dm->width();
+    int64_t const height = dm->height();
 
     /* Prepare triangle mesh. */
     TriangleMesh::Ptr mesh(TriangleMesh::create());
@@ -225,10 +224,10 @@ depthmap_triangulate (FloatImage::ConstPtr dm, math::Matrix3f const& invproj,
     vidx.fill(MATH_MAX_UINT);
 
     /* Iterate over 2x2-blocks in the depthmap and create triangles. */
-    int i = 0;
-    for (int y = 0; y < height - 1; ++y, ++i)
+    int64_t i = 0;
+    for (int64_t y = 0; y < height - 1; ++y, ++i)
     {
-        for (int x = 0; x < width - 1; ++x, ++i)
+        for (int64_t x = 0; x < width - 1; ++x, ++i)
         {
             /* Cache the four depth values. */
             float depths[4] = { dm->at(i, 0), dm->at(i + 1, 0),
@@ -327,8 +326,8 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     if (dm == nullptr)
         throw std::invalid_argument("Null depthmap given");
 
-    int const width = dm->width();
-    int const height = dm->height();
+    int64_t const width = dm->width();
+    int64_t const height = dm->height();
 
     if (ci != nullptr && (ci->width() != width || ci->height() != height))
         throw std::invalid_argument("Color image dimension mismatch");
@@ -346,8 +345,8 @@ depthmap_triangulate (FloatImage::ConstPtr dm, ByteImage::ConstPtr ci,
     mve::TriangleMesh::VertexList const& verts(mesh->get_vertices());
     colors.resize(verts.size());
 
-    int num_pixel = vids.get_pixel_amount();
-    for (int i = 0; i < num_pixel; ++i)
+    int64_t num_pixel = vids.get_pixel_amount();
+    for (int64_t i = 0; i < num_pixel; ++i)
     {
         if (vids[i] == MATH_MAX_UINT)
             continue;
@@ -423,16 +422,16 @@ rangegrid_triangulate (Image<unsigned int> const& grid, TriangleMesh::Ptr mesh)
     if (mesh == nullptr)
         throw std::invalid_argument("Null mesh given");
 
-    int w = grid.width();
-    int h = grid.height();
+    int64_t w = grid.width();
+    int64_t h = grid.height();
 
     TriangleMesh::VertexList const& verts(mesh->get_vertices());
     TriangleMesh::FaceList& faces(mesh->get_faces());
 
-    for (int y = 0; y < h - 1; ++y)
-        for (int x = 0; x < w - 1; ++x)
+    for (int64_t y = 0; y < h - 1; ++y)
+        for (int64_t x = 0; x < w - 1; ++x)
         {
-            int i = y * w + x;
+            int64_t i = y * w + x;
 
             unsigned int vid[4] = { grid[i], grid[i + 1],
                 grid[i + w], grid[i + w + 1] };

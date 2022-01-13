@@ -24,9 +24,9 @@ MVE_IMAGE_NAMESPACE_BEGIN
  */
 struct ImageHeaders
 {
-    int width;
-    int height;
-    int channels;
+    int64_t width;
+    int64_t height;
+    int64_t channels;
     ImageType type;
 };
 

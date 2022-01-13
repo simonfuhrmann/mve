@@ -150,8 +150,8 @@ image_undistort_vsfm (typename Image<T>::ConstPtr img,
  */
 template <typename T>
 typename Image<T>::Ptr
-crop (typename Image<T>::ConstPtr image, int width, int height,
-    int left, int top, T const* fill_color);
+crop (typename Image<T>::ConstPtr image, int64_t width, int64_t height,
+    int64_t left, int64_t top, T const* fill_color);
 
 /** Rescale interpolation type. */
 enum RescaleInterpolation
@@ -171,7 +171,7 @@ enum RescaleInterpolation
 template <typename T>
 typename Image<T>::Ptr
 rescale (typename Image<T>::ConstPtr image, RescaleInterpolation interp,
-    int width, int height);
+    int64_t width, int64_t height);
 
 /**
  * Returns a rescaled version of image, scaled by factor 1/2, by grouping
@@ -461,7 +461,7 @@ integral_image (typename Image<T_IN>::ConstPtr image);
 template <typename T>
 T
 integral_image_area (typename Image<T>::ConstPtr sat,
-    int x1, int y1, int x2, int y2, int cc = 0);
+    int64_t x1, int64_t y1, int64_t x2, int64_t y2, int64_t cc = 0);
 
 /**
  * Creates a thumbnail of the given size by first rescaling the image
@@ -470,7 +470,7 @@ integral_image_area (typename Image<T>::ConstPtr sat,
 template <typename T>
 typename Image<T>::Ptr
 create_thumbnail (typename Image<T>::ConstPtr image,
-    int thumb_width, int thumb_height);
+    int64_t thumb_width, int64_t thumb_height);
 
 MVE_IMAGE_NAMESPACE_END
 MVE_NAMESPACE_END
@@ -489,10 +489,10 @@ type_to_type_image (typename Image<SRC>::ConstPtr image)
 {
     typename Image<DST>::Ptr out = Image<DST>::create();
     out->allocate(image->width(), image->height(), image->channels());
-    int size = image->get_value_amount();
+    int64_t size = image->get_value_amount();
     SRC const* src_buf = image->get_data_pointer();
     DST* dst_buf = out->get_data_pointer();
-    std::copy(src_buf, src_buf + size, dst_buf);
+    std::copy_n(src_buf, size, dst_buf);
     return out;
 }
 
@@ -521,7 +521,7 @@ find_min_max_value (typename mve::Image<T>::ConstPtr image, T* vmin, T* vmax)
 template <typename T>
 typename Image<T>::Ptr
 rescale (typename Image<T>::ConstPtr img, RescaleInterpolation interp,
-    int width, int height)
+    int64_t width, int64_t height)
 {
     if (width == 0 && height == 0)
         throw std::invalid_argument("Invalid size request");
@@ -576,11 +576,11 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_half_size (typename Image<T>::ConstPtr img)
 {
-    int const iw = img->width();
-    int const ih = img->height();
-    int const ic = img->channels();
-    int const ow = (iw + 1) >> 1;
-    int const oh = (ih + 1) >> 1;
+    int64_t const iw = img->width();
+    int64_t const ih = img->height();
+    int64_t const ic = img->channels();
+    int64_t const ow = (iw + 1) >> 1;
+    int64_t const oh = (ih + 1) >> 1;
 
     if (iw < 2 || ih < 2)
         throw std::invalid_argument("Input image too small for half-sizing");
@@ -588,20 +588,20 @@ rescale_half_size (typename Image<T>::ConstPtr img)
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
 
-    int outpos = 0;
-    int rowstride = iw * ic;
-    for (int y = 0; y < oh; ++y)
+    int64_t outpos = 0;
+    int64_t rowstride = iw * ic;
+    for (int64_t y = 0; y < oh; ++y)
     {
-        int irow1 = y * 2 * rowstride;
-        int irow2 = irow1 + rowstride * (y * 2 + 1 < ih);
+        int64_t irow1 = y * 2 * rowstride;
+        int64_t irow2 = irow1 + rowstride * (y * 2 + 1 < ih);
 
-        for (int x = 0; x < ow; ++x)
+        for (int64_t x = 0; x < ow; ++x)
         {
-            int ipix1 = irow1 + x * 2 * ic;
-            int ipix2 = irow2 + x * 2 * ic;
-            int hasnext = (x * 2 + 1 < iw);
+            int64_t ipix1 = irow1 + x * 2 * ic;
+            int64_t ipix2 = irow2 + x * 2 * ic;
+            int64_t hasnext = (x * 2 + 1 < iw);
 
-            for (int c = 0; c < ic; ++c)
+            for (int64_t c = 0; c < ic; ++c)
                 out->at(outpos++) = math::interpolate<T>(
                     img->at(ipix1 + c), img->at(ipix1 + ic * hasnext + c),
                     img->at(ipix2 + c), img->at(ipix2 + ic * hasnext + c),
@@ -618,11 +618,11 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_half_size_gaussian (typename Image<T>::ConstPtr img, float sigma)
 {
-    int const iw = img->width();
-    int const ih = img->height();
-    int const ic = img->channels();
-    int const ow = (iw + 1) >> 1;
-    int const oh = (ih + 1) >> 1;
+    int64_t const iw = img->width();
+    int64_t const ih = img->height();
+    int64_t const ic = img->channels();
+    int64_t const ow = (iw + 1) >> 1;
+    int64_t const oh = (ih + 1) >> 1;
 
     if (iw < 2 || ih < 2)
         throw std::invalid_argument("Invalid input image");
@@ -639,30 +639,30 @@ rescale_half_size_gaussian (typename Image<T>::ConstPtr img, float sigma)
     float const w2 = std::exp(-2.5f / (2.0f * MATH_POW2(sigma)));
     float const w3 = std::exp(-4.5f / (2.0f * MATH_POW2(sigma)));
 
-    int outpos = 0;
-    int const rowstride = iw * ic;
-    for (int y = 0; y < oh; ++y)
+    int64_t outpos = 0;
+    int64_t const rowstride = iw * ic;
+    for (int64_t y = 0; y < oh; ++y)
     {
         /* Init the four row pointers. */
-        int y2 = (int)y << 1;
+        int64_t const y2 = y / 2;
         T const* row[4];
-        row[0] = &img->at(std::max(0, y2 - 1) * rowstride);
+        row[0] = &img->at(std::max<int64_t>(0, y2 - 1) * rowstride);
         row[1] = &img->at(y2 * rowstride);
-        row[2] = &img->at(std::min((int)ih - 1, y2 + 1) * rowstride);
-        row[3] = &img->at(std::min((int)ih - 1, y2 + 2) * rowstride);
+        row[2] = &img->at(std::min(ih - 1, y2 + 1) * rowstride);
+        row[3] = &img->at(std::min(ih - 1, y2 + 2) * rowstride);
 
-        for (int x = 0; x < ow; ++x)
+        for (int64_t x = 0; x < ow; ++x)
         {
             /* Init four pixel positions for each row. */
-            int x2 = (int)x << 1;
-            int xi[4];
-            xi[0] = std::max(0, x2 - 1) * ic;
+            int64_t x2 = x / 2;
+            int64_t xi[4];
+            xi[0] = std::max<int64_t>(0, x2 - 1) * ic;
             xi[1] = x2 * ic;
-            xi[2] = std::min((int)iw - 1, x2 + 1) * ic;
-            xi[3] = std::min((int)iw - 1, x2 + 2) * ic;
+            xi[2] = std::min(iw - 1, x2 + 1) * ic;
+            xi[3] = std::min(iw - 1, x2 + 2) * ic;
 
             /* Accumulate 16 values in each channel. */
-            for (int c = 0; c < ic; ++c)
+            for (int64_t c = 0; c < ic; ++c)
             {
                 math::Accum<T> accum(T(0));
                 accum.add(row[0][xi[0] + c], w3);
@@ -699,22 +699,22 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_half_size_subsample (typename Image<T>::ConstPtr img)
 {
-    int const iw = img->width();
-    int const ih = img->height();
-    int const ic = img->channels();
-    int const ow = (iw + 1) >> 1;
-    int const oh = (ih + 1) >> 1;
-    int const irs = iw * ic; // input image row stride
+    int64_t const iw = img->width();
+    int64_t const ih = img->height();
+    int64_t const ic = img->channels();
+    int64_t const ow = (iw + 1) >> 1;
+    int64_t const oh = (ih + 1) >> 1;
+    int64_t const irs = iw * ic; // input image row stride
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
 
-    int iter = 0; // Output image iterator
-    for (int iy = 0; iy < ih; iy += 2)
+    int64_t iter = 0; // Output image iterator
+    for (int64_t iy = 0; iy < ih; iy += 2)
     {
-        int rowoff = iy * irs;
-        int pixoff = rowoff;
-        for (int ix = 0; ix < iw; ix += 2)
+        int64_t rowoff = iy * irs;
+        int64_t pixoff = rowoff;
+        for (int64_t ix = 0; ix < iw; ix += 2)
         {
             T const* iptr = &img->at(pixoff);
             T* optr = &out->at(iter);
@@ -733,12 +733,12 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_double_size (typename Image<T>::ConstPtr img)
 {
-    int const iw = img->width();
-    int const ih = img->height();
-    int const ic = img->channels();
-    int const ow = iw << 1;
-    int const oh = ih << 1;
-    int const irs = iw * ic;  // input image row stride
+    int64_t const iw = img->width();
+    int64_t const ih = img->height();
+    int64_t const ic = img->channels();
+    int64_t const ow = iw << 1;
+    int64_t const oh = ih << 1;
+    int64_t const irs = iw * ic;  // input image row stride
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
@@ -748,8 +748,8 @@ rescale_double_size (typename Image<T>::ConstPtr img)
     T const* row1 = img->begin();
     T const* row2 = img->begin();
 
-    int i = 0;
-    for (int y = 0; y < oh; ++y)
+    int64_t i = 0;
+    for (int64_t y = 0; y < oh; ++y)
     {
         /* Uneven row -> advance, even row -> swap. */
         if (y % 2)
@@ -758,12 +758,12 @@ rescale_double_size (typename Image<T>::ConstPtr img)
             std::swap(row1, row2);
 
         T const* px[4] = { row1, row1, row2, row2 };
-        for (int x = 0; x < ow; ++x)
+        for (int64_t x = 0; x < ow; ++x)
         {
             /* Uneven pixel -> advance, even pixel -> swap. */
             if (x % 2)
             {
-                int off = (x < ow - 1 ? ic : 0);
+                int64_t off = (x < ow - 1 ? ic : 0);
                 px[1] = px[0] + off;
                 px[3] = px[2] + off;
             }
@@ -773,7 +773,7 @@ rescale_double_size (typename Image<T>::ConstPtr img)
                 std::swap(px[2], px[3]);
             }
 
-            for (int c = 0; c < ic; ++c, ++i)
+            for (int64_t c = 0; c < ic; ++c, ++i)
                 out->at(i) = math::interpolate
                     (px[0][c], px[1][c], px[2][c], px[3][c],
                     w[0], w[1], w[2], w[3]);
@@ -789,24 +789,24 @@ template <typename T>
 typename Image<T>::Ptr
 rescale_double_size_supersample (typename Image<T>::ConstPtr img)
 {
-    int const iw = img->width();
-    int const ih = img->height();
-    int const ic = img->channels();
-    int const ow = iw << 1;
-    int const oh = ih << 1;
+    int64_t const iw = img->width();
+    int64_t const ih = img->height();
+    int64_t const ic = img->channels();
+    int64_t const ow = iw << 1;
+    int64_t const oh = ih << 1;
 
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(ow, oh, ic);
 
-    int witer = 0;
-    for (int y = 0; y < oh; ++y)
+    int64_t witer = 0;
+    for (int64_t y = 0; y < oh; ++y)
     {
         bool nexty = (y + 1 < oh);
-        int yoff[2] = { iw * (y >> 1), iw * ((y + nexty) >> 1) };
-        for (int x = 0; x < ow; ++x)
+        int64_t yoff[2] = { iw * (y >> 1), iw * ((y + nexty) >> 1) };
+        for (int64_t x = 0; x < ow; ++x)
         {
             bool nextx = (x + 1 < ow);
-            int xoff[2] = { x >> 1, (x + nextx) >> 1 };
+            int64_t xoff[2] = { x >> 1, (x + nextx) >> 1 };
             T const* val[4] =
             {
                 &img->at(yoff[0] + xoff[0], 0),
@@ -815,7 +815,7 @@ rescale_double_size_supersample (typename Image<T>::ConstPtr img)
                 &img->at(yoff[1] + xoff[1], 0)
             };
 
-            for (int c = 0; c < ic; ++c, ++witer)
+            for (int64_t c = 0; c < ic; ++c, ++witer)
                 out->at(witer) = math::interpolate
                     (val[0][c], val[1][c], val[2][c], val[3][c],
                     0.25f, 0.25f, 0.25f, 0.25f);
@@ -834,22 +834,22 @@ rescale_nearest (typename Image<T>::ConstPtr img, typename Image<T>::Ptr out)
     if (img->channels() != out->channels())
         throw std::invalid_argument("Image channel mismatch");
 
-    int const iw = img->width();
-    int const ih = img->height();
-    int const ic = img->channels();
-    int const ow = out->width();
-    int const oh = out->height();
+    int64_t const iw = img->width();
+    int64_t const ih = img->height();
+    int64_t const ic = img->channels();
+    int64_t const ow = out->width();
+    int64_t const oh = out->height();
 
-    int outpos = 0;
-    for (int y = 0; y < oh; ++y)
+    int64_t outpos = 0;
+    for (int64_t y = 0; y < oh; ++y)
     {
         float ly = ((float)y + 0.5f) * (float)ih / (float)oh;
-        int iy = static_cast<int>(ly);
-        for (int x = 0; x < ow; ++x)
+        int64_t iy = static_cast<int64_t>(ly);
+        for (int64_t x = 0; x < ow; ++x)
         {
             float lx = ((float)x + 0.5f) * (float)iw / (float)ow;
-            int ix = static_cast<int>(lx);
-            for (int c = 0; c < ic; ++c)
+            int64_t ix = static_cast<int64_t>(lx);
+            for (int64_t c = 0; c < ic; ++c)
                 out->at(outpos++) = img->at(ix,iy,c);
         }
     }
@@ -864,18 +864,18 @@ rescale_linear (typename Image<T>::ConstPtr img, typename Image<T>::Ptr out)
     if (img->channels() != out->channels())
         throw std::invalid_argument("Image channel mismatch");
 
-    int const iw = img->width();
-    int const ih = img->height();
-    int const ic = img->channels();
-    int const ow = out->width();
-    int const oh = out->height();
+    int64_t const iw = img->width();
+    int64_t const ih = img->height();
+    int64_t const ic = img->channels();
+    int64_t const ow = out->width();
+    int64_t const oh = out->height();
 
     T* out_ptr = out->get_data_pointer();
-    int outpos = 0;
-    for (int y = 0; y < oh; ++y)
+    int64_t outpos = 0;
+    for (int64_t y = 0; y < oh; ++y)
     {
         float fy = ((float)y + 0.5f) * (float)ih / (float)oh;
-        for (int x = 0; x < ow; ++x, outpos += ic)
+        for (int64_t x = 0; x < ow; ++x, outpos += ic)
         {
             float fx = ((float)x + 0.5f) * (float)iw / (float)ow;
             img->linear_at(fx - 0.5f, fy - 0.5f, out_ptr + outpos);
@@ -888,10 +888,10 @@ rescale_linear (typename Image<T>::ConstPtr img, typename Image<T>::Ptr out)
 template <typename T>
 T
 gaussian_kernel (typename Image<T>::ConstPtr img,
-    float x, float y, int c, float sigma)
+    float x, float y, int64_t c, float sigma)
 {
-    int const width = img->width();
-    int const height = img->height();
+    int64_t const width = img->width();
+    int64_t const height = img->height();
 
     /*
      * Calculate kernel size for geometric gaussian
@@ -913,10 +913,12 @@ gaussian_kernel (typename Image<T>::ConstPtr img,
     float ky_min = std::floor(y - ks);
     float ky_max = std::ceil(y + ks - 1.0f);
 
-    int kxi_min = static_cast<int>(std::max(0.0f, kx_min));
-    int kxi_max = static_cast<int>(std::min((float)width - 1.0f, kx_max));
-    int kyi_min = static_cast<int>(std::max(0.0f, ky_min));
-    int kyi_max = static_cast<int>(std::min((float)height - 1.0f, ky_max));
+    int64_t kxi_min = static_cast<int64_t>(std::max(0.0f, kx_min));
+    int64_t kxi_max =
+        static_cast<int64_t>(std::min((float)width - 1.0f, kx_max));
+    int64_t kyi_min = static_cast<int64_t>(std::max(0.0f, ky_min));
+    int64_t kyi_max =
+        static_cast<int64_t>(std::min((float)height - 1.0f, ky_max));
 
     /* Determine pixel weight for kernel bounaries. */
     float wx_start = kx_min > 0.0f ? kx_min + 1.0f + ks - x : 1.0f;
@@ -926,8 +928,8 @@ gaussian_kernel (typename Image<T>::ConstPtr img,
 
     /* Apply kernel. */
     math::Accum<T> accum(0);
-    for (int yi = kyi_min; yi <= kyi_max; ++yi)
-        for (int xi = kxi_min; xi <= kxi_max; ++xi)
+    for (int64_t yi = kyi_min; yi <= kyi_max; ++yi)
+        for (int64_t xi = kxi_min; xi <= kxi_max; ++xi)
         {
             float weight = 1.0f;
             weight *= (xi == kxi_min ? wx_start : 1.0f);
@@ -954,9 +956,9 @@ rescale_gaussian (typename Image<T>::ConstPtr img,
     if (img->channels() != out->channels())
         throw std::invalid_argument("Image channels mismatch");
 
-    int const ow = out->width();
-    int const oh = out->height();
-    int const oc = out->channels();
+    int64_t const ow = out->width();
+    int64_t const oh = out->height();
+    int64_t const oc = out->channels();
 
     /* Choose gaussian sigma parameter according to scale factor. */
     float const scale_x = (float)img->width() / (float)ow;
@@ -964,13 +966,13 @@ rescale_gaussian (typename Image<T>::ConstPtr img,
     float const sigma = sigma_factor * std::max(scale_x, scale_y) / 2.0f;
 
     /* Iterate pixels of dest image and convolute with gaussians on input. */
-    int i = 0;
-    for (int y = 0; y < oh; ++y)
-        for (int x = 0; x < ow; ++x, ++i)
+    int64_t i = 0;
+    for (int64_t y = 0; y < oh; ++y)
+        for (int64_t x = 0; x < ow; ++x, ++i)
         {
             float xf = ((float)x + 0.5f) * scale_x;
             float yf = ((float)y + 0.5f) * scale_y;
-            for (int c = 0; c < oc; ++c)
+            for (int64_t c = 0; c < oc; ++c)
                 out->at(i, c) = gaussian_kernel<T>(img, xf, yf, c, sigma);
         }
 }
@@ -979,8 +981,8 @@ rescale_gaussian (typename Image<T>::ConstPtr img,
 
 template <typename T>
 typename Image<T>::Ptr
-crop (typename Image<T>::ConstPtr image, int width, int height,
-    int left, int top, T const* fill_color)
+crop (typename Image<T>::ConstPtr image, int64_t width, int64_t height,
+    int64_t left, int64_t top, T const* fill_color)
 {
     if (width < 0 || height < 0 || !image.get())
         throw std::invalid_argument("Invalid width/height or null image given");
@@ -988,9 +990,9 @@ crop (typename Image<T>::ConstPtr image, int width, int height,
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(width, height, image->channels());
 
-    int const iw = image->width();
-    int const ih = image->height();
-    int const ic = image->channels();
+    int64_t const iw = image->width();
+    int64_t const ih = image->height();
+    int64_t const ic = image->channels();
 
     /* Output image with fill color if new pixels are revealed. */
     if (left < 0 || top < 0 || left + width > iw || top + height > ih)
@@ -1001,10 +1003,12 @@ crop (typename Image<T>::ConstPtr image, int width, int height,
         return out;
 
     /* Copy horizontal overlap for each overlapping row. */
-    int const overlap = ic * (std::min(iw, left + width) - std::max(0, left));
-    for (int y = std::max(0, -top); y < std::min(height, ih - top); ++y)
+    int64_t const overlap =
+        ic * (std::min(iw, left + width) - std::max<int64_t>(0, left));
+    for (int64_t y = std::max<int64_t>(0, -top);
+        y < std::min(height, ih - top); ++y)
     {
-        int lookup_y = top + y;
+        int64_t lookup_y = top + y;
         if (lookup_y >= ih)
             break;
         T* out_ptr = &out->at(left < 0 ? -left : 0, y, 0);
@@ -1028,29 +1032,29 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
     if (MATH_EPSILON_EQ(sigma, 0.0f, 0.1f))
         return in->duplicate();
 
-    int const w = in->width();
-    int const h = in->height();
-    int const c = in->channels();
-    int const ks = std::ceil(sigma * 2.884f); // Cap kernel at 1/128
+    int64_t const w = in->width();
+    int64_t const h = in->height();
+    int64_t const c = in->channels();
+    int64_t const ks = std::ceil(sigma * 2.884f); // Cap kernel at 1/128
     std::vector<float> kernel(ks + 1);
 
     /* Fill kernel values. */
-    for (int i = 0; i < ks + 1; ++i)
+    for (int64_t i = 0; i < ks + 1; ++i)
         kernel[i] = math::gaussian((float)i, sigma);
 
 #if 1 // Separated kernel implementation
 
     /* Convolve the image in x direction. */
     typename Image<T>::Ptr sep(Image<T>::create(w, h, c));
-    int px = 0;
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x, ++px)
-            for (int cc = 0; cc < (int)c; ++cc)
+    int64_t px = 0;
+    for (int64_t y = 0; y < h; ++y)
+        for (int64_t x = 0; x < w; ++x, ++px)
+            for (int64_t cc = 0; cc < c; ++cc)
             {
                 math::Accum<T> accum(T(0));
-                for (int i = -ks; i <= ks; ++i)
+                for (int64_t i = -ks; i <= ks; ++i)
                 {
-                    int idx = math::clamp(x + i, 0, (int)w - 1);
+                    int64_t idx = math::clamp<int64_t>(x + i, 0, w - 1);
                     accum.add(in->at(y * w + idx, cc), kernel[std::abs(i)]);
                 }
                 sep->at(px, cc) = accum.normalized();
@@ -1059,14 +1063,14 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
     /* Convolve the image in y direction. */
     typename Image<T>::Ptr out(Image<T>::create(w, h, c));
     px = 0;
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x, ++px)
-            for (int cc = 0; cc < c; ++cc)
+    for (int64_t y = 0; y < h; ++y)
+        for (int64_t x = 0; x < w; ++x, ++px)
+            for (int64_t cc = 0; cc < c; ++cc)
             {
                 math::Accum<T> accum(T(0));
-                for (int i = -ks; i <= ks; ++i)
+                for (int64_t i = -ks; i <= ks; ++i)
                 {
-                    int idx = math::clamp(y + i, 0, (int)h - 1);
+                    int64_t idx = math::clamp<int64_t>(y + i, 0, h - 1);
                     accum.add(sep->at(idx * w + x, cc), kernel[std::abs(i)]);
                 }
                 out->at(px, cc) = accum.normalized();
@@ -1075,18 +1079,18 @@ blur_gaussian (typename Image<T>::ConstPtr in, float sigma)
 #else // Non-separated kernel implementation
 
     typename Image<T>::Ptr out(Image<T>::create(w, h, c));
-    int px = 0;
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x, ++px)
-            for (int cc = 0; cc < c; ++cc)
+    int64_t px = 0;
+    for (int64_t y = 0; y < h; ++y)
+        for (int64_t x = 0; x < w; ++x, ++px)
+            for (int64_t cc = 0; cc < c; ++cc)
             {
                 math::Accum<T> accum(T(0));
 
-                for (int ky = -ks; ky <= ks; ++ky)
-                    for (int kx = -ks; kx <= ks; ++kx)
+                for (int64_t ky = -ks; ky <= ks; ++ky)
+                    for (int64_t kx = -ks; kx <= ks; ++kx)
                     {
-                        int idx_x = math::clamp(x + kx, 0, (int)w - 1);
-                        int idx_y = math::clamp(y + ky, 0, (int)h - 1);
+                        int64_t idx_x = math::clamp(x + kx, 0, w - 1);
+                        int64_t idx_y = math::clamp(y + ky, 0, h - 1);
                         accum.add(in->at(idx_y * w + idx_x, cc),
                             kernel[std::abs(kx)] * kernel[std::abs(ky)]);
                     }
@@ -1108,10 +1112,10 @@ blur_boxfilter (typename Image<T>::ConstPtr in, int ks)
     if (in == nullptr)
         throw std::invalid_argument("Null image given");
 
-    int w(in->width());
-    int h(in->height());
-    int c(in->channels());
-    int wc = w * c;
+    int64_t w(in->width());
+    int64_t h(in->height());
+    int64_t c(in->channels());
+    int64_t wc = w * c;
 
 #if 1
     /* Super-fast separated kernel implementation. */
@@ -1119,24 +1123,24 @@ blur_boxfilter (typename Image<T>::ConstPtr in, int ks)
     math::Accum<T>* accums = new math::Accum<T>[c];
     T const* row = &in->at(0);
     T* outrow = &sep->at(0);
-    for (int y = 0; y < h; ++y, row += w * c, outrow += w * c)
+    for (int64_t y = 0; y < h; ++y, row += w * c, outrow += w * c)
     {
-        for (int cc = 0; cc < c; ++cc) // Reset accumulators
+        for (int64_t cc = 0; cc < c; ++cc) // Reset accumulators
             accums[cc] = math::Accum<T>(T(0));
 
         for (int i = 0; i < ks; ++i)
-            for (int cc = 0; cc < c; ++cc)
+            for (int64_t cc = 0; cc < c; ++cc)
                 accums[cc].add(row[i * c + cc], 1.0f);
 
-        for (int x = 0; x < w; ++x)
+        for (int64_t x = 0; x < w; ++x)
         {
             if (x + ks < w - 1)
-                for (int cc = 0; cc < c; ++cc)
+                for (int64_t cc = 0; cc < c; ++cc)
                     accums[cc].add(row[(x + ks) * c + cc], 1.0f);
             if (x > ks)
-                for (int cc = 0; cc < c; ++cc)
+                for (int64_t cc = 0; cc < c; ++cc)
                     accums[cc].sub(row[(x - ks - 1) * c + cc], 1.0f);
-            for (int cc = 0; cc < c; ++cc)
+            for (int64_t cc = 0; cc < c; ++cc)
                 outrow[x * c + cc] = accums[cc].normalized();
         }
     }
@@ -1145,24 +1149,24 @@ blur_boxfilter (typename Image<T>::ConstPtr in, int ks)
     typename Image<T>::Ptr out(Image<T>::create(w, h, c));
     T const* col = &sep->at(0);
     T* outcol = &out->at(0);
-    for (int x = 0; x < w; ++x, col += c, outcol += c)
+    for (int64_t x = 0; x < w; ++x, col += c, outcol += c)
     {
-        for (int cc = 0; cc < c; ++cc)
+        for (int64_t cc = 0; cc < c; ++cc)
             accums[cc] = math::Accum<T>(T(0));
 
         for (int i = 0; i < ks; ++i)
-            for (int cc = 0; cc < c; ++cc)
+            for (int64_t cc = 0; cc < c; ++cc)
                 accums[cc].add(col[i * wc + cc], 1.0f);
 
-        for (int y = 0; y < h; ++y)
+        for (int64_t y = 0; y < h; ++y)
         {
             if (y + ks < h - 1)
-                for (int cc = 0; cc < c; ++cc)
+                for (int64_t cc = 0; cc < c; ++cc)
                     accums[cc].add(col[(y + ks) * wc + cc], 1.0f);
             if (y > ks)
-                for (int cc = 0; cc < c; ++cc)
+                for (int64_t cc = 0; cc < c; ++cc)
                     accums[cc].sub(col[(y - ks - 1) * wc + cc], 1.0f);
-            for (int cc = 0; cc < c; ++cc)
+            for (int64_t cc = 0; cc < c; ++cc)
                 outcol[y * wc + cc] = accums[cc].normalized();
         }
     }
@@ -1173,16 +1177,16 @@ blur_boxfilter (typename Image<T>::ConstPtr in, int ks)
 
 #if 0 // Slow and naive, but simple implementation
     typename Image<T>::Ptr out(Image<T>::create(w, h, c));
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x)
-            for (int cc = 0; cc < c; ++cc)
+    for (int64_t y = 0; y < h; ++y)
+        for (int64_t x = 0; x < w; ++x)
+            for (int64_t cc = 0; cc < c; ++cc)
             {
                 math::Accum<T> accum(T(0));
                 for (int ky = -ks; ky <= ks; ++ky)
                     for (int kx = -ks; kx <= ks; ++kx)
                     {
-                        int idx_x = math::clamp(x + kx, 0, (int)w - 1);
-                        int idx_y = math::clamp(y + ky, 0, (int)h - 1);
+                        int64_t idx_x = math::clamp(x + kx, 0, w - 1);
+                        int64_t idx_y = math::clamp(y + ky, 0, h - 1);
                         accum.add(in->at(idx_x, idx_y, cc), 1.0f);
                     }
                 out->at(x, y, cc) = accum.normalized();
@@ -1201,21 +1205,21 @@ rotate (typename Image<T>::ConstPtr image, RotateType type)
     if (image == nullptr)
         throw std::invalid_argument("Null image given");
 
-    int iw = image->width();
-    int ih = image->height();
-    int ic = image->channels();
-    int ow = type == ROTATE_180 ? iw : ih;
-    int oh = type == ROTATE_180 ? ih : iw;
+    int64_t const iw = image->width();
+    int64_t const ih = image->height();
+    int64_t const ic = image->channels();
+    int64_t const ow = type == ROTATE_180 ? iw : ih;
+    int64_t const oh = type == ROTATE_180 ? ih : iw;
 
     typename Image<T>::Ptr ret(Image<T>::create());
     ret->allocate(ow, oh, ic);
 
-    int idx = 0;
-    for (int y = 0; y < ih; ++y)
-        for (int x = 0; x < iw; ++x, idx += ic)
+    int64_t idx = 0;
+    for (int64_t y = 0; y < ih; ++y)
+        for (int64_t x = 0; x < iw; ++x, idx += ic)
         {
-            int dx = x;
-            int dy = y;
+            int64_t dx = x;
+            int64_t dy = y;
             switch (type)
             {
                 case ROTATE_180:  dx = iw - x - 1; dy = ih - y - 1; break;
@@ -1242,9 +1246,9 @@ rotate (typename Image<T>::ConstPtr image, float angle, T const* fill_color)
     if (image == nullptr)
         throw std::invalid_argument("Null image given");
 
-    int const w = image->width();
-    int const h = image->height();
-    int const c = image->channels();
+    int64_t const w = image->width();
+    int64_t const h = image->height();
+    int64_t const c = image->channels();
     float const w2 = static_cast<float>(w - 1) / 2.0f;
     float const h2 = static_cast<float>(h - 1) / 2.0f;
     typename Image<T>::Ptr ret = Image<T>::create(w, h, c);
@@ -1252,11 +1256,13 @@ rotate (typename Image<T>::ConstPtr image, float angle, T const* fill_color)
     float const sin_angle = std::sin(-angle);
     float const cos_angle = std::cos(-angle);
     T* ret_ptr = ret->begin();
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x, ret_ptr += c)
+    for (int64_t y = 0; y < h; ++y)
+        for (int64_t x = 0; x < w; ++x, ret_ptr += c)
         {
-            float const sample_x = cos_angle * (x - w2) - sin_angle * (y - h2) + w2;
-            float const sample_y = sin_angle * (x - w2) + cos_angle * (y - h2) + h2;
+            float const sample_x =
+                cos_angle * (x - w2) - sin_angle * (y - h2) + w2;
+            float const sample_y =
+                sin_angle * (x - w2) + cos_angle * (y - h2) + h2;
             if (sample_x < -0.5f || sample_x > w - 0.5f
                 || sample_y < -0.5f || sample_y > h - 0.5f)
                 std::copy(fill_color, fill_color + c, ret_ptr);
@@ -1279,17 +1285,17 @@ flip (typename Image<T>::Ptr image, FlipType type)
 
     bool const fh = type & FLIP_HORIZONTAL;
     bool const fv = type & FLIP_VERTICAL;
-    int const iw = image->width();
-    int const ih = image->height();
-    int const ic = image->channels();
-    int const max_x = fh ? iw / 2 : iw;
-    int const max_y = fv && !fh ? ih / 2 : ih;
+    int64_t const iw = image->width();
+    int64_t const ih = image->height();
+    int64_t const ic = image->channels();
+    int64_t const max_x = fh ? iw / 2 : iw;
+    int64_t const max_y = fv && !fh ? ih / 2 : ih;
 
-    for (int y = 0; y < max_y; ++y)
-        for (int x = 0; x < max_x; ++x)
+    for (int64_t y = 0; y < max_y; ++y)
+        for (int64_t x = 0; x < max_x; ++x)
         {
-            int dx = (type & FLIP_HORIZONTAL ? iw - x - 1 : x);
-            int dy = (type & FLIP_VERTICAL ? ih - y - 1 : y);
+            int64_t dx = (type & FLIP_HORIZONTAL ? iw - x - 1 : x);
+            int64_t dy = (type & FLIP_VERTICAL ? ih - y - 1 : y);
             T* src = &image->at(x, y, 0);
             T* dst = &image->at(dx, dy, 0);
             std::swap_ranges(src, src + ic, dst);
@@ -1345,7 +1351,7 @@ desaturate (typename Image<T>::ConstPtr img, DesaturateType type)
     if (img == nullptr)
         throw std::invalid_argument("Null image given");
 
-    int ic = img->channels();
+    int64_t ic = img->channels();
     if (ic != 3 && ic != 4)
         throw std::invalid_argument("Image must be RGB or RGBA");
 
@@ -1366,10 +1372,10 @@ desaturate (typename Image<T>::ConstPtr img, DesaturateType type)
         default: throw std::invalid_argument("Invalid desaturate type");
     }
 
-    int outpos = 0;
-    int inpos = 0;
-    int pixels = img->get_pixel_amount();
-    for (int i = 0; i < pixels; ++i)
+    int64_t outpos = 0;
+    int64_t inpos = 0;
+    int64_t pixels = img->get_pixel_amount();
+    for (int64_t i = 0; i < pixels; ++i)
     {
         T const* v = &img->at(inpos);
         out->at(outpos) = func(v);
@@ -1393,7 +1399,7 @@ expand_grayscale (typename Image<T>::ConstPtr image)
     if (image == nullptr)
         throw std::invalid_argument("Null image given");
 
-    int const ic = image->channels();
+    int64_t const ic = image->channels();
     if (ic != 1 && ic != 2)
         throw std::invalid_argument("Image must be in G or GA");
 
@@ -1402,8 +1408,8 @@ expand_grayscale (typename Image<T>::ConstPtr image)
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(image->width(), image->height(), 3 + has_alpha);
 
-    int pixels = image->get_pixel_amount();
-    for (int i = 0; i < pixels; ++i)
+    int64_t pixels = image->get_pixel_amount();
+    for (int64_t i = 0; i < pixels; ++i)
     {
         out->at(i, 0) = image->at(i, 0);
         out->at(i, 1) = image->at(i, 0);
@@ -1421,7 +1427,7 @@ template <typename T>
 void
 reduce_alpha (typename mve::Image<T>::Ptr img)
 {
-    int const channels = img->channels();
+    int64_t const channels = img->channels();
     if (channels != 2 && channels != 4)
         throw std::invalid_argument("Image must be in GA or RGBA");
     img->delete_channel(channels - 1);
@@ -1433,19 +1439,19 @@ template <typename T>
 typename mve::Image<T>::Ptr
 sobel_edge (typename mve::Image<T>::ConstPtr img)
 {
-    int const width = img->width();
-    int const height = img->height();
-    int const chans = img->channels();
-    int const row_stride = width * chans;
+    int64_t const width = img->width();
+    int64_t const height = img->height();
+    int64_t const chans = img->channels();
+    int64_t const row_stride = width * chans;
 
     double const max_value = static_cast<double>(std::numeric_limits<T>::max());
     typename mve::Image<T>::Ptr out = mve::Image<T>::create
         (width, height, chans);
     T* out_ptr = out->get_data_pointer();
 
-    int pos = 0;
-    for (int y = 0; y < height; ++y)
-        for (int x = 0; x < width; ++x, pos += chans)
+    int64_t pos = 0;
+    for (int64_t y = 0; y < height; ++y)
+        for (int64_t x = 0; x < width; ++x, pos += chans)
         {
             if (y == 0 || y == height - 1 || x == 0 || x == width - 1)
             {
@@ -1453,9 +1459,9 @@ sobel_edge (typename mve::Image<T>::ConstPtr img)
                 continue;
             }
 
-            for (int cc = 0; cc < chans; ++cc)
+            for (int64_t cc = 0; cc < chans; ++cc)
             {
-                int const i = pos + cc;
+                int64_t const i = pos + cc;
                 double gx = 1.0 * (double)img->at(i + chans - row_stride)
                     - 1.0 * (double)img->at(i - chans - row_stride)
                     + 2.0 * (double)img->at(i + chans)
@@ -1482,9 +1488,9 @@ template <typename T>
 typename Image<T>::Ptr
 subtract (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
 {
-    int const iw = i1->width();
-    int const ih = i1->height();
-    int const ic = i1->channels();
+    int64_t const iw = i1->width();
+    int64_t const ih = i1->height();
+    int64_t const ic = i1->channels();
 
     if (i1 == nullptr || i2 == nullptr)
         throw std::invalid_argument("Null image given");
@@ -1496,7 +1502,7 @@ subtract (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
     out->allocate(iw, ih, ic);
 
     // FIXME: That needs speedup! STL algo with pointers.
-    for (int i = 0; i < i1->get_value_amount(); ++i)
+    for (int64_t i = 0; i < i1->get_value_amount(); ++i)
         out->at(i) = i1->at(i) - i2->at(i);
 
     return out;
@@ -1508,9 +1514,9 @@ template <typename T>
 typename Image<T>::Ptr
 difference (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
 {
-    int const iw = i1->width();
-    int const ih = i1->height();
-    int const ic = i1->channels();
+    int64_t const iw = i1->width();
+    int64_t const ih = i1->height();
+    int64_t const ic = i1->channels();
 
     if (i1 == nullptr || i2 == nullptr)
         throw std::invalid_argument("Null image given");
@@ -1521,7 +1527,7 @@ difference (typename Image<T>::ConstPtr i1, typename Image<T>::ConstPtr i2)
     typename Image<T>::Ptr out(Image<T>::create());
     out->allocate(iw, ih, ic);
 
-    for (int i = 0; i < i1->get_value_amount(); ++i)
+    for (int64_t i = 0; i < i1->get_value_amount(); ++i)
     {
         if (i1->at(i) < i2->at(i))
             out->at(i) = i2->at(i) - i1->at(i);
@@ -1550,8 +1556,8 @@ gamma_correct_srgb (typename Image<T>::Ptr image)
 {
     static_assert(std::is_floating_point<T>::value,
         "Only implemented for floating point images");
-    int const num_values = image->get_value_amount();
-    for (int i = 0; i < num_values; i++)
+    int64_t const num_values = image->get_value_amount();
+    for (int64_t i = 0; i < num_values; i++)
     {
         if (image->at(i) <= T(0.0031308))
             image->at(i) *= T(12.92);
@@ -1571,8 +1577,8 @@ gamma_correct_inv_srgb (typename Image<T>::Ptr image)
 {
     static_assert(std::is_floating_point<T>::value,
         "Only implemented for floating point images");
-    int const num_values = image->get_value_amount();
-    for (int i = 0; i < num_values; i++)
+    int64_t const num_values = image->get_value_amount();
+    for (int64_t i = 0; i < num_values; i++)
     {
         if (image->at(i) <= T(0.04045))
             image->at(i) /= T(12.92);
@@ -1593,10 +1599,10 @@ integral_image (typename Image<T_IN>::ConstPtr image)
     if (image == nullptr)
         throw std::invalid_argument("Null image given");
 
-    int const width = image->width();
-    int const height = image->height();
-    int const chans = image->channels();
-    int const row_stride = width * chans;
+    int64_t const width = image->width();
+    int64_t const height = image->height();
+    int64_t const chans = image->channels();
+    int64_t const row_stride = width * chans;
 
     typename Image<T_OUT>::Ptr ret(Image<T_OUT>::create());
     ret->allocate(width, height, chans);
@@ -1610,13 +1616,13 @@ integral_image (typename Image<T_IN>::ConstPtr image)
     /*
      * I(x,y) = i(x,y) + I(x-1,y) + I(x,y-1) - I(x-1,y-1)
      */
-    for (int y = 0; y < height; ++y)
+    for (int64_t y = 0; y < height; ++y)
     {
         /* Calculate first pixel in row. */
-        for (int cc = 0; cc < chans; ++cc)
+        for (int64_t cc = 0; cc < chans; ++cc)
             dest[cc] = static_cast<T_OUT>(inrow[cc]) + prev[cc];
         /* Calculate all following pixels in row. */
-        for (int i = chans; i < row_stride; ++i)
+        for (int64_t i = chans; i < row_stride; ++i)
             dest[i] = inrow[i] + prev[i] + dest[i - chans] - prev[i - chans];
 
         prev = dest;
@@ -1632,10 +1638,10 @@ integral_image (typename Image<T_IN>::ConstPtr image)
 template <typename T>
 T
 integral_image_area (typename Image<T>::ConstPtr sat,
-    int x1, int y1, int x2, int y2, int cc)
+    int64_t x1, int64_t y1, int64_t x2, int64_t y2, int64_t cc)
 {
-    int const row_stride = sat->width() * sat->channels();
-    int const channels = sat->channels();
+    int64_t const row_stride = sat->width() * sat->channels();
+    int64_t const channels = sat->channels();
     T ret = sat->at(y2 * row_stride + x2 * channels + cc);
     if (x1 > 0)
         ret -= sat->at(y2 * row_stride + (x1-1) * channels + cc);
@@ -1651,15 +1657,15 @@ integral_image_area (typename Image<T>::ConstPtr sat,
 template <typename T>
 typename Image<T>::Ptr
 create_thumbnail (typename Image<T>::ConstPtr image,
-    int thumb_width, int thumb_height)
+    int64_t thumb_width, int64_t thumb_height)
 {
-    int const width = image->width();
-    int const height = image->height();
+    int64_t const width = image->width();
+    int64_t const height = image->height();
     float const image_aspect = static_cast<float>(width) / height;
     float const thumb_aspect = static_cast<float>(thumb_width) / thumb_height;
 
-    int rescale_width, rescale_height;
-    int crop_left, crop_top;
+    int64_t rescale_width, rescale_height;
+    int64_t crop_left, crop_top;
     if (image_aspect > thumb_aspect)
     {
         rescale_width = std::ceil(thumb_height * image_aspect);
@@ -1689,10 +1695,10 @@ template <typename T>
 typename Image<T>::Ptr
 image_undistort_msps (typename Image<T>::ConstPtr img, double k0, double k1)
 {
-    int const width = img->width();
-    int const height = img->height();
-    int const chans = img->channels();
-    int const D = std::max(width, height);
+    int64_t const width = img->width();
+    int64_t const height = img->height();
+    int64_t const chans = img->channels();
+    int64_t const D = std::max(width, height);
 
     double const width_half = static_cast<double>(width) / 2.0;
     double const height_half = static_cast<double>(height) / 2.0;
@@ -1701,8 +1707,8 @@ image_undistort_msps (typename Image<T>::ConstPtr img, double k0, double k1)
     out->fill(T(0));
     T* out_ptr = out->get_data_pointer();
 
-    for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++, out_ptr += chans)
+    for (int64_t y = 0; y < height; y++)
+        for (int64_t x = 0; x < width; x++, out_ptr += chans)
         {
             double fx = static_cast<double>(x) - width_half;
             double fy = static_cast<double>(y) - height_half;
@@ -1733,9 +1739,9 @@ image_undistort_k2k4 (typename Image<T>::ConstPtr img,
     if (k2 == 0.0 && k4 == 0.0)
         return img->duplicate();
 
-    int const width = img->width();
-    int const height = img->height();
-    int const chans = img->channels();
+    int64_t const width = img->width();
+    int64_t const height = img->height();
+    int64_t const chans = img->channels();
     typename Image<T>::Ptr out = Image<T>::create(width, height, chans);
     out->fill(T(0));
     T* out_ptr = out->get_data_pointer();
@@ -1743,8 +1749,8 @@ image_undistort_k2k4 (typename Image<T>::ConstPtr img,
     double const fwidth2 = static_cast<double>(width) / 2.0;
     double const fheight2 = static_cast<double>(height) / 2.0;
     double const fnorm = static_cast<double>(std::max(width, height));
-    for (int y = 0; y < height; ++y)
-        for (int x = 0; x < width; ++x, out_ptr += chans)
+    for (int64_t y = 0; y < height; ++y)
+        for (int64_t x = 0; x < width; ++x, out_ptr += chans)
         {
             double const fx = (static_cast<double>(x) + 0.5 - fwidth2) / fnorm;
             double const fy = (static_cast<double>(y) + 0.5 - fheight2) / fnorm;
@@ -1775,9 +1781,9 @@ image_undistort_vsfm (typename Image<T>::ConstPtr img,
     if (k1 == 0.0)
         return img->duplicate();
 
-    int const width = img->width();
-    int const height = img->height();
-    int const chans = img->channels();
+    int64_t const width = img->width();
+    int64_t const height = img->height();
+    int64_t const chans = img->channels();
 
     /*
      * The image coordinates must be normalized before the distortion
@@ -1792,9 +1798,9 @@ image_undistort_vsfm (typename Image<T>::ConstPtr img,
     out->fill(T(0));
     T* out_ptr = out->begin();
 
-    for (int y = 0; y < height; ++y)
+    for (int64_t y = 0; y < height; ++y)
     {
-        for (int x = 0; x < width; ++x, out_ptr += chans)
+        for (int64_t x = 0; x < width; ++x, out_ptr += chans)
         {
             double fx = (static_cast<double>(x) - width_half) / norm;
             double fy = (static_cast<double>(y) - height_half) / norm;

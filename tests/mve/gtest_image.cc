@@ -289,10 +289,10 @@ TEST(ImageTest, ImageLinearAccess)
         img.at(i) = static_cast<float>(i);
 
     // Linear access with single channel. Remove this on?
-    EXPECT_EQ(0.0f, img.linear_at(0.0f, 0.0f, 0));
-    EXPECT_EQ(1.0f, img.linear_at(0.0f, 0.0f, 1));
-    EXPECT_EQ(2.0f, img.linear_at(1.0f, 0.0f, 0));
-    EXPECT_EQ(3.0f, img.linear_at(0.5f, 0.5, 0));
+    EXPECT_EQ(0.0f, img.linear_at(0.0f, 0.0f, (int64_t)0));
+    EXPECT_EQ(1.0f, img.linear_at(0.0f, 0.0f, (int64_t)1));
+    EXPECT_EQ(2.0f, img.linear_at(1.0f, 0.0f, (int64_t)0));
+    EXPECT_EQ(3.0f, img.linear_at(0.5f, 0.5, (int64_t)0));
 
     float px[2];
     img.linear_at(0.0f, 1.0f, px);

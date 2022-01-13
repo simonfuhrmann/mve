@@ -10,6 +10,8 @@
 #ifndef MVE_IMAGE_COLOR_HEADER
 #define MVE_IMAGE_COLOR_HEADER
 
+#include <algorithm>
+
 #include "math/functions.h"
 #include "mve/image.h"
 #include "mve/defines.h"
@@ -130,7 +132,7 @@ template <typename T, typename FUNCTOR>
 void
 color_convert (typename Image<T>::Ptr image, FUNCTOR& converter)
 {
-    int const channels = image->channels();
+    int64_t const channels = image->channels();
     if (channels != 3)
         throw std::invalid_argument("Only 3-channel images supported");
 
@@ -146,7 +148,7 @@ color_srgb_to_xyz (T* v)
     out[0] = v[0] * T(0.4124) + v[1] * T(0.3576) + v[2] * T(0.1805);
     out[1] = v[0] * T(0.2126) + v[1] * T(0.7152) + v[2] * T(0.0722);
     out[2] = v[0] * T(0.0193) + v[1] * T(0.1192) + v[2] * T(0.9505);
-    std::copy(out, out + 3, v);
+    std::copy_n(out, 3, v);
 }
 
 template <>
@@ -170,7 +172,7 @@ color_xyz_to_srgb (T* v)
     out[0] = v[0] * T( 3.2410) + v[1] * T(-1.5374) + v[2] * T(-0.4986);
     out[1] = v[0] * T(-0.9692) + v[1] * T( 1.8760) + v[2] * T( 0.0416);
     out[2] = v[0] * T( 0.0556) + v[1] * T(-0.2040) + v[2] * T( 1.0570);
-    std::copy(out, out + 3, v);
+    std::copy_n(out, 3, v);
 }
 
 template <>
@@ -203,7 +205,7 @@ color_xyy_to_xyz (T* v)
         out[0] = v[0] * ratio;
         out[1] = v[2];
         out[2] = (T(1) - v[0] - v[1]) * ratio;
-        std::copy(out, out + 3, v);
+        std::copy_n(out, 3, v);
     }
 }
 
@@ -247,7 +249,7 @@ color_xyz_to_xyy (T* v)
         out[0] = v[0] / sum;
         out[1] = v[1] / sum;
         out[2] = v[1];
-        std::copy(out, out + 3, v);
+        std::copy_n(out, 3, v);
     }
 }
 
@@ -282,7 +284,7 @@ color_rgb_to_ycbcr (T* v)
     out[0] = v[0] * T(0.299) + v[1] * T(0.587) + v[2] * T(0.114);
     out[1] = v[0] * T(-0.168736) + v[1] * T(-0.331264) + v[2] * T(0.5) + T(0.5);
     out[2] = v[0] * T(0.5) + v[1] * T(-0.418688) + v[2] * T(-0.081312) + T(0.5);
-    std::copy(out, out + 3, v);
+    std::copy_n(out, 3, v);
 }
 
 template <>
@@ -309,7 +311,7 @@ color_ycbcr_to_rgb (T* v)
     out[0] = v[0] * T(1) + v[1] * T(0) + v[2] * T(1.402);
     out[1] = v[0] * T(1) + v[1] * T(-0.34414) + v[2] * T(-0.71414);
     out[2] = v[0] * T(1) + v[1] * T(1.772) + v[2] * T(0);
-    std::copy(out, out + 3, v);
+    std::copy_n(out, 3, v);
 }
 
 template <>

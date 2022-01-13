@@ -230,59 +230,7 @@ TEST(MatrixSVDTest, MatrixBidiagonalizationStandardTest)
 
     math::internal::matrix_bidiagonalize(test_matrix, M, N, mat_u, mat_b, mat_v, 1e-14);
 
-    double groundtruth_mat_u[M * M];
-    groundtruth_mat_u[0] = 0.042070316191167;
-    groundtruth_mat_u[1] = 0.773453352501348;
-    groundtruth_mat_u[2] = -0.565028398052320;
-    groundtruth_mat_u[3] = -0.167888229103364;
-    groundtruth_mat_u[4] = 0.229251939845590;
-    groundtruth_mat_u[5] = 0.210351580955836;
-    groundtruth_mat_u[6] = 0.505719499712420;
-    groundtruth_mat_u[7] = 0.667776546677112;
-    groundtruth_mat_u[8] = 0.448708735648741;
-    groundtruth_mat_u[9] = 0.229640924620372;
-    groundtruth_mat_u[10] = 0.378632845720504;
-    groundtruth_mat_u[11] = 0.237985646923492;
-    groundtruth_mat_u[12] = 0.312183334193103;
-    groundtruth_mat_u[13] = -0.623816560842154;
-    groundtruth_mat_u[14] = -0.559816455877411;
-    groundtruth_mat_u[15] = 0.546914110485173;
-    groundtruth_mat_u[16] = -0.029748205865437;
-    groundtruth_mat_u[17] = -0.367582716208264;
-    groundtruth_mat_u[18] = 0.573059831151541;
-    groundtruth_mat_u[19] = -0.486297621488654;
-    groundtruth_mat_u[20] = 0.715195375249841;
-    groundtruth_mat_u[21] = -0.297482058654365;
-    groundtruth_mat_u[22] = -0.047348766609631;
-    groundtruth_mat_u[23] = -0.230063776854764;
-    groundtruth_mat_u[24] = 0.587221212900103;
-
-    double groundtruth_mat_b[M * N];
-    std::fill(groundtruth_mat_b, groundtruth_mat_b + M * N, 0);
-    groundtruth_mat_b[0] = 23.769728648009426;
-    groundtruth_mat_b[1] = 47.80352488206745;
-    groundtruth_mat_b[5] = 4.209811764688732;
-    groundtruth_mat_b[6] = 1.449308026420137;
-    groundtruth_mat_b[10] = -0.000000000000001;
-    groundtruth_mat_b[16] = 0.000000000000002;
-
-    double groundtruth_mat_v[N * N];
-    groundtruth_mat_v[0] = 1;
-    groundtruth_mat_v[1] = 0;
-    groundtruth_mat_v[2] = 0;
-    groundtruth_mat_v[3] = 0;
-    groundtruth_mat_v[4] = 0;
-    groundtruth_mat_v[5] = 0.536841016220519;
-    groundtruth_mat_v[6] = -0.738332619241934;
-    groundtruth_mat_v[7] = 0.408248290463862;
-    groundtruth_mat_v[8] = 0;
-    groundtruth_mat_v[9] = 0.576444042007278;
-    groundtruth_mat_v[10] = -0.032335735149281;
-    groundtruth_mat_v[11] = -0.816496580927726;
-    groundtruth_mat_v[12] = 0;
-    groundtruth_mat_v[13] = 0.616047067794038;
-    groundtruth_mat_v[14] = 0.673661148943370;
-    groundtruth_mat_v[15] = 0.408248290463864;
+    // TODO
 }
 
 TEST(MatrixSVDTest, MatrixBidiagonalizationQuadraticTest)

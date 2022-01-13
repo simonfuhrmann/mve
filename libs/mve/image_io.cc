@@ -1297,9 +1297,10 @@ save_mvei_file (ImageBase::ConstPtr image, std::string const& filename)
     if (image == nullptr)
         throw std::invalid_argument("Null image given");
 
-    int32_t width = image->width();
-    int32_t height = image->height();
-    int32_t channels = image->channels();
+    // Note: This is a narrowing conversion.
+    int32_t width = static_cast<int32_t>(image->width());
+    int32_t height = static_cast<int32_t>(image->height());
+    int32_t channels = static_cast<int32_t>(image->channels());
     int32_t type = image->get_type();
     char const* data = image->get_byte_pointer();
     std::size_t size = image->get_byte_size();

@@ -100,9 +100,9 @@ public:
 
         /* These fields are initialized on-demand (get_*_proxy()). */
         bool is_initialized = false;
-        int32_t width = 0;
-        int32_t height = 0;
-        int32_t channels = 0;
+        int64_t width = 0;
+        int64_t height = 0;
+        int64_t channels = 0;
         ImageType type = IMAGE_TYPE_UNKNOWN;
 
         /* This field is initialized on request with get_image(). */
