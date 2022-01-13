@@ -57,8 +57,8 @@ public:
 
 public:
     /** Initializes members with 0. */
-    ImageBase (void);
-    virtual ~ImageBase (void);
+    ImageBase (void) = default;
+    virtual ~ImageBase (void) = default;
 
     /** Duplicates the image. Data holders need to reimplement this. */
     virtual ImageBase::Ptr duplicate_base (void) const;
@@ -94,7 +94,9 @@ public:
     static ImageType get_type_for_string (std::string const& type_string);
 
 protected:
-    int w, h, c;
+    int w = 0;
+    int h = 0;
+    int c = 0;
 };
 
 /* ---------------------------------------------------------------- */
@@ -116,12 +118,12 @@ public:
 
 public:
     /** Default constructor creates an empty image. */
-    TypedImageBase (void);
+    TypedImageBase (void) = default;
 
     /** Copy constructor duplicates another image. */
     TypedImageBase (TypedImageBase<T> const& other);
 
-    virtual ~TypedImageBase (void);
+    virtual ~TypedImageBase (void) = default;
 
     /** Duplicates the image. Data holders need to reimplement this. */
     virtual ImageBase::Ptr duplicate_base (void) const;
@@ -188,17 +190,6 @@ protected:
 };
 
 /* ================================================================ */
-
-inline
-ImageBase::ImageBase (void)
-    : w(0), h(0), c(0)
-{
-}
-
-inline
-ImageBase::~ImageBase (void)
-{
-}
 
 inline ImageBase::Ptr
 ImageBase::duplicate_base (void) const
@@ -303,20 +294,8 @@ ImageBase::get_type_for_string (std::string const& type_string)
 
 template <typename T>
 inline
-TypedImageBase<T>::TypedImageBase (void)
-{
-}
-
-template <typename T>
-inline
 TypedImageBase<T>::TypedImageBase (TypedImageBase<T> const& other)
     : ImageBase(other), data(other.data)
-{
-}
-
-template <typename T>
-inline
-TypedImageBase<T>::~TypedImageBase (void)
 {
 }
 
