@@ -331,7 +331,7 @@ Matrix<T,N,M>::col (int index) const
 {
     typedef algo::InterleavedIter<T,M> RowIter;
     Vector<T,N> ret;
-    std::copy(RowIter(m + index), RowIter(m + index + M * N), *ret);
+    std::copy_n(RowIter(m + index), N, *ret);
     return ret;
 }
 
