@@ -1,18 +1,32 @@
 # Introduction ![Build Status](https://travis-ci.org/simonfuhrmann/mve.svg?branch=master)
 
-The Multi-View Environment is an effort to ease the work with multi-view
-datasets and to support the development of algorithms based on multiple
-views. It features Structure from Motion, Multi-View Stereo and Surface
-Reconstruction. MVE is developed at the TU Darmstadt. Visit the following
-website for more details.
+The Multi-View Environment, MVE, is an implementation of a complete
+end-to-end pipeline for image-based geometry reconstruction. It features
+Structure-from-Motion, Multi-View Stereo and Surface Reconstruction.
+Further, this is an effort to ease the work with multi-view datasets and
+to support the development of algorithms based on multiple views. MVE has
+been developed at the TU Darmstadt by Michael Goesele's research group,
+and is cucrently in maintenance mode, i.e., new features are rarely added.
 
- * https://www.gcc.tu-darmstadt.de/home/proj/mve/
-
-This README covers compilation and basic information about the
-pipeline. For documentation, please refer to the Wiki pages on GitHub.
+This README covers compilation and basic information about the pipeline.
+For documentation, please refer to the Wiki pages on GitHub.
 
  * https://github.com/simonfuhrmann/mve/wiki
 
+MVE is written in C++ and comes with a set of easy-to-use, cross-platform
+libraries. The code runs on Linux, MacOS X and (sometimes) Windows. MVE has
+minimal dependencies on external libraries; it depends on `libpng`,
+`libjpeg` and `libtiff`. A front-end QT-based application called UMVE is
+built on top of these libraries, for visualization of the datasets.
+
+If you use our system and want to mention MVE in your publications, please
+cite the following paper:
+
+**MVE – A Multi-View Reconstruction Environment** —
+[Paper, 10MB](http://www.simonfuhrmann.de/papers/gch2014-mve.pdf)<br>
+Simon Fuhrmann, Fabian Langguth and Michael Goesele<br>
+In: *Proceedings of the Eurographics Workshop on Graphics and Cultural
+Heritage, Darmstadt, Germany, 2014.*
 
 # Building MVE and UMVE
 
@@ -48,11 +62,11 @@ The MVE reconstruction pipeline is composed of the following components:
  * Multi-View Stereo, which reconstructs dense depth maps for each photo.
  * Surface Reconstruction, which reconstructs a surface mesh.
 
-The reconstruction tools can be found under `mve/apps/`. Please refer to the
+The individual steps of the pipeline are available as command line applications
+in the `mve/apps/` directory. Please refer to the
 [MVE Users Guide](https://github.com/simonfuhrmann/mve/wiki/MVE-Users-Guide)
 for a more detailed description how to use these tools. Note that UMVE is
 merely an interface for scene inspection and does not support reconstruction.
-
 
 # Licensing
 
