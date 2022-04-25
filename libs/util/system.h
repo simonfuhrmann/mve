@@ -143,10 +143,13 @@ print_build_timestamp (char const* application_name)
 #   define HOST_BYTEORDER_LE
 #endif
 
+/*
+ * The only Apple architectures with big-endian are PowerPC 32 and 64 bit.
+ */
 #if defined(__APPLE__)
 #   if defined(__ppc__) || defined(__ppc64__)
 #       define HOST_BYTEORDER_BE
-#   elif defined(__i386__) || defined(__x86_64__)
+#   else
 #       define HOST_BYTEORDER_LE
 #   endif
 #endif
