@@ -39,8 +39,12 @@
 
 #include <algorithm>
 #include <iostream>
-#include <emmintrin.h> // SSE2
-#include <pmmintrin.h> // SSE3
+#if defined(__SSE2__)
+#   include <emmintrin.h> // SSE2
+#endif
+#if defined(__SSE3__)
+#   include <pmmintrin.h> // SSE3
+#endif
 
 #include "sfm/nearest_neighbor.h"
 
