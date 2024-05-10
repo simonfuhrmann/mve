@@ -3,7 +3,7 @@ TARGET := libmve_sfm.a
 include ${MVE_ROOT}/Makefile.inc
 
 CXXFLAGS += -I${MVE_ROOT}/libs ${OPENMP}
-LDLIBS += -lpng -ltiff -ljpeg
+LDLIBS += ${LIBJPEG_LDFLAGS} ${LIBPNG_LDFLAGS} ${LIBTIFF_LDFLAGS}
 
 SOURCES := $(wildcard [^_]*.cc)
 ${TARGET}: ${SOURCES:.cc=.o}

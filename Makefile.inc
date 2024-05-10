@@ -16,6 +16,15 @@ ifeq (${UNAME},Darwin)
     OPENMP =
 endif
 
+LIBJPEG_CFLAGS = `pkg-config --cflags libjpeg`
+LIBJPEG_LDFLAGS = `pkg-config --libs libjpeg`
+
+LIBPNG_CFLAGS = `pkg-config --cflags libpng`
+LIBPNG_LDFLAGS = `pkg-config --libs libpng`
+
+LIBTIFF_CFLAGS = `pkg-config --cflags libtiff-4`
+LIBTIFF_LDFLAGS = `pkg-config --libs libtiff-4`
+
 COMPILE.cc = ${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.o = ${CXX} ${LDFLAGS}
 .DEFAULT_GOAL := ${TARGET}
