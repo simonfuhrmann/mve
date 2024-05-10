@@ -13,6 +13,7 @@ CXXFLAGS += -pthread
 
 UNAME = $(shell uname)
 ifeq (${UNAME},Darwin)
+    CXXFLAGS += -DGL_SILENCE_DEPRECATION=1
     OPENMP =
 endif
 
