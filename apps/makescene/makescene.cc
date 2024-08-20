@@ -33,7 +33,7 @@
 #include "util/system.h"
 #include "util/timer.h"
 #include "util/arguments.h"
-#include "util/strings.h"
+#include "util/string_utils.h"
 #include "util/file_system.h"
 #include "util/tokenizer.h"
 #include "mve/bundle.h"
@@ -353,10 +353,10 @@ import_bundle_nvm_or_colmap (AppSettings const& conf, bool load_nvm = true)
     if (cam_infos.size() != cameras.size())
     {
         if (load_nvm)
-            std::cerr << "Error: NVM info inconsistent with bundle!" 
+            std::cerr << "Error: NVM info inconsistent with bundle!"
                 << std::endl;
         else
-            std::cerr << "Error: Colmap info inconsistent with bundle!" 
+            std::cerr << "Error: Colmap info inconsistent with bundle!"
                 << std::endl;
         return;
     }
@@ -860,19 +860,19 @@ is_colmap_sfm_bundle_format (AppSettings const& conf)
 
     std::string cameras_txt_filename = join_path(model_path, "cameras.txt");
     std::string cameras_bin_filename = join_path(model_path, "cameras.bin");
-    if (!util::fs::file_exists(cameras_txt_filename.c_str()) && 
+    if (!util::fs::file_exists(cameras_txt_filename.c_str()) &&
         !util::fs::file_exists(cameras_bin_filename.c_str()))
         return false;
 
     std::string images_txt_filename = join_path(model_path, "images.txt");
     std::string images_bin_filename = join_path(model_path, "images.bin");
-    if (!util::fs::file_exists(images_txt_filename.c_str()) && 
+    if (!util::fs::file_exists(images_txt_filename.c_str()) &&
         !util::fs::file_exists(images_bin_filename.c_str()))
         return false;
 
     std::string points_3D_txt_filename = join_path(model_path, "points3D.txt");
     std::string points_3D_bin_filename = join_path(model_path, "points3D.bin");
-    if (!util::fs::file_exists(points_3D_txt_filename.c_str()) && 
+    if (!util::fs::file_exists(points_3D_txt_filename.c_str()) &&
         !util::fs::file_exists(points_3D_bin_filename.c_str()))
         return false;
 
@@ -917,7 +917,7 @@ import_bundle (AppSettings const& conf)
 
     /**
      * Try to detect Colmap bundle format.
-     * In this case the input folder contains files with extension ".txt" or 
+     * In this case the input folder contains files with extension ".txt" or
      * ".bin".
      */
     if (is_colmap_sfm_bundle_format(conf))

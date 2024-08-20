@@ -3,9 +3,9 @@
 
 #include <gtest/gtest.h>
 
-#include "util/strings.h"
+#include "util/string_utils.h"
 
-TEST(StringTest, LowerUpperCaseTest)
+TEST(StringUtilsTest, LowerUpperCaseTest)
 {
     /* Test to lowerstring and to upper string. */
     std::string str = "Test aAzZ 012349 STRING !! #$%";
@@ -15,7 +15,7 @@ TEST(StringTest, LowerUpperCaseTest)
     EXPECT_EQ(str_lc, util::string::lowercase(str));
 }
 
-TEST(StringTest, StringConversionTest)
+TEST(StringUtilsTest, StringConversionTest)
 {
     EXPECT_EQ("1230", util::string::get(1230));
     EXPECT_EQ("0.1", util::string::get(0.1));
@@ -61,7 +61,7 @@ TEST(StringTest, StringConversionTest)
     EXPECT_EQ("", util::string::convert<std::string>("", false));
 }
 
-TEST(StringTest, LeftRightSubstringTest)
+TEST(StringUtilsTest, LeftRightSubstringTest)
 {
     std::string str = "123456";
     EXPECT_EQ("1234", util::string::left(str, 4));
@@ -70,7 +70,7 @@ TEST(StringTest, LeftRightSubstringTest)
     EXPECT_EQ("123456", util::string::right(str, 8));
 }
 
-TEST(StringTest, ClipAndChopTest)
+TEST(StringUtilsTest, ClipAndChopTest)
 {
     std::string str1 = "\t  \t test\t ";
     std::string str2 = " \t  \t test\t";
@@ -89,7 +89,7 @@ TEST(StringTest, ClipAndChopTest)
     EXPECT_EQ("test", util::string::clipped_newlines(str7));
 }
 
-TEST(StringTest, PunctateTest)
+TEST(StringUtilsTest, PunctateTest)
 {
     std::string str = "1234567890";
     EXPECT_EQ("12.3456.7890", util::string::punctated(str, '.', 4));
@@ -106,7 +106,7 @@ TEST(StringTest, PunctateTest)
     EXPECT_EQ("1.234", util::string::punctated("1234", '.', 3));
 }
 
-TEST(StringTest, WordWrapTest)
+TEST(StringUtilsTest, WordWrapTest)
 {
     std::string str1 = "some longword";
     EXPECT_EQ("some\nlongword", util::string::wordwrap(str1.c_str(), 4));
@@ -120,7 +120,7 @@ TEST(StringTest, WordWrapTest)
     EXPECT_EQ("some\nlong word", util::string::wordwrap(str3.c_str(), 9));
 }
 
-TEST(StringTest, StringNormalizationTest)
+TEST(StringUtilsTest, StringNormalizationTest)
 {
     std::string str = "  string \t that\tis  pretty messy  \t";
     std::string str_gt = " string that is pretty messy ";

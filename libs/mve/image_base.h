@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "util/strings.h"
+#include "util/string_utils.h"
 #include "mve/defines.h"
 
 MVE_NAMESPACE_BEGIN

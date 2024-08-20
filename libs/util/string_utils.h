@@ -7,8 +7,8 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
-#ifndef UTIL_STRING_HEADER
-#define UTIL_STRING_HEADER
+#ifndef UTIL_STRING_UTILS_HEADER
+#define UTIL_STRING_UTILS_HEADER
 
 #include <sstream>
 #include <string>
@@ -511,4 +511,4 @@ get_size_string (std::size_t size)
 UTIL_STRING_NAMESPACE_END
 UTIL_NAMESPACE_END
 
-#endif /* UTIL_STRING_HEADER */
+#endif /* UTIL_STRING_UTILS_HEADER */

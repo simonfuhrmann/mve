@@ -14,7 +14,7 @@
 
 #include "ogl/defines.h"
 #include "ogl/opengl.h"
-#include "util/strings.h"
+#include "util/string_utils.h"
 
 OGL_NAMESPACE_BEGIN
 

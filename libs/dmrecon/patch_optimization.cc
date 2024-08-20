@@ -7,7 +7,7 @@
  * of the BSD 3-Clause license. See the LICENSE.txt file for details.
  */
 
-#include "util/strings.h"
+#include "util/string_utils.h"
 #include "math/algo.h"
 #include "math/defines.h"
 #include "math/matrix.h"

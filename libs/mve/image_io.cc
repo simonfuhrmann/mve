@@ -34,7 +34,7 @@
 
 #include "math/algo.h"
 #include "util/exception.h"
-#include "util/strings.h"
+#include "util/string_utils.h"
 #include "util/system.h"
 #include "mve/image_io.h"
 

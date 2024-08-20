@@ -9,7 +9,7 @@
 
 #include <QLineEdit>
 
-#include "util/strings.h"
+#include "util/string_utils.h"
 
 #include "guihelpers.h"
 #include "scenemanager.h"

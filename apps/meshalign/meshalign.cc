@@ -15,7 +15,7 @@
 #include "util/system.h"
 #include "util/file_system.h"
 #include "util/arguments.h"
-#include "util/strings.h"
+#include "util/string_utils.h"
 #include "mve/mesh.h"
 #include "mve/mesh_io.h"
 #include "mve/mesh_tools.h"

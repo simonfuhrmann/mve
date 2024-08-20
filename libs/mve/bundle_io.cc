@@ -17,7 +17,7 @@
 
 #include "util/system.h"
 #include "util/file_system.h"
-#include "util/strings.h"
+#include "util/string_utils.h"
 #include "util/exception.h"
 #include "math/matrix.h"
 #include "math/vector.h"
@@ -562,7 +562,7 @@ create_camera_info_from_params(CameraInfo& camera_info,
         camera_info.ppoint[0] = params[2] / width;
         camera_info.ppoint[1] = params[3] / height;
     }
-    else 
+    else
     {
         std::string msg = "Unsupported camera model with radial distortion "
             "detected! If possible, re-run the SfM reconstruction with the "
@@ -700,7 +700,7 @@ load_colmap_images_txt(std::string const& images_filename,
         CameraInfo model = camera_colmap_id_to_model.at(camera_colmap_id);
         initialize_bundle_cam(model, quat, trans, &bundle_cam);
         determine_depth_map_path(depth_path, image_name, &depth_map_name);
-        initialize_cam_info(model, image_path, image_name, depth_path, 
+        initialize_cam_info(model, image_path, image_name, depth_path,
             depth_map_name, &colmap_cam_info);
 
         std::string point_2d_line;
@@ -712,7 +712,7 @@ load_colmap_images_txt(std::string const& images_filename,
             ref.view_id = view_id;
             point_2d_line_ss >> ref.pos[0] >> ref.pos[1];
             point_2d_line_ss >> feature_3d_colmap_id;
-            // A POINT2D that does not correspond to a POINT3D has a POINT3D_ID 
+            // A POINT2D that does not correspond to a POINT3D has a POINT3D_ID
             // of -1
             if (feature_3d_colmap_id == -1)
                 ref.feature_id = -1;
@@ -722,7 +722,7 @@ load_colmap_images_txt(std::string const& images_filename,
         }
         bundle_cams.push_back(bundle_cam);
         colmap_cams_info.push_back(colmap_cam_info);
-    }    
+    }
     if (camera_info != nullptr)
         std::swap(*camera_info, colmap_cams_info);
     in_images.close();
@@ -772,9 +772,9 @@ load_colmap_points_3D_txt(std::string const& points3D_filename,
             int feature_2d_idx;      // starts at 0
             point_3d_line_ss >> view_colmap_id >> feature_2d_idx;
             int view_id = view_colmap_id - 1;
-            // Make sure that each point only has a single observation per 
+            // Make sure that each point only has a single observation per
             // image, since MVE does not support multiple observations.
-            if (std::find(view_ids.begin(), view_ids.end(), view_id) != 
+            if (std::find(view_ids.begin(), view_ids.end(), view_id) !=
                 view_ids.end())
                 continue;
             view_ids.push_back(view_id);
@@ -911,19 +911,19 @@ load_colmap_images_bin(std::string const& images_filename,
         CameraInfo model = camera_colmap_id_to_model.at(camera_colmap_id);
         initialize_bundle_cam(model, quat, trans, &bundle_cam);
         determine_depth_map_path(depth_path, image_name, &depth_map_name);
-        initialize_cam_info(model, image_path, image_name, depth_path, 
+        initialize_cam_info(model, image_path, image_name, depth_path,
             depth_map_name, &colmap_cam_info);
 
         const std::size_t num_points_2D = read_binary_little_endian<uint64_t>(
             &in_images);
-        for (std::size_t point_2d_idx = 0; point_2d_idx < num_points_2D; 
-            ++point_2d_idx) 
+        for (std::size_t point_2d_idx = 0; point_2d_idx < num_points_2D;
+            ++point_2d_idx)
         {
             Bundle::Feature2D ref;
             ref.view_id = view_id;
             ref.pos[0] = (float)read_binary_little_endian<double>(&in_images);
             ref.pos[1] = (float)read_binary_little_endian<double>(&in_images);
-            // A POINT2D that does not correspond to a POINT3D has a POINT3D_ID 
+            // A POINT2D that does not correspond to a POINT3D has a POINT3D_ID
             // of -1
             feature_3d_colmap_id = (uint32_t)read_binary_little_endian<
                 point3D_t>(&in_images);
@@ -955,7 +955,7 @@ load_colmap_points_3D_bin(std::string const& points3D_filename,
     Bundle::Features& features = bundle->get_features();
     features.reserve(num_features);
     std::size_t num_views = bundle->get_cameras().size();
-    for (std::size_t feature_3d_idx = 0; feature_3d_idx < num_features; 
+    for (std::size_t feature_3d_idx = 0; feature_3d_idx < num_features;
         ++feature_3d_idx)
     {
         Bundle::Feature3D feature_3d;
@@ -987,9 +987,9 @@ load_colmap_points_3D_bin(std::string const& points3D_filename,
             view_colmap_id = read_binary_little_endian<image_t>(&in_points3D);
             int view_id = view_colmap_id - 1;
             feature_2d_idx = read_binary_little_endian<point2D_t>(&in_points3D);
-            // Make sure that each point only has a single observation per 
+            // Make sure that each point only has a single observation per
             // image, since MVE does not support multiple observations.
-            if (std::find(view_ids.begin(), view_ids.end(), 
+            if (std::find(view_ids.begin(), view_ids.end(),
                 view_id) != view_ids.end())
                 continue;
             view_ids.push_back(view_id);
@@ -1006,7 +1006,7 @@ load_colmap_points_3D_bin(std::string const& points3D_filename,
         num_refs = refs.size();
 
         /* There should be at least 2 cameras that see the point. */
-        if (num_refs < 2 || num_refs > num_views) 
+        if (num_refs < 2 || num_refs > num_views)
         {
             throw util::Exception("Invalid number of feature refs: ",
                 util::string::get(num_refs));
@@ -1154,7 +1154,7 @@ load_colmap_depth_map(int scale, mve::CameraInfo& mve_cam, int original_width,
     math::Matrix3f inv_calib;
     mve_cam.fill_inverse_calibration(*inv_calib, original_width,
         original_height);
-    mve::image::depthmap_convert_conventions<float>(depth_image, inv_calib, 
+    mve::image::depthmap_convert_conventions<float>(depth_image, inv_calib,
         true);
 
     if (depth_width == original_width && depth_height == original_height)
