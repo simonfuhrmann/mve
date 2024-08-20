@@ -50,11 +50,11 @@ qmake && make -j8
 
 System requirements to compile and run MVE or UVME are:
 
-* libjpeg (for MVE, http://www.ijg.org/)
-* libpng (for MVE, http://www.libpng.org/pub/png/libpng.html)
-* libtiff (for MVE, http://www.libtiff.org/)
+* libjpeg (for MVE, <http://www.ijg.org/>)
+* libpng (for MVE, <http://www.libpng.org/pub/png/libpng.html>)
+* libtiff (for MVE, <http://www.libtiff.org/>)
 * OpenGL (for libogl in MVE and UMVE)
-* Qt 5 (for UMVE, http://www.qt.io)
+* Qt 5 (for UMVE, <http://www.qt.io>)
 
 Windows and OS X: Please refer to the Wiki pages for instructions.
 
