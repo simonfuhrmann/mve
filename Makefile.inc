@@ -2,7 +2,7 @@
 CXX ?= g++
 CXXWARNINGS ?= -Wall -Wextra -Wundef -pedantic
 CXXINTRINSICS ?= -march=native
-CXXFEATURES ?= -funsafe-math-optimizations -fno-math-errno -std=c++11
+CXXFEATURES ?= -funsafe-math-optimizations -fno-math-errno -std=c++14
 CXXFLAGS ?= ${CXXWARNINGS} ${CXXINTRINSICS} ${CXXFEATURES} -g -O3
 
 # Delete this if OpenMP is not available (e.g., OS X without gcc)
@@ -13,8 +13,18 @@ CXXFLAGS += -pthread
 
 UNAME = $(shell uname)
 ifeq (${UNAME},Darwin)
+    CXXFLAGS += -DGL_SILENCE_DEPRECATION=1
     OPENMP =
 endif
+
+LIBJPEG_CFLAGS = `pkg-config --cflags libjpeg`
+LIBJPEG_LDFLAGS = `pkg-config --libs libjpeg`
+
+LIBPNG_CFLAGS = `pkg-config --cflags libpng`
+LIBPNG_LDFLAGS = `pkg-config --libs libpng`
+
+LIBTIFF_CFLAGS = `pkg-config --cflags libtiff-4`
+LIBTIFF_LDFLAGS = `pkg-config --libs libtiff-4`
 
 COMPILE.cc = ${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.o = ${CXX} ${LDFLAGS}

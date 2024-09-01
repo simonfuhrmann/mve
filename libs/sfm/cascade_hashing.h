@@ -357,7 +357,7 @@ CascadeHashing::oneway_match (Matching::Options const& matching_opts,
 
     top_candidates.reserve(max_num_candidates);
 
-    std::unique_ptr<T> tmp(new T[max_num_candidates * descriptor_length]);
+    std::unique_ptr<T[]> tmp(new T[max_num_candidates * descriptor_length]);
     NearestNeighbor<T> nn;
     nn.set_elements(tmp.get());
     nn.set_element_dimensions(descriptor_length);

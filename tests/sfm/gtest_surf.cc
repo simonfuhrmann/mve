@@ -148,7 +148,7 @@ TEST_F(SurfTest, TestHaarWaveletsLargerKernel)
     this->set_image(create_incrementing_image(6));
     this->filter_dx_dy(3, 3, 2, &dx, &dy);
     EXPECT_EQ(1.0f, dx);
-    EXPECT_EQ(6.0f, dy);
+    EXPECT_FLOAT_EQ(6.0f, dy);
 }
 
 TEST_F(SurfTest, TestHaarWaveletsHugeKernel)

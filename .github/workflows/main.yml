@@ -1,0 +1,109 @@
+name: MVE GitHub Actions CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    name: ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        platform:
+        - { name: "Ubuntu 20.04, GCC, x86_64",   os: ubuntu-20.04, cpp_compiler: g++,     qmake_spec: linux-g++ }
+        - { name: "Ubuntu 20.04, Clang, x86_64", os: ubuntu-20.04, cpp_compiler: clang++, qmake_spec: linux-clang }
+        - { name: "Ubuntu 22.04, GCC, x86_64",   os: ubuntu-22.04, cpp_compiler: g++,     qmake_spec: linux-g++ }
+        - { name: "Ubuntu 22.04, Clang, x86_64", os: ubuntu-22.04, cpp_compiler: clang++, qmake_spec: linux-clang }
+        - { name: "Ubuntu 24.04, GCC, x86_64",   os: ubuntu-24.04, cpp_compiler: g++,     qmake_spec: linux-g++ }
+        - { name: "Ubuntu 24.04, Clang, x86_64", os: ubuntu-24.04, cpp_compiler: clang++, qmake_spec: linux-clang }
+        - { name: "macOS 12, Clang, x86_64",     os: macos-12,     cpp_compiler: clang++, qmake_spec: macx-clang }
+        - { name: "macOS 13, Clang, x86_64",     os: macos-13,     cpp_compiler: clang++, qmake_spec: macx-clang }
+        - { name: "macOS 14, Clang, arm64",      os: macos-14,     cpp_compiler: clang++, qmake_spec: macx-clang }
+
+    env:
+      CXX: ${{ matrix.platform.cpp_compiler }}
+      QMAKE_SPEC: ${{ matrix.platform.qmake_spec }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Ubuntu dependencies
+      if: runner.os == 'Linux'
+      run: |
+        echo "::group::apt-get update"
+        sudo apt-get update
+        echo "::endgroup::"
+
+        echo "::group::apt-get upgrade"
+        sudo apt-get upgrade -y
+        echo "::endgroup::"
+
+        echo "::group::apt-get install"
+        sudo apt-get install \
+          build-essential \
+          clang \
+          libgl-dev \
+          libgtest-dev \
+          libjpeg-turbo8-dev \
+          libomp-dev \
+          libpng-dev \
+          libqt5opengl5-dev \
+          libtiff-dev \
+          pkg-config \
+          zlib1g-dev
+        echo "::endgroup::"
+
+    - name: Install macOS dependencies
+      if: runner.os == 'macOS'
+      run: |
+        echo "::group::brew update"
+        brew update
+        echo "::endgroup::"
+
+        echo "::group::brew install"
+        brew install -q \
+          googletest \
+          jpeg-turbo \
+          libpng \
+          libtiff \
+          qt@5
+        echo "::endgroup::"
+
+        echo "::group::brew link"
+        brew link qt@5
+        echo "::endgroup::"
+
+    - name: Build (U)MVE on Linux/macOS
+      run: |
+        ${CXX} --version
+        if [ "`uname`" = "Darwin" ]; then
+          export NUM_CPU_CORES="`sysctl -n hw.ncpu`"
+        else
+          export NUM_CPU_CORES="`nproc`"
+        fi
+
+        echo "::group::Build MVE"
+        make -j${NUM_CPU_CORES}
+        echo "::endgroup"::
+
+        echo "::group::Build UMVE"
+        qmake -v
+        pushd apps/umve
+        qmake -spec ${QMAKE_SPEC}
+        make -j${NUM_CPU_CORES}
+        popd
+        echo "::endgroup::"
+
+        echo "::group::Build tests"
+        make -j${NUM_CPU_CORES} test
+        echo "::endgroup::"
+
+    - name: Run tests
+      run: ./tests/test
+

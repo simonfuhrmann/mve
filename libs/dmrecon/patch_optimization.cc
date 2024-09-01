@@ -313,7 +313,6 @@ PatchOptimization::optimizeDepthAndNormal()
     math::Vec3d ATb(0.f);
     Samples const & mCol = sampler->getMasterColorSamples();
     IndexSet::const_iterator id;
-    std::size_t row = 0;
     for (id = neighIDs.begin(); id != neighIDs.end(); ++id)
     {
         Samples nCol, nDeriv;
@@ -341,7 +340,6 @@ PatchOptimization::optimizeDepthAndNormal()
                 ATA(1,2) += a_i[1] * a_i[2];
                 ATA(2,2) += a_i[2] * a_i[2];
                 ATb += a_i * b_i;
-                ++row;
             }
         }
     }

@@ -740,7 +740,6 @@ load_colmap_points_3D_txt(std::string const& points3D_filename,
     Bundle::Features& features = bundle->get_features();
 
     std::size_t num_views = bundle->get_cameras().size();
-    int num_points_3d = 0;
     std::string point_3d_line;
     while (std::getline(in_points3D, point_3d_line))
     {
@@ -798,7 +797,6 @@ load_colmap_points_3D_txt(std::string const& points3D_filename,
         }
         feature_3d.refs = refs;
         features.push_back(feature_3d);
-        ++num_points_3d;
     }
     in_points3D.close();
 }

@@ -1,6 +1,7 @@
 MVE_ROOT = ../..
 
-CONFIG += qt release c++11
+CONFIG += link_pkgconfig qt release c++11
+PKGCONFIG += libjpeg libpng libtiff-4
 QT += concurrent opengl
 
 QMAKE_LFLAGS += -rdynamic -fopenmp
@@ -13,7 +14,7 @@ TARGET = umve
 
 INCLUDEPATH += $${MVE_ROOT}/libs
 DEPENDPATH += $${MVE_ROOT}/libs
-LIBS = $${MVE_ROOT}/libs/dmrecon/libmve_dmrecon.a $${MVE_ROOT}/libs/mve/libmve.a $${MVE_ROOT}/libs/ogl/libmve_ogl.a $${MVE_ROOT}/libs/util/libmve_util.a -lpng -ljpeg -ltiff
+LIBS = $${MVE_ROOT}/libs/dmrecon/libmve_dmrecon.a $${MVE_ROOT}/libs/mve/libmve.a $${MVE_ROOT}/libs/ogl/libmve_ogl.a $${MVE_ROOT}/libs/util/libmve_util.a
 QMAKE_LIBDIR_QT =
 
 OBJECTS_DIR = build
