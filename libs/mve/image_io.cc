@@ -631,7 +631,7 @@ void
 tiff_error_handler (char const* /*module*/, char const* fmt, va_list ap)
 {
     char msg[2048];
-    ::vsnprintf(msg, 2048, fmt, ap);
+    ::vsnprintf(msg, sizeof(msg), fmt, ap);
     throw util::Exception(msg);
 }
 
