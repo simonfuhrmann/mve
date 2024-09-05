@@ -1,6 +1,6 @@
 MVE_ROOT = ../..
 
-CONFIG += link_pkgconfig qt release c++11
+CONFIG += link_pkgconfig qt release c++14
 PKGCONFIG += libjpeg libpng libtiff-4
 QT += concurrent opengl
 
