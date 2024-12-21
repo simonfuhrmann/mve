@@ -24,6 +24,7 @@ jobs:
         - { name: "Ubuntu 24.04, Clang, x86_64", os: ubuntu-24.04, cpp_compiler: clang++, qmake_spec: linux-clang }
         - { name: "macOS 13, Clang, x86_64",     os: macos-13,     cpp_compiler: clang++, qmake_spec: macx-clang }
         - { name: "macOS 14, Clang, arm64",      os: macos-14,     cpp_compiler: clang++, qmake_spec: macx-clang }
+        - { name: "macOS 15, Clang, arm64",      os: macos-15,     cpp_compiler: clang++, qmake_spec: macx-clang }
 
     env:
       CXX: ${{ matrix.platform.cpp_compiler }}
