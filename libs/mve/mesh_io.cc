@@ -18,6 +18,7 @@
 #include "mve/mesh_io_pbrt.h"
 #include "mve/mesh_io_smf.h"
 #include "mve/mesh_io_obj.h"
+#include "mve/mesh_io_glb.h"
 
 MVE_NAMESPACE_BEGIN
 MVE_GEOM_NAMESPACE_BEGIN
@@ -60,6 +61,8 @@ save_mesh (TriangleMesh::ConstPtr mesh, std::string const& filename)
         save_smf_mesh(mesh, filename);
     else if (util::string::right(filename, 4) == ".obj")
         save_obj_mesh(mesh, filename);
+    else if (util::string::right(filename, 4) == ".glb")
+        save_glb_mesh(mesh, filename);
     else
         throw std::runtime_error("Extension not recognized");
 }
