@@ -12,8 +12,8 @@ on:
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
+  checks: read
+  pull-requests: read
 
 jobs:
   build:
