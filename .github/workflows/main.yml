@@ -5,6 +5,15 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
+  schedule:
+    # every 1st day of month at 00:00 UTC
+    - cron: "0 0 1 * *"
+
+permissions:
+  contents: read
+  checks: read
+  pull-requests: read
 
 jobs:
   build:
@@ -16,13 +25,10 @@ jobs:
 
       matrix:
         platform:
-        - { name: "Ubuntu 20.04, GCC, x86_64",   os: ubuntu-20.04, cpp_compiler: g++,     qmake_spec: linux-g++ }
-        - { name: "Ubuntu 20.04, Clang, x86_64", os: ubuntu-20.04, cpp_compiler: clang++, qmake_spec: linux-clang }
         - { name: "Ubuntu 22.04, GCC, x86_64",   os: ubuntu-22.04, cpp_compiler: g++,     qmake_spec: linux-g++ }
         - { name: "Ubuntu 22.04, Clang, x86_64", os: ubuntu-22.04, cpp_compiler: clang++, qmake_spec: linux-clang }
         - { name: "Ubuntu 24.04, GCC, x86_64",   os: ubuntu-24.04, cpp_compiler: g++,     qmake_spec: linux-g++ }
         - { name: "Ubuntu 24.04, Clang, x86_64", os: ubuntu-24.04, cpp_compiler: clang++, qmake_spec: linux-clang }
-        - { name: "macOS 13, Clang, x86_64",     os: macos-13,     cpp_compiler: clang++, qmake_spec: macx-clang }
         - { name: "macOS 14, Clang, arm64",      os: macos-14,     cpp_compiler: clang++, qmake_spec: macx-clang }
         - { name: "macOS 15, Clang, arm64",      os: macos-15,     cpp_compiler: clang++, qmake_spec: macx-clang }
 
