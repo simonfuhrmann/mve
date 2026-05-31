@@ -37,7 +37,7 @@ jobs:
       QMAKE_SPEC: ${{ matrix.platform.qmake_spec }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install Ubuntu dependencies
       if: runner.os == 'Linux'
